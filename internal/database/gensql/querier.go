@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database/types"
 )
 
 type Querier interface {
@@ -14,27 +13,13 @@ type Querier interface {
 	DeployInstructionsLatestDeployedForFeature(ctx context.Context, arg DeployInstructionsLatestDeployedForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
-	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
-	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
-	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
-	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
-	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
-	EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
-	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
-	EnvironmentSetLabels(ctx context.Context, arg EnvironmentSetLabelsParams) error
-	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
-	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
-	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (NamesFromDeployInstructionRow, error)
-	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
-	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
-	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 }
 
 var _ Querier = (*Queries)(nil)

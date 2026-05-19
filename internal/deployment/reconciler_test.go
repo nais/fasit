@@ -5,6 +5,7 @@ package deployment_test
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -20,7 +21,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
-	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -277,7 +277,7 @@ func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) 
 	if strings.HasSuffix(msg.Name, "-pending") {
 		status = model.RolloutStatusPending
 	}
-	return p.repo.DeployInstructionUpdateStatus(ctx, msg.ID, status)
+	return deployment.UpdateDeployInstructionStatus(ctx, msg.ID, status)
 }
 
 func (p *publisher) Stop() {}
@@ -296,7 +296,7 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	if labels["kind"] == "" {
 		labels["kind"] = "tenant"
 	}
-	env, err := d.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+	env, err := environment.Create(ctx, &model.EnvironmentCreate{
 		Name:     name,
 		TenantID: tenant.ID,
 		Kind:     model.EnvironmentKind(labels["kind"]),
@@ -304,21 +304,11 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	if err != nil {
 		d.t.Fatalf("create environment: %v", err)
 	}
-	lbls := make([]*protogen.EnvironmentLabel, 0)
-	for k, v := range labels {
-		lbls = append(lbls, &protogen.EnvironmentLabel{
-			Key:   k,
-			Value: v,
-		})
-	}
-	lbls = append(lbls, &protogen.EnvironmentLabel{
-		Key:   "tenant",
-		Value: tenant.Name,
-	}, &protogen.EnvironmentLabel{
-		Key:   "environment",
-		Value: name,
-	})
-	err = d.repo.EnvironmentSetLabels(ctx, env.ID, lbls)
+	lbls := environment.Labels{}
+	maps.Copy(lbls, labels)
+	lbls["tenant"] = tenant.Name
+	lbls["environment"] = env.Name
+	err = environment.SetLabels(ctx, env.ID, lbls)
 	if err != nil {
 		d.t.Fatalf("set environment labels: %v", err)
 	}

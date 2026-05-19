@@ -5,7 +5,6 @@ package gensql
 import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/database/types"
 )
 
 type DeployInstruction struct {
@@ -19,27 +18,4 @@ type DeployInstruction struct {
 	LastModified   pgtype.Timestamptz
 	Values         []byte
 	DeploymentID   *uuid.UUID
-}
-
-type Environment struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	Name         string
-	Kind         types.EnvironmentKind
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Reconcile    bool
-	Labels       types.EnvironmentLabels
-}
-
-type ReleaseStatus struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Version       string
-	Status        string
-	Revision      int32
-	LastDeployed  pgtype.Timestamptz
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
 }

@@ -3,7 +3,6 @@ package tenants
 import (
 	"net/http"
 
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
@@ -28,7 +27,7 @@ type tenantCard struct {
 	IconColor    string
 }
 
-func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenants, err := environment.GetTenants(r.Context())
 		if err != nil {
@@ -38,7 +37,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		cards := make([]tenantCard, 0, len(tenants))
 		for _, tenant := range tenants {
-			envs, err := repo.EnvironmentsGet(r.Context(), tenant.ID)
+			envs, err := environment.List(r.Context(), tenant.ID)
 			if err != nil {
 				http.Error(w, "Failed to load tenants", http.StatusInternalServerError)
 				return

@@ -17,18 +17,7 @@ import (
 type DeployInstructionRepo interface {
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionsLatestDeployedForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
-	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error)
-}
-
-func (r *repo) DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
-	if !status.IsValid() {
-		return fmt.Errorf("invalid status: %q", status)
-	}
-	return r.querier.DeployInstructionsUpdateStatus(ctx, gensql.DeployInstructionsUpdateStatusParams{
-		ID:     id,
-		Status: status.String(),
-	})
 }
 
 func (r *repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {

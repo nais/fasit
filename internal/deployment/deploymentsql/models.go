@@ -61,3 +61,14 @@ type Log struct {
 	Message           string
 	Kind              string
 }
+
+type ReleaseStatus struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Version       string
+	Status        string
+	Revision      int32
+	LastDeployed  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+}

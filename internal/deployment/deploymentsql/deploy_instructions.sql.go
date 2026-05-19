@@ -324,3 +324,22 @@ func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, timeoutDeployInstructions)
 	return err
 }
+
+const updateDeployInstructionStatus = `-- name: UpdateDeployInstructionStatus :exec
+UPDATE
+	deploy_instructions
+SET
+	status = $1
+WHERE
+	id = $2
+`
+
+type UpdateDeployInstructionStatusParams struct {
+	Status string
+	ID     uuid.UUID
+}
+
+func (q *Queries) UpdateDeployInstructionStatus(ctx context.Context, arg UpdateDeployInstructionStatusParams) error {
+	_, err := q.db.Exec(ctx, updateDeployInstructionStatus, arg.Status, arg.ID)
+	return err
+}

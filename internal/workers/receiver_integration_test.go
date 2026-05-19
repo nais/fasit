@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/slack/fake"
@@ -34,8 +35,6 @@ func TestReceiverIntegration(t *testing.T) {
 		ctx := testinfra.Context(ctx, pool)
 		testinfra.Exec(ctx, t, pool, fixtures...)
 
-		repo := testinfra.Repo(pool)
-
 		releases := message.HelmRelease{
 			Releases: []message.Release{
 				{Name: "app1", Status: "deployed", Version: "1.0.0"},
@@ -48,14 +47,13 @@ func TestReceiverIntegration(t *testing.T) {
 			&fakeClient{messages: []message.Status{
 				{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
 			}},
-			repo,
 			logrus.NewEntry(logrus.New()),
 			fake.NewFakeSlackClient(),
 			"test",
 		)
 		rec.Run(ctx)
 
-		got, err := repo.ReleaseStatusesGet(ctx, envID)
+		got, err := deployment.ListReleaseStatuses(ctx, envID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,15 +67,12 @@ func TestReceiverIntegration(t *testing.T) {
 		ctx := testinfra.Context(ctx, pool)
 		testinfra.Exec(ctx, t, pool, fixtures...)
 
-		repo := testinfra.Repo(pool)
-
 		send := func(releases []message.Release) {
 			data, _ := json.Marshal(message.HelmRelease{Releases: releases})
 			rec := workers.NewReceiver(
 				&fakeClient{messages: []message.Status{
 					{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
 				}},
-				repo,
 				logrus.NewEntry(logrus.New()),
 				fake.NewFakeSlackClient(),
 				"test",
@@ -92,7 +87,7 @@ func TestReceiverIntegration(t *testing.T) {
 			{Name: "new-app", Status: "deployed", Version: "2.0.0"},
 		})
 
-		got, err := repo.ReleaseStatusesGet(ctx, envID)
+		got, err := deployment.ListReleaseStatuses(ctx, envID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,7 +104,6 @@ func TestReceiverIntegration(t *testing.T) {
 		ctx := testinfra.Context(ctx, pool)
 		testinfra.Exec(ctx, t, pool, fixtures...)
 
-		repo := testinfra.Repo(pool)
 		reportedAt := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 
 		data, _ := json.Marshal(message.Health{ReportedAt: reportedAt})
@@ -117,7 +111,6 @@ func TestReceiverIntegration(t *testing.T) {
 			&fakeClient{messages: []message.Status{
 				{Type: message.StatusTypeHealth, Tenant: "mytenant", Environment: "dev", Data: data},
 			}},
-			repo,
 			logrus.NewEntry(logrus.New()),
 			fake.NewFakeSlackClient(),
 			"test",
@@ -143,7 +136,6 @@ func TestReceiverIntegration(t *testing.T) {
 			fmt.Sprintf("INSERT INTO deploy_instructions (id, environment_id, feature_name, feature_version, hash) VALUES ('%s', '%s', 'myfeature', '1.0.0', 'abc')", diID, envID),
 		)
 
-		repo := testinfra.Repo(pool)
 		helm := map[string]any{
 			"name":          "myfeature",
 			"rolloutStatus": "deployed",
@@ -156,7 +148,6 @@ func TestReceiverIntegration(t *testing.T) {
 			&fakeClient{messages: []message.Status{
 				{Type: message.StatusTypeHelm, Tenant: "mytenant", Environment: "dev", Data: data},
 			}},
-			repo,
 			logrus.NewEntry(logrus.New()),
 			fake.NewFakeSlackClient(),
 			"test",

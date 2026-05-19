@@ -34,13 +34,13 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		tenantSlug := chi.URLParam(r, "tenant")
 		envName := chi.URLParam(r, "env")
 
-		tenant, err := envpkg.GetTenantGetByName(r.Context(), tenantSlug)
+		tenant, err := envpkg.GetTenantByName(r.Context(), tenantSlug)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, envName)
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, envName)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -53,7 +53,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		}
 
 		allTenants, _ := envpkg.GetTenants(r.Context())
-		tenantEnvs, _ := repo.EnvironmentsGet(r.Context(), tenant.ID)
+		tenantEnvs, _ := envpkg.List(r.Context(), tenant.ID)
 
 		environment := &Environment{
 			Environment: env,

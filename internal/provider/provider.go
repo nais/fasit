@@ -46,7 +46,7 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 }
 
 func (s *server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (*protogen.TenantResponse, error) {
-	tenant, err := environment.GetTenantGetByName(ctx, in.Name)
+	tenant, err := environment.GetTenantByName(ctx, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
@@ -79,7 +79,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, err
 	}
 
-	env, err := s.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+	env, err := environment.Create(ctx, &model.EnvironmentCreate{
 		Name:     in.Name,
 		TenantID: tenant.ID,
 		Kind:     kind,
@@ -88,7 +88,12 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = s.repo.EnvironmentSetLabels(ctx, env.ID, in.Labels)
+	labels := environment.Labels{}
+	for _, l := range in.Labels {
+		labels[l.Key] = l.Value
+	}
+
+	err = environment.SetLabels(ctx, env.ID, labels)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -106,12 +111,17 @@ func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvir
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	env, err := s.repo.EnvironmentGet(ctx, environmentID)
+	env, err := environment.Get(ctx, environmentID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	if err := s.repo.EnvironmentSetLabels(ctx, env.ID, in.Labels); err != nil {
+	labels := environment.Labels{}
+	for _, l := range in.Labels {
+		labels[l.Key] = l.Value
+	}
+
+	if err := environment.SetLabels(ctx, env.ID, labels); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -128,7 +138,7 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
 	}
 
-	env, err := s.repo.EnvironmentGetByName(ctx, tenantID, in.Name)
+	env, err := environment.GetByName(ctx, tenantID, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
@@ -168,7 +178,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	env, err := s.repo.EnvironmentGet(ctx, envID)
+	env, err := environment.Get(ctx, envID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}

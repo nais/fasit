@@ -61,7 +61,7 @@ func PlaygroundSubmitHandler(renderPage RenderPage, repo database.Repo) http.Han
 
 		code := r.FormValue("code")
 		data.PlaygroundCode = code
-		data.PlaygroundResult, _ = runPlayground(r.Context(), repo, chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), code, r.FormValue("includeUnset") == "on")
+		data.PlaygroundResult, _ = runPlayground(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), code, r.FormValue("includeUnset") == "on")
 
 		renderPage(w, r, layout.Props{
 			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,

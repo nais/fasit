@@ -80,6 +80,38 @@ func (q *Queries) Get(ctx context.Context, id uuid.UUID) (Environment, error) {
 	return i, err
 }
 
+const getByName = `-- name: GetByName :one
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+FROM
+	environments
+WHERE
+	tenant_id = $1
+	AND name = $2
+`
+
+type GetByNameParams struct {
+	TenantID uuid.UUID
+	Name     string
+}
+
+func (q *Queries) GetByName(ctx context.Context, arg GetByNameParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, getByName, arg.TenantID, arg.Name)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Reconcile,
+		&i.Labels,
+	)
+	return i, err
+}
+
 const getLabels = `-- name: GetLabels :one
 SELECT
 	labels
@@ -94,6 +126,52 @@ func (q *Queries) GetLabels(ctx context.Context, id uuid.UUID) (types.Environmen
 	var labels types.EnvironmentLabels
 	err := row.Scan(&labels)
 	return labels, err
+}
+
+const list = `-- name: List :many
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+FROM
+	environments
+WHERE
+	tenant_id = $1
+ORDER BY
+	CASE WHEN name = 'management' THEN
+		1
+	ELSE
+		2
+	END,
+	name ASC
+`
+
+func (q *Queries) List(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
+	rows, err := q.db.Query(ctx, list, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Environment{}
+	for rows.Next() {
+		var i Environment
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Kind,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Reconcile,
+			&i.Labels,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const setLabels = `-- name: SetLabels :exec

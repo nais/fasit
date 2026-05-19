@@ -49,7 +49,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		rows := make([]deploymentStatusRow, 0, len(statuses))
 		for _, status := range statuses {
-			env, err := repo.EnvironmentGet(r.Context(), status.EnvironmentID)
+			env, err := envpkg.Get(r.Context(), status.EnvironmentID)
 			if err != nil {
 				continue
 			}
@@ -60,7 +60,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			}
 
 			releaseVersion := ""
-			if releases, err := repo.ReleaseStatusesGet(r.Context(), status.EnvironmentID); err == nil {
+			if releases, err := deployment.ListReleaseStatuses(r.Context(), status.EnvironmentID); err == nil {
 				for _, release := range releases {
 					if release.Name == dep.Feature.Name {
 						releaseVersion = release.Version

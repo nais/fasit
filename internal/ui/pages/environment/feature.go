@@ -95,19 +95,19 @@ func DeleteConfigHandler(_ database.Repo) http.HandlerFunc {
 	}
 }
 
-func ConfigOverrideSubmitHandler(repo database.Repo) http.HandlerFunc {
+func ConfigOverrideSubmitHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
 		}
 
-		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
+		tenant, err := envpkg.GetTenantByName(r.Context(), chi.URLParam(r, "tenant"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -162,12 +162,12 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 
-		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
+		tenant, err := envpkg.GetTenantByName(r.Context(), chi.URLParam(r, "tenant"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -204,19 +204,19 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 	}
 }
 
-func RedeployHandler(repo database.Repo) http.HandlerFunc {
+func RedeployHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
 		}
 
-		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
+		tenant, err := envpkg.GetTenantByName(r.Context(), chi.URLParam(r, "tenant"))
 		if err != nil {
 			http.Error(w, "Failed to get tenant: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return

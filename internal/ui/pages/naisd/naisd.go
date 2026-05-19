@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/components"
@@ -29,7 +28,7 @@ type agentRow struct {
 	HasReport   bool
 }
 
-func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenants, err := environment.GetTenants(r.Context())
 		if err != nil {
@@ -39,7 +38,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		var rows []agentRow
 		for _, tenant := range tenants {
-			envs, err := repo.EnvironmentsGet(r.Context(), tenant.ID)
+			envs, err := environment.List(r.Context(), tenant.ID)
 			if err != nil {
 				continue
 			}

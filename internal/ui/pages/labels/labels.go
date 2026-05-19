@@ -42,27 +42,25 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		allLabels := map[string]map[string]bool{}
 
 		for _, tenant := range tenants {
-			envs, err := repo.EnvironmentsGet(r.Context(), tenant.ID)
+			envs, err := environment.List(r.Context(), tenant.ID)
 			if err != nil {
 				continue
 			}
 			for _, env := range envs {
-				labels, err := repo.EnvironmentGetLabels(r.Context(), env.ID)
+				labels, err := environment.GetLabels(r.Context(), env.ID)
 				if err != nil {
 					continue
 				}
-				labelMap := make(map[string]string, len(labels))
-				for _, l := range labels {
-					labelMap[l.Key] = l.Value
-					if allLabels[l.Key] == nil {
-						allLabels[l.Key] = map[string]bool{}
+				for k, v := range labels {
+					if allLabels[k] == nil {
+						allLabels[k] = map[string]bool{}
 					}
-					allLabels[l.Key][l.Value] = true
+					allLabels[k][v] = true
 				}
 				rows = append(rows, envRow{
 					Tenant:      tenant.Name,
 					Environment: env.Name,
-					Labels:      labelMap,
+					Labels:      labels,
 				})
 			}
 		}

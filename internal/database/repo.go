@@ -40,9 +40,7 @@ type TXFunc func(repo Repo) error
 
 type Repo interface {
 	DeployInstructionRepo
-	EnvironmentRepo
 	EnvironmentValueRepo
-	ReleaseStatusRepo
 
 	Transaction
 

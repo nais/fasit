@@ -54,6 +54,18 @@ func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) erro
 	})
 }
 
+func GetLabels(ctx context.Context, environmentID uuid.UUID) (Labels, error) {
+	labels, err := querier(ctx).GetLabels(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	lbls := make(Labels)
+	maps.Copy(lbls, labels)
+
+	return lbls, nil
+}
+
 func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
 	err := querier(ctx).SetEnvironmentValue(ctx, environmentsql.SetEnvironmentValueParams{
 		Envid:  environmentID,
@@ -103,6 +115,17 @@ func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
 	return environmentFromSQL(env), nil
 }
 
+func GetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error) {
+	env, err := querier(ctx).GetByName(ctx, environmentsql.GetByNameParams{
+		TenantID: tenantID,
+		Name:     name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return environmentFromSQL(env), nil
+}
+
 func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 	tenant, err := querier(ctx).GetTenant(ctx, id)
 	if err != nil {
@@ -123,7 +146,7 @@ func GetTenants(ctx context.Context) ([]*model.Tenant, error) {
 	return tenantSlice, nil
 }
 
-func GetTenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+func GetTenantByName(ctx context.Context, name string) (*model.Tenant, error) {
 	tenant, err := querier(ctx).GetTenantByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -143,4 +166,16 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 	audit.CreateAudit(ctx, "created", "tenants", tenant.ID.String())
 
 	return tenantFromSQL(tenant), nil
+}
+
+func List(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
+	envs, err := querier(ctx).List(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	environmentSlice := make([]*model.Environment, len(envs))
+	for i, env := range envs {
+		environmentSlice[i] = environmentFromSQL(env)
+	}
+	return environmentSlice, nil
 }

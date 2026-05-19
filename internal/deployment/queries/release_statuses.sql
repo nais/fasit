@@ -1,4 +1,4 @@
--- name: ReleaseStatusCreateOrUpdate :one
+-- name: SetReleaseStatus :one
 INSERT INTO release_statuses(
 	environment_id,
 	feature,
@@ -24,17 +24,17 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ReleaseStatusesGet :many
+-- name: ReleaseStatusDeleteByEnvironment :exec
+DELETE FROM release_statuses
+WHERE environment_id = @environment_id;
+
+-- name: ListReleaseStatuses :many
 SELECT
 	*
 FROM
 	release_statuses
 WHERE
-	environment_id = @environment_ID
+	environment_id = @environment_id
 ORDER BY
 	feature ASC;
-
--- name: ReleaseStatusDeleteByEnvironment :exec
-DELETE FROM release_statuses
-WHERE environment_id = @environment_id;
 

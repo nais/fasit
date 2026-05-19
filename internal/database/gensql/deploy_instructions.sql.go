@@ -184,25 +184,6 @@ func (q *Queries) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) 
 	return i, err
 }
 
-const deployInstructionsUpdateStatus = `-- name: DeployInstructionsUpdateStatus :exec
-UPDATE
-	deploy_instructions
-SET
-	status = $1
-WHERE
-	id = $2
-`
-
-type DeployInstructionsUpdateStatusParams struct {
-	Status string
-	ID     uuid.UUID
-}
-
-func (q *Queries) DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error {
-	_, err := q.db.Exec(ctx, deployInstructionsUpdateStatus, arg.Status, arg.ID)
-	return err
-}
-
 const namesFromDeployInstruction = `-- name: NamesFromDeployInstruction :one
 SELECT
 	environments.name AS environment_name,

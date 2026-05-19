@@ -96,7 +96,6 @@ func Run(ctx context.Context) error {
 
 	receiver := workers.NewReceiver(
 		statusMgr,
-		repo,
 		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
@@ -124,8 +123,6 @@ func Run(ctx context.Context) error {
 			log.WithError(err).Fatal("running server")
 		}
 	}()
-
-	go clustersMetrics(ctx, repo, meter, log)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()

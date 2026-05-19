@@ -1,11 +1,3 @@
--- name: DeployInstructionsUpdateStatus :exec
-UPDATE
-	deploy_instructions
-SET
-	status = @status
-WHERE
-	id = @id;
-
 -- name: DeployInstructionsLatestForFeature :one
 SELECT
 	*

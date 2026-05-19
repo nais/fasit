@@ -31,8 +31,12 @@ type Querier interface {
 	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
 	ListFeatureStatesInEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureStatesInEnvironmentRow, error)
 	ListFeatures(ctx context.Context) ([]string, error)
+	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
+	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
+	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) (ReleaseStatus, error)
 	TimeoutDeployInstructions(ctx context.Context) error
+	UpdateDeployInstructionStatus(ctx context.Context, arg UpdateDeployInstructionStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

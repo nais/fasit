@@ -8,11 +8,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
+	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,6 +33,16 @@ func RegisterForTest(ctx context.Context, querier deploymentsql.Querier) context
 
 func fromContext(ctx context.Context) *Manager {
 	return ctx.Value(managerKey).(*Manager)
+}
+
+func querier(ctx context.Context) deploymentsql.Querier {
+	q := fromContext(ctx).querier
+	if tx, ok := dbtx.Tx(ctx); ok {
+		if real, ok := q.(*deploymentsql.Queries); ok {
+			return real.WithTx(tx)
+		}
+	}
+	return q
 }
 
 func GetManager(ctx context.Context) *Manager {
@@ -65,11 +78,11 @@ func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
 }
 
 func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
-	return getDeployment(ctx, fromContext(ctx).querier, id)
+	return getDeployment(ctx, querier(ctx), id)
 }
 
 func GetDeployInstructionByID(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error) {
-	di, err := fromContext(ctx).querier.DeployInstructionsByID(ctx, id)
+	di, err := querier(ctx).DeployInstructionsByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +90,11 @@ func GetDeployInstructionByID(ctx context.Context, id uuid.UUID) (*model.DeployI
 }
 
 func ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID uuid.UUID) ([]deploymentsql.ListDeployInstructionsByDeploymentIDRow, error) {
-	return fromContext(ctx).querier.ListDeployInstructionsByDeploymentID(ctx, &deploymentID)
+	return querier(ctx).ListDeployInstructionsByDeploymentID(ctx, &deploymentID)
 }
 
 func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
-	di, err := fromContext(ctx).querier.GetDeployInstructionByDeploymentAndEnvironmentID(ctx, deploymentsql.GetDeployInstructionByDeploymentAndEnvironmentIDParams{
+	di, err := querier(ctx).GetDeployInstructionByDeploymentAndEnvironmentID(ctx, deploymentsql.GetDeployInstructionByDeploymentAndEnvironmentIDParams{
 		DeploymentID:  &deploymentID,
 		EnvironmentID: environmentID,
 	})
@@ -106,7 +119,7 @@ func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uui
 }
 
 func ListDeployments(ctx context.Context) ([]*Deployment, error) {
-	rows, err := fromContext(ctx).querier.ListDeployments(ctx)
+	rows, err := querier(ctx).ListDeployments(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +137,7 @@ func ListDeployments(ctx context.Context) ([]*Deployment, error) {
 }
 
 func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*DeploymentStatus, error) {
-	rows, err := fromContext(ctx).querier.ListDeploymentStatuses(ctx, deploymentID)
+	rows, err := querier(ctx).ListDeploymentStatuses(ctx, deploymentID)
 	if err != nil {
 		return nil, fmt.Errorf("get deployment statuses: %w", err)
 	}
@@ -138,7 +151,7 @@ func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*Dep
 }
 
 func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
-	rows, err := fromContext(ctx).querier.ListDeploymentsByFeature(ctx, featureName)
+	rows, err := querier(ctx).ListDeploymentsByFeature(ctx, featureName)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +169,7 @@ func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deplo
 }
 
 func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
-	err := fromContext(ctx).querier.DeleteDeployment(ctx, deploymentID)
+	err := querier(ctx).DeleteDeployment(ctx, deploymentID)
 	if err != nil {
 		return err
 	}
@@ -165,7 +178,7 @@ func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
 }
 
 func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
-	err := fromContext(ctx).querier.DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
+	err := querier(ctx).DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
 		FeatureName: featureName,
 		Target:      target,
 	})
@@ -185,14 +198,14 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 }
 
 func invalidateDeployInstructionHash(ctx context.Context, envID uuid.UUID, featureName string) error {
-	return fromContext(ctx).querier.InvalidateDeployInstructionHash(ctx, deploymentsql.InvalidateDeployInstructionHashParams{
+	return querier(ctx).InvalidateDeployInstructionHash(ctx, deploymentsql.InvalidateDeployInstructionHashParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
 	})
 }
 
 func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
-	features, err := fromContext(ctx).querier.ListEnvironmentFeatures(ctx, environmentID)
+	features, err := querier(ctx).ListEnvironmentFeatures(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +233,7 @@ func TimeoutDeployInstructions(ctx context.Context, log logrus.FieldLogger) {
 	defer ticker.Stop()
 
 	for {
-		err := fromContext(ctx).querier.TimeoutDeployInstructions(ctx)
+		err := querier(ctx).TimeoutDeployInstructions(ctx)
 		if err != nil {
 			log.WithError(err).Error("failed to timeout deploy instructions")
 		}
@@ -231,4 +244,55 @@ func TimeoutDeployInstructions(ctx context.Context, log logrus.FieldLogger) {
 		case <-ticker.C:
 		}
 	}
+}
+
+func SetReleaseStatus(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
+	_, err := querier(ctx).SetReleaseStatus(ctx, deploymentsql.SetReleaseStatusParams{
+		EnvironmentID: environmentID,
+		Feature:       h.Name,
+		Version:       h.Version,
+		Status:        h.Status,
+		Revision:      int32(h.Revision), // #nosec G115
+		LastDeployed: pgtype.Timestamptz{
+			Time:  h.LastDeployed,
+			Valid: true,
+		},
+	})
+
+	return err
+}
+
+func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error) {
+	res, err := querier(ctx).ListReleaseStatuses(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	releases := make([]*model.Release, len(res))
+	for i, r := range res {
+		releases[i] = &model.Release{
+			Name:         r.Feature,
+			Version:      r.Version,
+			Status:       r.Status,
+			Revision:     int(r.Revision),
+			LastDeployed: r.LastDeployed.Time,
+			Created:      r.Created.Time,
+			LastModified: r.LastModified.Time,
+		}
+	}
+
+	return releases, nil
+}
+
+func DeleteReleaseStatus(ctx context.Context, environmentID uuid.UUID) error {
+	return querier(ctx).ReleaseStatusDeleteByEnvironment(ctx, environmentID)
+}
+
+func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
+	if !status.IsValid() {
+		return fmt.Errorf("invalid status: %q", status)
+	}
+	return querier(ctx).UpdateDeployInstructionStatus(ctx, deploymentsql.UpdateDeployInstructionStatusParams{
+		ID:     id,
+		Status: status.String(),
+	})
 }

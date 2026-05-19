@@ -134,7 +134,7 @@ func main() {
 			}
 		}
 
-		tenant, err := environment.GetTenantGetByName(ctx, tenantName)
+		tenant, err := environment.GetTenantByName(ctx, tenantName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -193,14 +193,16 @@ func main() {
 		}
 	}
 
-	repo := database.NewRepo(dbConn, log)
-
 	envID := func(tenantName, envName string) uuid.UUID {
-		id, err := repo.EnvironmentIDByNames(ctx, tenantName, envName)
+		t, err := environment.GetTenantByName(ctx, tenantName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		env, err := environment.GetByName(ctx, t.ID, envName)
 		if err != nil {
 			log.WithField("tenant", tenantName).WithField("env", envName).Fatal(err)
 		}
-		return id
+		return env.ID
 	}
 
 	seeder := deploymenttest.NewSeeder()

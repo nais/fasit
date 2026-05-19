@@ -259,12 +259,12 @@ func countEnabled(features []view.FeatureNav) int {
 }
 
 func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
-	tenant, err := envpkg.GetTenantGetByName(ctx, tenantSlug)
+	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
 	}
 
-	env, err := repo.EnvironmentGetByName(ctx, tenant.ID, envName)
+	env, err := envpkg.GetByName(ctx, tenant.ID, envName)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 	}
 
 	allTenants, _ := envpkg.GetTenants(ctx)
-	tenantEnvs, _ := repo.EnvironmentsGet(ctx, tenant.ID)
+	tenantEnvs, _ := envpkg.List(ctx, tenant.ID)
 
 	page := &FeaturePage{
 		Breadcrumbs: []breadcrumb.Crumb{
@@ -486,13 +486,9 @@ func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (
 }
 
 func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, featureName string, envID uuid.UUID) []EnvDeploymentItem {
-	envLabels, err := repo.EnvironmentGetLabels(ctx, envID)
+	envLabels, err := envpkg.GetLabels(ctx, envID)
 	if err != nil {
 		return nil
-	}
-	envLabelMap := make(map[string]string, len(envLabels))
-	for _, l := range envLabels {
-		envLabelMap[l.Key] = l.Value
 	}
 
 	deployments, err := deployment.ListDeploymentsByFeature(ctx, featureName)
@@ -501,7 +497,7 @@ func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, feature
 	}
 
 	releaseVersion := ""
-	if releases, err := repo.ReleaseStatusesGet(ctx, envID); err == nil {
+	if releases, err := deployment.ListReleaseStatuses(ctx, envID); err == nil {
 		for _, release := range releases {
 			if release.Name == featureName {
 				releaseVersion = release.Version
@@ -523,7 +519,7 @@ func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, feature
 
 	for _, dep := range deployments {
 		target := dep.TargetLabels
-		if !labelsMatch(envLabelMap, target) {
+		if !labelsMatch(envLabels, target) {
 			continue
 		}
 
@@ -679,8 +675,12 @@ func yamlUnmarshalFeature(code string, out *model.FeatureYAML) error {
 	return yaml.Unmarshal([]byte(code), out)
 }
 
-func runPlayground(ctx context.Context, repo database.Repo, tenantSlug, envSlug, featureName, code string, includeUnset bool) (*PlaygroundResult, error) {
-	env, err := repo.EnvironmentByNames(ctx, tenantSlug, envSlug)
+func runPlayground(ctx context.Context, tenantSlug, envSlug, featureName, code string, includeUnset bool) (*PlaygroundResult, error) {
+	t, err := envpkg.GetTenantByName(ctx, tenantSlug)
+	if err != nil {
+		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
+	}
+	env, err := envpkg.GetByName(ctx, t.ID, envSlug)
 	if err != nil {
 		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
 	}

@@ -7,9 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
@@ -28,17 +27,8 @@ type HelmListener interface {
 	Receive(ctx context.Context, message *message.Helm) error
 }
 
-type ReceiverStore interface {
-	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
-	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
-	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
-	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
-	TxFunc(ctx context.Context, fn database.TXFunc) error
-}
-
 type Receiver struct {
 	manager      ReceiverClient
-	repo         ReceiverStore
 	log          logrus.FieldLogger
 	slack        slack.SlackClient
 	slackChannel string
@@ -47,7 +37,6 @@ type Receiver struct {
 
 func NewReceiver(
 	mgr ReceiverClient,
-	repo ReceiverStore,
 	log logrus.FieldLogger,
 	slackClient slack.SlackClient,
 	slackChannel string,
@@ -55,7 +44,6 @@ func NewReceiver(
 ) *Receiver {
 	receiver := &Receiver{
 		manager:      mgr,
-		repo:         repo,
 		log:          log.WithField("subsystem", "status-receiver"),
 		slack:        slackClient,
 		slackChannel: slackChannel,
@@ -111,7 +99,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return err
 	}
 
-	env, err := r.repo.EnvironmentGet(ctx, di.EnvironmentID)
+	env, err := environment.Get(ctx, di.EnvironmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.WithField("deploy_instruction", helmStatus.DIID).
@@ -133,7 +121,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	if err := r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
+	if err := deployment.UpdateDeployInstructionStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
 		return fmt.Errorf("updating deploy instruction status: %w", err)
 	}
 
@@ -148,7 +136,14 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 		return nil
 	}
 
-	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
+	t, err := environment.GetTenantByName(ctx, msg.Tenant)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.WithField("tenant", msg.Tenant).Warn("unknown tenant")
+		}
+		return nil
+	}
+	env, err := environment.GetByName(ctx, t.ID, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			r.log.WithField("tenant", msg.Tenant).
@@ -159,14 +154,14 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 		return fmt.Errorf("getting environment id: %w", err)
 	}
 
-	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
-		err = repo.ReleaseStatusDeleteByEnvironmentID(ctx, environmentID)
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		err = deployment.DeleteReleaseStatus(ctx, env.ID)
 		if err != nil {
 			return fmt.Errorf("deleting release status: %w", err)
 		}
 
 		for _, rel := range status.Releases {
-			err = repo.ReleaseStatusCreateOrUpdate(ctx, environmentID, &rel)
+			err = deployment.SetReleaseStatus(ctx, env.ID, &rel)
 			if err != nil {
 				return fmt.Errorf("creating release status: %w", err)
 			}
@@ -182,7 +177,14 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		r.log.WithError(err).Errorf("invalid json")
 		return nil
 	}
-	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
+	t, err := environment.GetTenantByName(ctx, msg.Tenant)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.WithField("tenant", msg.Tenant).Warn("unknown tenant")
+		}
+		return nil
+	}
+	env, err := environment.GetByName(ctx, t.ID, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			r.log.WithField("tenant", msg.Tenant).
@@ -192,7 +194,7 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		}
 		return err
 	}
-	return naisdstatus.Set(ctx, environmentID, status)
+	return naisdstatus.Set(ctx, env.ID, status)
 }
 
 func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) error {

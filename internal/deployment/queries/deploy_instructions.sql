@@ -107,3 +107,11 @@ WHERE
 			di.created DESC
 		LIMIT 1);
 
+-- name: UpdateDeployInstructionStatus :exec
+UPDATE
+	deploy_instructions
+SET
+	status = @status
+WHERE
+	id = @id;
+

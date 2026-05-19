@@ -21,8 +21,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/site.js", s.JS)
 	r.Get("/favicon.ico", s.Favicon)
 
-	r.Get("/", tenants.Handler(s.renderPage, s.repo))
-	r.Get("/tenants/{tenant}", tenant.Handler(s.renderPage, s.repo))
+	r.Get("/", tenants.Handler(s.renderPage))
+	r.Get("/tenants/{tenant}", tenant.Handler(s.renderPage))
 
 	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage, s.repo))
 
@@ -38,9 +38,9 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/edit/{id}", environment.UpdateConfigHandler(s.repo))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/delete/{id}", environment.DeleteConfigHandler(s.repo))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.FeatureTabHandler(s.renderPage, s.repo, "overview"))
-	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.ConfigOverrideSubmitHandler(s.repo))
+	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.ConfigOverrideSubmitHandler())
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/toggle-reconcile", environment.ToggleFeatureStateHandler(s.repo))
-	r.Post("/tenants/{tenant}/envs/{env}/{feature}/redeploy", environment.RedeployHandler(s.repo))
+	r.Post("/tenants/{tenant}/envs/{env}/{feature}/redeploy", environment.RedeployHandler())
 
 	r.Get("/deployments", deployments.ListHandler(s.renderPage))
 	r.Post("/deployments", deployments.CreateHandler())
@@ -54,7 +54,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))
 
 	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
-	r.Get("/naisd", naisd.Handler(s.renderPage, s.repo))
+	r.Get("/naisd", naisd.Handler(s.renderPage))
 
 	return r
 }

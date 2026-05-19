@@ -97,12 +97,6 @@ func Context(ctx context.Context, pool *pgxpool.Pool) context.Context {
 	return ctx
 }
 
-// Repo returns a database.Repo backed by the given pool.
-func Repo(pool *pgxpool.Pool) database.Repo {
-	log, _ := test.NewNullLogger()
-	return database.NewRepo(pool, logrus.NewEntry(log))
-}
-
 // Exec runs SQL statements against the pool. Useful for test fixtures.
 func Exec(ctx context.Context, t *testing.T, pool *pgxpool.Pool, stmts ...string) {
 	t.Helper()

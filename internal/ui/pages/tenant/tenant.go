@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -30,17 +29,17 @@ type pageData struct {
 	IconColor    string
 }
 
-func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slug := chi.URLParam(r, "tenant")
 
-		tenant, err := environment.GetTenantGetByName(r.Context(), slug)
+		tenant, err := environment.GetTenantByName(r.Context(), slug)
 		if err != nil {
 			http.Error(w, "Failed to load tenant: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		envs, err := repo.EnvironmentsGet(r.Context(), tenant.ID)
+		envs, err := environment.List(r.Context(), tenant.ID)
 		if err != nil {
 			http.Error(w, "Failed to load tenant: "+err.Error(), http.StatusInternalServerError)
 			return

@@ -537,7 +537,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 	}
 	var allEnvs []envInfo
 	for _, tenant := range tenants {
-		envs, err := repo.EnvironmentsGet(ctx, tenant.ID)
+		envs, err := envpkg.List(ctx, tenant.ID)
 		if err != nil {
 			continue
 		}
@@ -545,15 +545,12 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 			if !featureTargetsKind(feature.EnvironmentKinds, env.Kind) {
 				continue
 			}
-			labels, err := repo.EnvironmentGetLabels(ctx, env.ID)
+			labels, err := envpkg.GetLabels(ctx, env.ID)
 			if err != nil {
 				continue
 			}
-			lblMap := make(map[string]string, len(labels))
-			for _, l := range labels {
-				lblMap[l.Key] = l.Value
-			}
-			allEnvs = append(allEnvs, envInfo{env: env, tenantName: tenant.Name, labels: lblMap})
+
+			allEnvs = append(allEnvs, envInfo{env: env, tenantName: tenant.Name, labels: labels})
 		}
 	}
 
@@ -611,7 +608,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				es.LastDeployed = di.LastModified
 			}
 
-			releases, err := repo.ReleaseStatusesGet(ctx, env.env.ID)
+			releases, err := deployment.ListReleaseStatuses(ctx, env.env.ID)
 			if err == nil {
 				for _, release := range releases {
 					if release.Name == feature.Name {
