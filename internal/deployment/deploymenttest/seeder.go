@@ -25,6 +25,7 @@ type deploymentInput struct {
 	EnvironmentKinds []model.EnvironmentKind
 	Values           model.Values
 	Defaults         map[string]any
+	Description      string
 }
 
 type deployments []deploymentInput
@@ -54,7 +55,7 @@ func (s *Seeder) AddDeployment(name, version string, target environment.Labels, 
 // optional fake chart defaults. The defaults are returned by the seeder's
 // ChartDownloader as the feature's ValuesYAML, mimicking values pulled from a
 // real chart's values.yaml in production.
-func (s *Seeder) AddDeploymentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, deps ...string) *Seeder {
+func (s *Seeder) AddDeploymentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, description string, deps ...string) *Seeder {
 	s.deployments = append(s.deployments, deploymentInput{
 		FeatureName:      name,
 		Version:          version,
@@ -63,6 +64,7 @@ func (s *Seeder) AddDeploymentWithValues(name, version string, target environmen
 		EnvironmentKinds: kinds,
 		Values:           values,
 		Defaults:         defaults,
+		Description:      description,
 	})
 	return s
 }
@@ -108,9 +110,10 @@ func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 					return nil, fmt.Errorf("build defaults for %s: %w", deploy.FeatureName, err)
 				}
 				return &model.Feature{
-					Name:    deploy.FeatureName,
-					Version: deploy.Version,
-					Chart:   u,
+					Name:        deploy.FeatureName,
+					Version:     deploy.Version,
+					Chart:       u,
+					Description: deploy.Description,
 					FeatureYAML: model.FeatureYAML{
 						Dependencies:     deps,
 						EnvironmentKinds: deploy.kinds(),

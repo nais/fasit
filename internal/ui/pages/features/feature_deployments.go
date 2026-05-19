@@ -104,12 +104,6 @@ type card struct {
 
 func loadDeploymentData(ctx context.Context, repo database.Repo, feature *model.Feature, data *DetailPage) {
 	data.DeploymentEnvs = featureDeploymentEnvStatuses(ctx, repo, feature)
-	for _, env := range data.DeploymentEnvs {
-		if env.IsOverridden {
-			continue
-		}
-		data.ChartDescriptions = append(data.ChartDescriptions, env.ChartDescription)
-	}
 }
 
 func deploymentDetailContent(data *DetailPage) g.Node {

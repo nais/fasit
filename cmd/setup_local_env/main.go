@@ -378,8 +378,20 @@ func main() {
 		},
 	}
 
+	featureDescriptions := map[string]string{
+		"naiserator":      "Kubernetes operator for NAIS applications",
+		"v13s":            "Vulnerability scanning and reporting",
+		"console":         "Web console for NAIS platform management",
+		"unleash":         "Feature toggle management service",
+		"replicator":      "Cross-namespace secret and configmap replication",
+		"dependencytrack": "Software composition analysis and dependency tracking",
+		"kyverno":         "Kubernetes policy engine",
+		"aivenator":       "Aiven service provisioning operator",
+		"hookd":           "GitHub deployment webhook handler",
+	}
+
 	addDeployment := func(name, version string, target environment.Labels, kinds []model.EnvironmentKind) {
-		seeder.AddDeploymentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name])
+		seeder.AddDeploymentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name], featureDescriptions[name])
 	}
 
 	naiseratorV := newVersion()

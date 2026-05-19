@@ -522,6 +522,9 @@ nav .nav-btn:hover {
   color: var(--text-faint);
   background: transparent;
   border: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 .breadcrumbs a {
   color: var(--text-faint);
@@ -536,6 +539,20 @@ nav .nav-btn:hover {
 }
 .breadcrumbs span.active {
   color: var(--text-secondary);
+}
+.breadcrumb-subtitle {
+  color: var(--text-faint);
+  font-weight: normal;
+}
+.breadcrumb-source {
+  margin-left: auto;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.breadcrumb-source:hover {
+  color: var(--text-heading);
 }
 .breadcrumb-switcher {
   position: relative;

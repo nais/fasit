@@ -3,7 +3,6 @@ package features
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/rand/v2"
 	"net/http"
 	"slices"
@@ -26,12 +25,11 @@ import (
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type DetailPage struct {
-	Breadcrumbs       []breadcrumb.Crumb
-	Features          []view.FeatureNav
-	CurrentFeature    *Feature
-	ChartDescriptions []string
-	DeploymentEnvs    []DeploymentEnvStatus
-	Prefs             ViewPrefs
+	Breadcrumbs    []breadcrumb.Crumb
+	Features       []view.FeatureNav
+	CurrentFeature *Feature
+	DeploymentEnvs []DeploymentEnvStatus
+	Prefs          ViewPrefs
 }
 
 type Feature struct {
@@ -103,33 +101,9 @@ func detailPage(data *DetailPage) g.Node {
 		components.FeaturesSidebar(data.Features, data.CurrentFeature.Name),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(data.Breadcrumbs),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"), chartInfoHeader(data))),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"), content)),
 		),
 	)
-}
-
-func chartInfoHeader(data *DetailPage) g.Node {
-	feat := data.CurrentFeature.Feature
-	rows := []g.Node{}
-	if feat.Chart != "" {
-		rows = append(rows, metaRow("Chart", g.Text(feat.Chart)))
-	}
-	if feat.Source != "" {
-		rows = append(rows, metaRow("Source", h.A(h.Href(feat.Source), h.Target("_blank"), g.Text(feat.Source))))
-	}
-	for i, desc := range data.ChartDescriptions {
-		label := "Description"
-		if len(data.ChartDescriptions) > 1 {
-			label = fmt.Sprintf("Description %d", i+1)
-		}
-		rows = append(rows, metaRow(label, g.Text(desc)))
-	}
-	return h.Table(h.Class("table meta-table"), h.TBody(rows...))
-}
-
-func metaRow(label string, value g.Node) g.Node {
-	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
 }
 
 func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
@@ -143,39 +117,20 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 		return nil, err
 	}
 	failed, pending := featureStatusCounts(r.Context(), repo)
+	featureCrumb := breadcrumb.Feature(featureName)
+	featureCrumb.Subtitle = feature.Description
+	featureCrumb.SourceURL = feature.Source
 	data := &DetailPage{
-		Breadcrumbs:    []breadcrumb.Crumb{breadcrumb.Features(), breadcrumb.Feature(featureName)},
+		Breadcrumbs:    []breadcrumb.Crumb{breadcrumb.Features(), featureCrumb},
 		Features:       toFeatureNavs(features, failed, pending),
 		CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)},
 	}
 	loadDeploymentData(r.Context(), repo, feature, data)
-	data.ChartDescriptions = dedupedChartDescriptions(feature, data)
 	return data, nil
 }
 
 func featureStatusCounts(_ context.Context, _ database.Repo) (failed, pending map[string]int) {
 	return map[string]int{}, map[string]int{}
-}
-
-func dedupedChartDescriptions(feature *model.Feature, data *DetailPage) []string {
-	seen := map[string]struct{}{}
-	ret := []string{}
-	add := func(d string) {
-		d = strings.TrimSpace(d)
-		if d == "" {
-			return
-		}
-		if _, ok := seen[d]; ok {
-			return
-		}
-		seen[d] = struct{}{}
-		ret = append(ret, d)
-	}
-	for _, desc := range data.ChartDescriptions {
-		add(desc)
-	}
-	add(feature.Description)
-	return ret
 }
 
 func featureConfigItems(feature *model.Feature) []ConfigItem {

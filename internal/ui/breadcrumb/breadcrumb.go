@@ -5,6 +5,8 @@ import "github.com/nais/fasit/internal/ui/view"
 type Crumb struct {
 	Label        string
 	URL          string
+	Subtitle     string // shown in parentheses after Label on the last crumb
+	SourceURL    string // shown as icon link to the right on the last crumb
 	Alternatives []Crumb
 }
 
