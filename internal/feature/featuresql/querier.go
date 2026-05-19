@@ -28,9 +28,6 @@ type Querier interface {
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
-	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
-	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
 	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
 	Features(ctx context.Context) ([]FeaturesRow, error)
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)

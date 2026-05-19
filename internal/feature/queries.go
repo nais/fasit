@@ -10,13 +10,10 @@ import (
 	"reflect"
 	"slices"
 	"text/template"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment"
@@ -514,72 +511,4 @@ func Features(ctx context.Context) ([]*model.Feature, error) {
 	}
 
 	return ret, nil
-}
-
-func FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
-	ret := []*model.FeatureState{}
-	featureStates, err := querier(ctx).FeatureStatesGet(ctx, envID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-		return nil, err
-	}
-
-	for _, featureState := range featureStates {
-		ret = append(ret, &model.FeatureState{
-			ID:           model.FeatureStateID(envID, featureState.Name),
-			FeatureName:  featureState.Name,
-			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
-			Enabled:      featureState.Enabled,
-			Created:      featureState.Created.Time,
-			LastModified: featureState.LastModified.Time,
-			EnvID:        envID,
-		})
-	}
-
-	return ret, nil
-}
-
-func FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error) {
-	if len(feature.Dependencies) > 0 && enabled {
-		states, err := FeatureStatesGet(ctx, envID)
-		if err != nil {
-			return nil, err
-		}
-
-		enabledFeatures := []string{}
-		for _, state := range states {
-			if state.Enabled {
-				enabledFeatures = append(enabledFeatures, state.FeatureName)
-			}
-		}
-
-		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
-		if len(missingFeatures) > 0 {
-			return nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)
-		}
-	}
-
-	res, err := querier(ctx).FeatureStateCreateOrUpdate(ctx, featuresql.FeatureStateCreateOrUpdateParams{
-		EnvironmentID: envID,
-		Feature:       feature.Name,
-		Enabled:       enabled,
-		Enabledat: pgtype.Timestamptz{
-			Time:  time.Now(),
-			Valid: enabled,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	msg := fmt.Sprintf("enabled %v", feature.Name)
-	if !enabled {
-		msg = fmt.Sprintf("disabled %v", feature.Name)
-	}
-
-	audit.CreateAudit(ctx, msg, "feature_states", envID.String()+":"+feature.Name)
-
-	return featureStateFromSQL(res), nil
 }

@@ -16,7 +16,3 @@ type FeatureState struct {
 
 	EnvID uuid.UUID `json:"-"`
 }
-
-func FeatureStateID(envID uuid.UUID, featureName string) string {
-	return envID.String() + "-" + featureName
-}

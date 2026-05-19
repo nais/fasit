@@ -2,6 +2,7 @@ package feature
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
@@ -21,8 +22,6 @@ type fakeQuerier struct {
 	configGlobalGetByKeyFunc       func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)
 	configGlobalUpdateOrCreateFunc func(ctx context.Context, arg featuresql.ConfigGlobalUpdateOrCreateParams) (featuresql.ConfigurationsGlobal, error)
 	configUpdateFunc               func(ctx context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error)
-	featureStateGetFunc            func(ctx context.Context, arg featuresql.FeatureStateGetParams) (featuresql.FeatureState, error)
-	featureStateCreateOrUpdateFunc func(ctx context.Context, arg featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error)
 }
 
 func (f *fakeQuerier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
@@ -101,18 +100,6 @@ func (f *fakeQuerier) FeatureDataCreate(context.Context, featuresql.FeatureDataC
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) FeatureStateCreateOrUpdate(ctx context.Context, arg featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error) {
-	return f.featureStateCreateOrUpdateFunc(ctx, arg)
-}
-
-func (f *fakeQuerier) FeatureStateGet(ctx context.Context, arg featuresql.FeatureStateGetParams) (featuresql.FeatureState, error) {
-	return f.featureStateGetFunc(ctx, arg)
-}
-
-func (f *fakeQuerier) FeatureStatesGet(context.Context, uuid.UUID) ([]featuresql.FeatureStatesGetRow, error) {
-	panic("not implemented")
-}
-
 func (f *fakeQuerier) FeatureVersionUpdate(context.Context, featuresql.FeatureVersionUpdateParams) error {
 	panic("not implemented")
 }
@@ -161,4 +148,16 @@ func newTestCtx(t *testing.T) (context.Context, *fakeQuerier, *auditfake.Querier
 	ctx := context.WithValue(context.Background(), QuerierKey, featuresql.Querier(fq))
 	ctx = audit.RegisterTestDeps(ctx, aq, log)
 	return ctx, fq, aq
+}
+
+func assertAuditMetadata(t *testing.T, raw []byte, key, want string) {
+	t.Helper()
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		t.Fatalf("unmarshal audit metadata: %v", err)
+	}
+	got, _ := m[key].(string)
+	if got != want {
+		t.Errorf("audit metadata[%q] = %q, want %q", key, got, want)
+	}
 }

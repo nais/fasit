@@ -49,15 +49,6 @@ type FeatureDatum struct {
 	TplDetails    []byte
 }
 
-type FeatureState struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Enabled       bool
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
-	EnabledAt     pgtype.Timestamptz
-}
-
 type Log struct {
 	ID                int64
 	DeployInstruction uuid.UUID
