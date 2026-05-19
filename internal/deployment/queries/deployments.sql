@@ -65,25 +65,19 @@ FROM
 WHERE
 	d.id = @id;
 
--- name: ListDeploymentsToReconcile :many
+-- name: ListDeploymentsForEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
-	sqlc.embed(fd)
+	sqlc.embed(fd),
+	(df.feature IS NOT NULL)::bool AS disabled
 FROM
 	deployments d
 	JOIN environments e ON e.id = @environment_id
-		AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+		AND e.labels @> d.target
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-WHERE
-	NOT EXISTS (
-		SELECT
-			1
-		FROM
-			disabled_features df
-		WHERE
-			df.environment_id = e.id
-			AND df.feature = fd.name)
+	LEFT JOIN disabled_features df ON df.environment_id = e.id
+		AND df.feature = d.feature_name
 ORDER BY
 	d.feature_name,
 	d.target,
@@ -194,3 +188,19 @@ WHERE
 	ds.deployment_id = @deployment_id
 	AND ds.environment_id = @environment_id;
 
+-- name: MostSpecificDeploymentForFeature :many
+SELECT DISTINCT ON (d.feature_name, d.target)
+	sqlc.embed(d),
+	sqlc.embed(fd)
+FROM
+	deployments d
+	JOIN environments e ON e.id = @environment_id
+		AND e.labels @> d.target
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	d.feature_name = @feature_name
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC;

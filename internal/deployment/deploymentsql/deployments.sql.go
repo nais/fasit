@@ -430,45 +430,108 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 	return items, nil
 }
 
-const listDeploymentsToReconcile = `-- name: ListDeploymentsToReconcile :many
+const listDeploymentsForEnvironment = `-- name: ListDeploymentsForEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
+	(df.feature IS NOT NULL)::bool AS disabled
 FROM
 	deployments d
 	JOIN environments e ON e.id = $1
-		AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+		AND e.labels @> d.target
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-WHERE
-	NOT EXISTS (
-		SELECT
-			1
-		FROM
-			disabled_features df
-		WHERE
-			df.environment_id = e.id
-			AND df.feature = fd.name)
+	LEFT JOIN disabled_features df ON df.environment_id = e.id
+		AND df.feature = d.feature_name
 ORDER BY
 	d.feature_name,
 	d.target,
 	d.created DESC
 `
 
-type ListDeploymentsToReconcileRow struct {
+type ListDeploymentsForEnvironmentRow struct {
 	Deployment   Deployment
 	FeatureDatum FeatureDatum
+	Disabled     bool
 }
 
-func (q *Queries) ListDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsToReconcileRow, error) {
-	rows, err := q.db.Query(ctx, listDeploymentsToReconcile, environmentID)
+func (q *Queries) ListDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsForEnvironmentRow, error) {
+	rows, err := q.db.Query(ctx, listDeploymentsForEnvironment, environmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListDeploymentsToReconcileRow{}
+	items := []ListDeploymentsForEnvironmentRow{}
 	for rows.Next() {
-		var i ListDeploymentsToReconcileRow
+		var i ListDeploymentsForEnvironmentRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.Disabled,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mostSpecificDeploymentForFeature = `-- name: MostSpecificDeploymentForFeature :many
+SELECT DISTINCT ON (d.feature_name, d.target)
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN environments e ON e.id = $1
+		AND e.labels @> d.target
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	d.feature_name = $2
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC
+`
+
+type MostSpecificDeploymentForFeatureParams struct {
+	EnvironmentID uuid.UUID
+	FeatureName   string
+}
+
+type MostSpecificDeploymentForFeatureRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) MostSpecificDeploymentForFeature(ctx context.Context, arg MostSpecificDeploymentForFeatureParams) ([]MostSpecificDeploymentForFeatureRow, error) {
+	rows, err := q.db.Query(ctx, mostSpecificDeploymentForFeature, arg.EnvironmentID, arg.FeatureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MostSpecificDeploymentForFeatureRow{}
+	for rows.Next() {
+		var i MostSpecificDeploymentForFeatureRow
 		if err := rows.Scan(
 			&i.Deployment.ID,
 			&i.Deployment.FeatureName,

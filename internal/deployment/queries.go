@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,6 +48,32 @@ func querier(ctx context.Context) deploymentsql.Querier {
 
 func GetManager(ctx context.Context) *Manager {
 	return fromContext(ctx)
+}
+
+func deploymentsFromRows(rows []deploymentsql.ListDeploymentsForEnvironmentRow) ([]*Deployment, error) {
+	deps := make([]*Deployment, len(rows))
+	for i, row := range rows {
+		dep, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		dep.TplDetails = row.FeatureDatum.TplDetails
+		dep.Disabled = row.Disabled
+		deps[i] = dep
+	}
+	return deps, nil
+}
+
+func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][]string, error) {
+	rows, err := querier(ctx).ListDeploymentsForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, fmt.Errorf("list deployments for environment: %w", err)
+	}
+	deps, err := deploymentsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	return collectKeyRefs(filterDeployments(deps)), nil
 }
 
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
@@ -204,26 +231,60 @@ func invalidateDeployInstructionHash(ctx context.Context, envID uuid.UUID, featu
 	})
 }
 
-func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
-	features, err := querier(ctx).ListEnvironmentFeatures(ctx, environmentID)
+type EnvironmentFeature struct {
+	Name     string
+	Disabled bool
+}
+
+func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentFeature, error) {
+	rows, err := querier(ctx).ListDeploymentsForEnvironment(ctx, environmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list deployments for environment: %w", err)
+	}
+	deps, err := deploymentsFromRows(rows)
 	if err != nil {
 		return nil, err
 	}
-
-	ret := make([]*model.FeatureState, len(features))
-	for i, f := range features {
-		ret[i] = &model.FeatureState{
-			ID:           environmentID.String() + "-" + f.FeatureDatum.Name,
-			FeatureName:  f.FeatureDatum.Name,
-			Enabled:      true,
-			EnabledAt:    &f.Created.Time,
-			Created:      f.Created.Time,
-			LastModified: f.Created.Time,
-			EnvID:        environmentID,
+	filtered := filterDeployments(deps)
+	seen := make(map[string]bool, len(filtered))
+	features := make([]EnvironmentFeature, 0, len(filtered))
+	for _, dep := range filtered {
+		if !seen[dep.Feature.Name] {
+			seen[dep.Feature.Name] = true
+			features = append(features, EnvironmentFeature{
+				Name:     dep.Feature.Name,
+				Disabled: dep.Disabled,
+			})
 		}
 	}
+	sort.Slice(features, func(i, j int) bool { return features[i].Name < features[j].Name })
+	return features, nil
+}
 
-	return ret, nil
+func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {
+	rows, err := querier(ctx).MostSpecificDeploymentForFeature(ctx, deploymentsql.MostSpecificDeploymentForFeatureParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query deployments for feature %q: %w", featureName, err)
+	}
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("no deployment found for feature %q in environment", featureName)
+	}
+	deps := make([]*Deployment, len(rows))
+	for i, row := range rows {
+		dep, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		deps[i] = dep
+	}
+	winner := filterDeployments(deps)
+	if len(winner) == 0 {
+		return nil, fmt.Errorf("no deployment found for feature %q in environment after filtering", featureName)
+	}
+	return winner[0].Feature, nil
 }
 
 // TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for

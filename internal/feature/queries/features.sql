@@ -25,39 +25,24 @@ VALUES (
 	@timeout,
 	@tpl_details);
 
--- name: FeatureVersionUpdate :exec
-INSERT INTO features(
-	name,
-	version)
-VALUES (
-	@name,
-	@version)
-ON CONFLICT (
-	name)
-	DO UPDATE SET
-		version = EXCLUDED.version;
-
--- name: FeatureByName :one
+-- name: LatestFeatureData :one
 SELECT
-	sqlc.embed(fd),
-	features.created,
-	features.last_modified
+	sqlc.embed(fd)
 FROM
-	features
-	JOIN feature_data fd ON features.name = fd.name
-		AND features.version = fd.version
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
 WHERE
-	fd.name = @name;
+	d.feature_name = @feature_name
+ORDER BY
+	d.created DESC
+LIMIT 1;
 
--- name: Features :many
-SELECT
-	sqlc.embed(fd),
-	features.created,
-	features.last_modified
+-- name: FeatureNames :many
+SELECT DISTINCT
+	feature_name
 FROM
-	features
-	JOIN feature_data fd ON features.name = fd.name
-		AND features.version = fd.version
-	ORDER BY
-		features.name;
+	deployments
+ORDER BY
+	feature_name;
 

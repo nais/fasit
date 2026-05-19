@@ -17,7 +17,7 @@ WITH latest_di AS (
 		JOIN environments environment ON environment.id = di.environment_id
 		LEFT JOIN disabled_features df ON df.environment_id = di.environment_id
 			AND df.feature = di.feature_name
-		LEFT JOIN features fd ON fd.name = di.feature_name
+		LEFT JOIN feature_data fd ON fd.name = di.feature_name
 			AND fd.version = di.feature_version
 	WHERE (environment.id = @environment_id
 		OR environment.tenant_id = @tenant_id)

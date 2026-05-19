@@ -9,8 +9,7 @@ import (
 type EnvironmentValue struct {
 	EnvironmentID uuid.UUID
 
-	Key       string          `json:"key"`
-	Value     json.RawMessage `json:"value"`
-	Secret    bool            `json:"secret"`
-	KnownUses int             `json:"knownUses"`
+	Key    string          `json:"key"`
+	Value  json.RawMessage `json:"value"`
+	Secret bool            `json:"secret"`
 }

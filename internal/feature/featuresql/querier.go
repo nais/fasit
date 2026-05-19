@@ -26,15 +26,9 @@ type Querier interface {
 	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
 	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
-	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
-	Features(ctx context.Context) ([]FeaturesRow, error)
-	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
-	// Returns TRUE when at least one deployment exists whose target labels
-	// are contained by the environment's labels (matching the predicate used
-	// by the deployment reconciler in ListDeploymentsToReconcile).
-	HasMatchingDeployment(ctx context.Context, arg HasMatchingDeploymentParams) (bool, error)
+	FeatureNames(ctx context.Context) ([]string, error)
+	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)

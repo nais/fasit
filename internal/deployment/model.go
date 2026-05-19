@@ -21,6 +21,8 @@ type Deployment struct {
 	Created     time.Time      `json:"created"`
 
 	TargetLabels environment.Labels `json:"-"`
+	TplDetails   []byte             `json:"-"`
+	Disabled     bool               `json:"-"`
 }
 
 func (d *Deployment) Target() []*model.EnvironmentLabel {
@@ -137,6 +139,7 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		GHRef:        d.GhRef,
 		Created:      d.Created.Time,
 		TargetLabels: environment.Labels(d.Target),
+		TplDetails:   fd.TplDetails,
 	}, nil
 }
 

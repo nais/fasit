@@ -12,7 +12,6 @@ import (
 	"text/template"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
@@ -443,72 +442,26 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 	})
 }
 
-func FeatureVersionUpdate(ctx context.Context, name string, version string) error {
-	return querier(ctx).FeatureVersionUpdate(ctx, featuresql.FeatureVersionUpdateParams{
-		Name:    name,
-		Version: version,
-	})
+func getLatestFeatureData(ctx context.Context, name string) (*model.Feature, error) {
+	f, err := querier(ctx).LatestFeatureData(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get latest feature data from db: %w", err)
+	}
+	return featureFromSQL(f.FeatureDatum)
+}
+
+func getFeatureNames(ctx context.Context) ([]string, error) {
+	return querier(ctx).FeatureNames(ctx)
 }
 
 func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
-	f, err := querier(ctx).FeatureByName(ctx, name)
+	feat, err := getLatestFeatureData(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("get feature by name from db: %w", err)
+		return nil, fmt.Errorf("get feature by name: %w", err)
 	}
-
-	feature, err := featureFromSQL(f.FeatureDatum)
-	if err != nil {
-		return nil, err
-	}
-
-	return feature, nil
+	return feat, nil
 }
 
-func FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
-	feat, err := GetEnvironmentFeature(ctx, envID, name)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, fmt.Errorf("get environment feature from db: %w", err)
-	}
-
-	if feat != nil {
-		return feat, nil
-	}
-
-	return FeatureByName(ctx, name)
-}
-
-func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
-	f, err := querier(ctx).GetEnvironmentFeature(ctx, featuresql.GetEnvironmentFeatureParams{
-		EnvironmentID: environmentID,
-		FeatureName:   featureName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	feature, err := featureFromSQL(f.FeatureDatum)
-	if err != nil {
-		return nil, fmt.Errorf("make feature: %w", err)
-	}
-
-	return feature, nil
-}
-
-func Features(ctx context.Context) ([]*model.Feature, error) {
-	features, err := querier(ctx).Features(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("get features from db: %w", err)
-	}
-
-	var ret []*model.Feature
-	for _, f := range features {
-		feature, err := featureFromSQL(f.FeatureDatum)
-		if err != nil {
-			return nil, fmt.Errorf("make feature: %w", err)
-		}
-
-		ret = append(ret, feature)
-	}
-
-	return ret, nil
+func FeatureNames(ctx context.Context) ([]string, error) {
+	return getFeatureNames(ctx)
 }

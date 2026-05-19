@@ -68,24 +68,6 @@ func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
-	err := d.querier.InsertEnvironmentFeature(ctx, deploymentsql.InsertEnvironmentFeatureParams{
-		EnvironmentID:  environment.ID,
-		DeploymentID:   deployment.ID,
-		FeatureName:    deployment.Feature.Name,
-		FeatureVersion: deployment.Feature.Version,
-	})
-	if err != nil {
-		d.log.WithError(err).WithFields(logrus.Fields{
-			"environment_id":  environment.ID,
-			"deployment_id":   deployment.ID,
-			"feature_name":    deployment.Feature.Name,
-			"feature_version": deployment.Feature.Version,
-		}).Error("insert environment feature")
-
-		d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, "failed to register feature deployment")
-		return nil
-	}
-
 	if err := d.naisdHealthCheck(ctx, environment.ID); err != nil {
 		d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusPending, err.Error())
 		return nil
@@ -256,11 +238,6 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
 	}
 
-	if req.Global {
-		if err := featurepkg.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
-			return uuid.Nil, fmt.Errorf("unable to update feature version: %w", err)
-		}
-	}
 	return deployment.ID, nil
 }
 

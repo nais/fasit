@@ -2,6 +2,7 @@ package environment
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
@@ -23,10 +24,10 @@ type Environment struct {
 }
 
 type MetadataItem struct {
-	Key       string
-	Value     string
-	IsSecret  bool
-	KnownUses *int
+	Key          string
+	Value        string
+	IsSecret     bool
+	ReferencedBy []string
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -79,13 +80,15 @@ func metadataValue(item MetadataItem) g.Node {
 	} else {
 		value = g.Text(item.Value)
 	}
-	if item.KnownUses == nil {
+	if item.ReferencedBy == nil {
 		return value
 	}
+	count := len(item.ReferencedBy)
+	tooltip := strings.Join(item.ReferencedBy, ", ")
 	return g.Group([]g.Node{
 		value,
 		g.Text(" "),
-		h.Span(h.Class("badge"), h.Title("Known references to this value from feature templates"), g.Textf("%d ref%s", *item.KnownUses, plural(*item.KnownUses))),
+		h.Span(h.Class("badge"), h.Title(tooltip), g.Textf("%d ref%s", count, plural(count))),
 	})
 }
 

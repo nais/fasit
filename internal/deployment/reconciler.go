@@ -113,6 +113,27 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
+func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*Deployment, error) {
+	rows, err := r.querier.ListDeploymentsForEnvironment(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Deployment, 0, len(rows))
+	for _, row := range rows {
+		if row.Disabled {
+			continue
+		}
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret = append(ret, deployment)
+	}
+
+	return filterDeployments(ret), nil
+}
+
 func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
 	start := time.Now()
 	defer func() {
@@ -126,41 +147,20 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name), r.deployer.log)
 	defer publisher.Stop()
 
-	allDeployments, err := r.listDeploymentsToReconcile(ctx, environment.ID)
+	deployments, err := r.listDeploymentsToReconcile(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}
 
-	filtered := filterDeployments(allDeployments)
-
 	r.log.
 		WithField("tenant", environment.TenantName).
 		WithField("env", environment.Name).
-		WithField("num_deployments", len(filtered)).
+		WithField("num_deployments", len(deployments)).
 		Info("deployments to reconcile for environment")
-	for _, deployment := range filtered {
+	for _, deployment := range deployments {
 		if err := r.deployer.deployToEnvironment(ctx, deployment, environment, publisher); err != nil {
-			// TODO: continue on error? earlier we returned the error immediately when the above was inside the loop.
 			return err
 		}
 	}
 	return nil
-}
-
-func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*Deployment, error) {
-	rows, err := r.querier.ListDeploymentsToReconcile(ctx, environmentID)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*Deployment, len(rows))
-	for i, row := range rows {
-		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
-		if err != nil {
-			return nil, fmt.Errorf("make deployment: %w", err)
-		}
-		ret[i] = deployment
-	}
-
-	return ret, nil
 }
