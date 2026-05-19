@@ -188,7 +188,7 @@ WHERE
 	ds.deployment_id = @deployment_id
 	AND ds.environment_id = @environment_id;
 
--- name: MostSpecificDeploymentForFeature :many
+-- name: ListDeploymentsForEnvironmentFeature :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
 	sqlc.embed(fd)

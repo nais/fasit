@@ -262,7 +262,7 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 }
 
 func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {
-	rows, err := querier(ctx).MostSpecificDeploymentForFeature(ctx, deploymentsql.MostSpecificDeploymentForFeatureParams{
+	rows, err := querier(ctx).ListDeploymentsForEnvironmentFeature(ctx, deploymentsql.ListDeploymentsForEnvironmentFeatureParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
 	})
