@@ -21,7 +21,7 @@ WITH latest_di AS (
 			AND fd.version = di.feature_version
 	WHERE (environment.id = @environment_id
 		OR environment.tenant_id = @tenant_id)
-		AND df.feature IS NULL
+	AND df.feature IS NULL
 ORDER BY
 	feature_name,
 	di.environment_id,
