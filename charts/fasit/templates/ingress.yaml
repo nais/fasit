@@ -29,6 +29,26 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: {{ include "fasit.fullname" . }}-deploy
+  labels: {{- include "fasit.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.deployEndpoint.ingressClassName }}
+  rules:
+    - host: {{ .Values.deployEndpoint.ingressHost }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "fasit.fullname" . }}
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: {{ include "fasit.fullname" . }}-nginx
   labels: {{- include "fasit.labels" . | nindent 4 }}
 spec:
