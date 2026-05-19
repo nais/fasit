@@ -18,6 +18,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/view"
+	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -133,7 +134,10 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 
 	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
 	if err == nil {
-		refs, _ := deployment.ValueRefsForEnvironment(ctx, env.ID)
+		refs, err := deployment.ValueRefsForEnvironment(ctx, env.ID)
+		if err != nil {
+			logrus.WithError(err).Warn("failed to load value refs for environment")
+		}
 		for _, val := range values {
 			item := MetadataItem{Key: val.Key}
 			if refs != nil {

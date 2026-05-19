@@ -2,6 +2,8 @@ package deployment
 
 import (
 	"encoding/json"
+
+	"github.com/sirupsen/logrus"
 )
 
 func collectKeyRefs(deployments []*Deployment) map[string][]string {
@@ -17,6 +19,7 @@ func collectKeyRefs(deployments []*Deployment) map[string][]string {
 			Management []string `json:"Management"`
 		}
 		if err := json.Unmarshal(dep.TplDetails, &details); err != nil {
+			logrus.WithError(err).WithField("feature", dep.Feature.Name).Warn("failed to unmarshal tpl_details")
 			continue
 		}
 		seen := make(map[string]bool)

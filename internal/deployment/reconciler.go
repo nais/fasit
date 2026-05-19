@@ -119,19 +119,19 @@ func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environment
 		return nil, err
 	}
 
-	ret := make([]*Deployment, 0, len(rows))
-	for _, row := range rows {
-		if row.Disabled {
-			continue
-		}
-		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
-		if err != nil {
-			return nil, fmt.Errorf("make deployment: %w", err)
-		}
-		ret = append(ret, deployment)
+	deps, err := deploymentsFromRows(rows)
+	if err != nil {
+		return nil, err
 	}
 
-	return filterDeployments(ret), nil
+	enabled := make([]*Deployment, 0, len(deps))
+	for _, dep := range deps {
+		if !dep.Disabled {
+			enabled = append(enabled, dep)
+		}
+	}
+
+	return filterDeployments(enabled), nil
 }
 
 func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
