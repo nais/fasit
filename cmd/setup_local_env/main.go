@@ -439,25 +439,9 @@ func main() {
 		}
 	}
 
-	// Enable every feature in every env so they don't default to disabled.
-	for tenantName, environments := range envs {
-		for envName := range environments {
-			id := envID(tenantName, envName)
-			states, err := feature.FeatureStatesGet(ctx, id)
-			if err != nil {
-				log.WithError(err).Errorf("get feature states for %s/%s", tenantName, envName)
-				continue
-			}
-			for _, state := range states {
-				if _, err := feature.FeatureStatesCreateOrUpdate(ctx, id, &model.Feature{Name: state.FeatureName}, true); err != nil {
-					log.WithError(err).Errorf("enable %s in %s/%s", state.FeatureName, tenantName, envName)
-				}
-			}
-		}
-	}
-
+	// Features are enabled by default (absence from disabled_features = enabled).
 	// Disable one feature to get a DISABLED status row in the mix.
-	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: "dependencytrack"}, false); err != nil {
+	if err := feature.FeatureDisable(ctx, envID("dev-nais", "dev"), "dependencytrack", "seeded as disabled for local dev"); err != nil {
 		log.WithError(err).Errorf("disable dependencytrack in dev-nais/dev")
 	}
 

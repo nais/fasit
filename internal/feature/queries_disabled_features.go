@@ -14,6 +14,10 @@ import (
 	"github.com/nais/fasit/internal/feature/featuresql"
 )
 
+// reasonDescriptionMax bounds the prefix of the disable reason embedded in
+// the audit description; the full reason is in metadata.
+const reasonDescriptionMax = 200
+
 // FeatureDisable marks a (feature, environment) combination as disabled in the
 // authoritative disabled_features table and writes an audit entry. Insert and
 // audit are committed together via dbtx.WithTx; nested calls reuse the outer

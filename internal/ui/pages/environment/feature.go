@@ -235,10 +235,6 @@ func RedeployHandler(repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
 			return
 		}
-		if _, err := featurepkg.FeatureStatesCreateOrUpdate(r.Context(), env.ID, feature, true); err != nil {
-			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
 		if err := deployment.TriggerRedeploy(r.Context(), env.ID, feature.Name); err != nil {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return

@@ -6,7 +6,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
@@ -130,23 +129,4 @@ func makeFeatureYAML(fd featuresql.FeatureDatum) (model.FeatureYAML, map[string]
 	}
 
 	return ret, retDefaultVals, nil
-}
-
-func nullTimeToPtr(nt pgtype.Timestamptz) *time.Time {
-	if !nt.Valid {
-		return nil
-	}
-	return &nt.Time
-}
-
-func featureStateFromSQL(state featuresql.FeatureState) *model.FeatureState {
-	return &model.FeatureState{
-		ID:           model.FeatureStateID(state.EnvironmentID, state.Feature),
-		EnvID:        state.EnvironmentID,
-		FeatureName:  state.Feature,
-		EnabledAt:    nullTimeToPtr(state.EnabledAt),
-		Enabled:      state.Enabled,
-		Created:      state.Created.Time,
-		LastModified: state.LastModified.Time,
-	}
 }
