@@ -61,4 +61,3 @@ FROM
 	ORDER BY
 		features.name;
 
-
