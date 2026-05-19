@@ -442,26 +442,14 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 	})
 }
 
-func getLatestFeatureData(ctx context.Context, name string) (*model.Feature, error) {
+func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := querier(ctx).LatestFeatureData(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("get latest feature data from db: %w", err)
+		return nil, fmt.Errorf("get latest feature data for %q: %w", name, err)
 	}
 	return featureFromSQL(f.FeatureDatum)
 }
 
-func getFeatureNames(ctx context.Context) ([]string, error) {
-	return querier(ctx).FeatureNames(ctx)
-}
-
-func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
-	feat, err := getLatestFeatureData(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("get feature by name: %w", err)
-	}
-	return feat, nil
-}
-
 func FeatureNames(ctx context.Context) ([]string, error) {
-	return getFeatureNames(ctx)
+	return querier(ctx).FeatureNames(ctx)
 }
