@@ -101,17 +101,3 @@ func FeatureDisabledAt(ctx context.Context, envID uuid.UUID, featureName string)
 	}
 	return row.DisabledAt.Time, true, nil
 }
-
-// FeaturesDisabledIn returns the set of feature names disabled in the given
-// environment. Useful for batch lookups when rendering lists.
-func FeaturesDisabledIn(ctx context.Context, envID uuid.UUID) (map[string]struct{}, error) {
-	rows, err := querier(ctx).DisabledFeaturesByEnvironment(ctx, envID)
-	if err != nil {
-		return nil, err
-	}
-	out := make(map[string]struct{}, len(rows))
-	for _, r := range rows {
-		out[r.Feature] = struct{}{}
-	}
-	return out, nil
-}
