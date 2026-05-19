@@ -222,9 +222,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var DEFAULTS = {
     group: "tenant",
     show_overridden: "false",
-    col_version: "true",
-    col_last_deployed: "true",
-    col_last_updated: "true"
+    col_version: "false",
+    col_last_deployed: "false",
+    col_last_updated: "false"
   };
 
   function loadPrefs() {

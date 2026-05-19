@@ -54,9 +54,9 @@ func parseViewPrefs(r *http.Request) ViewPrefs {
 	p := ViewPrefs{
 		Group:          "tenant",
 		ShowOverridden: false,
-		ShowVersion:    true,
-		ShowLastDeploy: true,
-		ShowLastUpdate: true,
+		ShowVersion:    false,
+		ShowLastDeploy: false,
+		ShowLastUpdate: false,
 	}
 
 	// Use query params if present, otherwise fall back to cookie.
