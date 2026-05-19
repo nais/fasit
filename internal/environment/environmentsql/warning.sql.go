@@ -32,7 +32,7 @@ WITH latest_di AS (
 			AND fd.version = di.feature_version
 	WHERE (environment.id = $1
 		OR environment.tenant_id = $2)
-		AND df.feature IS NULL
+	AND df.feature IS NULL
 ORDER BY
 	feature_name,
 	di.environment_id,
