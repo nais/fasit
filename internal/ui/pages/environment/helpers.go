@@ -103,39 +103,20 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 }
 
 func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, error) {
-	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
+	features, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	disabled, err := featurepkg.FeaturesDisabledIn(ctx, env.ID)
-	if err != nil {
-		return nil, err
+	navs := make([]view.FeatureNav, 0, len(features))
+	for _, f := range features {
+		navs = append(navs, view.FeatureNav{
+			Name:    f.Name,
+			Enabled: !f.Disabled,
+		})
 	}
 
-	navs := make(map[string]view.FeatureNav, len(deploymentFeatures))
-	for _, f := range deploymentFeatures {
-		nav, ok := navs[f.FeatureName]
-		if !ok {
-			nav = view.FeatureNav{Name: f.FeatureName}
-		}
-		if _, ok := disabled[f.FeatureName]; !ok {
-			nav.Enabled = true
-		}
-		navs[f.FeatureName] = nav
-	}
-
-	names := make([]string, 0, len(navs))
-	for name := range navs {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
-	allFeatures := make([]view.FeatureNav, 0, len(names))
-	for _, name := range names {
-		allFeatures = append(allFeatures, navs[name])
-	}
-	return allFeatures, nil
+	return navs, nil
 }
 
 func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.Environment) []MetadataItem {
@@ -152,9 +133,13 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 
 	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
 	if err == nil {
+		refs, _ := deployment.ValueRefsForEnvironment(ctx, env.ID)
 		for _, val := range values {
-			uses := val.KnownUses
-			item := MetadataItem{Key: val.Key, KnownUses: &uses}
+			item := MetadataItem{Key: val.Key}
+			if refs != nil {
+				features := refs[val.Key]
+				item.ReferencedBy = features
+			}
 			if val.Secret {
 				item.IsSecret = true
 			} else {
@@ -274,7 +259,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	feat, err := featurepkg.FeatureByNameForEnv(ctx, featureName, env.ID)
+	feat, err := deployment.FeatureForEnvironment(ctx, env.ID, featureName)
 	if err != nil {
 		return nil, err
 	}

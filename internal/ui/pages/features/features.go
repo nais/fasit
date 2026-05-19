@@ -2,7 +2,6 @@ package features
 
 import (
 	"context"
-	"encoding/json"
 	"math/rand/v2"
 	"net/http"
 	"slices"
@@ -34,21 +33,11 @@ type DetailPage struct {
 
 type Feature struct {
 	*model.Feature
-	Config []ConfigItem
-}
-
-type ConfigItem struct {
-	Key        string
-	Value      string
-	Type       string
-	IsSecret   bool
-	IsComputed bool
-	Template   string
 }
 
 func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		features, err := featurepkg.Features(r.Context())
+		features, err := featurepkg.FeatureNames(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
@@ -108,7 +97,7 @@ func detailPage(data *DetailPage) g.Node {
 
 func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	featureName := chi.URLParam(r, "feature")
-	features, err := featurepkg.Features(r.Context())
+	features, err := featurepkg.FeatureNames(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +112,7 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	data := &DetailPage{
 		Breadcrumbs:    []breadcrumb.Crumb{breadcrumb.Features(), featureCrumb},
 		Features:       toFeatureNavs(features, failed, pending),
-		CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)},
+		CurrentFeature: &Feature{Feature: feature},
 	}
 	loadDeploymentData(r.Context(), repo, feature, data)
 	return data, nil
@@ -133,36 +122,13 @@ func featureStatusCounts(_ context.Context, _ database.Repo) (failed, pending ma
 	return map[string]int{}, map[string]int{}
 }
 
-func featureConfigItems(feature *model.Feature) []ConfigItem {
-	items := make([]ConfigItem, 0, len(feature.Values))
-	keys := make([]string, 0, len(feature.Values))
-	for key, value := range feature.Values {
-		if value.Config != nil {
-			keys = append(keys, key)
-		}
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		value := feature.Values[key]
-		item := ConfigItem{Key: key, Value: rawValueToString(feature.ValuesYAML[key])}
-		item.Type = strings.ToUpper(value.Config.Type.String())
-		item.IsSecret = value.Config.Secret
-		if value.Computed != nil {
-			item.IsComputed = true
-			item.Template = value.Computed.Template
-		}
-		items = append(items, item)
-	}
-	return items
-}
-
-func toFeatureNavs(features []*model.Feature, failedCounts, pendingCounts map[string]int) []view.FeatureNav {
-	ret := make([]view.FeatureNav, 0, len(features))
-	for _, feature := range features {
+func toFeatureNavs(names []string, failedCounts, pendingCounts map[string]int) []view.FeatureNav {
+	ret := make([]view.FeatureNav, 0, len(names))
+	for _, name := range names {
 		ret = append(ret, view.FeatureNav{
-			Name:         feature.Name,
-			FailedCount:  failedCounts[feature.Name],
-			PendingCount: pendingCounts[feature.Name],
+			Name:         name,
+			FailedCount:  failedCounts[name],
+			PendingCount: pendingCounts[name],
 		})
 	}
 	sort.Slice(ret, func(i, j int) bool {
@@ -213,22 +179,4 @@ func renderStatus(status string) g.Node {
 	default:
 		return g.Text(status)
 	}
-}
-
-func rawValueToString(value json.RawMessage) string {
-	if len(value) == 0 {
-		return ""
-	}
-	var v any
-	if err := json.Unmarshal(value, &v); err != nil {
-		return string(value)
-	}
-	if s, ok := v.(string); ok {
-		return s
-	}
-	b, err := json.Marshal(v)
-	if err != nil {
-		return string(value)
-	}
-	return string(b)
 }

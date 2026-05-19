@@ -51,13 +51,9 @@ SELECT
 			END
 		ELSE
 			value
-		END)::JSONB AS "value",
-	COALESCE("evs"."count", 0) AS "count"
+		END)::JSONB AS "value"
 FROM
 	environment_values
-	LEFT JOIN environments ON environments.id = environment_values.environment_id
-	LEFT JOIN environment_values_stats evs ON evs.key = environment_values.key
-		AND evs.kind = environments.kind
 WHERE
 	"environment_id" = @envID
 ORDER BY

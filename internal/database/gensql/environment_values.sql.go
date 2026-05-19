@@ -180,13 +180,9 @@ SELECT
 			END
 		ELSE
 			value
-		END)::JSONB AS "value",
-	COALESCE("evs"."count", 0) AS "count"
+		END)::JSONB AS "value"
 FROM
 	environment_values
-	LEFT JOIN environments ON environments.id = environment_values.environment_id
-	LEFT JOIN environment_values_stats evs ON evs.key = environment_values.key
-		AND evs.kind = environments.kind
 WHERE
 	"environment_id" = $2
 ORDER BY
@@ -203,7 +199,6 @@ type EnvironmentValuesForEnvironmentRow struct {
 	Key           string
 	Secret        bool
 	Value         []byte
-	Count         int64
 }
 
 func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error) {
@@ -220,7 +215,6 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg Envir
 			&i.Key,
 			&i.Secret,
 			&i.Value,
-			&i.Count,
 		); err != nil {
 			return nil, err
 		}

@@ -127,7 +127,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		featureName := chi.URLParam(r, "feature")
 		key := r.FormValue("key")
 
-		feat, err := featurepkg.FeatureByNameForEnv(r.Context(), featureName, env.ID)
+		feat, err := deployment.FeatureForEnvironment(r.Context(), env.ID, featureName)
 		if err != nil {
 			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -172,7 +172,7 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		feature, err := featurepkg.FeatureByNameForEnv(r.Context(), chi.URLParam(r, "feature"), env.ID)
+		feature, err := deployment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
 		if err != nil {
 			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -221,7 +221,7 @@ func RedeployHandler() http.HandlerFunc {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		feature, err := featurepkg.FeatureByNameForEnv(r.Context(), chi.URLParam(r, "feature"), env.ID)
+		feature, err := deployment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
 		if err != nil {
 			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
 			return

@@ -5,49 +5,7 @@ package featuresql
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
-
-const featureByName = `-- name: FeatureByName :one
-SELECT
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
-	features.created,
-	features.last_modified
-FROM
-	features
-	JOIN feature_data fd ON features.name = fd.name
-		AND features.version = fd.version
-WHERE
-	fd.name = $1
-`
-
-type FeatureByNameRow struct {
-	FeatureDatum FeatureDatum
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-}
-
-func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error) {
-	row := q.db.QueryRow(ctx, featureByName, name)
-	var i FeatureByNameRow
-	err := row.Scan(
-		&i.FeatureDatum.Name,
-		&i.FeatureDatum.Version,
-		&i.FeatureDatum.Chart,
-		&i.FeatureDatum.Description,
-		&i.FeatureDatum.Source,
-		&i.FeatureDatum.Kinds,
-		&i.FeatureDatum.Dependencies,
-		&i.FeatureDatum.Values,
-		&i.FeatureDatum.DefaultValues,
-		&i.FeatureDatum.Timeout,
-		&i.FeatureDatum.TplDetails,
-		&i.Created,
-		&i.LastModified,
-	)
-	return i, err
-}
 
 const featureDataCreate = `-- name: FeatureDataCreate :exec
 INSERT INTO feature_data(
@@ -108,78 +66,68 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 	return err
 }
 
-const featureVersionUpdate = `-- name: FeatureVersionUpdate :exec
-INSERT INTO features(
-	name,
-	version)
-VALUES (
-	$1,
-	$2)
-ON CONFLICT (
-	name)
-	DO UPDATE SET
-		version = EXCLUDED.version
-`
-
-type FeatureVersionUpdateParams struct {
-	Name    string
-	Version string
-}
-
-func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error {
-	_, err := q.db.Exec(ctx, featureVersionUpdate, arg.Name, arg.Version)
-	return err
-}
-
-const features = `-- name: Features :many
-SELECT
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
-	features.created,
-	features.last_modified
+const featureNames = `-- name: FeatureNames :many
+SELECT DISTINCT
+	feature_name
 FROM
-	features
-	JOIN feature_data fd ON features.name = fd.name
-		AND features.version = fd.version
-	ORDER BY
-		features.name
+	deployments
+ORDER BY
+	feature_name
 `
 
-type FeaturesRow struct {
-	FeatureDatum FeatureDatum
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-}
-
-func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
-	rows, err := q.db.Query(ctx, features)
+func (q *Queries) FeatureNames(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, featureNames)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []FeaturesRow{}
+	items := []string{}
 	for rows.Next() {
-		var i FeaturesRow
-		if err := rows.Scan(
-			&i.FeatureDatum.Name,
-			&i.FeatureDatum.Version,
-			&i.FeatureDatum.Chart,
-			&i.FeatureDatum.Description,
-			&i.FeatureDatum.Source,
-			&i.FeatureDatum.Kinds,
-			&i.FeatureDatum.Dependencies,
-			&i.FeatureDatum.Values,
-			&i.FeatureDatum.DefaultValues,
-			&i.FeatureDatum.Timeout,
-			&i.FeatureDatum.TplDetails,
-			&i.Created,
-			&i.LastModified,
-		); err != nil {
+		var feature_name string
+		if err := rows.Scan(&feature_name); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, feature_name)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+const latestFeatureData = `-- name: LatestFeatureData :one
+SELECT
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	d.feature_name = $1
+ORDER BY
+	d.created DESC
+LIMIT 1
+`
+
+type LatestFeatureDataRow struct {
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error) {
+	row := q.db.QueryRow(ctx, latestFeatureData, featureName)
+	var i LatestFeatureDataRow
+	err := row.Scan(
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+	)
+	return i, err
 }

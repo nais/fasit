@@ -92,27 +92,15 @@ func (f *fakeQuerier) EnvConfig(context.Context, featuresql.EnvConfigParams) ([]
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) FeatureByName(context.Context, string) (featuresql.FeatureByNameRow, error) {
-	panic("not implemented")
-}
-
 func (f *fakeQuerier) FeatureDataCreate(context.Context, featuresql.FeatureDataCreateParams) error {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) FeatureVersionUpdate(context.Context, featuresql.FeatureVersionUpdateParams) error {
+func (f *fakeQuerier) FeatureNames(context.Context) ([]string, error) {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) Features(context.Context) ([]featuresql.FeaturesRow, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) GetEnvironmentFeature(context.Context, featuresql.GetEnvironmentFeatureParams) (featuresql.GetEnvironmentFeatureRow, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) HasMatchingDeployment(context.Context, featuresql.HasMatchingDeploymentParams) (bool, error) {
+func (f *fakeQuerier) LatestFeatureData(context.Context, string) (featuresql.LatestFeatureDataRow, error) {
 	panic("not implemented")
 }
 

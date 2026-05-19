@@ -20,18 +20,17 @@ type Querier interface {
 	GetDeploymentStatus(ctx context.Context, arg GetDeploymentStatusParams) (DeploymentStatus, error)
 	GetDeploymentStatusLog(ctx context.Context, arg GetDeploymentStatusLogParams) ([]GetDeploymentStatusLogRow, error)
 	GetLatestDeployInstructionsForFeature(ctx context.Context, arg GetLatestDeployInstructionsForFeatureParams) (DeployInstruction, error)
-	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error
 	InvalidateDeployInstructionHash(ctx context.Context, arg InvalidateDeployInstructionHashParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
 	ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsByDeploymentIDRow, error)
 	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)
 	ListDeployments(ctx context.Context) ([]ListDeploymentsRow, error)
 	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)
-	ListDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsToReconcileRow, error)
-	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
+	ListDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsForEnvironmentRow, error)
 	ListFeatureStatesInEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureStatesInEnvironmentRow, error)
 	ListFeatures(ctx context.Context) ([]string, error)
 	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
+	MostSpecificDeploymentForFeature(ctx context.Context, arg MostSpecificDeploymentForFeatureParams) ([]MostSpecificDeploymentForFeatureRow, error)
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
 	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) (ReleaseStatus, error)
