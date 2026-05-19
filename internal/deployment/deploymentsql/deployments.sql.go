@@ -495,7 +495,7 @@ func (q *Queries) ListDeploymentsForEnvironment(ctx context.Context, environment
 	return items, nil
 }
 
-const mostSpecificDeploymentForFeature = `-- name: MostSpecificDeploymentForFeature :many
+const listDeploymentsForEnvironmentFeature = `-- name: ListDeploymentsForEnvironmentFeature :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
@@ -513,25 +513,25 @@ ORDER BY
 	d.created DESC
 `
 
-type MostSpecificDeploymentForFeatureParams struct {
+type ListDeploymentsForEnvironmentFeatureParams struct {
 	EnvironmentID uuid.UUID
 	FeatureName   string
 }
 
-type MostSpecificDeploymentForFeatureRow struct {
+type ListDeploymentsForEnvironmentFeatureRow struct {
 	Deployment   Deployment
 	FeatureDatum FeatureDatum
 }
 
-func (q *Queries) MostSpecificDeploymentForFeature(ctx context.Context, arg MostSpecificDeploymentForFeatureParams) ([]MostSpecificDeploymentForFeatureRow, error) {
-	rows, err := q.db.Query(ctx, mostSpecificDeploymentForFeature, arg.EnvironmentID, arg.FeatureName)
+func (q *Queries) ListDeploymentsForEnvironmentFeature(ctx context.Context, arg ListDeploymentsForEnvironmentFeatureParams) ([]ListDeploymentsForEnvironmentFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listDeploymentsForEnvironmentFeature, arg.EnvironmentID, arg.FeatureName)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []MostSpecificDeploymentForFeatureRow{}
+	items := []ListDeploymentsForEnvironmentFeatureRow{}
 	for rows.Next() {
-		var i MostSpecificDeploymentForFeatureRow
+		var i ListDeploymentsForEnvironmentFeatureRow
 		if err := rows.Scan(
 			&i.Deployment.ID,
 			&i.Deployment.FeatureName,
