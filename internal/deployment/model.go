@@ -20,9 +20,9 @@ type Deployment struct {
 	GHRef       []byte         `json:"ghRef,omitempty"`
 	Created     time.Time      `json:"created"`
 
-	TargetLabels environment.Labels `json:"-"`
-	TplDetails   []byte             `json:"-"`
-	Disabled     bool               `json:"-"`
+	TargetLabels    environment.Labels `json:"-"`
+	TplDetails      []byte             `json:"-"`
+	FeatureDisabled bool               `json:"-"`
 }
 
 func (d *Deployment) Target() []*model.EnvironmentLabel {

@@ -57,7 +57,7 @@ func deploymentsFromRows(rows []deploymentsql.ListDeploymentsForEnvironmentRow) 
 		if err != nil {
 			return nil, fmt.Errorf("make deployment: %w", err)
 		}
-		dep.Disabled = row.Disabled
+		dep.FeatureDisabled = row.Disabled
 		deps[i] = dep
 	}
 	return deps, nil
@@ -231,8 +231,8 @@ func invalidateDeployInstructionHash(ctx context.Context, envID uuid.UUID, featu
 }
 
 type EnvironmentFeature struct {
-	Name     string
-	Disabled bool
+	Name            string
+	FeatureDisabled bool
 }
 
 func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentFeature, error) {
@@ -251,8 +251,8 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 		if !seen[dep.Feature.Name] {
 			seen[dep.Feature.Name] = true
 			features = append(features, EnvironmentFeature{
-				Name:     dep.Feature.Name,
-				Disabled: dep.Disabled,
+				Name:            dep.Feature.Name,
+				FeatureDisabled: dep.FeatureDisabled,
 			})
 		}
 	}
