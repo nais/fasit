@@ -383,7 +383,17 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 	if showTenant {
 		cells = append(cells, h.Td(g.Text(env.TenantName)))
 	}
-	cells = append(cells, h.Td(envLink))
+
+	hasDrift := env.ReleaseVersion != "" && env.ReleaseVersion != env.DeploymentVersion
+	driftIcon := g.If(hasDrift,
+		h.Span(
+			h.Class("version-drift"),
+			h.Title("Running: "+env.ReleaseVersion),
+			g.Raw(` <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 14H1L8 1z" fill="#e8a735"/><text x="8" y="13" text-anchor="middle" font-size="10" font-weight="bold" fill="#000">!</text></svg>`),
+		),
+	)
+
+	cells = append(cells, h.Td(envLink, g.If(!showVersion, driftIcon)))
 
 	statusCell := []g.Node{}
 	if tip := statusTooltip(env); tip != "" {
@@ -393,17 +403,7 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 	cells = append(cells, h.Td(statusCell...))
 
 	if showVersion {
-		versionNodes := []g.Node{g.Text(env.DeploymentVersion)}
-		if env.ReleaseVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
-			versionNodes = append(versionNodes,
-				h.Span(
-					h.Class("version-drift"),
-					h.Title("Running: "+env.ReleaseVersion),
-					g.Raw(` <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 14H1L8 1z" fill="#e8a735"/><text x="8" y="13" text-anchor="middle" font-size="10" font-weight="bold" fill="#000">!</text></svg>`),
-				),
-			)
-		}
-		cells = append(cells, h.Td(versionNodes...))
+		cells = append(cells, h.Td(g.Text(env.DeploymentVersion), driftIcon))
 	}
 
 	if prefs.ShowLastUpdate {
