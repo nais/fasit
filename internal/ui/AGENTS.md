@@ -30,7 +30,7 @@ ui/
 
 ## Anti-Patterns
 
-- No JavaScript frameworks — vanilla JS only, theme toggle only
+- No JavaScript frameworks — vanilla JS only
 - No client-side routing — server-side `<a>` tags only
 - No template files — all HTML is Go code via gomponents
 - No new JS without discussion

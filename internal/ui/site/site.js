@@ -215,6 +215,127 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+// Feature view preferences: persist to localStorage + cookie, toolbar navigation.
+(function () {
+  var STORAGE_KEY = "feature-view-prefs";
+  var COOKIE_NAME = "feature_view_prefs";
+  var DEFAULTS = {
+    group: "tenant",
+    show_overridden: "false",
+    col_desired_version: "true",
+    col_current_version: "true",
+    col_last_deployed: "true",
+    col_last_updated: "true"
+  };
+
+  function loadPrefs() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (_) {}
+    return {};
+  }
+
+  function savePrefs(prefs) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch (_) {}
+    syncCookie(prefs);
+  }
+
+  function syncCookie(prefs) {
+    var params = new URLSearchParams();
+    Object.keys(DEFAULTS).forEach(function (k) {
+      params.set(k, prefs[k] || DEFAULTS[k]);
+    });
+    document.cookie = COOKIE_NAME + "=" + encodeURIComponent(params.toString()) + ";path=/;max-age=31536000;SameSite=Lax";
+  }
+
+  function mergedPrefs() {
+    var prefs = loadPrefs();
+    var merged = {};
+    Object.keys(DEFAULTS).forEach(function (k) { merged[k] = prefs[k] || DEFAULTS[k]; });
+    return merged;
+  }
+
+  function buildUrl(path, prefs) {
+    var params = new URLSearchParams();
+    Object.keys(DEFAULTS).forEach(function (k) {
+      params.set(k, prefs[k] || DEFAULTS[k]);
+    });
+    return path + "?" + params.toString();
+  }
+
+  // Sync cookie on every page load so server always has latest prefs.
+  syncCookie(mergedPrefs());
+
+  // Group-by links
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-group-value]");
+    if (!btn) return;
+    var toolbar = document.getElementById("view-toolbar");
+    if (!toolbar || !toolbar.contains(btn)) return;
+
+    var prefs = mergedPrefs();
+    prefs.group = btn.getAttribute("data-group-value");
+    if (prefs.group !== "deployment") {
+      prefs.show_overridden = "false";
+    }
+    savePrefs(prefs);
+    location.assign(buildUrl(location.pathname, prefs));
+  });
+
+  // Checkbox prefs (show_overridden, column toggles)
+  document.addEventListener("change", function (e) {
+    var toolbar = document.getElementById("view-toolbar");
+    if (!toolbar) return;
+    var el = e.target.closest("[data-pref]");
+    if (!el || !toolbar.contains(el)) return;
+    if (el.type !== "checkbox") return;
+
+    var prefs = mergedPrefs();
+    var key = el.getAttribute("data-pref");
+    prefs[key] = el.checked ? "true" : "false";
+    savePrefs(prefs);
+    location.assign(buildUrl(location.pathname, prefs));
+  });
+})();
+
+// Kebab menu toggle
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-kebab-toggle]");
+  if (btn) {
+    var id = btn.getAttribute("data-kebab-toggle");
+    var menu = document.getElementById(id);
+    if (menu) {
+      var wasOpen = menu.classList.contains("open");
+      document.querySelectorAll(".kebab-menu.open").forEach(function (m) { m.classList.remove("open"); });
+      if (!wasOpen) menu.classList.add("open");
+    }
+    e.stopPropagation();
+    return;
+  }
+  // Close kebabs on outside click
+  document.querySelectorAll(".kebab-menu.open").forEach(function (m) { m.classList.remove("open"); });
+});
+
+// Column toggle menu
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-col-toggle]");
+  if (btn) {
+    var id = btn.getAttribute("data-col-toggle");
+    var menu = document.getElementById(id);
+    if (menu) {
+      var wasOpen = menu.classList.contains("open");
+      document.querySelectorAll(".col-toggle-menu.open").forEach(function (m) { m.classList.remove("open"); });
+      if (!wasOpen) menu.classList.add("open");
+    }
+    e.stopPropagation();
+    return;
+  }
+  // Don't close when clicking inside the menu (checkboxes)
+  if (e.target.closest(".col-toggle-menu")) return;
+  document.querySelectorAll(".col-toggle-menu.open").forEach(function (m) { m.classList.remove("open"); });
+});
+
 // Expand/collapse all <details> matching [data-expand-all="<class>"]
 document.addEventListener("click", function (e) {
   var btn = e.target.closest("[data-expand-all]");

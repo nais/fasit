@@ -31,6 +31,7 @@ type DetailPage struct {
 	CurrentFeature    *Feature
 	ChartDescriptions []string
 	DeploymentEnvs    []DeploymentEnvStatus
+	Prefs             ViewPrefs
 }
 
 type Feature struct {
@@ -66,6 +67,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
 		}
+		data.Prefs = parseViewPrefs(r)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }

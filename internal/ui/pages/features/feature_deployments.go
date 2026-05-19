@@ -2,6 +2,8 @@ package features
 
 import (
 	"context"
+	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -36,10 +38,67 @@ type DeploymentEnvStatus struct {
 	OverriddenByLabels  map[string]string
 }
 
-type deploymentGroup struct {
-	DeploymentID string
-	Version      string
+type ViewPrefs struct {
+	Group              string // "tenant", "deployment", "desired_version", "current_version"
+	ShowOverridden     bool
+	ShowDesiredVersion bool
+	ShowCurrentVersion bool
+	ShowLastDeploy     bool
+	ShowLastUpdate     bool
+}
+
+var validGroups = map[string]bool{
+	"tenant": true, "deployment": true, "desired_version": true, "current_version": true,
+}
+
+func parseViewPrefs(r *http.Request) ViewPrefs {
+	p := ViewPrefs{
+		Group:              "tenant",
+		ShowOverridden:     false,
+		ShowDesiredVersion: true,
+		ShowCurrentVersion: true,
+		ShowLastDeploy:     true,
+		ShowLastUpdate:     true,
+	}
+
+	// Use query params if present, otherwise fall back to cookie.
+	src := r.URL.Query()
+	if len(src) == 0 {
+		if c, err := r.Cookie("feature_view_prefs"); err == nil {
+			if decoded, err := url.QueryUnescape(c.Value); err == nil {
+				if parsed, err := url.ParseQuery(decoded); err == nil {
+					src = parsed
+				}
+			}
+		}
+	}
+
+	if g := src.Get("group"); validGroups[g] {
+		p.Group = g
+	}
+	if src.Get("show_overridden") == "true" {
+		p.ShowOverridden = true
+	}
+	if src.Has("col_desired_version") {
+		p.ShowDesiredVersion = src.Get("col_desired_version") == "true"
+	}
+	if src.Has("col_current_version") {
+		p.ShowCurrentVersion = src.Get("col_current_version") == "true"
+	}
+	if src.Has("col_last_deployed") {
+		p.ShowLastDeploy = src.Get("col_last_deployed") == "true"
+	}
+	if src.Has("col_last_updated") {
+		p.ShowLastUpdate = src.Get("col_last_updated") == "true"
+	}
+	return p
+}
+
+type card struct {
+	Title        string
+	LinkHref     string
 	Labels       map[string]string
+	DeploymentID string
 	Environments []DeploymentEnvStatus
 }
 
@@ -57,117 +116,366 @@ func deploymentDetailContent(data *DetailPage) g.Node {
 	if len(data.DeploymentEnvs) == 0 {
 		return h.P(g.Text("No environments found."))
 	}
-	groups := groupByDeployment(data.DeploymentEnvs)
-	return deploymentStatusTable(groups, data.CurrentFeature.Name, data.CurrentFeature.Chart)
+
+	prefs := data.Prefs
+	envs := data.DeploymentEnvs
+
+	// Filter overridden rows: only shown in deployment grouping when toggled on
+	if prefs.Group != "deployment" || !prefs.ShowOverridden {
+		filtered := make([]DeploymentEnvStatus, 0, len(envs))
+		for _, env := range envs {
+			if !env.IsOverridden {
+				filtered = append(filtered, env)
+			}
+		}
+		envs = filtered
+	}
+
+	cards := buildCards(envs, prefs.Group)
+
+	return h.Div(
+		toolbar(prefs),
+		cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs),
+	)
 }
 
-func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
-	groups := map[string]*deploymentGroup{}
-	var order []string
+func toolbar(prefs ViewPrefs) g.Node {
+	groupOptions := []struct{ Value, Label string }{
+		{"tenant", "Tenant"},
+		{"deployment", "Deployment"},
+		{"desired_version", "Desired version"},
+		{"current_version", "Current version"},
+	}
 
+	groupLinks := h.Div(h.Class("toolbar-group-links"),
+		g.Map(groupOptions, func(opt struct{ Value, Label string }) g.Node {
+			cls := "toolbar-group-link"
+			if opt.Value == prefs.Group {
+				cls += " active"
+			}
+			return h.Button(
+				h.Type("button"),
+				h.Class(cls),
+				g.Attr("data-group-value", opt.Value),
+				g.Text(opt.Label),
+			)
+		}),
+	)
+
+	overriddenToggle := g.If(prefs.Group == "deployment",
+		h.Label(h.Class("toolbar-toggle"),
+			h.Input(
+				h.Type("checkbox"),
+				g.Attr("data-pref", "show_overridden"),
+				g.If(prefs.ShowOverridden, g.Attr("checked", "")),
+			),
+			g.Text(" Show overridden"),
+		),
+	)
+
+	colMenu := h.Div(h.Class("col-toggle-wrap"),
+		h.Button(h.Type("button"), h.Class("col-toggle-btn"),
+			g.Attr("data-col-toggle", "col-toggle-menu"),
+			g.Attr("aria-label", "Toggle columns"),
+			g.Attr("title", "Columns"),
+			// Three-column icon (SVG)
+			g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="3" height="12" rx="0.5"/><rect x="6.5" y="2" width="3" height="12" rx="0.5"/><rect x="12" y="2" width="3" height="12" rx="0.5"/></svg>`),
+		),
+		h.Div(h.Class("col-toggle-menu"), h.ID("col-toggle-menu"),
+			colToggleItem("Desired version", "col_desired_version", prefs.ShowDesiredVersion),
+			colToggleItem("Current version", "col_current_version", prefs.ShowCurrentVersion),
+			colToggleItem("Last updated", "col_last_updated", prefs.ShowLastUpdate),
+			colToggleItem("Last deployed", "col_last_deployed", prefs.ShowLastDeploy),
+		),
+	)
+
+	return h.Div(h.Class("view-toolbar"), h.ID("view-toolbar"),
+		h.Span(h.Class("toolbar-label"), g.Text("Group by")),
+		groupLinks,
+		overriddenToggle,
+		colMenu,
+	)
+}
+
+func colToggleItem(label, prefKey string, checked bool) g.Node {
+	return h.Label(h.Class("col-toggle-item"),
+		h.Input(
+			h.Type("checkbox"),
+			g.Attr("data-pref", prefKey),
+			g.If(checked, g.Attr("checked", "")),
+		),
+		g.Text(" "+label),
+	)
+}
+
+func buildCards(envs []DeploymentEnvStatus, groupBy string) []card {
+	switch groupBy {
+	case "deployment":
+		return groupByDeploymentCards(envs)
+	case "desired_version":
+		return groupByDesiredVersionCards(envs)
+	case "current_version":
+		return groupByCurrentVersionCards(envs)
+	default:
+		return groupByTenantCards(envs)
+	}
+}
+
+func groupByTenantCards(envs []DeploymentEnvStatus) []card {
+	groups := map[string]*card{}
+	var order []string
+	for _, env := range envs {
+		if _, ok := groups[env.TenantName]; !ok {
+			groups[env.TenantName] = &card{Title: env.TenantName}
+			order = append(order, env.TenantName)
+		}
+		groups[env.TenantName].Environments = append(groups[env.TenantName].Environments, env)
+	}
+	sort.Strings(order)
+	result := make([]card, 0, len(order))
+	for _, name := range order {
+		c := *groups[name]
+		sortEnvs(c.Environments)
+		result = append(result, c)
+	}
+	return result
+}
+
+func groupByDeploymentCards(envs []DeploymentEnvStatus) []card {
+	groups := map[string]*card{}
+	var order []string
 	for _, env := range envs {
 		if _, ok := groups[env.DeploymentID]; !ok {
-			groups[env.DeploymentID] = &deploymentGroup{
-				DeploymentID: env.DeploymentID,
-				Version:      env.DeploymentVersion,
+			groups[env.DeploymentID] = &card{
+				Title:        env.DeploymentVersion,
+				LinkHref:     "/deployments/" + env.DeploymentID,
 				Labels:       env.TargetLabels,
+				DeploymentID: env.DeploymentID,
 			}
 			order = append(order, env.DeploymentID)
 		}
 		groups[env.DeploymentID].Environments = append(groups[env.DeploymentID].Environments, env)
 	}
-
-	result := make([]deploymentGroup, 0, len(order))
+	result := make([]card, 0, len(order))
 	for _, id := range order {
-		group := *groups[id]
-		sort.SliceStable(group.Environments, func(i, j int) bool {
-			a, b := group.Environments[i], group.Environments[j]
-			if a.IsOverridden != b.IsOverridden {
-				return !a.IsOverridden
-			}
-			if a.TenantName != b.TenantName {
-				return a.TenantName < b.TenantName
-			}
-			return a.Name < b.Name
-		})
-		result = append(result, group)
+		c := *groups[id]
+		sortEnvs(c.Environments)
+		result = append(result, c)
 	}
 	return result
 }
 
-func deploymentStatusTable(groups []deploymentGroup, featureName, chart string) g.Node {
-	var bodies []g.Node
-	for _, group := range groups {
-		popoverID := "set-version-" + group.DeploymentID
-		headerChildren := []g.Node{}
-		if group.Version != "" {
-			headerChildren = append(headerChildren,
-				h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-version"), h.Title("View deployment"), g.Text(group.Version)),
-			)
+func groupByDesiredVersionCards(envs []DeploymentEnvStatus) []card {
+	groups := map[string]*card{}
+	var order []string
+	for _, env := range envs {
+		version := env.DeploymentVersion
+		if env.IsOverridden && env.OverriddenByVersion != "" {
+			version = env.OverriddenByVersion
 		}
-		headerChildren = append(headerChildren, labelPills(group.Labels))
-		headerChildren = append(headerChildren,
-			h.Button(h.Type("button"), h.Class("btn-small set-version-btn"), g.Attr("popovertarget", popoverID), g.Text("Set version")),
-			setVersionPopover(popoverID, featureName, chart, group.Labels),
-		)
-		rows := []g.Node{
-			h.Tr(h.Class("deployment-group-row"), h.ID("deployment-"+group.DeploymentID),
-				h.Td(g.Attr("colspan", "6"),
-					h.Div(h.Class("deployment-group-header"), g.Group(headerChildren)),
-				),
-			),
+		if _, ok := groups[version]; !ok {
+			groups[version] = &card{Title: version}
+			order = append(order, version)
 		}
-		for _, env := range group.Environments {
-			rows = append(rows, envRow(env, featureName))
-		}
-		bodies = append(bodies, h.TBody(g.Group(rows)))
+		groups[version].Environments = append(groups[version].Environments, env)
 	}
-	return h.Table(h.Class("table"),
-		h.THead(h.Tr(
-			h.Th(g.Text("Tenant")),
-			h.Th(g.Text("Environment")),
-			h.Th(g.Text("Status")),
-			h.Th(g.Text("Last update")),
-			h.Th(g.Text("Last deployed")),
-			h.Th(g.Text("")),
-		)),
-		g.Group(bodies),
+	sort.Strings(order)
+	result := make([]card, 0, len(order))
+	for _, v := range order {
+		c := *groups[v]
+		sortEnvs(c.Environments)
+		result = append(result, c)
+	}
+	return result
+}
+
+func groupByCurrentVersionCards(envs []DeploymentEnvStatus) []card {
+	groups := map[string]*card{}
+	var order []string
+	for _, env := range envs {
+		version := env.ReleaseVersion
+		if version == "" {
+			version = "(none)"
+		}
+		if _, ok := groups[version]; !ok {
+			groups[version] = &card{Title: version}
+			order = append(order, version)
+		}
+		groups[version].Environments = append(groups[version].Environments, env)
+	}
+	sort.Strings(order)
+	result := make([]card, 0, len(order))
+	for _, v := range order {
+		c := *groups[v]
+		sortEnvs(c.Environments)
+		result = append(result, c)
+	}
+	return result
+}
+
+func sortEnvs(envs []DeploymentEnvStatus) {
+	sort.SliceStable(envs, func(i, j int) bool {
+		a, b := envs[i], envs[j]
+		if a.IsOverridden != b.IsOverridden {
+			return !a.IsOverridden
+		}
+		if a.TenantName != b.TenantName {
+			return a.TenantName < b.TenantName
+		}
+		return a.Name < b.Name
+	})
+}
+
+func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs) g.Node {
+	if len(cards) == 0 {
+		return h.P(h.Class("text-muted"), g.Text("No environments to show."))
+	}
+	return h.Div(h.Class("feature-card-grid"),
+		g.Map(cards, func(c card) g.Node {
+			return renderCard(c, featureName, chart, prefs)
+		}),
 	)
 }
 
-func envRow(env DeploymentEnvStatus, featureName string) g.Node {
-	logsHref := "/tenants/" + env.TenantSlug + "/envs/" + env.Name + "/" + featureName + "/logs"
+func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
+	headerChildren := []g.Node{}
+
+	if c.LinkHref != "" {
+		headerChildren = append(headerChildren,
+			h.A(h.Href(c.LinkHref), h.Class("card-group-title-link"), g.Text(c.Title)),
+		)
+	} else {
+		headerChildren = append(headerChildren,
+			h.Span(h.Class("card-group-title"), g.Text(c.Title)),
+		)
+	}
+
+	if len(c.Labels) > 0 {
+		headerChildren = append(headerChildren, labelPills(c.Labels))
+	}
+
+	// Card-level kebab for deployment grouping (set version)
+	if prefs.Group == "deployment" && c.DeploymentID != "" {
+		popoverID := "set-version-" + c.DeploymentID
+		headerChildren = append(headerChildren,
+			h.Div(h.Class("card-kebab-wrap"),
+				kebabButton("card-kebab-"+c.DeploymentID),
+				h.Div(h.Class("kebab-menu"), h.ID("card-kebab-"+c.DeploymentID),
+					h.Button(h.Type("button"), h.Class("kebab-item"),
+						g.Attr("popovertarget", popoverID),
+						g.Text("Set version"),
+					),
+				),
+				setVersionPopover(popoverID, featureName, chart, c.Labels),
+			),
+		)
+	}
+
+	header := h.Div(h.Class("feature-card-header"), g.Group(headerChildren))
+
+	// Build table columns
+	showTenant := prefs.Group != "tenant"
+	showDesired := prefs.Group != "desired_version" && prefs.ShowDesiredVersion
+	showCurrent := prefs.Group != "current_version" && prefs.ShowCurrentVersion
+
+	thNodes := []g.Node{}
+	if showTenant {
+		thNodes = append(thNodes, h.Th(g.Text("Tenant")))
+	}
+	thNodes = append(thNodes, h.Th(g.Text("Environment")))
+	thNodes = append(thNodes, h.Th(g.Text("Status")))
+	if showDesired {
+		thNodes = append(thNodes, h.Th(g.Text("Desired")))
+	}
+	if showCurrent {
+		thNodes = append(thNodes, h.Th(g.Text("Current")))
+	}
+	if prefs.ShowLastUpdate {
+		thNodes = append(thNodes, h.Th(g.Text("Last updated")))
+	}
+	if prefs.ShowLastDeploy {
+		thNodes = append(thNodes, h.Th(g.Text("Last deployed")))
+	}
+	thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
+
+	rows := g.Map(c.Environments, func(env DeploymentEnvStatus) g.Node {
+		return envCardRow(env, featureName, prefs, showTenant, showDesired, showCurrent)
+	})
+
+	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-card"),
+		h.THead(h.Tr(g.Group(thNodes))),
+		h.TBody(g.Group(rows)),
+	)
+
+	return h.Div(h.Class("feature-card"),
+		header,
+		h.Div(h.Class("feature-card-body"), table),
+	)
+}
+
+func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showDesired, showCurrent bool) g.Node {
 	envLink := h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))
+	logsHref := "/tenants/" + env.TenantSlug + "/envs/" + env.Name + "/" + featureName + "/logs"
 
 	rowAttrs := []g.Node{}
-	rowTip := ""
 	if env.IsOverridden {
-		rowAttrs = append(rowAttrs, h.Class("deployment-overridden"), g.Attr("data-overridden-by", env.OverriddenByID))
-		rowTip = statusTooltip(env)
+		rowAttrs = append(rowAttrs, h.Class("deployment-overridden"))
 	}
 
-	td := func(children ...g.Node) g.Node {
-		if rowTip != "" {
-			children = append([]g.Node{h.Title(rowTip)}, children...)
-		}
-		return h.Td(children...)
+	cells := []g.Node{}
+	if showTenant {
+		cells = append(cells, h.Td(g.Text(env.TenantName)))
 	}
+	cells = append(cells, h.Td(envLink))
 
 	statusCell := []g.Node{}
-	if tip := statusTooltip(env); tip != "" && rowTip == "" {
+	if tip := statusTooltip(env); tip != "" {
 		statusCell = append(statusCell, h.Title(tip))
 	}
 	statusCell = append(statusCell, renderStatus(env.StatusText))
+	cells = append(cells, h.Td(statusCell...))
 
-	cells := []g.Node{
-		td(g.Text(env.TenantName)),
-		td(envLink),
-		td(statusCell...),
-		td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
-		lastDeployedCell(env.LastDeployed, rowTip),
-		td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
+	if showDesired {
+		cells = append(cells, h.Td(g.Text(env.DeploymentVersion)))
 	}
+	if showCurrent {
+		version := env.ReleaseVersion
+		if version == "" {
+			cells = append(cells, h.Td(h.Span(h.Class("text-muted"), g.Text("—"))))
+		} else {
+			cells = append(cells, h.Td(g.Text(version)))
+		}
+	}
+
+	if prefs.ShowLastUpdate {
+		cells = append(cells, h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))))
+	}
+	if prefs.ShowLastDeploy {
+		cells = append(cells, lastDeployedCell(env.LastDeployed, ""))
+	}
+
+	// Kebab menu for row actions
+	kebabID := "row-kebab-" + env.TenantSlug + "-" + env.Name
+	cells = append(cells, h.Td(h.Class("action"),
+		h.Div(h.Class("kebab-wrap"),
+			kebabButton(kebabID),
+			h.Div(h.Class("kebab-menu"), h.ID(kebabID),
+				h.A(h.Href(logsHref), h.Class("kebab-item"), g.Text("View logs")),
+			),
+		),
+	))
+
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
+}
+
+func kebabButton(targetID string) g.Node {
+	return h.Button(
+		h.Type("button"),
+		h.Class("kebab-btn"),
+		g.Attr("data-kebab-toggle", targetID),
+		g.Attr("aria-label", "Actions"),
+		g.Text("⋮"),
+	)
 }
 
 func statusTooltip(env DeploymentEnvStatus) string {
