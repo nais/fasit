@@ -113,7 +113,7 @@ func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav
 	for _, f := range features {
 		navs = append(navs, view.FeatureNav{
 			Name:    f.Name,
-			Enabled: !f.Disabled,
+			Enabled: !f.FeatureDisabled,
 		})
 	}
 

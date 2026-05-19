@@ -126,7 +126,7 @@ func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environment
 
 	enabled := make([]*Deployment, 0, len(deps))
 	for _, dep := range deps {
-		if !dep.Disabled {
+		if !dep.FeatureDisabled {
 			enabled = append(enabled, dep)
 		}
 	}
