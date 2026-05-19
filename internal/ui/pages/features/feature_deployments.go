@@ -39,26 +39,24 @@ type DeploymentEnvStatus struct {
 }
 
 type ViewPrefs struct {
-	Group              string // "tenant", "deployment", "desired_version", "current_version"
-	ShowOverridden     bool
-	ShowDesiredVersion bool
-	ShowCurrentVersion bool
-	ShowLastDeploy     bool
-	ShowLastUpdate     bool
+	Group          string // "tenant", "deployment", "version"
+	ShowOverridden bool
+	ShowVersion    bool
+	ShowLastDeploy bool
+	ShowLastUpdate bool
 }
 
 var validGroups = map[string]bool{
-	"tenant": true, "deployment": true, "desired_version": true, "current_version": true,
+	"tenant": true, "deployment": true, "version": true,
 }
 
 func parseViewPrefs(r *http.Request) ViewPrefs {
 	p := ViewPrefs{
-		Group:              "tenant",
-		ShowOverridden:     false,
-		ShowDesiredVersion: true,
-		ShowCurrentVersion: true,
-		ShowLastDeploy:     true,
-		ShowLastUpdate:     true,
+		Group:          "tenant",
+		ShowOverridden: false,
+		ShowVersion:    true,
+		ShowLastDeploy: true,
+		ShowLastUpdate: true,
 	}
 
 	// Use query params if present, otherwise fall back to cookie.
@@ -79,11 +77,8 @@ func parseViewPrefs(r *http.Request) ViewPrefs {
 	if src.Get("show_overridden") == "true" {
 		p.ShowOverridden = true
 	}
-	if src.Has("col_desired_version") {
-		p.ShowDesiredVersion = src.Get("col_desired_version") == "true"
-	}
-	if src.Has("col_current_version") {
-		p.ShowCurrentVersion = src.Get("col_current_version") == "true"
+	if src.Has("col_version") {
+		p.ShowVersion = src.Get("col_version") == "true"
 	}
 	if src.Has("col_last_deployed") {
 		p.ShowLastDeploy = src.Get("col_last_deployed") == "true"
@@ -137,8 +132,7 @@ func toolbar(prefs ViewPrefs) g.Node {
 	groupOptions := []struct{ Value, Label string }{
 		{"tenant", "Tenant"},
 		{"deployment", "Deployment"},
-		{"desired_version", "Desired version"},
-		{"current_version", "Current version"},
+		{"version", "Version"},
 	}
 
 	groupLinks := h.Div(h.Class("toolbar-group-links"),
@@ -176,8 +170,7 @@ func toolbar(prefs ViewPrefs) g.Node {
 			g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="3" height="12" rx="0.5"/><rect x="6.5" y="2" width="3" height="12" rx="0.5"/><rect x="12" y="2" width="3" height="12" rx="0.5"/></svg>`),
 		),
 		h.Div(h.Class("col-toggle-menu"), h.ID("col-toggle-menu"),
-			colToggleItem("Desired version", "col_desired_version", prefs.ShowDesiredVersion),
-			colToggleItem("Current version", "col_current_version", prefs.ShowCurrentVersion),
+			colToggleItem("Version", "col_version", prefs.ShowVersion),
 			colToggleItem("Last updated", "col_last_updated", prefs.ShowLastUpdate),
 			colToggleItem("Last deployed", "col_last_deployed", prefs.ShowLastDeploy),
 		),
@@ -206,10 +199,8 @@ func buildCards(envs []DeploymentEnvStatus, groupBy string) []card {
 	switch groupBy {
 	case "deployment":
 		return groupByDeploymentCards(envs)
-	case "desired_version":
-		return groupByDesiredVersionCards(envs)
-	case "current_version":
-		return groupByCurrentVersionCards(envs)
+	case "version":
+		return groupByVersionCards(envs)
 	default:
 		return groupByTenantCards(envs)
 	}
@@ -259,37 +250,13 @@ func groupByDeploymentCards(envs []DeploymentEnvStatus) []card {
 	return result
 }
 
-func groupByDesiredVersionCards(envs []DeploymentEnvStatus) []card {
+func groupByVersionCards(envs []DeploymentEnvStatus) []card {
 	groups := map[string]*card{}
 	var order []string
 	for _, env := range envs {
 		version := env.DeploymentVersion
 		if env.IsOverridden && env.OverriddenByVersion != "" {
 			version = env.OverriddenByVersion
-		}
-		if _, ok := groups[version]; !ok {
-			groups[version] = &card{Title: version}
-			order = append(order, version)
-		}
-		groups[version].Environments = append(groups[version].Environments, env)
-	}
-	sort.Strings(order)
-	result := make([]card, 0, len(order))
-	for _, v := range order {
-		c := *groups[v]
-		sortEnvs(c.Environments)
-		result = append(result, c)
-	}
-	return result
-}
-
-func groupByCurrentVersionCards(envs []DeploymentEnvStatus) []card {
-	groups := map[string]*card{}
-	var order []string
-	for _, env := range envs {
-		version := env.ReleaseVersion
-		if version == "" {
-			version = "(none)"
 		}
 		if _, ok := groups[version]; !ok {
 			groups[version] = &card{Title: version}
@@ -369,8 +336,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 
 	// Build table columns
 	showTenant := prefs.Group != "tenant"
-	showDesired := prefs.Group != "desired_version" && prefs.ShowDesiredVersion
-	showCurrent := prefs.Group != "current_version" && prefs.ShowCurrentVersion
+	showVersion := prefs.Group != "version" && prefs.ShowVersion
 
 	thNodes := []g.Node{}
 	if showTenant {
@@ -378,11 +344,8 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	}
 	thNodes = append(thNodes, h.Th(g.Text("Environment")))
 	thNodes = append(thNodes, h.Th(g.Text("Status")))
-	if showDesired {
-		thNodes = append(thNodes, h.Th(g.Text("Desired")))
-	}
-	if showCurrent {
-		thNodes = append(thNodes, h.Th(g.Text("Current")))
+	if showVersion {
+		thNodes = append(thNodes, h.Th(g.Text("Version")))
 	}
 	if prefs.ShowLastUpdate {
 		thNodes = append(thNodes, h.Th(g.Text("Last updated")))
@@ -393,7 +356,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
 
 	rows := g.Map(c.Environments, func(env DeploymentEnvStatus) g.Node {
-		return envCardRow(env, featureName, prefs, showTenant, showDesired, showCurrent)
+		return envCardRow(env, featureName, prefs, showTenant, showVersion)
 	})
 
 	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-card"),
@@ -407,7 +370,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	)
 }
 
-func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showDesired, showCurrent bool) g.Node {
+func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion bool) g.Node {
 	envLink := h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))
 	logsHref := "/tenants/" + env.TenantSlug + "/envs/" + env.Name + "/" + featureName + "/logs"
 
@@ -429,16 +392,18 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 	statusCell = append(statusCell, renderStatus(env.StatusText))
 	cells = append(cells, h.Td(statusCell...))
 
-	if showDesired {
-		cells = append(cells, h.Td(g.Text(env.DeploymentVersion)))
-	}
-	if showCurrent {
-		version := env.ReleaseVersion
-		if version == "" {
-			cells = append(cells, h.Td(h.Span(h.Class("text-muted"), g.Text("—"))))
-		} else {
-			cells = append(cells, h.Td(g.Text(version)))
+	if showVersion {
+		versionNodes := []g.Node{g.Text(env.DeploymentVersion)}
+		if env.ReleaseVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
+			versionNodes = append(versionNodes,
+				h.Span(
+					h.Class("version-drift"),
+					h.Title("Running: "+env.ReleaseVersion),
+					g.Raw(` <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 14H1L8 1z" fill="#e8a735"/><text x="8" y="13" text-anchor="middle" font-size="10" font-weight="bold" fill="#000">!</text></svg>`),
+				),
+			)
 		}
+		cells = append(cells, h.Td(versionNodes...))
 	}
 
 	if prefs.ShowLastUpdate {

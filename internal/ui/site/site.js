@@ -222,8 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var DEFAULTS = {
     group: "tenant",
     show_overridden: "false",
-    col_desired_version: "true",
-    col_current_version: "true",
+    col_version: "true",
     col_last_deployed: "true",
     col_last_updated: "true"
   };

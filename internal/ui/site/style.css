@@ -1437,6 +1437,11 @@ a:hover .feature-nav-badge {
 }
 
 /* Kebab (three-dot) menu */
+.version-drift {
+  cursor: help;
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}
 .kebab-wrap,
 .card-kebab-wrap {
   position: relative;
