@@ -7,4 +7,3 @@ DROP TABLE IF EXISTS features;
 
 -- +goose Down
 -- Irreversible: application code no longer uses these tables.
-
