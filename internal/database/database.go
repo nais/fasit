@@ -35,22 +35,6 @@ func (c closeFuncs) Close() error {
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
 
-type Repo interface {
-	Close()
-}
-
-type repo struct {
-	db  *pgxpool.Pool
-	log logrus.FieldLogger
-}
-
-func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
-	return &repo{
-		db:  pool,
-		log: log.WithField("subsystem", "database-repo"),
-	}
-}
-
 func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
 	cloudsql := !strings.Contains(dbConnDSN, "://")
 
@@ -129,8 +113,4 @@ func Migrate(pool *pgxpool.Pool, log logrus.FieldLogger) error {
 		return fmt.Errorf("goose up: %w", err)
 	}
 	return nil
-}
-
-func (r *repo) Close() {
-	r.db.Close()
 }

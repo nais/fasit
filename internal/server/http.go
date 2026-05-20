@@ -8,7 +8,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/ui"
 	uiserver "github.com/nais/fasit/internal/ui/server"
@@ -21,7 +20,6 @@ func SetupRouter(
 	loadContext contextloader.LoaderFunc,
 	iapAudience string,
 	insecureSkipProxy bool,
-	repo database.Repo,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)

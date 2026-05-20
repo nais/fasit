@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
@@ -15,14 +14,10 @@ import (
 
 type server struct {
 	protogen.UnimplementedProviderServer
-
-	repo database.Repo
 }
 
-func newServer(repo database.Repo) protogen.ProviderServer {
-	return &server{
-		repo: repo,
-	}
+func newServer() protogen.ProviderServer {
+	return &server{}
 }
 
 func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.TenantResponse, error) {

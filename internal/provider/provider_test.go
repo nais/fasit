@@ -57,8 +57,7 @@ func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc, pool *p
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
 	log, _ := test.NewNullLogger()
-	repo := database.NewRepo(pool, log)
-	grpcServer := NewGrpcServer(loadContext, repo)
+	grpcServer := NewGrpcServer(loadContext)
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
