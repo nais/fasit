@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,13 +19,22 @@ type queryCtxVal struct {
 	start time.Time
 }
 
-var sqlcNameRe = regexp.MustCompile(`^-- name: (\w+)`)
+var (
+	sqlcNameRe = regexp.MustCompile(`^-- name: (\w+)`)
+	tableRe    = regexp.MustCompile(`(?i)(?:FROM|INTO|UPDATE|JOIN)\s+(\w+)`)
+)
 
 func queryName(sql string) string {
+	name := "unknown"
 	if m := sqlcNameRe.FindStringSubmatch(sql); m != nil {
-		return m[1]
+		name = m[1]
 	}
-	return "unknown"
+
+	if m := tableRe.FindStringSubmatch(sql); m != nil {
+		return strings.ToLower(m[1]) + "." + name
+	}
+
+	return name
 }
 
 type QueryMetricsTracer struct {
