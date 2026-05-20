@@ -19,13 +19,7 @@ func Features() Crumb {
 }
 
 func TenantWithSwitcher(name string, allTenants []view.TenantNav) Crumb {
-	alts := make([]Crumb, 0, len(allTenants))
-	for _, t := range allTenants {
-		if t.Name != name {
-			alts = append(alts, Crumb{Label: t.Name, URL: "/tenants/" + t.Name})
-		}
-	}
-	return Crumb{Label: name, URL: "/tenants/" + name, Alternatives: alts}
+	return Crumb{Label: name}
 }
 
 func EnvironmentWithSwitcher(tenantName, envName string, environments []view.EnvironmentNav) Crumb {

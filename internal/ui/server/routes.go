@@ -9,7 +9,6 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/naisd"
-	"github.com/nais/fasit/internal/ui/pages/tenant"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
 	"github.com/sirupsen/logrus"
 )
@@ -29,7 +28,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/favicon.ico", s.Favicon)
 
 	r.Get("/", tenants.Handler(s.renderPage))
-	r.Get("/tenants/{tenant}", tenant.Handler(s.renderPage))
 
 	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage))
 

@@ -162,7 +162,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			)),
 			h.TBody(g.Group(g.Map(statuses, func(s deploymentStatusRow) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/tenants/"+s.TenantName), g.Text(s.TenantName))),
+					h.Td(g.Text(s.TenantName)),
 					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name), g.Text(s.EnvironmentName))),
 					h.Td(renderStatus(s.State)),
 					h.Td(g.Text(s.Message)),

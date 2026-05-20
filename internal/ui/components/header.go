@@ -8,11 +8,11 @@ import (
 type Page string
 
 const (
-	PageTenants     Page = "tenants"
-	PageFeatures    Page = "features"
-	PageDeployments Page = "deployments"
-	PageLabels      Page = "labels"
-	PageNaisd       Page = "naisd"
+	PageEnvironments Page = "environments"
+	PageFeatures     Page = "features"
+	PageDeployments  Page = "deployments"
+	PageLabels       Page = "labels"
+	PageNaisd        Page = "naisd"
 )
 
 func SiteHeader(currentPage Page, userEmail string, gcpProjectID string) g.Node {
@@ -32,8 +32,8 @@ func SiteHeader(currentPage Page, userEmail string, gcpProjectID string) g.Node 
 	return h.Nav(
 		h.A(h.Href("/"), h.Class("logo"), g.Text("Fasit")),
 		h.Div(h.Class("menu"),
-			navItem("/", "Tenants", PageTenants),
 			navItem("/features", "Features", PageFeatures),
+			navItem("/", "Environments", PageEnvironments),
 			navItem("/deployments", "Deployments", PageDeployments),
 			navItem("/labels", "Labels", PageLabels),
 			navItem("/naisd", "Naisd", PageNaisd),
