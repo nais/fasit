@@ -1,6 +1,8 @@
 name: Build and deploy naisd
 on:
   push:
+    branches:
+      - main
     tags:
       - "naisd-*"
 env:
@@ -114,6 +116,7 @@ jobs:
           echo "Pushing: $chart"
           helm push "$chart" oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature
   rollout_naisd:
+    if: startsWith(github.ref, 'refs/tags/naisd-')
     needs: [build_push_naisd_chart, build_and_push_naisd]
     runs-on: fasit-deploy
     permissions:
