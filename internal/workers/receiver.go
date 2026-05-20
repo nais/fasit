@@ -75,6 +75,8 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 	if r.messagesRecv != nil {
 		r.messagesRecv.Add(ctx, 1, metric.WithAttributes(
 			attribute.String("type", msg.Type.String()),
+			attribute.String("tenant", msg.Tenant),
+			attribute.String("environment", msg.Environment),
 		))
 	}
 
