@@ -25,6 +25,23 @@ const (
 	StatusTypeLog
 )
 
+func (s StatusType) String() string {
+	switch s {
+	case StatusTypeKubernetesEvent:
+		return "kubernetes_event"
+	case StatusTypeHelm:
+		return "helm"
+	case StatusTypeHelmReleases:
+		return "helm_releases"
+	case StatusTypeHealth:
+		return "health"
+	case StatusTypeLog:
+		return "log"
+	default:
+		return "unknown"
+	}
+}
+
 type Helm struct {
 	// DIID is the unique identifier for the deployment instruction
 	DIID uuid.UUID

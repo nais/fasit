@@ -96,6 +96,7 @@ func Run(ctx context.Context) error {
 		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
+		meter,
 		deployment.GetManager(ctx),
 	)
 	go receiver.Run(ctx)

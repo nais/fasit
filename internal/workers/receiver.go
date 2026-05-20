@@ -17,6 +17,8 @@ import (
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type ReceiverClient interface {
@@ -33,6 +35,7 @@ type Receiver struct {
 	slack        slack.SlackClient
 	slackChannel string
 	listeners    []HelmListener
+	messagesRecv metric.Int64Counter
 }
 
 func NewReceiver(
@@ -40,14 +43,23 @@ func NewReceiver(
 	log logrus.FieldLogger,
 	slackClient slack.SlackClient,
 	slackChannel string,
+	meter metric.Meter,
 	listeners ...HelmListener,
 ) *Receiver {
+	messagesRecv, err := meter.Int64Counter("status_messages_received_total",
+		metric.WithDescription("Total status messages received from naisd, by type"),
+	)
+	if err != nil {
+		log.WithError(err).Warn("failed to create status messages counter")
+	}
+
 	receiver := &Receiver{
 		manager:      mgr,
 		log:          log.WithField("subsystem", "status-receiver"),
 		slack:        slackClient,
 		slackChannel: slackChannel,
 		listeners:    listeners,
+		messagesRecv: messagesRecv,
 	}
 	return receiver
 }
@@ -60,6 +72,12 @@ func (r *Receiver) Run(ctx context.Context) {
 }
 
 func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
+	if r.messagesRecv != nil {
+		r.messagesRecv.Add(ctx, 1, metric.WithAttributes(
+			attribute.String("type", msg.Type.String()),
+		))
+	}
+
 	switch msg.Type {
 	case message.StatusTypeHelm:
 		return r.handlerHelm(ctx, msg)
