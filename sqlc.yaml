@@ -39,36 +39,32 @@ sql:
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Environment SQL"
     !!merge <<: *default_domain
-    name: "Environment SQL"
     queries: "internal/environment/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "environmentsql"
         out: "internal/environment/environmentsql"
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Naisd status SQL"
     !!merge <<: *default_domain
-    name: "Naisd status SQL"
     queries: "internal/naisdstatus/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "naisdstatussql"
         out: "internal/naisdstatus/naisdstatussql"
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Feature SQL"
     !!merge <<: *default_domain
-    name: "Feature SQL"
     queries: "internal/feature/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "featuresql"
         out: "internal/feature/featuresql"
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Audit SQL"
     !!merge <<: *default_domain
-    name: "Audit SQL"
     queries: "internal/audit/queries"
     gen:
       go:
