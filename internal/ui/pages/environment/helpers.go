@@ -295,7 +295,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
+	page.FeatureLog = loadFeatureLog(ctx, env.ID, feat)
 
 	if activeTab == "helm" || activeTab == "playground" {
 		vals, herr := loadHelmValues(ctx, feat, env.ID)
@@ -305,7 +305,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		}
 	}
 	if activeTab == "deployments" {
-		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
+		page.Deployments = loadEnvironmentDeployments(ctx, featureName, env.ID)
 	}
 	if activeTab == "audit" {
 		entries, err := audit.EntriesForEnvironment(ctx, env.ID, featureName)
@@ -474,7 +474,7 @@ func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (
 	return string(b), nil
 }
 
-func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, featureName string, envID uuid.UUID) []EnvDeploymentItem {
+func loadEnvironmentDeployments(ctx context.Context, featureName string, envID uuid.UUID) []EnvDeploymentItem {
 	envLabels, err := envpkg.GetLabels(ctx, envID)
 	if err != nil {
 		return nil
@@ -523,7 +523,7 @@ func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, feature
 				}
 			}
 		}
-		status, _ := view.EffectiveDeploymentStatus(ctx, repo, envID, featureName, fallbackState, fallbackModified, dep.Feature.Version, releaseVersion)
+		status, _ := view.EffectiveDeploymentStatus(ctx, envID, featureName, fallbackState, fallbackModified, dep.Feature.Version, releaseVersion)
 		if status == "" {
 			status = "UNKNOWN"
 		}
@@ -568,8 +568,8 @@ func labelsMatch(envLabels, target map[string]string) bool {
 	return true
 }
 
-func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, feat *model.Feature) *FeatureLog {
-	di, err := repo.DeployInstructionsLatestForFeature(ctx, envID, feat.Name)
+func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *FeatureLog {
+	di, err := deployment.GetLatestDeployInstructionForFeature(ctx, envID, feat.Name)
 	if err != nil {
 		return nil
 	}
@@ -578,7 +578,7 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 		return nil
 	}
 	lastDeployed := "never"
-	if dep, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, envID, feat.Name); err == nil && dep != nil {
+	if dep, err := deployment.GetLatestDeployedDeployInstruction(ctx, envID, feat.Name); err == nil && dep != nil {
 		lastDeployed = view.FormatTime(dep.LastModified)
 	}
 	ret := &FeatureLog{
@@ -590,7 +590,7 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 	for _, line := range lines {
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
 	}
-	ret.HelmDiff, _ = repo.HelmValueDiffGet(ctx, di, feat.SecretKeys())
+	ret.HelmDiff, _ = featurepkg.HelmValueDiff(ctx, di, feat.SecretKeys())
 	return ret
 }
 

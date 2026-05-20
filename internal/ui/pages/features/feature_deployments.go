@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -97,8 +96,8 @@ type card struct {
 	Environments []DeploymentEnvStatus
 }
 
-func loadDeploymentData(ctx context.Context, repo database.Repo, feature *model.Feature, data *DetailPage) {
-	data.DeploymentEnvs = featureDeploymentEnvStatuses(ctx, repo, feature)
+func loadDeploymentData(ctx context.Context, feature *model.Feature, data *DetailPage) {
+	data.DeploymentEnvs = featureDeploymentEnvStatuses(ctx, feature)
 }
 
 func deploymentDetailContent(data *DetailPage) g.Node {
@@ -518,7 +517,7 @@ func labelPills(labels map[string]string) g.Node {
 	return g.Group(pills)
 }
 
-func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, feature *model.Feature) []DeploymentEnvStatus {
+func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) []DeploymentEnvStatus {
 	deployments, err := deployment.ListDeploymentsByFeature(ctx, feature.Name)
 	if err != nil || len(deployments) == 0 {
 		return []DeploymentEnvStatus{}
@@ -604,7 +603,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				es.LastModified = disabledAt
 			}
 
-			if di, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, env.env.ID, feature.Name); err == nil && di != nil {
+			if di, err := deployment.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
 				es.LastDeployed = di.LastModified
 			}
 
@@ -632,7 +631,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 					fallbackState = string(status.State)
 					fallbackModified = status.LastModified
 				}
-				es.StatusText, es.LastModified = view.EffectiveDeploymentStatus(ctx, repo, env.env.ID, feature.Name, fallbackState, fallbackModified, es.DeploymentVersion, es.ReleaseVersion)
+				es.StatusText, es.LastModified = view.EffectiveDeploymentStatus(ctx, env.env.ID, feature.Name, fallbackState, fallbackModified, es.DeploymentVersion, es.ReleaseVersion)
 			}
 
 			ret = append(ret, es)

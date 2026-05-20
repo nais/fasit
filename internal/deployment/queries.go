@@ -358,3 +358,30 @@ func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status mod
 		Status: status.String(),
 	})
 }
+
+func GetLatestDeployInstructionForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	di, err := querier(ctx).GetLatestDeployInstructionsForFeature(ctx, deploymentsql.GetLatestDeployInstructionsForFeatureParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return deployInstructionFromSQL(di), nil
+}
+
+func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	di, err := querier(ctx).GetLatestDeployedDeployInstruction(ctx, deploymentsql.GetLatestDeployedDeployInstructionParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return deployInstructionFromSQL(di), nil
+}

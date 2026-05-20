@@ -44,14 +44,14 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/deployments", deployments.ListHandler(s.renderPage))
 	r.Post("/deployments", deployments.CreateHandler())
-	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage, s.repo))
+	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage))
 	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
 	r.Post("/deployments/{id}/delete", deployments.DeleteHandler())
 	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
 	r.Post("/reconcile", deployments.ReconcileHandler())
 
-	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
-	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))
+	r.Get("/features", features.ListHandler(s.renderPage))
+	r.Get("/features/{feature}", features.Handler(s.renderPage))
 
 	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
 	r.Get("/naisd", naisd.Handler(s.renderPage))

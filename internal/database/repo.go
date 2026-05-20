@@ -37,7 +37,6 @@ func (c closeFuncs) Close() error {
 var embedMigrations embed.FS
 
 type Repo interface {
-	DeployInstructionRepo
 	EnvironmentValueRepo
 
 	Close()

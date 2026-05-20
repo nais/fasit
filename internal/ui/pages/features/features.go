@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nais/fasit/internal/database"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -30,7 +29,7 @@ type DetailPage struct {
 	Prefs          ViewPrefs
 }
 
-func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		features, err := featurepkg.FeatureNames(r.Context())
 		if err != nil {
@@ -41,9 +40,9 @@ func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	}
 }
 
-func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeatureData(r, repo)
+		data, err := loadFeatureData(r)
 		if err != nil {
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
@@ -89,7 +88,7 @@ func detailPage(data *DetailPage) g.Node {
 	)
 }
 
-func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
+func loadFeatureData(r *http.Request) (*DetailPage, error) {
 	featureName := chi.URLParam(r, "feature")
 	features, err := featurepkg.FeatureNames(r.Context())
 	if err != nil {
@@ -107,7 +106,7 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 		Features:       toFeatureNavs(features),
 		CurrentFeature: feature,
 	}
-	loadDeploymentData(r.Context(), repo, feature, data)
+	loadDeploymentData(r.Context(), feature, data)
 	return data, nil
 }
 

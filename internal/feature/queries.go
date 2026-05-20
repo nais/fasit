@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
@@ -20,6 +21,7 @@ import (
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nsf/jsondiff"
 )
 
 type ctxKey int
@@ -452,4 +454,77 @@ func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 
 func FeatureNames(ctx context.Context) ([]string, error) {
 	return querier(ctx).FeatureNames(ctx)
+}
+
+func HelmValueDiff(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {
+	ret := &model.HelmValueDiff{
+		Difference: model.HelmValueDifferenceNoMatch,
+	}
+
+	prev, err := querier(ctx).GetPreviousDeployInstruction(ctx, di.ID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ret, nil
+		}
+		return nil, fmt.Errorf("failed to get previous deploy instruction: %w", err)
+	}
+
+	currentValues := scrubSecrets(di.Values, secretKeys)
+	previousValues := scrubSecrets(prev.Values, secretKeys)
+
+	opts := jsondiff.DefaultHTMLOptions()
+	opts.Indent = "\t"
+	opts.PrintTypes = true
+	opts.SkipMatches = true
+	diff, diff2 := jsondiff.Compare(previousValues, currentValues, &opts)
+	ret.Diff = diff2
+
+	switch diff {
+	case jsondiff.FullMatch:
+		ret.Difference = model.HelmValueDifferenceFullMatch
+	case jsondiff.SupersetMatch:
+		ret.Difference = model.HelmValueDifferenceSupersetMatch
+	case jsondiff.BothArgsAreInvalidJson, jsondiff.FirstArgIsInvalidJson, jsondiff.SecondArgIsInvalidJson:
+		ret.Difference = model.HelmValueDifferenceInvalidJSON
+	}
+
+	return ret, nil
+}
+
+func scrubSecrets(data []byte, secretKeys []string) []byte {
+	if len(secretKeys) == 0 {
+		return data
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return data
+	}
+	for _, key := range secretKeys {
+		parts, err := featureutil.SmartDotSplit(key)
+		if err != nil {
+			continue
+		}
+		scrubPath(obj, parts)
+	}
+	result, err := json.Marshal(obj)
+	if err != nil {
+		return data
+	}
+	return result
+}
+
+func scrubPath(obj map[string]any, parts []string) {
+	for i, part := range parts {
+		if i == len(parts)-1 {
+			if _, ok := obj[part]; ok {
+				obj[part] = "••••••••"
+			}
+			return
+		}
+		next, ok := obj[part].(map[string]any)
+		if !ok {
+			return
+		}
+		obj = next
+	}
 }

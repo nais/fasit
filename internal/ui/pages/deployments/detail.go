@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	envpkg "github.com/nais/fasit/internal/environment"
@@ -31,7 +30,7 @@ type matchingDeployment struct {
 	Created     time.Time
 }
 
-func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
@@ -69,7 +68,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 				}
 			}
 
-			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), repo, status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified, dep.Feature.Version, releaseVersion)
+			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified, dep.Feature.Version, releaseVersion)
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
