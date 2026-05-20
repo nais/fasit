@@ -38,8 +38,8 @@ func PlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
 
 		renderPage(w, r, layout.Props{
 			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage:  components.PageTenants,
-			GCPProjectID: gcpProjectIDFromMetadata(data.Environment.Metadata),
+			CurrentPage:  components.PageEnvironments,
+			GCPProjectID: data.GCPProjectID,
 			Content:      featurePageContent(data),
 		})
 	}
@@ -64,8 +64,8 @@ func PlaygroundSubmitHandler(renderPage RenderPage) http.HandlerFunc {
 
 		renderPage(w, r, layout.Props{
 			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage:  components.PageTenants,
-			GCPProjectID: gcpProjectIDFromMetadata(data.Environment.Metadata),
+			CurrentPage:  components.PageEnvironments,
+			GCPProjectID: data.GCPProjectID,
 			Content:      featurePageContent(data),
 		})
 	}

@@ -43,6 +43,7 @@ type FeaturePage struct {
 	Environment      *Environment
 	Feature          *FeatureDetail
 	AllFeatures      []view.FeatureNav
+	GCPProjectID     string
 	HelmValues       string
 	HelmValuesError  string
 	Deployments      []EnvDeploymentItem
@@ -227,23 +228,13 @@ func isEmptyConfigValue(value string) bool {
 	}
 }
 
-func gcpProjectIDFromMetadata(metadata []MetadataItem) string {
-	for _, m := range metadata {
-		if m.Key == "project_id" && !m.IsSecret {
-			return m.Value
+func gcpProjectIDFromValues(values []*model.EnvironmentValue) string {
+	for _, v := range values {
+		if v.Key == "project_id" && !v.Secret {
+			return rawValueToString(v.Value)
 		}
 	}
 	return ""
-}
-
-func countEnabled(features []view.FeatureNav) int {
-	count := 0
-	for _, feature := range features {
-		if feature.Enabled {
-			count++
-		}
-	}
-	return count
 }
 
 func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
@@ -288,6 +279,9 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		AllFeatures: allFeatures,
 		ActiveTab:   activeTab,
 	}
+
+	envValues, _ := envpkg.ListEnvironmentValuesForEnvironment(ctx, env.ID, true)
+	page.GCPProjectID = gcpProjectIDFromValues(envValues)
 
 	page.Feature.ConfigItems, err = loadFeatureConfigItems(ctx, feat, env.ID)
 	if err != nil {

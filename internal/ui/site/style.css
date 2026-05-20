@@ -1531,3 +1531,14 @@ a:hover .feature-nav-badge {
     background: transparent;
   }
 }
+
+.label-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.label-pills .label-filter-tag {
+  margin: 0;
+}
