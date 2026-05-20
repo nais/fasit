@@ -36,31 +36,17 @@ func (c closeFuncs) Close() error {
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
 
-type TXFunc func(repo Repo) error
-
 type Repo interface {
 	DeployInstructionRepo
 	EnvironmentValueRepo
 
-	Transaction
-
 	Close()
-	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
-}
-
-type Transaction interface {
-	TxFunc(ctx context.Context, fn TXFunc) error
 }
 
 type repo struct {
-	querier Querier
+	querier gensql.Querier
 	db      *pgxpool.Pool
 	log     logrus.FieldLogger
-}
-
-type Querier interface {
-	gensql.Querier
-	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
 func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
@@ -69,28 +55,6 @@ func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
 		db:      pool,
 		log:     log.WithField("subsystem", "database-repo"),
 	}
-}
-
-func (r *repo) WithTx(ctx context.Context) (Repo, pgx.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-	return &repo{
-		querier: r.querier.WithTx(tx),
-		db:      r.db,
-		log:     r.log,
-	}, tx, nil
-}
-
-func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
-	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
-		return fn(&repo{
-			querier: r.querier.WithTx(tx),
-			db:      r.db,
-			log:     r.log,
-		})
-	})
 }
 
 func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
