@@ -25,11 +25,6 @@ type EnvironmentLabel struct {
 	Value string `json:"value"`
 }
 
-type EnvironmentUpdate struct {
-	// description of the environment
-	Description *string `json:"description,omitempty"`
-}
-
 type HelmValueDiff struct {
 	Difference HelmValueDifference `json:"difference"`
 	Diff       string              `json:"diff"`
@@ -81,14 +76,6 @@ const (
 	HelmValueDifferenceNoMatch       HelmValueDifference = "NO_MATCH"
 	HelmValueDifferenceInvalidJSON   HelmValueDifference = "INVALID_JSON"
 )
-
-func (e HelmValueDifference) IsValid() bool {
-	switch e {
-	case HelmValueDifferenceFullMatch, HelmValueDifferenceSupersetMatch, HelmValueDifferenceNoMatch, HelmValueDifferenceInvalidJSON:
-		return true
-	}
-	return false
-}
 
 func (e HelmValueDifference) String() string {
 	return string(e)
