@@ -32,7 +32,7 @@ func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][
 	if err != nil {
 		return nil, err
 	}
-	return collectKeyRefs(filterDeployments(deps)), nil
+	return collectKeyRefs(mostSpecificPerFeature(deps)), nil
 }
 
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
@@ -168,6 +168,40 @@ func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*Dep
 	return models, nil
 }
 
+// NormalizeStatus uppercases a deployment status and maps intermediate
+// states to user-facing labels (e.g. CREATED → PENDING).
+func NormalizeStatus(s string) string {
+	s = strings.ToUpper(s)
+	switch s {
+	case "CREATED":
+		return "PENDING"
+	case "":
+		return "UNKNOWN"
+	default:
+		return s
+	}
+}
+
+// FeatureStatusForEnvironment returns the deployment status for the winning
+// deployment of a feature in an environment. Returns empty string when no status exists.
+func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (status string, err error) {
+	dep, err := mostSpecificDeployment(ctx, envID, featureName)
+	if err != nil {
+		return "", err
+	}
+	row, err := querier(ctx).GetDeploymentStatus(ctx, deploymentsql.GetDeploymentStatusParams{
+		DeploymentID:  dep.ID,
+		EnvironmentID: envID,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("get deployment status: %w", err)
+	}
+	return NormalizeStatus(row.Status), nil
+}
+
 func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
 	rows, err := querier(ctx).ListByFeature(ctx, featureName)
 	if err != nil {
@@ -226,7 +260,7 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 		return fmt.Errorf("invalidate hash: %w", err)
 	}
 
-	if dep, err := winningDeployment(ctx, envID, featureName); err == nil {
+	if dep, err := mostSpecificDeployment(ctx, envID, featureName); err == nil {
 		_ = querier(ctx).SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
 			DeploymentID:  dep.ID,
 			EnvironmentID: envID,
@@ -248,7 +282,7 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 	if err != nil {
 		return nil, err
 	}
-	filtered := filterDeployments(deps)
+	filtered := mostSpecificPerFeature(deps)
 	seen := make(map[string]bool, len(filtered))
 	features := make([]EnvironmentFeature, 0, len(filtered))
 	for _, dep := range filtered {
@@ -265,14 +299,14 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 }
 
 func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {
-	dep, err := winningDeployment(ctx, envID, featureName)
+	dep, err := mostSpecificDeployment(ctx, envID, featureName)
 	if err != nil {
 		return nil, err
 	}
 	return dep.Feature, nil
 }
 
-func winningDeployment(ctx context.Context, envID uuid.UUID, featureName string) (*Deployment, error) {
+func mostSpecificDeployment(ctx context.Context, envID uuid.UUID, featureName string) (*Deployment, error) {
 	rows, err := querier(ctx).ListDeploymentsForEnvironmentFeature(ctx, deploymentsql.ListDeploymentsForEnvironmentFeatureParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -291,7 +325,7 @@ func winningDeployment(ctx context.Context, envID uuid.UUID, featureName string)
 		}
 		deps[i] = dep
 	}
-	winner := filterDeployments(deps)
+	winner := mostSpecificPerFeature(deps)
 	if len(winner) == 0 {
 		return nil, fmt.Errorf("%w: %q in environment after filtering", ErrFeatureNotFound, featureName)
 	}

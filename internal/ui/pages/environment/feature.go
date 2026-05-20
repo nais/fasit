@@ -306,8 +306,8 @@ func featureMetadataHeader(page *FeaturePage) g.Node {
 	}
 	rows = append(rows, metaRow("Current version", g.Text(currentVersion)))
 
-	if page.FeatureLog != nil && page.FeatureLog.CurrentStatus != "" {
-		rows = append(rows, metaRow("Status", renderStatus(page.FeatureLog.CurrentStatus)))
+	if page.Status != "" {
+		rows = append(rows, metaRow("Status", renderStatus(page.Status)))
 	}
 
 	if feat.Chart != "" {

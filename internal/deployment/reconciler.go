@@ -140,7 +140,7 @@ func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environment
 		}
 	}
 
-	return filterDeployments(enabled), nil
+	return mostSpecificPerFeature(enabled), nil
 }
 
 func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {

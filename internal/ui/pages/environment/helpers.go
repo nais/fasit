@@ -47,6 +47,7 @@ type FeaturePage struct {
 	HelmValuesError  string
 	Deployments      []EnvDeploymentItem
 	FeatureLog       *FeatureLog
+	Status           string
 	ActiveTab        string
 	PlaygroundCode   string
 	PlaygroundResult *PlaygroundResult
@@ -279,6 +280,14 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		ActiveTab:   activeTab,
 	}
 
+	if !env.Reconcile {
+		page.Status = "DISABLED"
+	} else if disabled {
+		page.Status = "DISABLED"
+	} else if status, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
+		page.Status = status
+	}
+
 	envValues, _ := envpkg.ListEnvironmentValuesForEnvironment(ctx, env.ID, true)
 	page.GCPProjectID = gcpProjectIDFromValues(envValues)
 
@@ -498,7 +507,7 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 		if statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID); err == nil {
 			for _, s := range statuses {
 				if s.EnvironmentID == envID {
-					fallbackState = strings.ToUpper(string(s.State))
+					fallbackState = deployment.NormalizeStatus(string(s.State))
 					break
 				}
 			}

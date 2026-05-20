@@ -293,9 +293,10 @@ func IsMoreSpecific(candidateLabels, existingLabels map[string]string, candidate
 	return len(candidateLabels) == len(existingLabels) && candidateCreated.After(existingCreated)
 }
 
-// filterDeployments filters the deployments to only include the most specific deployment with the latest created
-// timestamp.
-func filterDeployments(deps []*Deployment) []*Deployment {
+// mostSpecificPerFeature picks one deployment per feature name: the one with
+// the most specific target labels (most labels wins), breaking ties by latest
+// created timestamp.
+func mostSpecificPerFeature(deps []*Deployment) []*Deployment {
 	deployments := map[string]*Deployment{}
 	for _, dep := range deps {
 		existing, ok := deployments[dep.Feature.Name]

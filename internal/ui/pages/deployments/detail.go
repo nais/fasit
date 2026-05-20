@@ -57,7 +57,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 				continue
 			}
 
-			state := strings.ToUpper(status.State.String())
+			state := deployment.NormalizeStatus(status.State.String())
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,

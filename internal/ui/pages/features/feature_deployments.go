@@ -648,11 +648,8 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 			} else {
 				es.StatusText = "UNKNOWN"
 				if status := statusByDepEnv[dep.ID.String()+":"+env.env.ID.String()]; status != nil {
-					es.StatusText = strings.ToUpper(string(status.State))
+					es.StatusText = deployment.NormalizeStatus(string(status.State))
 					es.LastModified = status.LastModified
-				}
-				if es.StatusText == "CREATED" {
-					es.StatusText = "PENDING"
 				}
 			}
 
