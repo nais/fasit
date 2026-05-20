@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/testinfra"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 func TestReceiverIntegration(t *testing.T) {
@@ -50,6 +51,7 @@ func TestReceiverIntegration(t *testing.T) {
 			logrus.NewEntry(logrus.New()),
 			fake.NewFakeSlackClient(),
 			"test",
+			noop.Meter{},
 		)
 		rec.Run(ctx)
 
@@ -76,6 +78,7 @@ func TestReceiverIntegration(t *testing.T) {
 				logrus.NewEntry(logrus.New()),
 				fake.NewFakeSlackClient(),
 				"test",
+				noop.Meter{},
 			)
 			rec.Run(ctx)
 		}
@@ -114,6 +117,7 @@ func TestReceiverIntegration(t *testing.T) {
 			logrus.NewEntry(logrus.New()),
 			fake.NewFakeSlackClient(),
 			"test",
+			noop.Meter{},
 		)
 		rec.Run(ctx)
 
@@ -151,6 +155,7 @@ func TestReceiverIntegration(t *testing.T) {
 			logrus.NewEntry(logrus.New()),
 			fake.NewFakeSlackClient(),
 			"test",
+			noop.Meter{},
 		)
 		rec.Run(ctx)
 
