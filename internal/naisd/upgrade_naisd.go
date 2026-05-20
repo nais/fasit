@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 )
@@ -31,7 +32,7 @@ func getInstructionFromFile() (message.DeployInstruction, error) {
 	if err != nil {
 		return message.DeployInstruction{}, err
 	}
-	defer f.Close()
+	defer ioconvenience.CloseWithLog(f, logrus.StandardLogger())
 
 	err = json.NewDecoder(f).Decode(&msg)
 	if err != nil {

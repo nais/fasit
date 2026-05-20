@@ -14,7 +14,7 @@ import (
 func TestInsecureValidateMW(t *testing.T) {
 	th := func(w http.ResponseWriter, r *http.Request) {
 		val := r.Context().Value(contextEmail)
-		fmt.Fprint(w, val)
+		_, _ = fmt.Fprint(w, val)
 	}
 
 	rec := httptest.NewRecorder()

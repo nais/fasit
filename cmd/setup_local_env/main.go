@@ -20,6 +20,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
 )
@@ -114,7 +115,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer cancel.Close()
+	defer ioconvenience.CloseWithLog(cancel, log)
 
 	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, noop.NewMeterProvider().Meter(""), logrus.New())
 	if err != nil {

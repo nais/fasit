@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd/selfupgrade"
 	"github.com/sirupsen/logrus"
@@ -229,13 +230,13 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	pubsubLog := newPubsubLogger(msg.ID, d.statuses, d.log)
 
 	go pubsubLog.Run(ctx)
-	defer pubsubLog.Close()
+	defer ioconvenience.CloseWithLog(pubsubLog, d.log)
 
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
 		if d.inProgress.Value() > 0 {
 			if d.lastChecked.Get().Add(15 * time.Second).Before(time.Now()) {
 				d.log.WithField("inProgress", d.inProgress.Value()).Debug("Postponing naisd upgrade")
-				fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
+				_, _ = fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
 				d.lastChecked.Set()
 			}
 			return errPostpone
@@ -243,7 +244,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 		d.log.Debug("Offloading naisd upgrade")
 		if _, ok := d.executor.(*MockExecutor); ok {
-			fmt.Fprintln(pubsubLog, "MockExecutor, not starting regular naisd upgrade")
+			_, _ = fmt.Fprintln(pubsubLog, "MockExecutor, not starting regular naisd upgrade")
 		} else {
 			err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.naisProjectID, d.env, d.tenantName)
 			if err != nil {
@@ -263,7 +264,11 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	if err != nil {
 		return err
 	}
-	defer os.Remove(valuesFile)
+	defer func() {
+		if err := os.Remove(valuesFile); err != nil {
+			d.log.WithError(err).Error("error removing values file")
+		}
+	}()
 
 	namespace := namespaceFor(msg.Name)
 
@@ -317,7 +322,7 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 	opts := metav1.ListOptions{}
 	watcher, err := d.k8sClient.CoreV1().Events(namespace).Watch(ctx, opts)
 	if err != nil {
-		fmt.Fprintf(pubsubLog, "failed to watch events: %s\n", err)
+		_, _ = fmt.Fprintf(pubsubLog, "failed to watch events: %s\n", err)
 		d.log.Warnf("failed to watch events: %v", err)
 		return
 	}
@@ -405,7 +410,7 @@ func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, err
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer ioconvenience.CloseWithLog(file, d.log)
 
 	enc := yaml.NewEncoder(file)
 	if err := enc.Encode(m.Values); err != nil {

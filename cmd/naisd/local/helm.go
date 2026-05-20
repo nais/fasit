@@ -67,8 +67,10 @@ func (h *HelmClient) Execute(cmd *exec.Cmd) error {
 	h.logger.Println(cmd.String())
 
 	if cmd.Stdout != nil {
-		fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
-		defer fmt.Fprintln(cmd.Stdout, "end of mock executor")
+		_, _ = fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
+		defer func() {
+			_, _ = fmt.Fprintln(cmd.Stdout, "end of mock executor")
+		}()
 	}
 	time.Sleep(3 * time.Second)
 

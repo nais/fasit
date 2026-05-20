@@ -205,7 +205,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *Deplo
 }
 
 func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request) (uuid.UUID, error) {
-	details, err := featurepkg.ParseTemplateDetails(feat.FeatureYAML.Values)
+	details, err := featurepkg.ParseTemplateDetails(feat.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
 	}

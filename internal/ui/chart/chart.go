@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/nais/fasit/internal/ioconvenience"
+	"github.com/sirupsen/logrus"
 )
 
 func FetchFeatureYAML(chartRef, version string) (string, error) {
@@ -39,7 +41,7 @@ func extractFeatureYAML(layer v1.Layer) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer rc.Close()
+	defer ioconvenience.CloseWithLog(rc, logrus.StandardLogger())
 
 	tr := tar.NewReader(rc)
 	for {

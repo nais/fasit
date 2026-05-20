@@ -54,7 +54,7 @@ func writeSkeleton(buf *strings.Builder, n *html.Node) {
 				if normalizedAttrs[a.Key] {
 					val = "_"
 				}
-				buf.WriteString(fmt.Sprintf(" %s=%q", a.Key, val))
+				_, _ = fmt.Fprintf(buf, " %s=%q", a.Key, val)
 			}
 		}
 		buf.WriteString(">")
@@ -148,7 +148,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 	require.GreaterOrEqual(t, len(dataRows), 2, "expected at least 2 data rows")
 
 	// Determine which rows should warn based on the spec rule:
-	// warn iff feat.FeatureYAML.Values[item.Key].Required && item.Source == "HELM" && item.Value == ""
+	// warn iff feat.Values[item.Key].Required && item.Source == "HELM" && item.Value == ""
 	type rowInfo struct {
 		skeleton   string
 		shouldWarn bool
@@ -156,7 +156,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 
 	rows := make([]rowInfo, 2)
 	for i, item := range page.Feature.ConfigItems {
-		valDef := feat.FeatureYAML.Values[item.Key]
+		valDef := feat.Values[item.Key]
 		warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && item.Value == ""
 		rows[i] = rowInfo{
 			skeleton:   skeleton(dataRows[i]),

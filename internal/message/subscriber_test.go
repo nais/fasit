@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/pubsub/pstest"
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
@@ -21,19 +22,19 @@ func TestSubscriber(t *testing.T) {
 
 	// Start a fake server running locally.
 	srv := pstest.NewServer()
-	defer srv.Close()
+	defer ioconvenience.CloseWithLog(srv, logrus.StandardLogger())
 	// Connect to the server without using TLS.
 	conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer ioconvenience.CloseWithLog(conn, logrus.StandardLogger())
 	// Use the connection when creating a pubsub client.
 	client, err := pubsub.NewClient(ctx, "project", option.WithGRPCConn(conn))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer ioconvenience.CloseWithLog(client, logrus.StandardLogger())
 
 	topicRes, err := client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
 		Name: "projects/project/topics/topic",

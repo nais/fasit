@@ -29,6 +29,7 @@ jobs:
       matrix:
         mise-task:
           - check:deadcode
+          - check:golangci-lint
           - check:gosec
           - check:govet
           - check:govulncheck
