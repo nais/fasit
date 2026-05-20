@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -48,6 +49,40 @@ func TestProvider(t *testing.T) {
 
 		if got.GetId() != want.GetId() {
 			t.Fatalf("Expected tenant id %s, got %s", want.GetId(), got.GetId())
+		}
+	})
+
+	t.Run("create environment sets name and tenant labels", func(t *testing.T) {
+		ctx := loadContext(ctx)
+
+		tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: "label-test-tenant"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		env, err := environment.Create(ctx, &model.EnvironmentCreate{
+			Name:     "my-env",
+			TenantID: tenant.ID,
+			Kind:     model.EnvironmentKindTenant,
+			Labels:   map[string]string{"kind": "tenant"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		labels, err := environment.GetLabels(ctx, env.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if labels["name"] != "my-env" {
+			t.Errorf("expected label name=my-env, got %q", labels["name"])
+		}
+		if labels["tenant"] != "label-test-tenant" {
+			t.Errorf("expected label tenant=label-test-tenant, got %q", labels["tenant"])
+		}
+		if labels["kind"] != "tenant" {
+			t.Errorf("expected label kind=tenant, got %q", labels["kind"])
 		}
 	})
 }
