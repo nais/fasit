@@ -159,4 +159,13 @@ func TestStatusTooltip(t *testing.T) {
 		}
 		assert.Equal(t, "", statusTooltip(env))
 	})
+
+	t.Run("created status treated as pending shows no-release tooltip", func(t *testing.T) {
+		env := DeploymentEnvStatus{
+			Enabled:           true,
+			DeploymentVersion: "1.0.0",
+			StatusText:        "PENDING",
+		}
+		assert.Equal(t, "No release deployed yet", statusTooltip(env))
+	})
 }

@@ -651,6 +651,9 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 					es.StatusText = strings.ToUpper(string(status.State))
 					es.LastModified = status.LastModified
 				}
+				if es.StatusText == "CREATED" {
+					es.StatusText = "PENDING"
+				}
 			}
 
 			ret = append(ret, es)

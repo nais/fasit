@@ -226,6 +226,15 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 		return fmt.Errorf("invalidate hash: %w", err)
 	}
 
+	if dep, err := winningDeployment(ctx, envID, featureName); err == nil {
+		_ = querier(ctx).SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
+			DeploymentID:  dep.ID,
+			EnvironmentID: envID,
+			Status:        "pending",
+			Message:       "redeploy triggered",
+		})
+	}
+
 	TriggerReconcile(ctx, ReconcileTriggerEvent{})
 	return nil
 }
@@ -256,6 +265,14 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 }
 
 func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {
+	dep, err := winningDeployment(ctx, envID, featureName)
+	if err != nil {
+		return nil, err
+	}
+	return dep.Feature, nil
+}
+
+func winningDeployment(ctx context.Context, envID uuid.UUID, featureName string) (*Deployment, error) {
 	rows, err := querier(ctx).ListDeploymentsForEnvironmentFeature(ctx, deploymentsql.ListDeploymentsForEnvironmentFeatureParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -278,7 +295,7 @@ func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName str
 	if len(winner) == 0 {
 		return nil, fmt.Errorf("%w: %q in environment after filtering", ErrFeatureNotFound, featureName)
 	}
-	return winner[0].Feature, nil
+	return winner[0], nil
 }
 
 // TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
