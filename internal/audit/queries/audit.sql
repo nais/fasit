@@ -1,4 +1,4 @@
--- name: AuditCreate :exec
+-- name: Create :exec
 INSERT INTO audits(
 	actor,
 	description,
@@ -12,7 +12,7 @@ VALUES (
 	@object_id,
 	@metadata);
 
--- name: AuditForEnvironment :many
+-- name: List :many
 SELECT
 	*
 FROM

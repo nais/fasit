@@ -195,24 +195,34 @@ func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deplo
 }
 
 func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
-	err := querier(ctx).DeleteDeployment(ctx, deploymentID)
-	if err != nil {
-		return err
-	}
-	audit.CreateAudit(ctx, "deleted", "deployments", deploymentID.String())
-	return nil
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		err := querier(ctx).DeleteDeployment(ctx, deploymentID)
+		if err != nil {
+			return err
+		}
+		return audit.Create(ctx, audit.CreateParams{
+			Description: "deleted",
+			ObjectType:  "deployments",
+			ObjectID:    deploymentID.String(),
+		})
+	})
 }
 
 func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
-	err := querier(ctx).DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
-		FeatureName: featureName,
-		Target:      target,
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		err := querier(ctx).DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
+			FeatureName: featureName,
+			Target:      target,
+		})
+		if err != nil {
+			return err
+		}
+		return audit.Create(ctx, audit.CreateParams{
+			Description: "deleted all deployments matching feature and target",
+			ObjectType:  "deployments",
+			ObjectID:    featureName,
+		})
 	})
-	if err != nil {
-		return err
-	}
-	audit.CreateAudit(ctx, "deleted all deployments matching feature and target", "deployments", featureName)
-	return nil
 }
 
 func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) error {

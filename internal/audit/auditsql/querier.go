@@ -7,8 +7,8 @@ import (
 )
 
 type Querier interface {
-	AuditCreate(ctx context.Context, arg AuditCreateParams) error
-	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
+	Create(ctx context.Context, arg CreateParams) error
+	List(ctx context.Context, arg ListParams) ([]Audit, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -49,20 +49,6 @@ func log(ctx context.Context) logrus.FieldLogger {
 	return ctx.Value(logKey).(logrus.FieldLogger)
 }
 
-func CreateAudit(ctx context.Context, description, objectType, objectID string) {
-	actor := actorOrUnknown(ctx, description, objectType)
-
-	err := querier(ctx).AuditCreate(ctx, auditsql.AuditCreateParams{
-		Actor:       actor,
-		Description: description,
-		ObjectType:  objectType,
-		ObjectID:    objectID,
-	})
-	if err != nil {
-		log(ctx).WithError(err).Error("failed to create audit")
-	}
-}
-
 type CreateParams struct {
 	Description string
 	ObjectType  string
@@ -75,7 +61,6 @@ type CreateParams struct {
 // surrounding transaction back.
 func Create(ctx context.Context, p CreateParams) error {
 	actor := actorOrUnknown(ctx, p.Description, p.ObjectType)
-
 	var meta []byte
 	if p.Metadata != nil {
 		b, err := json.Marshal(p.Metadata)
@@ -85,7 +70,7 @@ func Create(ctx context.Context, p CreateParams) error {
 		meta = b
 	}
 
-	return querier(ctx).AuditCreate(ctx, auditsql.AuditCreateParams{
+	return querier(ctx).Create(ctx, auditsql.CreateParams{
 		Actor:       actor,
 		Description: p.Description,
 		ObjectType:  p.ObjectType,
@@ -123,9 +108,9 @@ type Entry struct {
 	Metadata    json.RawMessage
 }
 
-func EntriesForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*Entry, error) {
-	rows, err := querier(ctx).AuditForEnvironment(ctx, auditsql.AuditForEnvironmentParams{
-		EnvironmentID: id.String(),
+func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*Entry, error) {
+	rows, err := querier(ctx).List(ctx, auditsql.ListParams{
+		EnvironmentID: environmentId.String(),
 		Featurename:   featureName,
 		PageSize:      50,
 	})
@@ -141,7 +126,7 @@ func EntriesForEnvironment(ctx context.Context, id uuid.UUID, featureName string
 			ObjectType:  r.ObjectType,
 			ObjectID:    r.ObjectID,
 			CreatedAt:   r.CreatedAt.Time,
-			Metadata:    json.RawMessage(r.Metadata),
+			Metadata:    r.Metadata,
 		})
 	}
 	return ret, nil

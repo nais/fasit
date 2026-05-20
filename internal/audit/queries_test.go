@@ -51,8 +51,9 @@ func TestCreate(t *testing.T) {
 			q := &auditfake.Querier{}
 			ctx := RegisterTestDeps(context.Background(), q, log)
 
-			if err := Create(ctx, tc.params); err != nil {
-				t.Fatal(err)
+			err := Create(ctx, tc.params)
+			if err != nil {
+				t.Errorf("Create() error = %v", err)
 			}
 
 			if len(q.Creates) != 1 {

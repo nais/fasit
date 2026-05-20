@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -178,37 +179,43 @@ func configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []b
 }
 
 func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
-	existing, err := querier(ctx).ConfigGetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
+	var conf featuresql.ConfigurationsGlobal
+	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
+		var err error
+		conf, err = querier(ctx).ConfigGetByID(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	if bytes.Equal(existing.Value, c.Value) && stringPtrEqual(existing.Description, c.Description) {
-		return globalConfigFromSQL(existing), nil
-	}
+		if bytes.Equal(conf.Value, c.Value) && stringPtrEqual(conf.Description, c.Description) {
+			return nil
+		}
+		beforeValue := conf.Value
 
-	conf, err := querier(ctx).ConfigUpdate(ctx, featuresql.ConfigUpdateParams{
-		Description: c.Description,
-		Value:       c.Value,
-		ID:          id,
+		conf, err = querier(ctx).ConfigUpdate(ctx, featuresql.ConfigUpdateParams{
+			Description: c.Description,
+			Value:       c.Value,
+			ID:          id,
+		})
+		if err != nil {
+			return err
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Description: configDescription("updated", conf.Key, conf.Secret),
+			ObjectType:  "configurations_global",
+			ObjectID:    conf.ID.String(),
+			Metadata: configMetadata("update", configMetadataInput{
+				feature: conf.Feature,
+				key:     conf.Key,
+				envID:   nil,
+				secret:  conf.Secret,
+				before:  beforeValue,
+				after:   c.Value,
+			}),
+		})
 	})
 	if err != nil {
-		return nil, err
-	}
-
-	if err := audit.Create(ctx, audit.CreateParams{
-		Description: configDescription("updated", conf.Key, conf.Secret),
-		ObjectType:  "configurations_global",
-		ObjectID:    conf.ID.String(),
-		Metadata: configMetadata("update", configMetadataInput{
-			feature: conf.Feature,
-			key:     conf.Key,
-			envID:   nil,
-			secret:  conf.Secret,
-			before:  existing.Value,
-			after:   c.Value,
-		}),
-	}); err != nil {
 		return nil, err
 	}
 
@@ -216,29 +223,31 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 }
 
 func ConfigDelete(ctx context.Context, id uuid.UUID) error {
-	existing, err := querier(ctx).ConfigGetByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		existing, err := querier(ctx).ConfigGetByID(ctx, id)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil
+			}
+			return err
 		}
-		return err
-	}
 
-	if err := querier(ctx).ConfigDelete(ctx, id); err != nil {
-		return err
-	}
+		if err := querier(ctx).ConfigDelete(ctx, id); err != nil {
+			return err
+		}
 
-	return audit.Create(ctx, audit.CreateParams{
-		Description: configDescription("deleted", existing.Key, existing.Secret),
-		ObjectType:  "configurations_global",
-		ObjectID:    id.String(),
-		Metadata: configMetadata("delete", configMetadataInput{
-			feature: existing.Feature,
-			key:     existing.Key,
-			envID:   nil,
-			secret:  existing.Secret,
-			before:  existing.Value,
-		}),
+		return audit.Create(ctx, audit.CreateParams{
+			Description: configDescription("deleted", existing.Key, existing.Secret),
+			ObjectType:  "configurations_global",
+			ObjectID:    id.String(),
+			Metadata: configMetadata("delete", configMetadataInput{
+				feature: existing.Feature,
+				key:     existing.Key,
+				envID:   nil,
+				secret:  existing.Secret,
+				before:  existing.Value,
+			}),
+		})
 	})
 }
 
@@ -254,27 +263,29 @@ type configAuditInfo struct {
 }
 
 func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAuditInfo) error {
-	verb := "create"
-	if hadExisting {
-		verb = "update"
-	}
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		verb := "create"
+		if hadExisting {
+			verb = "update"
+		}
 
-	metaIn := configMetadataInput{
-		feature: info.feature,
-		key:     info.key,
-		envID:   info.envID,
-		secret:  info.secret,
-		after:   info.after,
-	}
-	if hadExisting {
-		metaIn.before = info.before
-	}
+		metaIn := configMetadataInput{
+			feature: info.feature,
+			key:     info.key,
+			envID:   info.envID,
+			secret:  info.secret,
+			after:   info.after,
+		}
+		if hadExisting {
+			metaIn.before = info.before
+		}
 
-	return audit.Create(ctx, audit.CreateParams{
-		Description: configDescription(verb+"d", info.key, info.secret),
-		ObjectType:  info.objectType,
-		ObjectID:    info.objectID,
-		Metadata:    configMetadata(verb, metaIn),
+		return audit.Create(ctx, audit.CreateParams{
+			Description: configDescription(verb+"d", info.key, info.secret),
+			ObjectType:  info.objectType,
+			ObjectID:    info.objectID,
+			Metadata:    configMetadata(verb, metaIn),
+		})
 	})
 }
 

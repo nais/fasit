@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
+	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment/environmentsql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -29,18 +30,28 @@ func querier(ctx context.Context) environmentsql.Querier {
 }
 
 func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
-	env, err := querier(ctx).Create(ctx, environmentsql.CreateParams{
-		Name:        t.Name,
-		Description: t.Description,
-		TenantID:    t.TenantID,
-		Kind:        types.EnvironmentKind(t.Kind),
+	var env environmentsql.Environment
+	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
+		var err error
+		env, err = querier(ctx).Create(ctx, environmentsql.CreateParams{
+			Name:        t.Name,
+			Description: t.Description,
+			TenantID:    t.TenantID,
+			Kind:        types.EnvironmentKind(t.Kind),
+		})
+		if err != nil {
+			return err
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Description: "created",
+			ObjectType:  "environments",
+			ObjectID:    env.ID.String(),
+		})
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	audit.CreateAudit(ctx, "created", "environments", env.ID.String())
-
 	return environmentFromSQL(env), nil
 }
 
@@ -67,19 +78,23 @@ func GetLabels(ctx context.Context, environmentID uuid.UUID) (Labels, error) {
 }
 
 func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
-	err := querier(ctx).SetEnvironmentValue(ctx, environmentsql.SetEnvironmentValueParams{
-		EnvironmentID: environmentID,
-		Key:           key,
-		Value:         value,
-		Secret:        secret,
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		err := querier(ctx).SetEnvironmentValue(ctx, environmentsql.SetEnvironmentValueParams{
+			EnvironmentID: environmentID,
+			Key:           key,
+			Value:         value,
+			Secret:        secret,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to store environment value: %w", err)
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Description: "created or updated",
+			ObjectType:  "environment_values",
+			Metadata:    environmentID.String() + ":" + key,
+		})
 	})
-	if err != nil {
-		return fmt.Errorf("failed to store environment value: %w", err)
-	}
-
-	audit.CreateAudit(ctx, "created or updated", "environment_values", environmentID.String()+":"+key)
-
-	return nil
 }
 
 func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
@@ -155,16 +170,26 @@ func GetTenantByName(ctx context.Context, name string) (*model.Tenant, error) {
 }
 
 func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
-	tenant, err := querier(ctx).TenantCreate(ctx, environmentsql.TenantCreateParams{
-		Name:        t.Name,
-		Description: t.Description,
+	var tenant environmentsql.Tenant
+	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
+		var err error
+		tenant, err = querier(ctx).TenantCreate(ctx, environmentsql.TenantCreateParams{
+			Name:        t.Name,
+			Description: t.Description,
+		})
+		if err != nil {
+			return err
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Description: "created",
+			ObjectType:  "tenants",
+			Metadata:    tenant.ID.String(),
+		})
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	audit.CreateAudit(ctx, "created", "tenants", tenant.ID.String())
-
 	return tenantFromSQL(tenant), nil
 }
 
@@ -225,15 +250,19 @@ func ListEnvironmentValuesForKey(ctx context.Context, key string) ([]environment
 }
 
 func DeleteEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string) error {
-	err := querier(ctx).DeleteEnvironmentValue(ctx, environmentsql.DeleteEnvironmentValueParams{
-		EnvironmentID: environmentID,
-		Key:           key,
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		err := querier(ctx).DeleteEnvironmentValue(ctx, environmentsql.DeleteEnvironmentValueParams{
+			EnvironmentID: environmentID,
+			Key:           key,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete environment value: %w", err)
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Description: "deleted",
+			ObjectType:  "environment_values",
+			Metadata:    environmentID.String() + ":" + key,
+		})
 	})
-	if err != nil {
-		return fmt.Errorf("failed to delete environment value: %w", err)
-	}
-
-	audit.CreateAudit(ctx, "deleted", "environment_values", environmentID.String()+":"+key)
-
-	return nil
 }

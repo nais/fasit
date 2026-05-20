@@ -10,14 +10,14 @@ import (
 // Querier is a test fake that records calls. Assign function fields to
 // control return values; unset fields panic on use.
 type Querier struct {
-	AuditCreateFunc         func(ctx context.Context, arg auditsql.AuditCreateParams) error
-	AuditForEnvironmentFunc func(ctx context.Context, arg auditsql.AuditForEnvironmentParams) ([]auditsql.Audit, error)
+	AuditCreateFunc         func(ctx context.Context, arg auditsql.CreateParams) error
+	AuditForEnvironmentFunc func(ctx context.Context, arg auditsql.ListParams) ([]auditsql.Audit, error)
 
 	// Creates records every AuditCreate call for assertion.
-	Creates []auditsql.AuditCreateParams
+	Creates []auditsql.CreateParams
 }
 
-func (f *Querier) AuditCreate(ctx context.Context, arg auditsql.AuditCreateParams) error {
+func (f *Querier) Create(ctx context.Context, arg auditsql.CreateParams) error {
 	f.Creates = append(f.Creates, arg)
 	if f.AuditCreateFunc != nil {
 		return f.AuditCreateFunc(ctx, arg)
@@ -25,7 +25,7 @@ func (f *Querier) AuditCreate(ctx context.Context, arg auditsql.AuditCreateParam
 	return nil
 }
 
-func (f *Querier) AuditForEnvironment(ctx context.Context, arg auditsql.AuditForEnvironmentParams) ([]auditsql.Audit, error) {
+func (f *Querier) List(ctx context.Context, arg auditsql.ListParams) ([]auditsql.Audit, error) {
 	if f.AuditForEnvironmentFunc == nil {
 		panic("auditfake: AuditForEnvironmentFunc not set")
 	}

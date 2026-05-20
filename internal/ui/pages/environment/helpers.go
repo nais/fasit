@@ -307,7 +307,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		page.Deployments = loadEnvironmentDeployments(ctx, featureName, env.ID)
 	}
 	if activeTab == "audit" {
-		entries, err := audit.EntriesForEnvironment(ctx, env.ID, featureName)
+		entries, err := audit.List(ctx, env.ID, featureName)
 		if err != nil {
 			return nil, fmt.Errorf("load audit entries: %w", err)
 		}

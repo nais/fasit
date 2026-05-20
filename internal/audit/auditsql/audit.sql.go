@@ -7,7 +7,7 @@ import (
 	"context"
 )
 
-const auditCreate = `-- name: AuditCreate :exec
+const create = `-- name: Create :exec
 INSERT INTO audits(
 	actor,
 	description,
@@ -22,7 +22,7 @@ VALUES (
 	$5)
 `
 
-type AuditCreateParams struct {
+type CreateParams struct {
 	Actor       string
 	Description string
 	ObjectType  string
@@ -30,8 +30,8 @@ type AuditCreateParams struct {
 	Metadata    []byte
 }
 
-func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error {
-	_, err := q.db.Exec(ctx, auditCreate,
+func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
+	_, err := q.db.Exec(ctx, create,
 		arg.Actor,
 		arg.Description,
 		arg.ObjectType,
@@ -41,7 +41,7 @@ func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error 
 	return err
 }
 
-const auditForEnvironment = `-- name: AuditForEnvironment :many
+const list = `-- name: List :many
 SELECT
 	id, actor, description, object_type, object_id, created_at, metadata
 FROM
@@ -63,14 +63,14 @@ ORDER BY
 LIMIT $3
 `
 
-type AuditForEnvironmentParams struct {
+type ListParams struct {
 	Featurename   string
 	EnvironmentID string
 	PageSize      int32
 }
 
-func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error) {
-	rows, err := q.db.Query(ctx, auditForEnvironment, arg.Featurename, arg.EnvironmentID, arg.PageSize)
+func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
+	rows, err := q.db.Query(ctx, list, arg.Featurename, arg.EnvironmentID, arg.PageSize)
 	if err != nil {
 		return nil, err
 	}
