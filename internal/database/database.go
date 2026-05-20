@@ -15,7 +15,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
@@ -35,63 +34,6 @@ func (c closeFuncs) Close() error {
 
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
-
-type TXFunc func(repo Repo) error
-
-type Repo interface {
-	DeployInstructionRepo
-	EnvironmentValueRepo
-
-	Transaction
-
-	Close()
-	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
-}
-
-type Transaction interface {
-	TxFunc(ctx context.Context, fn TXFunc) error
-}
-
-type repo struct {
-	querier Querier
-	db      *pgxpool.Pool
-	log     logrus.FieldLogger
-}
-
-type Querier interface {
-	gensql.Querier
-	WithTx(tx pgx.Tx) *gensql.Queries
-}
-
-func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
-	return &repo{
-		querier: gensql.New(pool),
-		db:      pool,
-		log:     log.WithField("subsystem", "database-repo"),
-	}
-}
-
-func (r *repo) WithTx(ctx context.Context) (Repo, pgx.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-	return &repo{
-		querier: r.querier.WithTx(tx),
-		db:      r.db,
-		log:     r.log,
-	}, tx, nil
-}
-
-func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
-	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
-		return fn(&repo{
-			querier: r.querier.WithTx(tx),
-			db:      r.db,
-			log:     r.log,
-		})
-	})
-}
 
 func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
 	cloudsql := !strings.Contains(dbConnDSN, "://")
@@ -171,8 +113,4 @@ func Migrate(pool *pgxpool.Pool, log logrus.FieldLogger) error {
 		return fmt.Errorf("goose up: %w", err)
 	}
 	return nil
-}
-
-func (r *repo) Close() {
-	r.db.Close()
 }

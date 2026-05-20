@@ -75,9 +75,6 @@ func Run(ctx context.Context) error {
 	}
 	defer ioconvenience.CloseWithLog(closers, log)
 
-	repo := database.NewRepo(pool, log)
-	log.Info("-- successfully started database client")
-
 	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
@@ -104,7 +101,7 @@ func Run(ctx context.Context) error {
 	go receiver.Run(ctx)
 
 	go func() {
-		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, repo, log); err != nil {
+		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, log); err != nil {
 			log.WithError(err).Fatal("running GRPC server")
 		}
 	}()
@@ -112,7 +109,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, repo, log)
+	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}
@@ -152,14 +149,14 @@ func newLogger(level string) (logrus.FieldLogger, error) {
 	return log, nil
 }
 
-func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, repo database.Repo, log logrus.FieldLogger) error {
+func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, log logrus.FieldLogger) error {
 	log.Info("GRPC serving on port", bindAddress)
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	s := provider.NewGrpcServer(loadContext, repo)
+	s := provider.NewGrpcServer(loadContext)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return s.Serve(lis) })

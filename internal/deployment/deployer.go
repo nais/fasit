@@ -125,7 +125,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployme
 }
 
 func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
-	existingDeploy, err := d.getLatestDeployInstructionForFeature(ctx, environment.ID, deployment.Feature.Name)
+	existingDeploy, err := GetLatestDeployInstructionForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return false, fmt.Errorf("get deploy instructions latest for environment %q: %w", environment.Name, err)
@@ -281,18 +281,6 @@ func (d *deployer) createDeployInstruction(ctx context.Context, envID uuid.UUID,
 		Values:         values,
 		DeploymentID:   deploymentID,
 	})
-}
-
-func (d *deployer) getLatestDeployInstructionForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
-	di, err := d.querier.GetLatestDeployInstructionsForFeature(ctx, deploymentsql.GetLatestDeployInstructionsForFeatureParams{
-		EnvironmentID: envID,
-		FeatureName:   featureName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return deployInstructionFromSQL(di), nil
 }
 
 // IsMoreSpecific reports whether a deployment with candidateLabels (created at

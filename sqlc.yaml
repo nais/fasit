@@ -7,21 +7,23 @@ rules:
       SELECT statements must have an ORDER BY clause
 sql:
   - &default_domain
-    name: "Fasit SQL"
+    name: "Deployment SQL"
     engine: "postgresql"
     schema: "internal/database/migrations"
-    queries: "internal/database/queries"
+    queries: "internal/deployment/queries"
     rules:
       - "always-order-by"
     gen:
       go: &default_go
-        package: "gensql"
-        out: "internal/database/gensql"
+        package: "deploymentsql"
+        out: "internal/deployment/deploymentsql"
         sql_package: "pgx/v5"
         emit_interface: true
         omit_sqlc_version: true
         emit_empty_slices: true
         omit_unused_structs: true
+        emit_pointers_for_null_types: true
+        # emit_result_struct_pointers: true
         overrides:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.UUID"
@@ -37,58 +39,35 @@ sql:
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Environment SQL"
     !!merge <<: *default_domain
-    name: "Deployment SQL"
-    queries: "internal/deployment/queries"
-    gen:
-      go:
-        !!merge <<: *default_go
-        package: "deploymentsql"
-        out: "internal/deployment/deploymentsql"
-        emit_pointers_for_null_types: true
-  - engine: "postgresql" # keep this line for Intellij formatting issues
-    !!merge <<: *default_domain
-    name: "Environment SQL"
     queries: "internal/environment/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "environmentsql"
         out: "internal/environment/environmentsql"
-        emit_pointers_for_null_types: true
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Naisd status SQL"
     !!merge <<: *default_domain
-    name: "Naisd status SQL"
     queries: "internal/naisdstatus/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "naisdstatussql"
         out: "internal/naisdstatus/naisdstatussql"
-        emit_pointers_for_null_types: true
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Feature SQL"
     !!merge <<: *default_domain
-    name: "Feature SQL"
     queries: "internal/feature/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "featuresql"
         out: "internal/feature/featuresql"
-        emit_pointers_for_null_types: true
-  - engine: "postgresql" # keep this line for Intellij formatting issues
+  - name: "Audit SQL"
     !!merge <<: *default_domain
-    name: "Audit SQL"
     queries: "internal/audit/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "auditsql"
         out: "internal/audit/auditsql"
-        emit_pointers_for_null_types: true
-#emit_result_struct_pointers: true
-#emit_prepared_queries: true
-#emit_all_enum_values: true
-#emit_enum_valid_method: true
-#json_tags_id_uppercase: true

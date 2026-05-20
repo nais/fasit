@@ -41,7 +41,7 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 	seeder.AddDeployment("my-feature", "1.0.0", environment.Labels{"kind": "tenant"})
 	deployment.ChartDownloader = seeder.ChartDownloader()
 
-	pub := &publisher{repo: mgr.db.repo}
+	pub := &publisher{}
 	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return pub
 	}

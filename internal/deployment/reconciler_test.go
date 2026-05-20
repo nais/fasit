@@ -31,7 +31,6 @@ import (
 
 // Intentional uppercase to avoid var clashes
 type Db struct {
-	repo database.Repo
 	t    *testing.T
 	pool *pgxpool.Pool
 }
@@ -266,8 +265,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 }
 
 type publisher struct {
-	msg  []message.DeployInstruction
-	repo database.Repo
+	msg []message.DeployInstruction
 }
 
 func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
@@ -401,7 +399,7 @@ func setupTestMgr(
 	t.Helper()
 	db := getDb(ctx, t, container, dsn, log)
 	seeder := deploymenttest.NewSeeder()
-	pub := &publisher{repo: db.repo}
+	pub := &publisher{}
 	return &TestMgr{
 		t:         t,
 		db:        db,
@@ -427,7 +425,6 @@ func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContai
 	})
 
 	return Db{
-		repo: database.NewRepo(pool, log),
 		t:    t,
 		pool: pool,
 	}

@@ -8,19 +8,12 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/server"
 	"github.com/sirupsen/logrus"
 )
 
-func newHTTPServer(
-	ctx context.Context,
-	loadContext contextloader.LoaderFunc,
-	cfg *Config,
-	repo database.Repo,
-	log logrus.FieldLogger,
-) (*http.Server, error) {
-	router, err := server.SetupRouter(ctx, loadContext, cfg.IAPAudience, cfg.InsecureSkipProxy, repo, log)
+func newHTTPServer(ctx context.Context, loadContext contextloader.LoaderFunc, cfg *Config, log logrus.FieldLogger) (*http.Server, error) {
+	router, err := server.SetupRouter(ctx, loadContext, cfg.IAPAudience, cfg.InsecureSkipProxy, log)
 	if err != nil {
 		return nil, fmt.Errorf("setting up router: %w", err)
 	}

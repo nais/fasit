@@ -20,6 +20,7 @@ type Querier interface {
 	GetDeploymentStatus(ctx context.Context, arg GetDeploymentStatusParams) (DeploymentStatus, error)
 	GetDeploymentStatusLog(ctx context.Context, arg GetDeploymentStatusLogParams) ([]GetDeploymentStatusLogRow, error)
 	GetLatestDeployInstructionsForFeature(ctx context.Context, arg GetLatestDeployInstructionsForFeatureParams) (DeployInstruction, error)
+	GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (DeployInstruction, error)
 	InvalidateDeployInstructionHash(ctx context.Context, arg InvalidateDeployInstructionHashParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
 	ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsByDeploymentIDRow, error)

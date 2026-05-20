@@ -4,17 +4,16 @@ import (
 	"context"
 
 	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"google.golang.org/grpc"
 )
 
-func NewGrpcServer(loadContext contextloader.LoaderFunc, repo database.Repo) *grpc.Server {
+func NewGrpcServer(loadContext contextloader.LoaderFunc) *grpc.Server {
 	opts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(newContextInterceptor(loadContext)),
 	}
 	s := grpc.NewServer(opts...)
-	protogen.RegisterProviderServer(s, newServer(repo))
+	protogen.RegisterProviderServer(s, newServer())
 	return s
 }
 

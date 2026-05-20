@@ -28,6 +28,7 @@ type Querier interface {
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureNames(ctx context.Context) ([]string, error)
+	GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)

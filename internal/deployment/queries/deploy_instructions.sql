@@ -115,3 +115,16 @@ SET
 WHERE
 	id = @id;
 
+-- name: GetLatestDeployedDeployInstruction :one
+SELECT
+	*
+FROM
+	deploy_instructions
+WHERE
+	feature_name = @feature_name
+	AND environment_id = @environment_id
+	AND status = 'deployed'
+ORDER BY
+	last_modified DESC
+LIMIT 1;
+

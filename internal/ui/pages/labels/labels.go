@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -30,7 +29,7 @@ type labelKeyInfo struct {
 	Count  int
 }
 
-func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenants, err := environment.GetTenants(r.Context())
 		if err != nil {

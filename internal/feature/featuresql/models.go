@@ -29,6 +29,19 @@ type ConfigurationsGlobal struct {
 	Created     pgtype.Timestamptz
 }
 
+type DeployInstruction struct {
+	ID             uuid.UUID
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	Status         string
+	Hash           string
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
+	Values         []byte
+	DeploymentID   *uuid.UUID
+}
+
 type DisabledFeature struct {
 	EnvironmentID uuid.UUID
 	Feature       string

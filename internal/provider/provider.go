@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
@@ -15,14 +14,10 @@ import (
 
 type server struct {
 	protogen.UnimplementedProviderServer
-
-	repo database.Repo
 }
 
-func newServer(repo database.Repo) protogen.ProviderServer {
-	return &server{
-		repo: repo,
-	}
+func newServer() protogen.ProviderServer {
+	return &server{}
 }
 
 func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.TenantResponse, error) {
@@ -158,7 +153,7 @@ func (s *server) CreateOrUpdateEnvironmentValue(ctx context.Context, in *protoge
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	err = s.repo.EnvironmentValueStore(ctx, envID, in.Key, in.Value, in.Secret)
+	err = environment.SetEnvironmentValue(ctx, envID, in.Key, in.Value, in.Secret)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -173,7 +168,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	ev, err := s.repo.EnvironmentValueGet(ctx, envID, in.Key, true)
+	ev, err := environment.GetEnvironmentValue(ctx, envID, in.Key, true)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
@@ -200,7 +195,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 }
 
 func (s *server) GetEnvironmentValuesAcrossEnvs(ctx context.Context, input *protogen.GetEnvironmentValuesAcrossEnvsRequest) (*protogen.EnvironmentValuesAcrossEnvsResponse, error) {
-	es, err := s.repo.EnvironmentValuesAcrossEnvs(ctx, input.GetKey())
+	es, err := environment.ListEnvironmentValuesForKey(ctx, input.GetKey())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -232,7 +227,7 @@ func (s *server) DeleteEnvironmentValue(ctx context.Context, req *protogen.Delet
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	if err := s.repo.EnvironmentValueDelete(ctx, uid, req.Key); err != nil {
+	if err := environment.DeleteEnvironmentValue(ctx, uid, req.Key); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
