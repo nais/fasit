@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/dbtx"
@@ -30,12 +31,13 @@ type HelmListener interface {
 }
 
 type Receiver struct {
-	manager      ReceiverClient
-	log          logrus.FieldLogger
-	slack        slack.SlackClient
-	slackChannel string
-	listeners    []HelmListener
-	messagesRecv metric.Int64Counter
+	manager        ReceiverClient
+	log            logrus.FieldLogger
+	slack          slack.SlackClient
+	slackChannel   string
+	listeners      []HelmListener
+	messagesRecv   metric.Int64Counter
+	deployDuration metric.Float64Histogram
 }
 
 func NewReceiver(
@@ -53,13 +55,22 @@ func NewReceiver(
 		log.WithError(err).Warn("failed to create status messages counter")
 	}
 
+	deployDuration, err := meter.Float64Histogram("deploy_instruction_duration_seconds",
+		metric.WithDescription("Time from deploy instruction creation to terminal status"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		log.WithError(err).Warn("failed to create deploy duration histogram")
+	}
+
 	receiver := &Receiver{
-		manager:      mgr,
-		log:          log.WithField("subsystem", "status-receiver"),
-		slack:        slackClient,
-		slackChannel: slackChannel,
-		listeners:    listeners,
-		messagesRecv: messagesRecv,
+		manager:        mgr,
+		log:            log.WithField("subsystem", "status-receiver"),
+		slack:          slackClient,
+		slackChannel:   slackChannel,
+		listeners:      listeners,
+		messagesRecv:   messagesRecv,
+		deployDuration: deployDuration,
 	}
 	return receiver
 }
@@ -143,6 +154,14 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 
 	if err := deployment.UpdateDeployInstructionStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
 		return fmt.Errorf("updating deploy instruction status: %w", err)
+	}
+
+	if r.deployDuration != nil {
+		duration := time.Since(di.Created).Seconds()
+		r.deployDuration.Record(ctx, duration, metric.WithAttributes(
+			attribute.String("feature", di.FeatureName),
+			attribute.String("status", helmStatus.RolloutStatus.String()),
+		))
 	}
 
 	return nil

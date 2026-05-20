@@ -17,6 +17,8 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd/selfupgrade"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,6 +115,9 @@ type DeployManager struct {
 
 	performNaisdUpgrades bool
 	stop                 context.CancelFunc
+
+	helmDuration    metric.Float64Histogram
+	handlerDuration metric.Float64Histogram
 }
 
 func NewDeployManager(
@@ -150,6 +155,25 @@ func NewDeployManager(
 	return receiver, nil
 }
 
+func (d *DeployManager) SetMeter(meter metric.Meter) {
+	var err error
+	d.helmDuration, err = meter.Float64Histogram("helm_execution_duration_seconds",
+		metric.WithDescription("Helm command execution duration"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		d.log.WithError(err).Warn("failed to create helm duration histogram")
+	}
+
+	d.handlerDuration, err = meter.Float64Histogram("deploy_handler_duration_seconds",
+		metric.WithDescription("Deploy handler total duration"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		d.log.WithError(err).Warn("failed to create handler duration histogram")
+	}
+}
+
 func (d *DeployManager) Run(ctx context.Context) {
 	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
 	d.deployments.Synchronous()
@@ -180,6 +204,15 @@ func (d *DeployManager) Run(ctx context.Context) {
 }
 
 func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstruction) error {
+	handlerStart := time.Now()
+	defer func() {
+		if d.handlerDuration != nil {
+			d.handlerDuration.Record(ctx, time.Since(handlerStart).Seconds(), metric.WithAttributes(
+				attribute.String("feature", msg.Name),
+			))
+		}
+	}()
+
 	// Force ack message to prevent retries for long running tasks
 	message.ForceAck(ctx)
 
@@ -252,6 +285,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	go d.listenForEvents(eventsCtx, pubsubLog, msg, namespace)
 
+	helmStart := time.Now()
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args)
 	if err != nil {
 		d.log.WithField("feature", msg.Name).WithError(err).Warn("failed to run helm")
@@ -259,6 +293,12 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		helmStatus.Error = err.Error()
 	} else {
 		helmStatus.RolloutStatus = model.RolloutStatusDeployed
+	}
+	if d.helmDuration != nil {
+		d.helmDuration.Record(ctx, time.Since(helmStart).Seconds(), metric.WithAttributes(
+			attribute.String("feature", msg.Name),
+			attribute.String("status", helmStatus.RolloutStatus.String()),
+		))
 	}
 
 	d.RepublishHelmList()

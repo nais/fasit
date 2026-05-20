@@ -35,21 +35,27 @@ type reconciler struct {
 	lock sync.Mutex
 
 	// Metrics
-	reconcileTime metric.Int64Histogram
+	reconcileTime     metric.Int64Histogram
+	reconcileLoopTime metric.Int64Histogram
 }
 
 func newReconciler(querier deploymentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
-	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
+	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling per environment"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
 	}
+	reconcileLoopTime, err := meter.Int64Histogram("reconcile_loop_duration", metric.WithDescription("Total time for one full reconcile loop"), metric.WithUnit("ms"))
+	if err != nil {
+		return nil, fmt.Errorf("create reconcile loop time histogram: %w", err)
+	}
 	reconcileTrigger := make(chan chan TriggerResult, 1)
 	return &reconciler{
-		querier:          querier,
-		log:              log,
-		reconcileTrigger: reconcileTrigger,
-		deployer:         deployer,
-		reconcileTime:    reconcileTime,
+		querier:           querier,
+		log:               log,
+		reconcileTrigger:  reconcileTrigger,
+		deployer:          deployer,
+		reconcileTime:     reconcileTime,
+		reconcileLoopTime: reconcileLoopTime,
 	}, nil
 }
 
@@ -92,6 +98,7 @@ func (r *reconciler) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	loopStart := time.Now()
 	ctx = auth.SetEmail(ctx, "system:deployment_reconciler")
 
 	if shouldrun := r.lock.TryLock(); !shouldrun {
@@ -110,6 +117,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, environment.TenantName, err)
 		}
 	}
+
+	r.reconcileLoopTime.Record(ctx, time.Since(loopStart).Milliseconds())
 	return nil
 }
 

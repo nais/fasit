@@ -69,14 +69,25 @@ func Run(ctx context.Context) error {
 
 	log.Info("starting database client")
 
-	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN, log)
+	queryTracer, err := database.NewQueryMetricsTracer(meter)
+	if err != nil {
+		return fmt.Errorf("error creating query metrics tracer: %w", err)
+	}
+
+	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN, log, database.WithQueryTracer(queryTracer))
 	if err != nil {
 		return fmt.Errorf("error setting up database: %w", err)
 	}
 	defer ioconvenience.CloseWithLog(closers, log)
 
+	if err := database.RegisterPoolMetrics(meter, pool); err != nil {
+		return fmt.Errorf("error registering pool metrics: %w", err)
+	}
+
 	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
+		p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
+		p.SetMeter(meter)
+		return p
 	}
 
 	loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, meter, log)
@@ -110,7 +121,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, log)
+	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}
@@ -175,8 +186,17 @@ func newMetricsProvider() (metric.Meter, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	prefixView := func(i metricsdk.Instrument) (metricsdk.Stream, bool) {
+		s := metricsdk.Stream{Name: "fasit_" + i.Name}
+		return s, true
+	}
+
 	return metricsdk.
-		NewMeterProvider(metricsdk.WithReader(exporter)).
+		NewMeterProvider(
+			metricsdk.WithReader(exporter),
+			metricsdk.WithView(prefixView),
+		).
 		Meter("github.com/nais/fasit"), nil
 }
 

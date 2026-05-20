@@ -13,6 +13,7 @@ import (
 	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/metric"
 )
 
 func SetupRouter(
@@ -20,6 +21,7 @@ func SetupRouter(
 	loadContext contextloader.LoaderFunc,
 	iapAudience string,
 	insecureSkipProxy bool,
+	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
@@ -41,7 +43,7 @@ func SetupRouter(
 	deploy.AllowAll = insecureSkipProxy
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
-	uiServer := uiserver.New(ui.SiteFS)
+	uiServer := uiserver.New(ui.SiteFS, meter)
 	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil
 }

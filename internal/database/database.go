@@ -20,6 +20,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ConnPoolOption func(*pgxpool.Config)
+
+func WithQueryTracer(tracer pgx.QueryTracer) ConnPoolOption {
+	return func(cfg *pgxpool.Config) {
+		cfg.ConnConfig.Tracer = tracer
+	}
+}
+
 type closeFuncs []func() error
 
 func (c closeFuncs) Close() error {
@@ -35,7 +43,7 @@ func (c closeFuncs) Close() error {
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
 
-func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
+func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger, opts ...ConnPoolOption) (*pgxpool.Pool, io.Closer, error) {
 	cloudsql := !strings.Contains(dbConnDSN, "://")
 
 	cloudsqlHost := ""
@@ -86,6 +94,10 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) 
 			return nil, closers, err
 		}
 		closers = append(closers, cleanup)
+	}
+
+	for _, opt := range opts {
+		opt(config)
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)

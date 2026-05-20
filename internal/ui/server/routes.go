@@ -11,11 +11,18 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/naisd"
 	"github.com/nais/fasit/internal/ui/pages/tenant"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *Server) Routes() http.Handler {
 	r := chi.NewRouter()
-	r.Use(MetricsMiddleware)
+
+	mm, err := NewMetricsMiddleware(s.meter)
+	if err != nil {
+		logrus.WithError(err).Warn("failed to create HTTP metrics middleware")
+	} else {
+		r.Use(mm.Handler)
+	}
 
 	r.Get("/site.css", s.CSS)
 	r.Get("/site.js", s.JS)

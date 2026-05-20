@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var mime = map[string]string{
@@ -24,12 +25,14 @@ var mime = map[string]string{
 type Server struct {
 	siteFS       fs.FS
 	assetVersion string
+	meter        metric.Meter
 }
 
-func New(siteFS fs.FS) *Server {
+func New(siteFS fs.FS, meter metric.Meter) *Server {
 	return &Server{
 		siteFS:       siteFS,
 		assetVersion: computeAssetVersion(siteFS),
+		meter:        meter,
 	}
 }
 

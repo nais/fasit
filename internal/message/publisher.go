@@ -3,9 +3,12 @@ package message
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"cloud.google.com/go/pubsub/v2"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type publisherConfig struct {
@@ -34,9 +37,12 @@ type Topic interface {
 }
 
 type Publisher[T any] struct {
-	topic  Topic
-	log    logrus.FieldLogger
-	config publisherConfig
+	topic           Topic
+	log             logrus.FieldLogger
+	config          publisherConfig
+	publishCount    metric.Int64Counter
+	publishDuration metric.Float64Histogram
+	topicName       string
 }
 
 func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log logrus.FieldLogger, opts ...publisherOpts) *Publisher[T] {
@@ -46,9 +52,28 @@ func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log l
 	}
 
 	return &Publisher[T]{
-		topic:  client.Publisher("projects/" + projectID + "/topics/" + topicID),
-		log:    log,
-		config: cfg,
+		topic:     client.Publisher("projects/" + projectID + "/topics/" + topicID),
+		log:       log,
+		config:    cfg,
+		topicName: topicID,
+	}
+}
+
+func (p *Publisher[T]) SetMeter(meter metric.Meter) {
+	var err error
+	p.publishCount, err = meter.Int64Counter("pubsub_messages_published_total",
+		metric.WithDescription("Total pub/sub messages published"),
+	)
+	if err != nil {
+		p.log.WithError(err).Warn("failed to create publish counter")
+	}
+
+	p.publishDuration, err = meter.Float64Histogram("pubsub_publish_duration_seconds",
+		metric.WithDescription("Pub/sub publish duration"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		p.log.WithError(err).Warn("failed to create publish duration histogram")
 	}
 }
 
@@ -58,6 +83,8 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 		return err
 	}
 
+	start := time.Now()
+
 	p.log.WithField("topic", p.topic.String()).Debug("Published message")
 	res := p.topic.Publish(ctx, &pubsub.Message{
 		Data:       data,
@@ -66,11 +93,26 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 
 	if p.config.waitForPublish {
 		if _, err := res.Get(ctx); err != nil {
+			p.recordPublish(ctx, start, true)
 			return err
 		}
 	}
 
+	p.recordPublish(ctx, start, false)
 	return nil
+}
+
+func (p *Publisher[T]) recordPublish(ctx context.Context, start time.Time, isErr bool) {
+	attrs := metric.WithAttributes(
+		attribute.String("topic", p.topicName),
+		attribute.Bool("error", isErr),
+	)
+	if p.publishCount != nil {
+		p.publishCount.Add(ctx, 1, attrs)
+	}
+	if p.publishDuration != nil {
+		p.publishDuration.Record(ctx, time.Since(start).Seconds(), attrs)
+	}
 }
 
 func (p *Publisher[T]) Stop() {

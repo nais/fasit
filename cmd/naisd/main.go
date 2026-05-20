@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -13,7 +14,11 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
 	"github.com/nais/fasit/internal/workers"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -71,7 +76,21 @@ func main() {
 }
 
 func run(ctx context.Context, log *logrus.Logger) error {
-	receiver, helmClient, statusPublisher := sharedDependencies(ctx, log)
+	meter, err := newNaisdMetricsProvider()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		srv := &http.Server{Addr: cfg.BindAddress, Handler: mux, ReadHeaderTimeout: 2 * time.Second}
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.WithError(err).Error("metrics server")
+		}
+	}()
+
+	receiver, helmClient, statusPublisher := sharedDependencies(ctx, log, meter)
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
@@ -116,9 +135,13 @@ func newLogger() *logrus.Logger {
 
 func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Upgrading naisd")
-	receiver, _, _ := sharedDependencies(ctx, log)
+	meter, err := newNaisdMetricsProvider()
+	if err != nil {
+		log.WithError(err).Fatal("creating metrics provider")
+	}
+	receiver, _, _ := sharedDependencies(ctx, log, meter)
 
-	err := naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
+	err = naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
 	if err != nil {
 		log.WithError(err).Fatal("upgrading naisd")
 	}
@@ -129,7 +152,7 @@ func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Done")
 }
 
-func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, *message.Publisher[message.Status]) {
+func sharedDependencies(ctx context.Context, log *logrus.Logger, meter metric.Meter) (*naisd.DeployManager, naisd.HelmClient, *message.Publisher[message.Status]) {
 	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up new pub/sub client")
@@ -147,6 +170,7 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 			"environment": cfg.Env,
 		}),
 	)
+	statusPublisher.SetMeter(meter)
 
 	kubeConfig := local.RESTConfig()
 
@@ -186,6 +210,25 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 	if err != nil {
 		log.WithError(err).Fatal("setting up worker")
 	}
+	receiver.SetMeter(meter)
 
 	return receiver, helmClient, statusPublisher
+}
+
+func newNaisdMetricsProvider() (metric.Meter, error) {
+	exporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
+
+	prefixView := func(i metricsdk.Instrument) (metricsdk.Stream, bool) {
+		return metricsdk.Stream{Name: "naisd_" + i.Name}, true
+	}
+
+	return metricsdk.
+		NewMeterProvider(
+			metricsdk.WithReader(exporter),
+			metricsdk.WithView(prefixView),
+		).
+		Meter("github.com/nais/fasit/naisd"), nil
 }

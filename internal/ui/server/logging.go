@@ -6,36 +6,38 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
-var (
-	httpRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "fasit",
-		Subsystem: "ui",
-		Name:      "http_requests_total",
-	}, []string{"method", "path", "status"})
-
-	httpRequestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "fasit",
-		Subsystem: "ui",
-		Name:      "http_request_duration_seconds",
-		Buckets:   prometheus.DefBuckets,
-	}, []string{"method", "path"})
-)
-
-type responseWriter struct {
-	http.ResponseWriter
-	status int
+type metricsMiddleware struct {
+	requestsTotal   metric.Int64Counter
+	requestDuration metric.Float64Histogram
 }
 
-func (rw *responseWriter) WriteHeader(status int) {
-	rw.status = status
-	rw.ResponseWriter.WriteHeader(status)
+func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
+	requestsTotal, err := meter.Int64Counter("http_requests_total",
+		metric.WithDescription("Total HTTP requests"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	requestDuration, err := meter.Float64Histogram("http_request_duration_seconds",
+		metric.WithDescription("HTTP request duration"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metricsMiddleware{
+		requestsTotal:   requestsTotal,
+		requestDuration: requestDuration,
+	}, nil
 }
 
-func MetricsMiddleware(next http.Handler) http.Handler {
+func (m *metricsMiddleware) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
@@ -47,7 +49,28 @@ func MetricsMiddleware(next http.Handler) http.Handler {
 			pattern = rctx.RoutePattern()
 		}
 
-		httpRequestsTotal.WithLabelValues(r.Method, pattern, strconv.Itoa(rw.status)).Inc()
-		httpRequestDuration.WithLabelValues(r.Method, pattern).Observe(time.Since(start).Seconds())
+		attrs := metric.WithAttributes(
+			attribute.String("method", r.Method),
+			attribute.String("path", pattern),
+			attribute.String("status", strconv.Itoa(rw.status)),
+		)
+
+		m.requestsTotal.Add(r.Context(), 1, attrs)
+		m.requestDuration.Record(r.Context(), time.Since(start).Seconds(),
+			metric.WithAttributes(
+				attribute.String("method", r.Method),
+				attribute.String("path", pattern),
+			),
+		)
 	})
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (rw *responseWriter) WriteHeader(status int) {
+	rw.status = status
+	rw.ResponseWriter.WriteHeader(status)
 }
