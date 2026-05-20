@@ -14,10 +14,11 @@ type GHRef struct {
 
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
-	Name        string          `json:"name"`
-	Description *string         `json:"description,omitempty"`
-	TenantID    uuid.UUID       `json:"tenantID"`
-	Kind        EnvironmentKind `json:"kind"`
+	Name        string            `json:"name"`
+	Description *string           `json:"description,omitempty"`
+	TenantID    uuid.UUID         `json:"tenantID"`
+	Kind        EnvironmentKind   `json:"kind"`
+	Labels      map[string]string `json:"labels,omitempty"`
 }
 
 type EnvironmentLabel struct {

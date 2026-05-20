@@ -52,11 +52,31 @@ func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment
 	if err != nil {
 		return nil, err
 	}
+
+	tenant, err := GetTenant(ctx, t.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("get tenant for labels: %w", err)
+	}
+
+	lbls := Labels{"name": t.Name, "tenant": tenant.Name}
+	for k, v := range t.Labels {
+		lbls[k] = v
+	}
+	if err := SetLabels(ctx, env.ID, lbls); err != nil {
+		return nil, fmt.Errorf("set labels: %w", err)
+	}
+
 	return environmentFromSQL(env), nil
 }
 
 func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) error {
+	existing, err := querier(ctx).GetLabels(ctx, environmentID)
+	if err != nil {
+		existing = nil
+	}
+
 	lbls := make(types.EnvironmentLabels)
+	maps.Copy(lbls, existing)
 	maps.Copy(lbls, labels)
 
 	return querier(ctx).SetLabels(ctx, environmentsql.SetLabelsParams{

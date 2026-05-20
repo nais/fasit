@@ -143,23 +143,13 @@ func main() {
 		for env, spec := range environments {
 			lbls := spec.labels
 			lbls["kind"] = strings.ToLower(spec.kind.String())
-			lbls["environment"] = env
-			lbls["tenant"] = tenantName
 
 			e, err := environment.Create(ctx, &model.EnvironmentCreate{
 				Name:     env,
 				TenantID: tenant.ID,
 				Kind:     spec.kind,
+				Labels:   lbls,
 			})
-			if err != nil {
-				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					continue
-				}
-
-				log.Fatal(err)
-			}
-
-			err = environment.SetLabels(ctx, e.ID, lbls)
 			if err != nil {
 				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 					continue

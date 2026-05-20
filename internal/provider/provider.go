@@ -74,21 +74,17 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, err
 	}
 
-	env, err := environment.Create(ctx, &model.EnvironmentCreate{
-		Name:     in.Name,
-		TenantID: tenant.ID,
-		Kind:     kind,
-	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	labels := environment.Labels{}
 	for _, l := range in.Labels {
 		labels[l.Key] = l.Value
 	}
 
-	err = environment.SetLabels(ctx, env.ID, labels)
+	env, err := environment.Create(ctx, &model.EnvironmentCreate{
+		Name:     in.Name,
+		TenantID: tenant.ID,
+		Kind:     kind,
+		Labels:   labels,
+	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
