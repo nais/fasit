@@ -5,60 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit/auditsql"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/dbtx"
 	"github.com/sirupsen/logrus"
 )
 
-type ctxKey int
+const unknownActor = "unknown"
 
-// QuerierKey is exposed so tests can inject fake queriers on the context.
-const (
-	QuerierKey ctxKey = iota
-	logKey
-)
-
-func Register(ctx context.Context, pool *pgxpool.Pool, log logrus.FieldLogger) context.Context {
-	ctx = context.WithValue(ctx, QuerierKey, auditsql.Querier(auditsql.New(pool)))
-	ctx = context.WithValue(ctx, logKey, log)
-	return ctx
-}
-
-func RegisterTestDeps(ctx context.Context, q auditsql.Querier, log logrus.FieldLogger) context.Context {
-	ctx = context.WithValue(ctx, QuerierKey, q)
-	ctx = context.WithValue(ctx, logKey, log)
-	return ctx
-}
-
-func querier(ctx context.Context) auditsql.Querier {
-	q := ctx.Value(QuerierKey).(auditsql.Querier)
-	if tx, ok := dbtx.Tx(ctx); ok {
-		if real, ok := q.(*auditsql.Queries); ok {
-			return real.WithTx(tx)
-		}
-	}
-	return q
-}
-
-func log(ctx context.Context) logrus.FieldLogger {
-	return ctx.Value(logKey).(logrus.FieldLogger)
-}
-
-type CreateParams struct {
-	Description string
-	ObjectType  string
-	ObjectID    string
-	// Metadata is JSON-marshaled before insert. nil → SQL NULL.
-	Metadata any
-}
-
-// Create writes an audit row, returning any error so callers can roll the
-// surrounding transaction back.
 func Create(ctx context.Context, p CreateParams) error {
 	actor := actorOrUnknown(ctx, p.Description, p.ObjectType)
 	var meta []byte
@@ -79,39 +34,10 @@ func Create(ctx context.Context, p CreateParams) error {
 	})
 }
 
-func sanitizeForLog(s string) string {
-	s = strings.ReplaceAll(s, "\n", "")
-	s = strings.ReplaceAll(s, "\r", "")
-	return s
-}
-
-func actorOrUnknown(ctx context.Context, description, objectType string) string {
-	actor := auth.GetEmail(ctx)
-	if actor == auth.UnauthorizedName {
-		log(ctx).WithFields(logrus.Fields{
-			"description": sanitizeForLog(description),
-			"objectType":  sanitizeForLog(objectType),
-		}).Warn("unknown actor")
-		return "unknown"
-	}
-	return actor
-}
-
-// Entry mirrors AuditLog but exposes the structured metadata column for the
-// server-rendered UI; the GraphQL surface stays on AuditLog.
-type Entry struct {
-	Actor       string
-	Description string
-	ObjectType  string
-	ObjectID    string
-	CreatedAt   time.Time
-	Metadata    json.RawMessage
-}
-
 func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*Entry, error) {
 	rows, err := querier(ctx).List(ctx, auditsql.ListParams{
 		EnvironmentID: environmentId.String(),
-		Featurename:   featureName,
+		FeatureName:   featureName,
 		PageSize:      50,
 	})
 	if err != nil {
@@ -130,4 +56,22 @@ func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*
 		})
 	}
 	return ret, nil
+}
+
+func sanitizeForLog(s string) string {
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
+}
+
+func actorOrUnknown(ctx context.Context, description, objectType string) string {
+	actor := auth.GetEmail(ctx)
+	if actor == auth.UnauthorizedName {
+		log(ctx).WithFields(logrus.Fields{
+			"description": sanitizeForLog(description),
+			"objectType":  sanitizeForLog(objectType),
+		}).Warn("unknown actor")
+		return unknownActor
+	}
+	return actor
 }

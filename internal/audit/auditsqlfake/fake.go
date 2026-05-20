@@ -1,11 +1,13 @@
 // Package auditfake provides a test fake for auditsql.Querier.
-package auditfake
+package auditsqlfake
 
 import (
 	"context"
 
 	"github.com/nais/fasit/internal/audit/auditsql"
 )
+
+var _ auditsql.Querier = (*Querier)(nil)
 
 // Querier is a test fake that records calls. Assign function fields to
 // control return values; unset fields panic on use.
@@ -31,5 +33,3 @@ func (f *Querier) List(ctx context.Context, arg auditsql.ListParams) ([]auditsql
 	}
 	return f.AuditForEnvironmentFunc(ctx, arg)
 }
-
-var _ auditsql.Querier = (*Querier)(nil)

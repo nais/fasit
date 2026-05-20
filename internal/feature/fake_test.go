@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/audit/auditsql/auditfake"
+	"github.com/nais/fasit/internal/audit/auditsqlfake"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/sirupsen/logrus/hooks/test"
 )
@@ -132,11 +132,11 @@ var _ featuresql.Querier = (*fakeQuerier)(nil)
 
 // setupTestCtx builds a context with fake feature and audit queriers.
 // Returns the context, feature fake, and audit fake.
-func newTestCtx(t *testing.T) (context.Context, *fakeQuerier, *auditfake.Querier) {
+func newTestCtx(t *testing.T) (context.Context, *fakeQuerier, *auditsqlfake.Querier) {
 	t.Helper()
 	log, _ := test.NewNullLogger()
 	fq := &fakeQuerier{}
-	aq := &auditfake.Querier{}
+	aq := &auditsqlfake.Querier{}
 	ctx := context.WithValue(context.Background(), QuerierKey, featuresql.Querier(fq))
 	ctx = audit.RegisterTestDeps(ctx, aq, log)
 	return ctx, fq, aq

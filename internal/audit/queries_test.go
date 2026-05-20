@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nais/fasit/internal/audit/auditsql"
-	"github.com/nais/fasit/internal/audit/auditsql/auditfake"
+	"github.com/nais/fasit/internal/audit/auditsqlfake"
 	"github.com/sirupsen/logrus/hooks/test"
 )
 
@@ -48,7 +47,7 @@ func TestCreate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			log, _ := test.NewNullLogger()
-			q := &auditfake.Querier{}
+			q := &auditsqlfake.Querier{}
 			ctx := RegisterTestDeps(context.Background(), q, log)
 
 			err := Create(ctx, tc.params)
@@ -94,5 +93,3 @@ func jsonEqual(a, b []byte) bool {
 	bj, _ := json.Marshal(vb)
 	return string(aj) == string(bj)
 }
-
-var _ auditsql.Querier = (*auditfake.Querier)(nil)

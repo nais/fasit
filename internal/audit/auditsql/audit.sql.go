@@ -64,13 +64,13 @@ LIMIT $3
 `
 
 type ListParams struct {
-	Featurename   string
+	FeatureName   string
 	EnvironmentID string
 	PageSize      int32
 }
 
 func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
-	rows, err := q.db.Query(ctx, list, arg.Featurename, arg.EnvironmentID, arg.PageSize)
+	rows, err := q.db.Query(ctx, list, arg.FeatureName, arg.EnvironmentID, arg.PageSize)
 	if err != nil {
 		return nil, err
 	}
