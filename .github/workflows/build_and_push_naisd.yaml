@@ -126,4 +126,4 @@ jobs:
         with:
           chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ needs.build_push_naisd_chart.outputs.name }}
           version: ${{ needs.build_push_naisd_chart.outputs.version }}
-          targets: '[{"target":{}}]'
+          targets: '[{"target":{"tenant":"dev-nais"}}]'
