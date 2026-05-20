@@ -104,6 +104,20 @@ document.addEventListener("input", function (e) {
     input.blur();
   });
 
+  // Enter key navigates to the first visible result.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var input = e.target.closest && e.target.closest(".sidebar-filter");
+    if (!input) return;
+    var sidebar = input.closest(".sidebar");
+    if (!sidebar) return;
+    var first = sidebar.querySelector(".nav li:not([hidden]) a");
+    if (first) {
+      e.preventDefault();
+      first.click();
+    }
+  });
+
   // Arrow key navigation between filter input and visible result links.
   document.addEventListener("keydown", function (e) {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
