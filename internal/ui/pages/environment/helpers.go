@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -120,7 +119,7 @@ func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav
 	return navs, nil
 }
 
-func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.Environment) []MetadataItem {
+func getEnvironmentMetadata(ctx context.Context, env *model.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
 	addMetadata(&metadata, "ID", env.ID.String())
 	addMetadata(&metadata, "Name", env.Name)
@@ -132,7 +131,7 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 	addMetadata(&metadata, "Last Modified", view.FormatTime(env.LastModified))
 	addMetadataBool(&metadata, "Reconcile", env.Reconcile)
 
-	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
+	values, err := envpkg.ListEnvironmentValuesForEnvironment(ctx, env.ID, true)
 	if err == nil {
 		refs, err := deployment.ValueRefsForEnvironment(ctx, env.ID)
 		if err != nil {
@@ -247,7 +246,7 @@ func countEnabled(features []view.FeatureNav) int {
 	return count
 }
 
-func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
+func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
 	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
@@ -284,7 +283,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		},
 		Tenant:      tenant,
 		TenantSlug:  tenantSlug,
-		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, repo, env)},
+		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
 		Feature:     &FeatureDetail{Feature: feat, Enabled: !disabled},
 		AllFeatures: allFeatures,
 		ActiveTab:   activeTab,

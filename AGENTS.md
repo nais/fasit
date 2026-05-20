@@ -46,7 +46,7 @@ New queries go in the domain package that owns the data (`internal/deployment/qu
 
 `mise run generate` runs: sqlc, protoc.
 
-Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`.
+Never edit files in: `deploymentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`.
 
 ## Build & Run
 

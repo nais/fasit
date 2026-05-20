@@ -68,10 +68,10 @@ func GetLabels(ctx context.Context, environmentID uuid.UUID) (Labels, error) {
 
 func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
 	err := querier(ctx).SetEnvironmentValue(ctx, environmentsql.SetEnvironmentValueParams{
-		Envid:  environmentID,
-		Key:    key,
-		Value:  value,
-		Secret: secret,
+		EnvironmentID: environmentID,
+		Key:           key,
+		Value:         value,
+		Secret:        secret,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to store environment value: %w", err)
@@ -178,4 +178,62 @@ func List(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 		environmentSlice[i] = environmentFromSQL(env)
 	}
 	return environmentSlice, nil
+}
+
+func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {
+	ev, err := querier(ctx).GetEnvironmentValue(ctx, environmentsql.GetEnvironmentValueParams{
+		EnvironmentID: environmentID,
+		Key:           key,
+		Showsensitive: showSensitive,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.EnvironmentValue{
+		EnvironmentID: ev.EnvironmentID,
+		Key:           ev.Key,
+		Value:         ev.Value,
+		Secret:        ev.Secret,
+	}, nil
+}
+
+func ListEnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error) {
+	values, err := querier(ctx).ListEnvironmentValuesForEnvironment(ctx, environmentsql.ListEnvironmentValuesForEnvironmentParams{
+		EnvironmentID: envID,
+		Showsensitive: showSensitive,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.EnvironmentValue, len(values))
+	for i, ev := range values {
+		ret[i] = &model.EnvironmentValue{
+			EnvironmentID: ev.EnvironmentID,
+			Key:           ev.Key,
+			Value:         ev.Value,
+			Secret:        ev.Secret,
+		}
+	}
+
+	return ret, nil
+}
+
+func ListEnvironmentValuesForKey(ctx context.Context, key string) ([]environmentsql.ListEnvironmentValuesForKeyRow, error) {
+	return querier(ctx).ListEnvironmentValuesForKey(ctx, key)
+}
+
+func DeleteEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string) error {
+	err := querier(ctx).DeleteEnvironmentValue(ctx, environmentsql.DeleteEnvironmentValueParams{
+		EnvironmentID: environmentID,
+		Key:           key,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete environment value: %w", err)
+	}
+
+	audit.CreateAudit(ctx, "deleted", "environment_values", environmentID.String()+":"+key)
+
+	return nil
 }

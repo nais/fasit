@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/sirupsen/logrus"
 )
@@ -24,14 +23,12 @@ var mime = map[string]string{
 
 type Server struct {
 	siteFS       fs.FS
-	repo         database.Repo
 	assetVersion string
 }
 
-func New(siteFS fs.FS, repo database.Repo) *Server {
+func New(siteFS fs.FS) *Server {
 	return &Server{
 		siteFS:       siteFS,
-		repo:         repo,
 		assetVersion: computeAssetVersion(siteFS),
 	}
 }

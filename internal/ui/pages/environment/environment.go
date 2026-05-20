@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nais/fasit/internal/database"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -30,7 +29,7 @@ type MetadataItem struct {
 	ReferencedBy []string
 }
 
-func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
+func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantSlug := chi.URLParam(r, "tenant")
 		envName := chi.URLParam(r, "env")
@@ -58,7 +57,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		environment := &Environment{
 			Environment: env,
-			Metadata:    getEnvironmentMetadata(r.Context(), repo, env),
+			Metadata:    getEnvironmentMetadata(r.Context(), env),
 		}
 
 		renderPage(w, r, layout.Props{

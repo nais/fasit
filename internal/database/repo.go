@@ -15,7 +15,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
@@ -37,22 +36,18 @@ func (c closeFuncs) Close() error {
 var embedMigrations embed.FS
 
 type Repo interface {
-	EnvironmentValueRepo
-
 	Close()
 }
 
 type repo struct {
-	querier gensql.Querier
-	db      *pgxpool.Pool
-	log     logrus.FieldLogger
+	db  *pgxpool.Pool
+	log logrus.FieldLogger
 }
 
 func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
 	return &repo{
-		querier: gensql.New(pool),
-		db:      pool,
-		log:     log.WithField("subsystem", "database-repo"),
+		db:  pool,
+		log: log.WithField("subsystem", "database-repo"),
 	}
 }
 

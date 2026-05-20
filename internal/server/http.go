@@ -43,7 +43,7 @@ func SetupRouter(
 	deploy.AllowAll = insecureSkipProxy
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
-	uiServer := uiserver.New(ui.SiteFS, repo)
+	uiServer := uiserver.New(ui.SiteFS)
 	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil
 }

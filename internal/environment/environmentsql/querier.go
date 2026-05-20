@@ -11,13 +11,17 @@ import (
 
 type Querier interface {
 	Create(ctx context.Context, arg CreateParams) (Environment, error)
+	DeleteEnvironmentValue(ctx context.Context, arg DeleteEnvironmentValueParams) error
 	Get(ctx context.Context, id uuid.UUID) (Environment, error)
 	GetByName(ctx context.Context, arg GetByNameParams) (Environment, error)
+	GetEnvironmentValue(ctx context.Context, arg GetEnvironmentValueParams) (GetEnvironmentValueRow, error)
 	GetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
 	GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error)
 	GetTenantByName(ctx context.Context, name string) (Tenant, error)
 	GetTenants(ctx context.Context) ([]Tenant, error)
 	List(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
+	ListEnvironmentValuesForEnvironment(ctx context.Context, arg ListEnvironmentValuesForEnvironmentParams) ([]ListEnvironmentValuesForEnvironmentRow, error)
+	ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error)
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
 	SetLabels(ctx context.Context, arg SetLabelsParams) error
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
