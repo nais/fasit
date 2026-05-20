@@ -479,7 +479,7 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 		return nil
 	}
 
-	deployments, err := deployment.ListDeploymentsByFeature(ctx, featureName)
+	deployments, err := deployment.ListByFeature(ctx, featureName)
 	if err != nil {
 		return nil
 	}
@@ -568,7 +568,7 @@ func labelsMatch(envLabels, target map[string]string) bool {
 }
 
 func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *FeatureLog {
-	di, err := deployment.GetLatestDeployInstructionForFeature(ctx, envID, feat.Name)
+	di, err := featurepkg.GetLatestDeployInstruction(ctx, envID, feat.Name)
 	if err != nil {
 		return nil
 	}
@@ -577,7 +577,7 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *
 		return nil
 	}
 	lastDeployed := "never"
-	if dep, err := deployment.GetLatestDeployedDeployInstruction(ctx, envID, feat.Name); err == nil && dep != nil {
+	if dep, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, envID, feat.Name); err == nil && dep != nil {
 		lastDeployed = view.FormatTime(dep.LastModified)
 	}
 	ret := &FeatureLog{

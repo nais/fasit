@@ -1,4 +1,4 @@
--- name: DeployInstructionsByID :one
+-- name: GetDeployInstruction :one
 SELECT
 	*
 FROM
@@ -24,18 +24,6 @@ VALUES (
 RETURNING
 	id;
 
--- name: GetLatestDeployInstructionsForFeature :one
-SELECT
-	*
-FROM
-	deploy_instructions
-WHERE
-	feature_name = @feature_name
-	AND environment_id = @environment_id
-ORDER BY
-	created DESC
-LIMIT 1;
-
 -- name: TimeoutDeployInstructions :exec
 UPDATE
 	deploy_instructions
@@ -44,23 +32,6 @@ SET
 WHERE
 	status = 'pending'
 	AND last_modified < NOW() - INTERVAL '1 hour';
-
--- name: GetDeploymentStatusLog :many
-SELECT
-	sqlc.embed(di),
-	e.name AS environment_name,
-	t.name AS tenant_name,
-	sqlc.embed(l)
-FROM
-	deploy_instructions di
-	JOIN environments e ON e.id = di.environment_id
-	JOIN tenants t ON t.id = e.tenant_id
-	JOIN logs l ON l.deploy_instruction = di.id
-WHERE
-	di.deployment_id = @deployment_id
-	AND di.environment_id = @environment_id
-ORDER BY
-	l.time ASC;
 
 -- name: GetDeployInstructionByDeploymentAndEnvironmentID :one
 SELECT
@@ -75,7 +46,7 @@ WHERE
 	di.deployment_id = @deployment_id
 	AND di.environment_id = @environment_id;
 
--- name: ListDeployInstructionsByDeploymentID :many
+-- name: ListDeployInstructions :many
 SELECT
 	sqlc.embed(di),
 	e.name AS environment_name,
@@ -114,17 +85,4 @@ SET
 	status = @status
 WHERE
 	id = @id;
-
--- name: GetLatestDeployedDeployInstruction :one
-SELECT
-	*
-FROM
-	deploy_instructions
-WHERE
-	feature_name = @feature_name
-	AND environment_id = @environment_id
-	AND status = 'deployed'
-ORDER BY
-	last_modified DESC
-LIMIT 1;
 

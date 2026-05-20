@@ -491,6 +491,55 @@ func HelmValueDiff(ctx context.Context, di *model.DeployInstruction, secretKeys 
 	return ret, nil
 }
 
+func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	di, err := querier(ctx).GetLatestDeployInstruction(ctx, featuresql.GetLatestDeployInstructionParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.DeployInstruction{
+		ID:             di.ID,
+		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
+		FeatureName:    di.FeatureName,
+		FeatureVersion: di.FeatureVersion,
+		Status:         model.RolloutStatus(di.Status),
+		Hash:           di.Hash,
+		Created:        di.Created.Time,
+		LastModified:   di.LastModified.Time,
+		Values:         di.Values,
+	}, nil
+}
+
+func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	di, err := querier(ctx).GetLatestDeployedDeployInstruction(ctx, featuresql.GetLatestDeployedDeployInstructionParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &model.DeployInstruction{
+		ID:             di.ID,
+		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
+		FeatureName:    di.FeatureName,
+		FeatureVersion: di.FeatureVersion,
+		Status:         model.RolloutStatus(di.Status),
+		Hash:           di.Hash,
+		Created:        di.Created.Time,
+		LastModified:   di.LastModified.Time,
+		Values:         di.Values,
+	}, nil
+}
+
 func scrubSecrets(data []byte, secretKeys []string) []byte {
 	if len(secretKeys) == 0 {
 		return data

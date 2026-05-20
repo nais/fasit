@@ -64,7 +64,7 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	deployment, err := GetDeployment(ctx, deploymentID)
+	deployment, err := Get(ctx, deploymentID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "deployment does not exist", http.StatusNotFound)
 		return
@@ -121,7 +121,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	deploymentID, err := CreateDeployment(ctx, body)
+	deploymentID, err := Create(ctx, body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		h.log.WithError(err).Error("create deployment")

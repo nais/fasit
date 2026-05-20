@@ -98,7 +98,7 @@ func Run(ctx context.Context) error {
 	ctx = loadContext(ctx)
 	go deployment.TimeoutDeployInstructions(ctx, log)
 
-	go deployment.GetManager(ctx).Run(ctx, 10*time.Minute)
+	go deployment.RunReconciler(ctx, 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 

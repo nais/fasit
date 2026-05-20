@@ -26,7 +26,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var items []Summary
 
-		deployments, err := deployment.ListDeployments(r.Context())
+		deployments, err := deployment.List(r.Context())
 		if err == nil {
 			for _, dep := range deployments {
 				statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)

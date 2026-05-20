@@ -31,7 +31,7 @@ func LogsHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		dep, err := deployment.GetDeployment(r.Context(), id)
+		dep, err := deployment.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deployment: "+err.Error(), http.StatusInternalServerError)
 			return

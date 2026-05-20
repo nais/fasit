@@ -54,14 +54,6 @@ type FeatureDatum struct {
 	TplDetails    []byte
 }
 
-type Log struct {
-	ID                int64
-	DeployInstruction uuid.UUID
-	Time              pgtype.Timestamptz
-	Message           string
-	Kind              string
-}
-
 type ReleaseStatus struct {
 	EnvironmentID uuid.UUID
 	Feature       string

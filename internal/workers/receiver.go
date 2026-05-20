@@ -121,7 +121,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	di, err := deployment.GetDeployInstructionByID(ctx, helmStatus.DIID)
+	di, err := deployment.GetDeployInstruction(ctx, helmStatus.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")

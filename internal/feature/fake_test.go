@@ -24,6 +24,14 @@ type fakeQuerier struct {
 	configUpdateFunc               func(ctx context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error)
 }
 
+func (f *fakeQuerier) GetLatestDeployedDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployedDeployInstructionParams) (featuresql.DeployInstruction, error) {
+	panic("implement me")
+}
+
+func (f *fakeQuerier) GetLatestDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployInstructionParams) (featuresql.DeployInstruction, error) {
+	panic("implement me")
+}
+
 func (f *fakeQuerier) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (featuresql.DeployInstruction, error) {
 	panic("not implemented")
 }

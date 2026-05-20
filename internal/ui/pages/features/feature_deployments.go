@@ -518,7 +518,7 @@ func labelPills(labels map[string]string) g.Node {
 }
 
 func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) []DeploymentEnvStatus {
-	deployments, err := deployment.ListDeploymentsByFeature(ctx, feature.Name)
+	deployments, err := deployment.ListByFeature(ctx, feature.Name)
 	if err != nil || len(deployments) == 0 {
 		return []DeploymentEnvStatus{}
 	}
@@ -603,7 +603,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 				es.LastModified = disabledAt
 			}
 
-			if di, err := deployment.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
+			if di, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
 				es.LastDeployed = di.LastModified
 			}
 

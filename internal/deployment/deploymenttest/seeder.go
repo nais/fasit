@@ -72,7 +72,7 @@ func (s *Seeder) AddDeploymentWithValues(name, version string, target environmen
 func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, 0, len(s.deployments))
 	for _, d := range s.deployments {
-		id, err := deployment.CreateDeployment(ctx, deployment.Request{
+		id, err := deployment.Create(ctx, deployment.Request{
 			Chart:       "oci://" + d.FeatureName,
 			Version:     d.Version,
 			Description: "Setup local environment deployment",

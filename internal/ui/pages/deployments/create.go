@@ -33,7 +33,7 @@ func CreateHandler() http.HandlerFunc {
 			target[k] = v
 		}
 
-		_, err := deployment.CreateDeployment(r.Context(), deployment.Request{
+		_, err := deployment.Create(r.Context(), deployment.Request{
 			Chart:       chart,
 			Version:     version,
 			Description: "Set via UI",

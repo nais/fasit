@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/feature"
 )
 
 // EffectiveDeploymentStatus returns the status for a feature in an environment,
@@ -19,7 +19,7 @@ import (
 func EffectiveDeploymentStatus(ctx context.Context, envID uuid.UUID, featureName string, fallbackState string, fallbackModified time.Time, desiredVersion, releaseVersion string) (status string, lastModified time.Time) {
 	status = fallbackState
 	lastModified = fallbackModified
-	if di, err := deployment.GetLatestDeployInstructionForFeature(ctx, envID, featureName); err == nil && di != nil {
+	if di, err := feature.GetLatestDeployInstruction(ctx, envID, featureName); err == nil && di != nil {
 		status = strings.ToUpper(di.Status.String())
 		lastModified = di.LastModified
 	}

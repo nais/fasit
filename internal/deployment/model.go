@@ -1,10 +1,8 @@
 package deployment
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +10,11 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 )
+
+type EnvironmentFeature struct {
+	Name            string
+	FeatureDisabled bool
+}
 
 type Deployment struct {
 	ID          uuid.UUID      `json:"id"`
@@ -67,20 +70,6 @@ func (e DeploymentStatusState) IsValid() bool {
 
 func (e DeploymentStatusState) String() string {
 	return string(e)
-}
-
-func getDeployment(ctx context.Context, querier deploymentsql.Querier, id uuid.UUID) (*Deployment, error) {
-	d, err := querier.GetDeployment(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("getting deployment from db: %w", err)
-	}
-
-	ret, err := deploymentFromSQL(d.Deployment, d.FeatureDatum)
-	if err != nil {
-		return nil, fmt.Errorf("converting deployment from sql: %w", err)
-	}
-
-	return ret, nil
 }
 
 func makeFeatureYAML(fd deploymentsql.FeatureDatum) (model.FeatureYAML, map[string]json.RawMessage, error) {
@@ -143,28 +132,15 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 	}, nil
 }
 
-func deployInstructionFromSQL(di deploymentsql.DeployInstruction) *model.DeployInstruction {
-	return &model.DeployInstruction{
-		ID:             di.ID,
-		EnvironmentID:  di.EnvironmentID,
-		DeploymentID:   di.DeploymentID,
-		FeatureName:    di.FeatureName,
-		FeatureVersion: di.FeatureVersion,
-		Status:         model.RolloutStatus(di.Status),
-		Hash:           di.Hash,
-		Created:        di.Created.Time,
-		LastModified:   di.LastModified.Time,
-		Values:         di.Values,
+func deploymentsFromRows(rows []deploymentsql.ListDeploymentsForEnvironmentRow) ([]*Deployment, error) {
+	deps := make([]*Deployment, len(rows))
+	for i, row := range rows {
+		dep, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		dep.FeatureDisabled = row.Disabled
+		deps[i] = dep
 	}
-}
-
-func deploymentStatusFromSQL(status deploymentsql.DeploymentStatus) *DeploymentStatus {
-	return &DeploymentStatus{
-		State:         DeploymentStatusState(strings.ToUpper(status.Status)),
-		Message:       status.Message,
-		LastModified:  status.LastModified.Time,
-		Created:       status.Created.Time,
-		DeploymentID:  status.DeploymentID,
-		EnvironmentID: status.EnvironmentID,
-	}
+	return deps, nil
 }

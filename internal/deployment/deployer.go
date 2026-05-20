@@ -125,7 +125,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployme
 }
 
 func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
-	existingDeploy, err := GetLatestDeployInstructionForFeature(ctx, environment.ID, deployment.Feature.Name)
+	existingDeploy, err := featurepkg.GetLatestDeployInstruction(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return false, fmt.Errorf("get deploy instructions latest for environment %q: %w", environment.Name, err)

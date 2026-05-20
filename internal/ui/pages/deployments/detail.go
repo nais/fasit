@@ -38,7 +38,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		dep, err := deployment.GetDeployment(r.Context(), id)
+		dep, err := deployment.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deployment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -79,7 +79,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			})
 		}
 
-		allDeployInstructions, err := deployment.ListDeployInstructionsByDeploymentID(r.Context(), id)
+		allDeployInstructions, err := deployment.ListDeployInstructions(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deploy instructions: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -87,7 +87,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 
 		// Deduplicate to latest instruction per environment (query is ordered by created DESC).
 		seen := make(map[string]bool)
-		var deployInstructions []deploymentsql.ListDeployInstructionsByDeploymentIDRow
+		var deployInstructions []deploymentsql.ListDeployInstructionsRow
 		for _, di := range allDeployInstructions {
 			envID := di.DeployInstruction.EnvironmentID.String()
 			if !seen[envID] {
@@ -96,7 +96,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			}
 		}
 
-		allByFeature, _ := deployment.ListDeploymentsByFeature(r.Context(), dep.Feature.Name)
+		allByFeature, _ := deployment.ListByFeature(r.Context(), dep.Feature.Name)
 		var matching []matchingDeployment
 		for _, d := range allByFeature {
 			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
@@ -113,7 +113,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsByDeploymentIDRow, matching []matchingDeployment) g.Node {
+func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsRow, matching []matchingDeployment) g.Node {
 	meta := []g.Node{
 		metaRow("Feature", h.A(h.Href("/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
 		metaRow("Version", g.Text(d.Feature.Version)),
@@ -213,7 +213,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 				h.Th(g.Text("Last Modified")),
 				h.Th(g.Text("Logs")),
 			)),
-			h.TBody(g.Group(g.Map(deployInstructions, func(di deploymentsql.ListDeployInstructionsByDeploymentIDRow) g.Node {
+			h.TBody(g.Group(g.Map(deployInstructions, func(di deploymentsql.ListDeployInstructionsRow) g.Node {
 				return h.Tr(
 					h.Td(h.A(h.Href("/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
 					h.Td(renderStatus(strings.ToUpper(di.DeployInstruction.Status))),

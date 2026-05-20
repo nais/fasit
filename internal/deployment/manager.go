@@ -77,7 +77,7 @@ func (m *Manager) Reconcile(ctx context.Context) error {
 }
 
 func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {
-	di, err := m.querier.DeployInstructionsByID(ctx, status.DIID)
+	di, err := GetDeployInstruction(ctx, status.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			m.log.WithField("diid", status.DIID).Warn("unknown deploy instruction")

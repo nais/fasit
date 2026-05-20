@@ -17,7 +17,7 @@ func DeleteHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.DeleteDeployment(r.Context(), id); err != nil {
+		if err := deployment.Delete(r.Context(), id); err != nil {
 			http.Error(w, "Failed to delete deployment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -34,7 +34,7 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		dep, err := deployment.GetDeployment(r.Context(), id)
+		dep, err := deployment.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deployment: "+err.Error(), http.StatusInternalServerError)
 			return

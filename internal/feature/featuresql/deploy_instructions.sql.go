@@ -9,6 +9,79 @@ import (
 	"github.com/google/uuid"
 )
 
+const getLatestDeployInstruction = `-- name: GetLatestDeployInstruction :one
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+FROM
+	deploy_instructions
+WHERE
+	feature_name = $1
+	AND environment_id = $2
+ORDER BY
+	created DESC
+LIMIT 1
+`
+
+type GetLatestDeployInstructionParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, getLatestDeployInstruction, arg.FeatureName, arg.EnvironmentID)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+		&i.DeploymentID,
+	)
+	return i, err
+}
+
+const getLatestDeployedDeployInstruction = `-- name: GetLatestDeployedDeployInstruction :one
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+FROM
+	deploy_instructions
+WHERE
+	feature_name = $1
+	AND environment_id = $2
+	AND status = 'deployed'
+ORDER BY
+	last_modified DESC
+LIMIT 1
+`
+
+type GetLatestDeployedDeployInstructionParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, getLatestDeployedDeployInstruction, arg.FeatureName, arg.EnvironmentID)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+		&i.DeploymentID,
+	)
+	return i, err
+}
+
 const getPreviousDeployInstruction = `-- name: GetPreviousDeployInstruction :one
 WITH CURRENT AS (
 	SELECT

@@ -1,4 +1,4 @@
--- name: ListDeployments :many
+-- name: List :many
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -21,7 +21,7 @@ FROM
 	ORDER BY
 		d.created DESC;
 
--- name: ListDeploymentsByFeature :many
+-- name: ListByFeature :many
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
