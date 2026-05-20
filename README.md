@@ -30,6 +30,9 @@ mise run setup
 # Run fasit (in its own terminal)
 mise run fasit
 
+# Or, run fasit with auto-update on changes (using air)
+mise run dev
+
 # Run naisd for every seeded tenant/env in parallel (in its own terminal).
 # test-partner/prod is configured with --mock-failing and test-partner/staging
 # is intentionally left out (no naisd) so the local UI ends up with a mix of
