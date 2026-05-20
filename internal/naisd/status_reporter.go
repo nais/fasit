@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nais/fasit/internal/message"
@@ -54,13 +55,19 @@ func (s *StatusReporter) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
-
-	return s.pub.Publish(ctx, message.Status{
+	msg := message.Status{
 		Tenant:      s.tenant,
 		Environment: s.env,
 		Type:        message.StatusTypeHelmReleases,
 		Data:        hrb,
-	})
+	}
+
+	fmt.Println("RELEASE_STATUS:")
+	if err := json.NewEncoder(os.Stdout).Encode(msg); err != nil {
+		fmt.Printf("dump release status: %v\n", err)
+	}
+
+	return s.pub.Publish(ctx, msg)
 }
 
 func (s *StatusReporter) Trigger() {
