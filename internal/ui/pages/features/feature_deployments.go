@@ -19,22 +19,23 @@ import (
 )
 
 type DeploymentEnvStatus struct {
-	Name                string
-	TenantName          string
-	TenantSlug          string
-	Enabled             bool
-	LastModified        time.Time
-	LastDeployed        time.Time
-	StatusText          string
-	DeploymentID        string
-	DeploymentVersion   string
-	ChartDescription    string
-	ReleaseVersion      string
-	TargetLabels        map[string]string
-	IsOverridden        bool
-	OverriddenByID      string
-	OverriddenByVersion string
-	OverriddenByLabels  map[string]string
+	Name                 string
+	TenantName           string
+	TenantSlug           string
+	Enabled              bool
+	EnvReconcileDisabled bool
+	LastModified         time.Time
+	LastDeployed         time.Time
+	StatusText           string
+	DeploymentID         string
+	DeploymentVersion    string
+	ChartDescription     string
+	ReleaseVersion       string
+	TargetLabels         map[string]string
+	IsOverridden         bool
+	OverriddenByID       string
+	OverriddenByVersion  string
+	OverriddenByLabels   map[string]string
 }
 
 type ViewPrefs struct {
@@ -449,6 +450,20 @@ func statusTooltip(env DeploymentEnvStatus) string {
 		}
 		return strings.Join(parts, " — ")
 	}
+	if env.EnvReconcileDisabled {
+		tip := "Environment reconcile disabled"
+		if env.ReleaseVersion != "" {
+			tip += " — Running: " + env.ReleaseVersion
+		}
+		return tip
+	}
+	if !env.Enabled {
+		tip := "Feature reconcile disabled"
+		if env.ReleaseVersion != "" {
+			tip += " — Running: " + env.ReleaseVersion
+		}
+		return tip
+	}
 	if env.ReleaseVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
 		return "Currently: " + env.ReleaseVersion
 	}
@@ -590,14 +605,15 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 			}
 
 			es := DeploymentEnvStatus{
-				Name:              env.env.Name,
-				TenantName:        env.tenantName,
-				TenantSlug:        env.tenantName,
-				Enabled:           !disabled,
-				DeploymentID:      dep.ID.String(),
-				DeploymentVersion: dep.Feature.Version,
-				ChartDescription:  dep.Feature.Description,
-				TargetLabels:      dep.TargetLabels,
+				Name:                 env.env.Name,
+				TenantName:           env.tenantName,
+				TenantSlug:           env.tenantName,
+				Enabled:              !disabled,
+				EnvReconcileDisabled: !env.env.Reconcile,
+				DeploymentID:         dep.ID.String(),
+				DeploymentVersion:    dep.Feature.Version,
+				ChartDescription:     dep.Feature.Description,
+				TargetLabels:         dep.TargetLabels,
 			}
 			if disabled {
 				es.LastModified = disabledAt
@@ -624,14 +640,17 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 				es.OverriddenByVersion = winner.Feature.Version
 				es.OverriddenByLabels = winner.TargetLabels
 				es.StatusText = "OVERRIDDEN"
+			} else if !env.env.Reconcile {
+				es.StatusText = "DISABLED"
+			} else if disabled {
+				es.StatusText = "DISABLED"
+				es.LastModified = disabledAt
 			} else {
-				fallbackState := ""
-				var fallbackModified time.Time
+				es.StatusText = "UNKNOWN"
 				if status := statusByDepEnv[dep.ID.String()+":"+env.env.ID.String()]; status != nil {
-					fallbackState = string(status.State)
-					fallbackModified = status.LastModified
+					es.StatusText = strings.ToUpper(string(status.State))
+					es.LastModified = status.LastModified
 				}
-				es.StatusText, es.LastModified = view.EffectiveDeploymentStatus(ctx, env.env.ID, feature.Name, fallbackState, fallbackModified, es.DeploymentVersion, es.ReleaseVersion)
 			}
 
 			ret = append(ret, es)

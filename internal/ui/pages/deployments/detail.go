@@ -15,7 +15,6 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
-	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -58,24 +57,14 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 				continue
 			}
 
-			releaseVersion := ""
-			if releases, err := deployment.ListReleaseStatuses(r.Context(), status.EnvironmentID); err == nil {
-				for _, release := range releases {
-					if release.Name == dep.Feature.Name {
-						releaseVersion = release.Version
-						break
-					}
-				}
-			}
-
-			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified, dep.Feature.Version, releaseVersion)
+			state := strings.ToUpper(status.State.String())
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
 				EnvironmentID:   status.EnvironmentID.String(),
 				State:           state,
 				Message:         status.Message,
-				LastModified:    lastMod,
+				LastModified:    status.LastModified,
 			})
 		}
 

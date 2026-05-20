@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
@@ -478,16 +477,6 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 		return nil
 	}
 
-	releaseVersion := ""
-	if releases, err := deployment.ListReleaseStatuses(ctx, envID); err == nil {
-		for _, release := range releases {
-			if release.Name == featureName {
-				releaseVersion = release.Version
-				break
-			}
-		}
-	}
-
 	type candidate struct {
 		id      string
 		version string
@@ -505,21 +494,16 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 			continue
 		}
 
-		fallbackState := ""
-		var fallbackModified time.Time
+		fallbackState := "UNKNOWN"
 		if statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID); err == nil {
 			for _, s := range statuses {
 				if s.EnvironmentID == envID {
-					fallbackState = string(s.State)
-					fallbackModified = s.LastModified
+					fallbackState = strings.ToUpper(string(s.State))
 					break
 				}
 			}
 		}
-		status, _ := view.EffectiveDeploymentStatus(ctx, envID, featureName, fallbackState, fallbackModified, dep.Feature.Version, releaseVersion)
-		if status == "" {
-			status = "UNKNOWN"
-		}
+		status := fallbackState
 
 		candidates = append(candidates, candidate{
 			id:      dep.ID.String(),
