@@ -298,6 +298,15 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 		probeFailed = rerr == nil && !probeOK
 	}
 
+	globalConfigs, err := featurepkg.ConfigGet(ctx, feat.Name)
+	if err != nil {
+		return nil, err
+	}
+	globalByKey := make(map[string][]byte, len(globalConfigs))
+	for _, gc := range globalConfigs {
+		globalByKey[gc.Key] = gc.Content
+	}
+
 	items := make([]FeatureConfigItem, 0, len(configs))
 	for _, cfg := range configs {
 		item := FeatureConfigItem{
@@ -321,6 +330,13 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 				if probeFailed || computedSecrets[cfg.Key] {
 					item.IsSecret = true
 				}
+			}
+		}
+		if cfg.Source == model.ConfigSourceEnv {
+			if gv, ok := globalByKey[cfg.Key]; ok {
+				item.FallbackValue = components.RawValueForDisplay(gv)
+			} else if raw, ok := feat.ValuesYAML[cfg.Key]; ok {
+				item.FallbackValue = components.RawValueForDisplay(raw)
 			}
 		}
 		items = append(items, item)

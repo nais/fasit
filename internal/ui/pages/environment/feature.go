@@ -758,7 +758,8 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 	return components.ConfigDeletePopover(
 		"delete-"+item.ID,
 		action,
-		fmt.Sprintf("Remove the environment override for %s? The global default will be used instead.", item.Key),
+		fmt.Sprintf("Remove the environment override for %s?", item.Key),
+		item.FallbackValue,
 	)
 }
 

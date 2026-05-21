@@ -24,6 +24,7 @@ type ConfigItem struct {
 	IsOrphaned     bool
 	Template       string
 	MappedCount    int
+	FallbackValue  string
 }
 
 // ConfigKeyCell renders a <td> with the key, optional display name and description.
@@ -170,12 +171,16 @@ func ConfigEditPopover(popoverID, action, title, submitLabel string, item Config
 }
 
 // ConfigDeletePopover renders a delete confirmation popover.
-func ConfigDeletePopover(popoverID, action, message string) g.Node {
+func ConfigDeletePopover(popoverID, action, message, fallbackValue string) g.Node {
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon delete-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
 		h.Div(g.Attr("popover", ""), h.ID(popoverID),
 			h.H3(g.Text("Remove Configuration")),
 			h.P(g.Text(message)),
+			g.If(fallbackValue != "", h.P(
+				h.Strong(g.Text("Value after removal: ")),
+				h.Code(g.Text(fallbackValue)),
+			)),
 			h.Form(h.Method("POST"), h.Action(action),
 				h.Div(h.Class("popover-actions"),
 					h.Button(h.Type("submit"), g.Text("Remove")),

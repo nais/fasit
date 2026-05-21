@@ -44,6 +44,11 @@ func loadGlobalConfigItems(ctx context.Context, feat *model.Feature) ([]componen
 			item.IsOrphaned = true
 		} else {
 			populateFromValue(&item, feat.Values[cfg.Key])
+			if cfg.Source == model.ConfigSourceGlobal {
+				if raw, ok := feat.ValuesYAML[cfg.Key]; ok {
+					item.FallbackValue = components.RawValueForDisplay(raw)
+				}
+			}
 		}
 		items = append(items, item)
 	}
@@ -216,7 +221,8 @@ func globalDeleteButton(featureName string, item components.ConfigItem) g.Node {
 	return components.ConfigDeletePopover(
 		"delete-"+item.ID,
 		"/features/"+featureName+"/config/"+item.ID+"/delete",
-		fmt.Sprintf("Remove global config for %s? The chart default will be used instead.", item.Key),
+		fmt.Sprintf("Remove global config for %s?", item.Key),
+		item.FallbackValue,
 	)
 }
 
