@@ -140,16 +140,12 @@ func recentActivity(audits []*audit.Entry) g.Node {
 
 	tableRows := make([]g.Node, 0, len(audits))
 	for _, a := range audits {
-		env := ""
-		if a.TenantName != "" && a.EnvironmentName != "" {
-			env = a.TenantName + "/" + a.EnvironmentName
-		} else if a.EnvironmentName != "" {
-			env = a.EnvironmentName
-		}
+		env := envLinkNode(a)
+		resource := resourceLinkNode(a)
 		tableRows = append(tableRows, h.Tr(
 			h.Td(g.Text(string(a.Action))),
-			h.Td(g.Text(a.ObjectType.Display()+" "+a.ObjectID)),
-			h.Td(g.Text(env)),
+			h.Td(resource),
+			h.Td(env),
 			h.Td(h.Class("text-muted"), g.Text(a.Description)),
 			h.Td(g.Text(a.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
@@ -277,4 +273,33 @@ func renderStatus(status string) g.Node {
 	default:
 		return g.Text(status)
 	}
+}
+
+func resourceLinkNode(e *audit.Entry) g.Node {
+	label := e.ObjectType.Display() + " " + e.ObjectID
+	var href string
+	switch e.ObjectType {
+	case audit.ObjectTypeFeature, audit.ObjectTypeDeployment:
+		href = "/features/" + e.ObjectID
+	case audit.ObjectTypeConfiguration:
+		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
+			href = "/features/" + e.ObjectID[:i]
+		}
+	case audit.ObjectTypeEnvironment, audit.ObjectTypeEnvironmentValue:
+		if e.TenantName != "" && e.EnvironmentName != "" {
+			href = "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
+		}
+	}
+	if href == "" {
+		return g.Text(label)
+	}
+	return h.A(h.Href(href), g.Text(label))
+}
+
+func envLinkNode(e *audit.Entry) g.Node {
+	if e.TenantName == "" || e.EnvironmentName == "" {
+		return g.Text("")
+	}
+	label := e.TenantName + "/" + e.EnvironmentName
+	return h.A(h.Href("/tenants/"+e.TenantName+"/envs/"+e.EnvironmentName), g.Text(label))
 }

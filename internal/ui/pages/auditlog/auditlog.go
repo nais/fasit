@@ -87,16 +87,10 @@ func activityTable(entries []*audit.Entry) g.Node {
 
 	rows := make([]g.Node, 0, len(entries))
 	for _, e := range entries {
-		env := ""
-		if e.TenantName != "" && e.EnvironmentName != "" {
-			env = e.TenantName + "/" + e.EnvironmentName
-		} else if e.EnvironmentName != "" {
-			env = e.EnvironmentName
-		}
 		rows = append(rows, h.Tr(
 			h.Td(g.Text(string(e.Action))),
-			h.Td(g.Text(e.ObjectType.Display()+" "+e.ObjectID)),
-			h.Td(g.Text(env)),
+			h.Td(resourceLink(e)),
+			h.Td(envLink(e)),
 			h.Td(h.Class("text-muted"), g.Text(e.Description)),
 			h.Td(g.Text(e.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(e.CreatedAt))),
@@ -114,4 +108,42 @@ func activityTable(entries []*audit.Entry) g.Node {
 		)),
 		h.TBody(g.Group(rows)),
 	)
+}
+
+func resourceLink(e *audit.Entry) g.Node {
+	label := e.ObjectType.Display() + " " + e.ObjectID
+	href := resourceHref(e)
+	if href == "" {
+		return g.Text(label)
+	}
+	return h.A(h.Href(href), g.Text(label))
+}
+
+func resourceHref(e *audit.Entry) string {
+	switch e.ObjectType {
+	case audit.ObjectTypeFeature, audit.ObjectTypeDeployment:
+		return "/features/" + e.ObjectID
+	case audit.ObjectTypeConfiguration:
+		// ObjectID is "feature/key" — link to the feature
+		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
+			return "/features/" + e.ObjectID[:i]
+		}
+		return ""
+	case audit.ObjectTypeEnvironment, audit.ObjectTypeEnvironmentValue:
+		if e.TenantName != "" && e.EnvironmentName != "" {
+			return "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
+		}
+		return ""
+	default:
+		return ""
+	}
+}
+
+func envLink(e *audit.Entry) g.Node {
+	if e.TenantName == "" || e.EnvironmentName == "" {
+		return g.Text("")
+	}
+	label := e.TenantName + "/" + e.EnvironmentName
+	href := "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
+	return h.A(h.Href(href), g.Text(label))
 }
