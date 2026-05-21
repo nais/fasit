@@ -68,7 +68,11 @@ func Create(ctx context.Context, req Request) (uuid.UUID, error) {
 		Action:      audit.ActionCreated,
 		Description: "version " + req.Version,
 		ObjectType:  audit.ObjectTypeDeployment,
-		ObjectID:    req.Chart,
+		ObjectID:    feat.Name,
+		Feature:     feat.Name,
+		Metadata: map[string]any{
+			"chart": req.Chart,
+		},
 	})
 
 	return id, nil
@@ -229,6 +233,15 @@ func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, erro
 
 func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		objectID := deploymentID.String()
+		featureName := ""
+		if row, err := querier(ctx).GetDeployment(ctx, deploymentID); err == nil {
+			objectID = row.Deployment.FeatureName
+			featureName = row.Deployment.FeatureName
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+
 		err := querier(ctx).DeleteDeployment(ctx, deploymentID)
 		if err != nil {
 			return err
@@ -236,7 +249,11 @@ func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 		return audit.Create(ctx, audit.CreateParams{
 			Action:     audit.ActionDeleted,
 			ObjectType: audit.ObjectTypeDeployment,
-			ObjectID:   deploymentID.String(),
+			ObjectID:   objectID,
+			Feature:    featureName,
+			Metadata: map[string]any{
+				"deploymentID": deploymentID.String(),
+			},
 		})
 	})
 }

@@ -690,7 +690,7 @@ func auditTab(page *FeaturePage) g.Node {
 		cells := []g.Node{
 			h.Td(g.Text(view.FormatTime(e.CreatedAt))),
 			h.Td(g.Text(string(e.Action))),
-			h.Td(g.Text(e.ObjectType.Display()+" "+e.ObjectID)),
+			h.Td(g.Text(e.ObjectType.Display() + " " + e.ObjectID)),
 			h.Td(g.Text(e.Description)),
 			h.Td(g.Text(e.Actor)),
 		}

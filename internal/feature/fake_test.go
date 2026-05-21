@@ -2,7 +2,6 @@ package feature
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
@@ -148,16 +147,4 @@ func newTestCtx(t *testing.T) (context.Context, *fakeQuerier, *auditsqlfake.Quer
 	ctx := context.WithValue(context.Background(), QuerierKey, featuresql.Querier(fq))
 	ctx = audit.RegisterTestDeps(ctx, aq, log)
 	return ctx, fq, aq
-}
-
-func assertAuditMetadata(t *testing.T, raw []byte, key, want string) {
-	t.Helper()
-	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		t.Fatalf("unmarshal audit metadata: %v", err)
-	}
-	got, _ := m[key].(string)
-	if got != want {
-		t.Errorf("audit metadata[%q] = %q, want %q", key, got, want)
-	}
 }

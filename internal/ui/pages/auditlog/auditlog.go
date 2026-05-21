@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -121,7 +122,15 @@ func ResourceLink(e *audit.Entry) g.Node {
 
 func ResourceHref(e *audit.Entry) string {
 	switch e.ObjectType {
-	case audit.ObjectTypeFeature, audit.ObjectTypeDeployment:
+	case audit.ObjectTypeFeature:
+		return "/features/" + e.ObjectID
+	case audit.ObjectTypeDeployment:
+		if e.ObjectID == "all" {
+			return ""
+		}
+		if _, err := uuid.Parse(e.ObjectID); err == nil {
+			return ""
+		}
 		return "/features/" + e.ObjectID
 	case audit.ObjectTypeConfiguration:
 		// ObjectID is "feature/key" — link to the feature
