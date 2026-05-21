@@ -571,6 +571,10 @@ nav .nav-btn:hover {
 .status-disabled {
   color: var(--status-disabled);
 }
+.status-message {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
 
 .icon {
   display: inline-block;

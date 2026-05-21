@@ -66,13 +66,12 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		valueRefs, _ := deployment.ValueRefsForEnvironment(r.Context(), env.ID)
 
 		renderPage(w, r, layout.Props{
-			Title:        tenant.Name + " / " + env.Name,
-			CurrentPage:  components.PageEnvironments,
-			GCPProjectID: gcpProjectIDFromValues(envValues),
+			Title:       tenant.Name + " / " + env.Name,
+			CurrentPage: components.PageEnvironments,
 			Content: page([]breadcrumb.Crumb{
 				breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),
 				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-			}, tenant, environment, allFeatures, labels, envValues, valueRefs),
+			}, tenant, environment, allFeatures, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues)),
 		})
 	}
 }
@@ -112,7 +111,7 @@ func sortedKeys(m map[string]string) []string {
 	return keys
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Environment, allFeatures []view.FeatureNav, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string) g.Node {
+func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Environment, allFeatures []view.FeatureNav, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string) g.Node {
 	return h.Div(h.Class("container"),
 		components.EnvironmentSidebar(tenant.Name, environment.Name, "", allFeatures),
 		h.Main(h.Class("main-content"),
@@ -123,6 +122,17 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Env
 						g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
 							return h.Span(h.Class("label-filter-tag"), g.Textf("%s: %s", k, labels[k]))
 						})),
+						g.If(gcpProjectID != "",
+							h.A(
+								h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+								h.Class("label-filter-tag gcp-link"),
+								g.Attr("target", "_blank"),
+								g.Attr("rel", "noopener noreferrer"),
+								g.Attr("title", "Open GCP project "+gcpProjectID),
+								g.Text("GCP: "+gcpProjectID),
+								components.ExternalLinkIcon(),
+							),
+						),
 					),
 					h.H2(g.Text("Metadata")),
 					h.Table(h.Class("table"),

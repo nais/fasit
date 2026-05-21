@@ -184,22 +184,22 @@ func NormalizeStatus(s string) string {
 
 // FeatureStatusForEnvironment returns the deployment status for the winning
 // deployment of a feature in an environment. Returns empty string when no status exists.
-func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (status string, err error) {
+func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (status string, message string, err error) {
 	dep, err := mostSpecificDeployment(ctx, envID, featureName)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	row, err := querier(ctx).GetDeploymentStatus(ctx, deploymentsql.GetDeploymentStatusParams{
 		DeploymentID:  dep.ID,
 		EnvironmentID: envID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", nil
+		return "", "", nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("get deployment status: %w", err)
+		return "", "", fmt.Errorf("get deployment status: %w", err)
 	}
-	return NormalizeStatus(row.Status), nil
+	return NormalizeStatus(row.Status), row.Message, nil
 }
 
 func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {

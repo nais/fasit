@@ -42,12 +42,12 @@ type FeaturePage struct {
 	Environment      *Environment
 	Feature          *FeatureDetail
 	AllFeatures      []view.FeatureNav
-	GCPProjectID     string
 	HelmValues       string
 	HelmValuesError  string
 	Deployments      []EnvDeploymentItem
 	FeatureLog       *FeatureLog
 	Status           string
+	StatusMessage    string
 	ActiveTab        string
 	PlaygroundCode   string
 	PlaygroundResult *PlaygroundResult
@@ -284,12 +284,10 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		page.Status = "DISABLED"
 	} else if disabled {
 		page.Status = "DISABLED"
-	} else if status, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
+	} else if status, msg, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
 		page.Status = status
+		page.StatusMessage = msg
 	}
-
-	envValues, _ := envpkg.ListEnvironmentValuesForEnvironment(ctx, env.ID, true)
-	page.GCPProjectID = gcpProjectIDFromValues(envValues)
 
 	page.Feature.ConfigItems, err = loadFeatureConfigItems(ctx, feat, env.ID)
 	if err != nil {

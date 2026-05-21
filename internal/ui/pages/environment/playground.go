@@ -37,10 +37,9 @@ func PlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage:  components.PageEnvironments,
-			GCPProjectID: data.GCPProjectID,
-			Content:      featurePageContent(data),
+			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
+			CurrentPage: components.PageEnvironments,
+			Content:     featurePageContent(data),
 		})
 	}
 }
@@ -63,10 +62,9 @@ func PlaygroundSubmitHandler(renderPage RenderPage) http.HandlerFunc {
 		data.PlaygroundResult, _ = runPlayground(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), code, r.FormValue("includeUnset") == "on")
 
 		renderPage(w, r, layout.Props{
-			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage:  components.PageEnvironments,
-			GCPProjectID: data.GCPProjectID,
-			Content:      featurePageContent(data),
+			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
+			CurrentPage: components.PageEnvironments,
+			Content:     featurePageContent(data),
 		})
 	}
 }

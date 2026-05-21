@@ -34,10 +34,9 @@ func FeatureTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage:  components.PageEnvironments,
-			GCPProjectID: data.GCPProjectID,
-			Content:      featurePageContent(data),
+			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
+			CurrentPage: components.PageEnvironments,
+			Content:     featurePageContent(data),
 		})
 	}
 }
@@ -314,6 +313,9 @@ func featureMetadataHeader(page *FeaturePage) g.Node {
 
 	if page.Status != "" {
 		rows = append(rows, metaRow("Status", renderStatus(page.Status)))
+	}
+	if page.StatusMessage != "" {
+		rows = append(rows, metaRow("", h.Span(h.Class("status-message"), g.Text(page.StatusMessage))))
 	}
 
 	if feat.Chart != "" {
