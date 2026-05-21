@@ -10,34 +10,38 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
-const create = `-- name: Create :one
+const createEnvironment = `-- name: CreateEnvironment :one
 INSERT INTO environments(
 	name,
 	description,
 	tenant_id,
-	kind)
+	kind,
+	labels)
 VALUES (
 	$1,
 	$2,
 	$3,
-	$4)
+	$4,
+	$5)
 RETURNING
 	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 `
 
-type CreateParams struct {
+type CreateEnvironmentParams struct {
 	Name        string
 	Description *string
 	TenantID    uuid.UUID
 	Kind        types.EnvironmentKind
+	Labels      types.EnvironmentLabels
 }
 
-func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, error) {
-	row := q.db.QueryRow(ctx, create,
+func (q *Queries) CreateEnvironment(ctx context.Context, arg CreateEnvironmentParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, createEnvironment,
 		arg.Name,
 		arg.Description,
 		arg.TenantID,
 		arg.Kind,
+		arg.Labels,
 	)
 	var i Environment
 	err := row.Scan(
@@ -54,7 +58,7 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, er
 	return i, err
 }
 
-const get = `-- name: Get :one
+const getEnvironment = `-- name: GetEnvironment :one
 SELECT
 	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
@@ -63,8 +67,8 @@ WHERE
 	id = $1
 `
 
-func (q *Queries) Get(ctx context.Context, id uuid.UUID) (Environment, error) {
-	row := q.db.QueryRow(ctx, get, id)
+func (q *Queries) GetEnvironment(ctx context.Context, id uuid.UUID) (Environment, error) {
+	row := q.db.QueryRow(ctx, getEnvironment, id)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -80,7 +84,7 @@ func (q *Queries) Get(ctx context.Context, id uuid.UUID) (Environment, error) {
 	return i, err
 }
 
-const getByName = `-- name: GetByName :one
+const getEnvironmentByName = `-- name: GetEnvironmentByName :one
 SELECT
 	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
@@ -90,13 +94,13 @@ WHERE
 	AND name = $2
 `
 
-type GetByNameParams struct {
+type GetEnvironmentByNameParams struct {
 	TenantID uuid.UUID
 	Name     string
 }
 
-func (q *Queries) GetByName(ctx context.Context, arg GetByNameParams) (Environment, error) {
-	row := q.db.QueryRow(ctx, getByName, arg.TenantID, arg.Name)
+func (q *Queries) GetEnvironmentByName(ctx context.Context, arg GetEnvironmentByNameParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentByName, arg.TenantID, arg.Name)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -112,7 +116,7 @@ func (q *Queries) GetByName(ctx context.Context, arg GetByNameParams) (Environme
 	return i, err
 }
 
-const getLabels = `-- name: GetLabels :one
+const getEnvironmentLabels = `-- name: GetEnvironmentLabels :one
 SELECT
 	labels
 FROM
@@ -121,14 +125,14 @@ WHERE
 	id = $1
 `
 
-func (q *Queries) GetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error) {
-	row := q.db.QueryRow(ctx, getLabels, id)
+func (q *Queries) GetEnvironmentLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentLabels, id)
 	var labels types.EnvironmentLabels
 	err := row.Scan(&labels)
 	return labels, err
 }
 
-const list = `-- name: List :many
+const listEnvironments = `-- name: ListEnvironments :many
 SELECT
 	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
@@ -144,8 +148,8 @@ ORDER BY
 	name ASC
 `
 
-func (q *Queries) List(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
-	rows, err := q.db.Query(ctx, list, tenantID)
+func (q *Queries) ListEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
+	rows, err := q.db.Query(ctx, listEnvironments, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +178,7 @@ func (q *Queries) List(ctx context.Context, tenantID uuid.UUID) ([]Environment, 
 	return items, nil
 }
 
-const setLabels = `-- name: SetLabels :exec
+const setEnvironmentLabels = `-- name: SetEnvironmentLabels :exec
 UPDATE
 	environments
 SET
@@ -183,12 +187,12 @@ WHERE
 	id = $2
 `
 
-type SetLabelsParams struct {
+type SetEnvironmentLabelsParams struct {
 	Labels types.EnvironmentLabels
 	ID     uuid.UUID
 }
 
-func (q *Queries) SetLabels(ctx context.Context, arg SetLabelsParams) error {
-	_, err := q.db.Exec(ctx, setLabels, arg.Labels, arg.ID)
+func (q *Queries) SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error {
+	_, err := q.db.Exec(ctx, setEnvironmentLabels, arg.Labels, arg.ID)
 	return err
 }

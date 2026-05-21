@@ -30,7 +30,7 @@ type agentRow struct {
 
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tenants, err := environment.GetTenants(r.Context())
+		tenants, err := environment.ListTenants(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load tenants", http.StatusInternalServerError)
 			return

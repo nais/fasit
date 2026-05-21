@@ -106,7 +106,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 	defer r.lock.Unlock()
 
-	tenantEnvironments, err := environment.TenantEnvironments(ctx, true)
+	tenantEnvironments, err := environment.ListTenantEnvironments(ctx, true)
 	if err != nil {
 		return fmt.Errorf("get tenant environments: %w", err)
 	}

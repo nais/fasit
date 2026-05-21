@@ -7,17 +7,17 @@ import (
 
 type Labels map[string]string
 
-// TODO: add labels to the model below. It currently exists as a GraphQL resolver.
-func environmentFromSQL(p environmentsql.Environment) *model.Environment {
+func environmentFromSQL(e environmentsql.Environment) *model.Environment {
 	return &model.Environment{
-		ID:           p.ID,
-		Name:         p.Name,
-		Description:  p.Description,
-		Created:      p.Created.Time,
-		LastModified: p.LastModified.Time,
-		Kind:         model.EnvironmentKind(p.Kind),
-		TenantID:     p.TenantID,
-		Reconcile:    p.Reconcile,
+		ID:           e.ID,
+		Name:         e.Name,
+		Description:  e.Description,
+		Created:      e.Created.Time,
+		LastModified: e.LastModified.Time,
+		Kind:         model.EnvironmentKind(e.Kind),
+		TenantID:     e.TenantID,
+		Reconcile:    e.Reconcile,
+		Labels:       e.Labels,
 	}
 }
 

@@ -1,18 +1,20 @@
--- name: Create :one
+-- name: CreateEnvironment :one
 INSERT INTO environments(
 	name,
 	description,
 	tenant_id,
-	kind)
+	kind,
+	labels)
 VALUES (
 	@name,
 	@description,
 	@tenant_id,
-	@kind)
+	@kind,
+	@labels)
 RETURNING
 	*;
 
--- name: SetLabels :exec
+-- name: SetEnvironmentLabels :exec
 UPDATE
 	environments
 SET
@@ -20,7 +22,7 @@ SET
 WHERE
 	id = @id;
 
--- name: Get :one
+-- name: GetEnvironment :one
 SELECT
 	*
 FROM
@@ -28,7 +30,7 @@ FROM
 WHERE
 	id = @id;
 
--- name: GetLabels :one
+-- name: GetEnvironmentLabels :one
 SELECT
 	labels
 FROM
@@ -36,7 +38,7 @@ FROM
 WHERE
 	id = @id;
 
--- name: GetByName :one
+-- name: GetEnvironmentByName :one
 SELECT
 	*
 FROM
@@ -45,7 +47,7 @@ WHERE
 	tenant_id = @tenant_id
 	AND name = @name;
 
--- name: List :many
+-- name: ListEnvironments :many
 SELECT
 	*
 FROM

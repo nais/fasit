@@ -11,6 +11,36 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
+const createTenant = `-- name: CreateTenant :one
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	$1,
+	$2)
+RETURNING
+	id, name, description, created, last_modified, ci
+`
+
+type CreateTenantParams struct {
+	Name        string
+	Description *string
+}
+
+func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) (Tenant, error) {
+	row := q.db.QueryRow(ctx, createTenant, arg.Name, arg.Description)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+	)
+	return i, err
+}
+
 const getTenant = `-- name: GetTenant :one
 SELECT
 	id, name, description, created, last_modified, ci
@@ -57,74 +87,7 @@ func (q *Queries) GetTenantByName(ctx context.Context, name string) (Tenant, err
 	return i, err
 }
 
-const getTenants = `-- name: GetTenants :many
-SELECT
-	id, name, description, created, last_modified, ci
-FROM
-	tenants
-ORDER BY
-	created DESC,
-	name ASC
-`
-
-func (q *Queries) GetTenants(ctx context.Context) ([]Tenant, error) {
-	rows, err := q.db.Query(ctx, getTenants)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Tenant{}
-	for rows.Next() {
-		var i Tenant
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Created,
-			&i.LastModified,
-			&i.Ci,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const tenantCreate = `-- name: TenantCreate :one
-INSERT INTO tenants(
-	name,
-	description)
-VALUES (
-	$1,
-	$2)
-RETURNING
-	id, name, description, created, last_modified, ci
-`
-
-type TenantCreateParams struct {
-	Name        string
-	Description *string
-}
-
-func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error) {
-	row := q.db.QueryRow(ctx, tenantCreate, arg.Name, arg.Description)
-	var i Tenant
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-	)
-	return i, err
-}
-
-const tenantEnvironments = `-- name: TenantEnvironments :many
+const listTenantEnvironments = `-- name: ListTenantEnvironments :many
 SELECT
 	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels,
 	t.name AS tenant_name
@@ -143,7 +106,7 @@ ORDER BY
 	e.name
 `
 
-type TenantEnvironmentsRow struct {
+type ListTenantEnvironmentsRow struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
 	Name         string
@@ -156,15 +119,15 @@ type TenantEnvironmentsRow struct {
 	TenantName   string
 }
 
-func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, tenantEnvironments, all)
+func (q *Queries) ListTenantEnvironments(ctx context.Context, all bool) ([]ListTenantEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, listTenantEnvironments, all)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []TenantEnvironmentsRow{}
+	items := []ListTenantEnvironmentsRow{}
 	for rows.Next() {
-		var i TenantEnvironmentsRow
+		var i ListTenantEnvironmentsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -176,6 +139,43 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 			&i.Reconcile,
 			&i.Labels,
 			&i.TenantName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTenants = `-- name: ListTenants :many
+SELECT
+	id, name, description, created, last_modified, ci
+FROM
+	tenants
+ORDER BY
+	created DESC,
+	name ASC
+`
+
+func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
+	rows, err := q.db.Query(ctx, listTenants)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tenant{}
+	for rows.Next() {
+		var i Tenant
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Ci,
 		); err != nil {
 			return nil, err
 		}

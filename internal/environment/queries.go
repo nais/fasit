@@ -7,7 +7,6 @@ import (
 	"maps"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
@@ -15,29 +14,28 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-type ctxKey int
-
-// QuerierKey is exposed so tests can inject fake queriers on the context.
-// Avoid usage by e.g. using testcontainers.
-const QuerierKey ctxKey = iota
-
-func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	return context.WithValue(ctx, QuerierKey, environmentsql.New(pool))
-}
-
-func querier(ctx context.Context) environmentsql.Querier {
-	return ctx.Value(QuerierKey).(environmentsql.Querier)
-}
-
-func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
-	var env environmentsql.Environment
+func Create(ctx context.Context, env *model.EnvironmentCreate) (*model.Environment, error) {
+	var ret environmentsql.Environment
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
-		env, err = querier(ctx).Create(ctx, environmentsql.CreateParams{
-			Name:        t.Name,
-			Description: t.Description,
-			TenantID:    t.TenantID,
-			Kind:        types.EnvironmentKind(t.Kind),
+
+		tenant, err := GetTenant(ctx, env.TenantID)
+		if err != nil {
+			return fmt.Errorf("get tenant for labels: %w", err)
+		}
+
+		if len(env.Labels) == 0 {
+			env.Labels = make(map[string]string)
+		}
+		env.Labels["name"] = env.Name
+		env.Labels["tenant"] = tenant.Name
+
+		ret, err = querier(ctx).CreateEnvironment(ctx, environmentsql.CreateEnvironmentParams{
+			Name:        env.Name,
+			Description: env.Description,
+			TenantID:    env.TenantID,
+			Kind:        types.EnvironmentKind(env.Kind),
+			Labels:      env.Labels,
 		})
 		if err != nil {
 			return err
@@ -46,31 +44,18 @@ func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment
 		return audit.Create(ctx, audit.CreateParams{
 			Description: "created",
 			ObjectType:  "environments",
-			ObjectID:    env.ID.String(),
+			ObjectID:    ret.ID.String(),
 		})
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	tenant, err := GetTenant(ctx, t.TenantID)
-	if err != nil {
-		return nil, fmt.Errorf("get tenant for labels: %w", err)
-	}
-
-	lbls := Labels{"name": t.Name, "tenant": tenant.Name}
-	for k, v := range t.Labels {
-		lbls[k] = v
-	}
-	if err := SetLabels(ctx, env.ID, lbls); err != nil {
-		return nil, fmt.Errorf("set labels: %w", err)
-	}
-
-	return environmentFromSQL(env), nil
+	return environmentFromSQL(ret), nil
 }
 
 func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) error {
-	existing, err := querier(ctx).GetLabels(ctx, environmentID)
+	existing, err := querier(ctx).GetEnvironmentLabels(ctx, environmentID)
 	if err != nil {
 		existing = nil
 	}
@@ -79,22 +64,19 @@ func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) erro
 	maps.Copy(lbls, existing)
 	maps.Copy(lbls, labels)
 
-	return querier(ctx).SetLabels(ctx, environmentsql.SetLabelsParams{
+	return querier(ctx).SetEnvironmentLabels(ctx, environmentsql.SetEnvironmentLabelsParams{
 		Labels: lbls,
 		ID:     environmentID,
 	})
 }
 
 func GetLabels(ctx context.Context, environmentID uuid.UUID) (Labels, error) {
-	labels, err := querier(ctx).GetLabels(ctx, environmentID)
+	labels, err := querier(ctx).GetEnvironmentLabels(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
 
-	lbls := make(Labels)
-	maps.Copy(lbls, labels)
-
-	return lbls, nil
+	return Labels(labels), nil
 }
 
 func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
@@ -117,8 +99,8 @@ func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key strin
 	})
 }
 
-func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
-	data, err := querier(ctx).TenantEnvironments(ctx, !onlyReconciled)
+func ListTenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
+	data, err := querier(ctx).ListTenantEnvironments(ctx, !onlyReconciled)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +125,7 @@ func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.Tena
 }
 
 func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
-	env, err := querier(ctx).Get(ctx, id)
+	env, err := querier(ctx).GetEnvironment(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +133,7 @@ func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
 }
 
 func GetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error) {
-	env, err := querier(ctx).GetByName(ctx, environmentsql.GetByNameParams{
+	env, err := querier(ctx).GetEnvironmentByName(ctx, environmentsql.GetEnvironmentByNameParams{
 		TenantID: tenantID,
 		Name:     name,
 	})
@@ -169,8 +151,8 @@ func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 	return tenantFromSQL(tenant), nil
 }
 
-func GetTenants(ctx context.Context) ([]*model.Tenant, error) {
-	tenants, err := querier(ctx).GetTenants(ctx)
+func ListTenants(ctx context.Context) ([]*model.Tenant, error) {
+	tenants, err := querier(ctx).ListTenants(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +175,7 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 	var tenant environmentsql.Tenant
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
-		tenant, err = querier(ctx).TenantCreate(ctx, environmentsql.TenantCreateParams{
+		tenant, err = querier(ctx).CreateTenant(ctx, environmentsql.CreateTenantParams{
 			Name:        t.Name,
 			Description: t.Description,
 		})
@@ -214,7 +196,7 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 }
 
 func List(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
-	envs, err := querier(ctx).List(ctx, tenantID)
+	envs, err := querier(ctx).ListEnvironments(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}

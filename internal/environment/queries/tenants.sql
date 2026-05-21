@@ -6,7 +6,7 @@ FROM
 WHERE
 	id = @id;
 
--- name: GetTenants :many
+-- name: ListTenants :many
 SELECT
 	*
 FROM
@@ -23,7 +23,7 @@ FROM
 WHERE
 	name = @name;
 
--- name: TenantCreate :one
+-- name: CreateTenant :one
 INSERT INTO tenants(
 	name,
 	description)
@@ -33,7 +33,7 @@ VALUES (
 RETURNING
 	*;
 
--- name: TenantEnvironments :many
+-- name: ListTenantEnvironments :many
 SELECT
 	e.*,
 	t.name AS tenant_name

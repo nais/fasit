@@ -15,7 +15,8 @@ type Environment struct {
 	Kind         EnvironmentKind `json:"kind"`
 	Reconcile    bool            `json:"reconciled"`
 
-	TenantID uuid.UUID `json:"tenantID"`
+	TenantID uuid.UUID         `json:"tenantID"`
+	Labels   map[string]string `json:"labels"`
 }
 
 type EnvironmentKind string

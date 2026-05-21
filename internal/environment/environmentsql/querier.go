@@ -10,23 +10,22 @@ import (
 )
 
 type Querier interface {
-	Create(ctx context.Context, arg CreateParams) (Environment, error)
+	CreateEnvironment(ctx context.Context, arg CreateEnvironmentParams) (Environment, error)
+	CreateTenant(ctx context.Context, arg CreateTenantParams) (Tenant, error)
 	DeleteEnvironmentValue(ctx context.Context, arg DeleteEnvironmentValueParams) error
-	Get(ctx context.Context, id uuid.UUID) (Environment, error)
-	GetByName(ctx context.Context, arg GetByNameParams) (Environment, error)
+	GetEnvironment(ctx context.Context, id uuid.UUID) (Environment, error)
+	GetEnvironmentByName(ctx context.Context, arg GetEnvironmentByNameParams) (Environment, error)
+	GetEnvironmentLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
 	GetEnvironmentValue(ctx context.Context, arg GetEnvironmentValueParams) (GetEnvironmentValueRow, error)
-	GetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
 	GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error)
 	GetTenantByName(ctx context.Context, name string) (Tenant, error)
-	GetTenants(ctx context.Context) ([]Tenant, error)
-	List(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListEnvironmentValuesForEnvironment(ctx context.Context, arg ListEnvironmentValuesForEnvironmentParams) ([]ListEnvironmentValuesForEnvironmentRow, error)
 	ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error)
+	ListEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
+	ListTenantEnvironments(ctx context.Context, all bool) ([]ListTenantEnvironmentsRow, error)
+	ListTenants(ctx context.Context) ([]Tenant, error)
+	SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
-	SetLabels(ctx context.Context, arg SetLabelsParams) error
-	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
-	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
-	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

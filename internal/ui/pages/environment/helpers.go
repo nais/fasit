@@ -241,7 +241,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		return nil, err
 	}
 
-	allTenants, _ := envpkg.GetTenants(ctx)
+	allTenants, _ := envpkg.ListTenants(ctx)
 	tenantEnvs, _ := envpkg.List(ctx, tenant.ID)
 
 	page := &FeaturePage{

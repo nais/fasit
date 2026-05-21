@@ -54,7 +54,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		allTenants, _ := envpkg.GetTenants(r.Context())
+		allTenants, _ := envpkg.ListTenants(r.Context())
 		tenantEnvs, _ := envpkg.List(r.Context(), tenant.ID)
 		labels, _ := envpkg.GetLabels(r.Context(), env.ID)
 

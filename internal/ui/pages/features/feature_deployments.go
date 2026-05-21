@@ -539,7 +539,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 	}
 	deployments = latestDeploymentPerTarget(deployments)
 
-	tenants, err := envpkg.GetTenants(ctx)
+	tenants, err := envpkg.ListTenants(ctx)
 	if err != nil {
 		return []DeploymentEnvStatus{}
 	}
