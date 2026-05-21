@@ -129,6 +129,7 @@ func recentDeployments(rows []depRow) g.Node {
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
+		h.Div(h.Style("margin-top: 0.75rem; font-size: 0.85rem;"), h.A(h.Href("/deployments"), h.Class("link-muted"), g.Text("All deployments →"))),
 	})
 }
 

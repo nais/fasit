@@ -1,9 +1,12 @@
 package deployments
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 )
@@ -15,12 +18,15 @@ func CreateHandler() http.HandlerFunc {
 			return
 		}
 
-		featureName := strings.TrimSpace(r.FormValue("feature_name"))
 		chart := strings.TrimSpace(r.FormValue("chart"))
 		version := strings.TrimSpace(r.FormValue("version"))
-		if featureName == "" || chart == "" || version == "" {
-			http.Error(w, "feature_name, chart, and version are required", http.StatusBadRequest)
+		description := strings.TrimSpace(r.FormValue("description"))
+		if chart == "" || version == "" {
+			http.Error(w, "chart and version are required", http.StatusBadRequest)
 			return
+		}
+		if description == "" {
+			description = "Set via UI"
 		}
 
 		target := environment.Labels{}
@@ -32,11 +38,28 @@ func CreateHandler() http.HandlerFunc {
 			}
 			target[k] = v
 		}
+		if raw := strings.TrimSpace(r.FormValue("target_labels_raw")); raw != "" {
+			// Try JSON first, fall back to key=value lines
+			if err := json.Unmarshal([]byte(raw), &target); err != nil {
+				for _, line := range strings.Split(raw, "\n") {
+					line = strings.TrimSpace(line)
+					if line == "" {
+						continue
+					}
+					k, v, ok := strings.Cut(line, "=")
+					if !ok || k == "" {
+						http.Error(w, "invalid target label: "+line, http.StatusBadRequest)
+						return
+					}
+					target[strings.TrimSpace(k)] = strings.TrimSpace(v)
+				}
+			}
+		}
 
 		_, err := deployment.Create(r.Context(), deployment.Request{
 			Chart:       chart,
 			Version:     version,
-			Description: "Set via UI",
+			Description: description,
 			Target:      target,
 		})
 		if err != nil {
@@ -46,9 +69,15 @@ func CreateHandler() http.HandlerFunc {
 
 		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
 
+		_ = audit.Create(r.Context(), audit.CreateParams{
+			Description: fmt.Sprintf("set version %s for %s", version, chart),
+			ObjectType:  "deployment",
+			ObjectID:    chart,
+		})
+
 		redirect := r.Referer()
 		if redirect == "" {
-			redirect = "/features/" + featureName
+			redirect = "/deployments"
 		}
 		http.Redirect(w, r, redirect, http.StatusSeeOther)
 	}

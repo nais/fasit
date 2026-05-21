@@ -3,79 +3,72 @@ package deployments
 import (
 	"testing"
 	"time"
+
+	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/graph/model"
 )
 
-func TestGroupDeployments(t *testing.T) {
+func TestLatestPerChartAndTarget(t *testing.T) {
 	t0 := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 	t1 := time.Date(2024, 1, 1, 11, 0, 0, 0, time.UTC)
 	t2 := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
-	t3 := time.Date(2024, 1, 1, 13, 0, 0, 0, time.UTC)
 
-	t.Run("multiple features are grouped separately", func(t *testing.T) {
-		items := []Summary{
-			{FeatureName: "alpha", Target: "prod", createdAt: t1},
-			{FeatureName: "beta", Target: "prod", createdAt: t2},
+	makeDep := func(chart, version string, labels map[string]string, created time.Time) *deployment.Deployment {
+		return &deployment.Deployment{
+			Feature:      &model.Feature{Chart: chart, Version: version},
+			TargetLabels: labels,
+			Created:      created,
 		}
-		groups := groupDeployments(items)
-		if len(groups) != 2 {
-			t.Fatalf("expected 2 groups, got %d", len(groups))
+	}
+
+	t.Run("keeps latest per chart+target", func(t *testing.T) {
+		deps := []*deployment.Deployment{
+			makeDep("oci://foo", "v1", map[string]string{"env": "prod"}, t0),
+			makeDep("oci://foo", "v2", map[string]string{"env": "prod"}, t1),
+			makeDep("oci://foo", "v3", map[string]string{"env": "prod"}, t2),
 		}
-		names := map[string]bool{groups[0].FeatureName: true, groups[1].FeatureName: true}
-		if !names["alpha"] || !names["beta"] {
-			t.Errorf("expected groups for alpha and beta, got %v", names)
+		result := latestPerChartAndTarget(deps)
+		if len(result) != 1 {
+			t.Fatalf("expected 1 deployment, got %d", len(result))
+		}
+		if result[0].Feature.Version != "v3" {
+			t.Errorf("expected v3, got %s", result[0].Feature.Version)
 		}
 	})
 
-	t.Run("duplicate targets within a feature keep only the latest", func(t *testing.T) {
-		items := []Summary{
-			{FeatureName: "alpha", Target: "prod", Version: "v1", createdAt: t0},
-			{FeatureName: "alpha", Target: "prod", Version: "v2", createdAt: t1},
+	t.Run("different targets kept separately", func(t *testing.T) {
+		deps := []*deployment.Deployment{
+			makeDep("oci://foo", "v1", map[string]string{"env": "prod"}, t0),
+			makeDep("oci://foo", "v2", map[string]string{"env": "dev"}, t1),
 		}
-		groups := groupDeployments(items)
-		if len(groups) != 1 {
-			t.Fatalf("expected 1 group, got %d", len(groups))
-		}
-		if len(groups[0].Targets) != 1 {
-			t.Fatalf("expected 1 target after dedup, got %d", len(groups[0].Targets))
-		}
-		if groups[0].Targets[0].Version != "v2" {
-			t.Errorf("expected latest version v2, got %s", groups[0].Targets[0].Version)
+		result := latestPerChartAndTarget(deps)
+		if len(result) != 2 {
+			t.Fatalf("expected 2 deployments, got %d", len(result))
 		}
 	})
 
-	t.Run("groups sorted by most-recent-first", func(t *testing.T) {
-		items := []Summary{
-			{FeatureName: "older", Target: "prod", createdAt: t1},
-			{FeatureName: "newer", Target: "prod", createdAt: t3},
-			{FeatureName: "middle", Target: "prod", createdAt: t2},
+	t.Run("different charts kept separately", func(t *testing.T) {
+		deps := []*deployment.Deployment{
+			makeDep("oci://foo", "v1", map[string]string{"env": "prod"}, t0),
+			makeDep("oci://bar", "v1", map[string]string{"env": "prod"}, t1),
 		}
-		groups := groupDeployments(items)
-		if len(groups) != 3 {
-			t.Fatalf("expected 3 groups, got %d", len(groups))
-		}
-		if groups[0].FeatureName != "newer" || groups[1].FeatureName != "middle" || groups[2].FeatureName != "older" {
-			t.Errorf("groups not sorted most-recent-first: got %s, %s, %s",
-				groups[0].FeatureName, groups[1].FeatureName, groups[2].FeatureName)
+		result := latestPerChartAndTarget(deps)
+		if len(result) != 2 {
+			t.Fatalf("expected 2 deployments, got %d", len(result))
 		}
 	})
 
-	t.Run("rows within a group sorted by most-recent-first", func(t *testing.T) {
-		items := []Summary{
-			{FeatureName: "alpha", Target: "dev", Version: "v1", createdAt: t0},
-			{FeatureName: "alpha", Target: "staging", Version: "v2", createdAt: t2},
-			{FeatureName: "alpha", Target: "prod", Version: "v3", createdAt: t1},
+	t.Run("empty targets treated as same group", func(t *testing.T) {
+		deps := []*deployment.Deployment{
+			makeDep("oci://foo", "v1", nil, t0),
+			makeDep("oci://foo", "v2", nil, t2),
 		}
-		groups := groupDeployments(items)
-		if len(groups) != 1 {
-			t.Fatalf("expected 1 group, got %d", len(groups))
+		result := latestPerChartAndTarget(deps)
+		if len(result) != 1 {
+			t.Fatalf("expected 1 deployment, got %d", len(result))
 		}
-		targets := groups[0].Targets
-		if len(targets) != 3 {
-			t.Fatalf("expected 3 targets, got %d", len(targets))
-		}
-		if targets[0].Version != "v2" || targets[1].Version != "v3" || targets[2].Version != "v1" {
-			t.Errorf("targets not sorted most-recent-first: got %s, %s, %s",
-				targets[0].Version, targets[1].Version, targets[2].Version)
+		if result[0].Feature.Version != "v2" {
+			t.Errorf("expected v2, got %s", result[0].Feature.Version)
 		}
 	})
 }

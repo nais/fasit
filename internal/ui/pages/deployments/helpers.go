@@ -17,7 +17,7 @@ import (
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
-	FeatureName, Version, Status, Target, Created, Completed, DeploymentID string
+	FeatureName, Chart, Version, Status, Target, Created, Completed, DeploymentID string
 	TargetLabels                                                           map[string]string
 	createdAt                                                              time.Time
 	disabledCount                                                          int
@@ -47,10 +47,18 @@ func renderStatus(status string) g.Node {
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" DEPLOYED")})
 	case "FAILED":
 		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" FAILED")})
-	case "PENDING":
+	case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK":
 		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" PENDING")})
 	case "DISABLED":
-		return g.Group([]g.Node{g.Text("⏸️ DISABLED")})
+		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("○")), g.Text(" DISABLED")})
+	case "CREATED":
+		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" CREATED")})
+	case "UNKNOWN":
+		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("?")), g.Text(" UNKNOWN")})
+	case "ENABLED":
+		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" ENABLED")})
+	case "OVERRIDDEN":
+		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("⊘")), g.Text(" OVERRIDDEN")})
 	default:
 		return g.Text(status)
 	}

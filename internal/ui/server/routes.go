@@ -50,6 +50,7 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/deployments", deployments.ListHandler(s.renderPage))
 	r.Post("/deployments", deployments.CreateHandler())
+	r.Post("/deployments/preview-targets", deployments.PreviewTargetsHandler())
 	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage))
 	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
 	r.Post("/deployments/{id}/delete", deployments.DeleteHandler())

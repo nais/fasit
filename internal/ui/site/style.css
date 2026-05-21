@@ -916,6 +916,32 @@ nav .nav-btn:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.deployments-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.table-filter {
+  background: var(--input-bg, var(--bg-surface));
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.table-filter:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .playground-controls {
@@ -1106,6 +1132,41 @@ a.label-filter-tag:hover {
   background: var(--btn-bg);
   color: var(--text-secondary);
 }
+
+.form-hint {
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.form-hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+
+.preview-targets-result {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 a.label-value-tag:hover {
   background: var(--btn-hover-bg);
   color: var(--text-heading);
@@ -1645,4 +1706,85 @@ a:hover .feature-nav-badge {
 .table-compact td {
   padding: 0.4rem 0.6rem;
   font-size: 0.85rem;
+}
+
+.deploy-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deploy-detail-topbar h1 {
+  margin: 0;
+}
+
+.deploy-detail-topbar h1 a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.deploy-detail-topbar h1 a:hover {
+  text-decoration: underline;
+}
+
+.env-actions {
+  position: relative;
+}
+
+.env-actions-toggle {
+  list-style: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background 0.1s, color 0.1s;
+}
+
+.env-actions-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.env-actions-toggle:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.env-actions-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  margin: 0;
+  padding: 0.25rem 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  min-width: 10rem;
+}
+
+.env-actions-menu a,
+.env-actions-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.env-actions-menu a:hover,
+.env-actions-menu button:hover {
+  background: var(--bg-surface-hover);
+}
+
+.env-actions-danger {
+  color: var(--status-error, #e55) !important;
 }

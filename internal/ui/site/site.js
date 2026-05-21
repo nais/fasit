@@ -383,6 +383,142 @@ document.addEventListener("change", function (e) {
   }
 });
 
+// Table text filter: [data-filter-table="<id>"] filters rows of table#<id>
+document.addEventListener("input", function (e) {
+  var input = e.target.closest("[data-filter-table]");
+  if (!input) return;
+  var tableId = input.getAttribute("data-filter-table");
+  var table = document.getElementById(tableId);
+  if (!table) return;
+  var query = input.value.toLowerCase().trim();
+  var rows = table.querySelectorAll("tbody tr");
+  rows.forEach(function (row) {
+    var text = row.textContent.toLowerCase();
+    row.style.display = !query || text.indexOf(query) !== -1 ? "" : "none";
+  });
+});
+
+// URL-controlled filter: [data-url-filter="<param>"] updates ?param= on input
+// Filters client-side immediately, then navigates on Enter for shareable URL.
+(function () {
+  document.addEventListener("input", function (e) {
+    var input = e.target.closest("[data-url-filter]");
+    if (!input) return;
+    // Client-side filter immediately
+    var table = input.closest(".card-body");
+    if (!table) return;
+    var tbody = table.querySelector("table tbody");
+    if (!tbody) return;
+    var query = input.value.toLowerCase().trim();
+    var terms = query.split(/\s+/).filter(function (t) { return t; });
+    var rows = tbody.querySelectorAll("tr");
+    rows.forEach(function (row) {
+      var text = row.textContent.toLowerCase().replace(/:\s+/g, ":");
+      var match = !terms.length || terms.every(function (t) { return text.indexOf(t) !== -1; });
+      row.style.display = match ? "" : "none";
+    });
+    // Update URL without navigation
+    var param = input.getAttribute("data-url-filter");
+    var url = new URL(window.location);
+    if (query) {
+      url.searchParams.set(param, query);
+    } else {
+      url.searchParams.delete(param);
+    }
+    history.replaceState(null, "", url);
+  });
+
+  // Submit on Enter for full server round-trip
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var input = e.target.closest("[data-url-filter]");
+    if (!input) return;
+    e.preventDefault();
+    var param = input.getAttribute("data-url-filter");
+    var url = new URL(window.location);
+    var val = input.value.trim();
+    if (val) {
+      url.searchParams.set(param, val);
+    } else {
+      url.searchParams.delete(param);
+    }
+    window.location = url;
+  });
+})();
+
+// Preview targets for new deployment
+(function () {
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("#preview-targets-btn");
+    if (!btn) return;
+    var textarea = document.getElementById("target-labels-input");
+    var result = document.getElementById("preview-targets-result");
+    if (!textarea || !result) return;
+
+    var raw = textarea.value.trim();
+    var labels = {};
+    if (raw) {
+      try {
+        labels = JSON.parse(raw);
+      } catch (err) {
+        result.innerHTML = '<span class="status-error">Invalid JSON</span>';
+        return;
+      }
+    }
+
+    result.textContent = "Loading…";
+    fetch("/deployments/preview-targets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ labels: labels }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (envs) {
+        if (!envs || envs.length === 0) {
+          result.innerHTML = '<span class="text-muted">No environments matched.</span>';
+          return;
+        }
+        var html = '<span class="text-muted">' + envs.length + ' environment(s):</span> ';
+        html += envs.map(function (e) {
+          return '<span class="label-filter-tag">' + e.tenant + ' / ' + e.environment + '</span>';
+        }).join(" ");
+        result.innerHTML = html;
+      })
+      .catch(function () {
+        result.innerHTML = '<span class="status-error">Failed to load preview</span>';
+      });
+  });
+
+  // Validate JSON on form submit
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest("form[action='/deployments']");
+    if (!form) return;
+    var textarea = form.querySelector("#target-labels-input");
+    if (!textarea) return;
+    var raw = textarea.value.trim();
+    if (raw) {
+      try {
+        JSON.parse(raw);
+      } catch (err) {
+        e.preventDefault();
+        var result = document.getElementById("preview-targets-result");
+        if (result) result.innerHTML = '<span class="status-error">Invalid JSON — fix before deploying</span>';
+      }
+    }
+  });
+})();
+
+// Clear preview when popover is toggled
+(function () {
+  var popover = document.getElementById("new-deployment");
+  if (popover) {
+    popover.addEventListener("toggle", function () {
+      var result = document.getElementById("preview-targets-result");
+      if (result) result.innerHTML = "";
+    });
+  }
+})();
+
 // Nav hotdog hint
 function dismissNavHint() {
   var hint = document.getElementById("nav-hotdog-hint");
