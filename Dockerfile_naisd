@@ -12,9 +12,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 go build -o naisd ./cmd/naisd
 
-FROM scratch AS helm
+FROM alpine:3 AS helm
 ARG HELM_VERSION=3.17.3
-ADD https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz /
+RUN wget -qO- https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xz
 
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /
