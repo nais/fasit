@@ -321,7 +321,10 @@ document.addEventListener("click", function (e) {
     if (menu) {
       var wasOpen = menu.classList.contains("open");
       document.querySelectorAll(".kebab-menu.open").forEach(function (m) { m.classList.remove("open"); });
-      if (!wasOpen) menu.classList.add("open");
+      if (!wasOpen) {
+        menu.classList.add("open");
+        dismissNavHint();
+      }
     }
     e.stopPropagation();
     return;
@@ -379,3 +382,19 @@ document.addEventListener("change", function (e) {
     // Leave content untouched if it isn't valid JSON.
   }
 });
+
+// Nav hotdog hint
+function dismissNavHint() {
+  var hint = document.getElementById("nav-hotdog-hint");
+  if (hint) hint.classList.remove("visible");
+  var btn = document.querySelector(".nav-hotdog");
+  if (btn) btn.classList.remove("highlighted");
+  localStorage.setItem("nav-hotdog-seen", "1");
+}
+(function () {
+  if (localStorage.getItem("nav-hotdog-seen")) return;
+  var hint = document.getElementById("nav-hotdog-hint");
+  var btn = document.querySelector(".nav-hotdog");
+  if (hint) hint.classList.add("visible");
+  if (btn) btn.classList.add("highlighted");
+})();
