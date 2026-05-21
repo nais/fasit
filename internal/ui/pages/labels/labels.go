@@ -228,11 +228,15 @@ func availableLabelsSection(labelKeys []labelKeyInfo, activeFilters map[string]s
 		valueTags := make([]g.Node, 0, len(info.Values))
 		for _, v := range info.Values {
 			class := "label-value-tag"
+			var href string
 			if activeFilters[info.Key] == v {
 				class += " active"
+				href = removeFilterURL(activeFilters, info.Key)
+			} else {
+				href = filterURL(activeFilters, info.Key, v)
 			}
 			valueTags = append(valueTags, h.A(
-				h.Href(filterURL(activeFilters, info.Key, v)),
+				h.Href(href),
 				h.Class(class),
 				g.Text(v),
 			))
