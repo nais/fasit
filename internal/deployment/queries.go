@@ -173,7 +173,7 @@ func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*Dep
 func NormalizeStatus(s string) string {
 	s = strings.ToUpper(s)
 	switch s {
-	case "CREATED":
+	case "CREATED", "INVALIDATED":
 		return "PENDING"
 	case "":
 		return "UNKNOWN"

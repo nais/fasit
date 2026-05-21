@@ -205,6 +205,13 @@ func (d *DeployManager) Run(ctx context.Context) {
 }
 
 func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstruction) error {
+	// Force ack message to prevent retries for long running tasks
+	message.ForceAck(ctx)
+
+	// Detach from the pubsub context so in-flight work is not cancelled
+	// when the subscription stops accepting new messages on shutdown.
+	ctx = context.WithoutCancel(ctx)
+
 	handlerStart := time.Now()
 	defer func() {
 		if d.handlerDuration != nil {
@@ -213,9 +220,6 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 			))
 		}
 	}()
-
-	// Force ack message to prevent retries for long running tasks
-	message.ForceAck(ctx)
 
 	if msg.Uninstall {
 		return d.uninstallHandler(ctx, msg)
