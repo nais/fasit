@@ -1,4 +1,4 @@
--- name: List :many
+-- name: ListDeployments :many
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -21,7 +21,7 @@ FROM
 	ORDER BY
 		d.created DESC;
 
--- name: ListByFeature :many
+-- name: ListDeploymentsByFeature :many
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -83,7 +83,7 @@ FROM
 		d.target,
 		d.created DESC;
 
--- name: DeployInstructionsGetDeployedFeatures :many
+-- name: ListDeployedFeaturesInEnvironment :many
 SELECT DISTINCT ON (feature_name)
 	feature_name
 FROM
@@ -188,7 +188,7 @@ WHERE
 	ds.deployment_id = @deployment_id
 	AND ds.environment_id = @environment_id;
 
--- name: ListDeploymentsForEnvironmentFeature :many
+-- name: ListDeploymentsForFeatureInEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
 	sqlc.embed(fd)

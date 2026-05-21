@@ -24,7 +24,7 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ReleaseStatusDeleteByEnvironment :exec
+-- name: DeleteReleaseStatusesInEnvironment :exec
 DELETE FROM release_statuses
 WHERE environment_id = @environment_id;
 

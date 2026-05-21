@@ -13,21 +13,21 @@ type Querier interface {
 	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
 	DeleteDeployment(ctx context.Context, id uuid.UUID) error
 	DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error
-	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
+	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	GetDeployInstructionByDeploymentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByDeploymentAndEnvironmentIDParams) (GetDeployInstructionByDeploymentAndEnvironmentIDRow, error)
 	GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymentRow, error)
 	GetDeploymentStatus(ctx context.Context, arg GetDeploymentStatusParams) (DeploymentStatus, error)
 	InvalidateDeployInstruction(ctx context.Context, arg InvalidateDeployInstructionParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
-	List(ctx context.Context) ([]ListRow, error)
-	ListByFeature(ctx context.Context, featureName string) ([]ListByFeatureRow, error)
 	ListDeployInstructions(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsRow, error)
+	ListDeployedFeaturesInEnvironment(ctx context.Context, arg ListDeployedFeaturesInEnvironmentParams) ([]string, error)
 	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)
+	ListDeployments(ctx context.Context) ([]ListDeploymentsRow, error)
+	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)
 	ListDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsForEnvironmentRow, error)
-	ListDeploymentsForEnvironmentFeature(ctx context.Context, arg ListDeploymentsForEnvironmentFeatureParams) ([]ListDeploymentsForEnvironmentFeatureRow, error)
+	ListDeploymentsForFeatureInEnvironment(ctx context.Context, arg ListDeploymentsForFeatureInEnvironmentParams) ([]ListDeploymentsForFeatureInEnvironmentRow, error)
 	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
-	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
 	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) (ReleaseStatus, error)
 	TimeoutDeployInstructions(ctx context.Context) error

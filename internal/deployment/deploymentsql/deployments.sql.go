@@ -83,44 +83,6 @@ func (q *Queries) DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg D
 	return err
 }
 
-const deployInstructionsGetDeployedFeatures = `-- name: DeployInstructionsGetDeployedFeatures :many
-SELECT DISTINCT ON (feature_name)
-	feature_name
-FROM
-	deploy_instructions
-WHERE
-	feature_name = ANY ($1::TEXT[])
-	AND status = 'deployed'
-	AND environment_id = $2
-ORDER BY
-	feature_name
-`
-
-type DeployInstructionsGetDeployedFeaturesParams struct {
-	FeatureNames  []string
-	EnvironmentID uuid.UUID
-}
-
-func (q *Queries) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, deployInstructionsGetDeployedFeatures, arg.FeatureNames, arg.EnvironmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []string{}
-	for rows.Next() {
-		var feature_name string
-		if err := rows.Scan(&feature_name); err != nil {
-			return nil, err
-		}
-		items = append(items, feature_name)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getDeployment = `-- name: GetDeployment :one
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
@@ -218,125 +180,37 @@ func (q *Queries) LatestStatusForDeploymentInEnvironment(ctx context.Context, ar
 	return status, err
 }
 
-const list = `-- name: List :many
-SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+const listDeployedFeaturesInEnvironment = `-- name: ListDeployedFeaturesInEnvironment :many
+SELECT DISTINCT ON (feature_name)
+	feature_name
 FROM
-	deployments d
-	JOIN (
-		SELECT
-			feature_name,
-			target,
-			MAX(created) AS max_created
-		FROM
-			deployments
-		GROUP BY
-			feature_name,
-			target) latest ON d.feature_name = latest.feature_name
-	AND d.target = latest.target
-	AND d.created = latest.max_created
-	JOIN feature_data fd ON d.feature_name = fd.name
-		AND d.version = fd.version
-	ORDER BY
-		d.created DESC
-`
-
-type ListRow struct {
-	Deployment   Deployment
-	FeatureDatum FeatureDatum
-}
-
-func (q *Queries) List(ctx context.Context) ([]ListRow, error) {
-	rows, err := q.db.Query(ctx, list)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListRow{}
-	for rows.Next() {
-		var i ListRow
-		if err := rows.Scan(
-			&i.Deployment.ID,
-			&i.Deployment.FeatureName,
-			&i.Deployment.Version,
-			&i.Deployment.Target,
-			&i.Deployment.Created,
-			&i.Deployment.GhRef,
-			&i.Deployment.Description,
-			&i.FeatureDatum.Name,
-			&i.FeatureDatum.Version,
-			&i.FeatureDatum.Chart,
-			&i.FeatureDatum.Description,
-			&i.FeatureDatum.Source,
-			&i.FeatureDatum.Kinds,
-			&i.FeatureDatum.Dependencies,
-			&i.FeatureDatum.Values,
-			&i.FeatureDatum.DefaultValues,
-			&i.FeatureDatum.Timeout,
-			&i.FeatureDatum.TplDetails,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listByFeature = `-- name: ListByFeature :many
-SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
-FROM
-	deployments d
-	JOIN feature_data fd ON d.feature_name = fd.name
-		AND d.version = fd.version
+	deploy_instructions
 WHERE
-	fd.name = $1
+	feature_name = ANY ($1::TEXT[])
+	AND status = 'deployed'
+	AND environment_id = $2
 ORDER BY
-	d.created DESC
+	feature_name
 `
 
-type ListByFeatureRow struct {
-	Deployment   Deployment
-	FeatureDatum FeatureDatum
+type ListDeployedFeaturesInEnvironmentParams struct {
+	FeatureNames  []string
+	EnvironmentID uuid.UUID
 }
 
-func (q *Queries) ListByFeature(ctx context.Context, featureName string) ([]ListByFeatureRow, error) {
-	rows, err := q.db.Query(ctx, listByFeature, featureName)
+func (q *Queries) ListDeployedFeaturesInEnvironment(ctx context.Context, arg ListDeployedFeaturesInEnvironmentParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listDeployedFeaturesInEnvironment, arg.FeatureNames, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListByFeatureRow{}
+	items := []string{}
 	for rows.Next() {
-		var i ListByFeatureRow
-		if err := rows.Scan(
-			&i.Deployment.ID,
-			&i.Deployment.FeatureName,
-			&i.Deployment.Version,
-			&i.Deployment.Target,
-			&i.Deployment.Created,
-			&i.Deployment.GhRef,
-			&i.Deployment.Description,
-			&i.FeatureDatum.Name,
-			&i.FeatureDatum.Version,
-			&i.FeatureDatum.Chart,
-			&i.FeatureDatum.Description,
-			&i.FeatureDatum.Source,
-			&i.FeatureDatum.Kinds,
-			&i.FeatureDatum.Dependencies,
-			&i.FeatureDatum.Values,
-			&i.FeatureDatum.DefaultValues,
-			&i.FeatureDatum.Timeout,
-			&i.FeatureDatum.TplDetails,
-		); err != nil {
+		var feature_name string
+		if err := rows.Scan(&feature_name); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, feature_name)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -430,6 +304,132 @@ func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.
 	return items, nil
 }
 
+const listDeployments = `-- name: ListDeployments :many
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN (
+		SELECT
+			feature_name,
+			target,
+			MAX(created) AS max_created
+		FROM
+			deployments
+		GROUP BY
+			feature_name,
+			target) latest ON d.feature_name = latest.feature_name
+	AND d.target = latest.target
+	AND d.created = latest.max_created
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created DESC
+`
+
+type ListDeploymentsRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, error) {
+	rows, err := q.db.Query(ctx, listDeployments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeploymentsRow{}
+	for rows.Next() {
+		var i ListDeploymentsRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDeploymentsByFeature = `-- name: ListDeploymentsByFeature :many
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	fd.name = $1
+ORDER BY
+	d.created DESC
+`
+
+type ListDeploymentsByFeatureRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listDeploymentsByFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeploymentsByFeatureRow{}
+	for rows.Next() {
+		var i ListDeploymentsByFeatureRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDeploymentsForEnvironment = `-- name: ListDeploymentsForEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
@@ -495,7 +495,7 @@ func (q *Queries) ListDeploymentsForEnvironment(ctx context.Context, environment
 	return items, nil
 }
 
-const listDeploymentsForEnvironmentFeature = `-- name: ListDeploymentsForEnvironmentFeature :many
+const listDeploymentsForFeatureInEnvironment = `-- name: ListDeploymentsForFeatureInEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
@@ -513,25 +513,25 @@ ORDER BY
 	d.created DESC
 `
 
-type ListDeploymentsForEnvironmentFeatureParams struct {
+type ListDeploymentsForFeatureInEnvironmentParams struct {
 	EnvironmentID uuid.UUID
 	FeatureName   string
 }
 
-type ListDeploymentsForEnvironmentFeatureRow struct {
+type ListDeploymentsForFeatureInEnvironmentRow struct {
 	Deployment   Deployment
 	FeatureDatum FeatureDatum
 }
 
-func (q *Queries) ListDeploymentsForEnvironmentFeature(ctx context.Context, arg ListDeploymentsForEnvironmentFeatureParams) ([]ListDeploymentsForEnvironmentFeatureRow, error) {
-	rows, err := q.db.Query(ctx, listDeploymentsForEnvironmentFeature, arg.EnvironmentID, arg.FeatureName)
+func (q *Queries) ListDeploymentsForFeatureInEnvironment(ctx context.Context, arg ListDeploymentsForFeatureInEnvironmentParams) ([]ListDeploymentsForFeatureInEnvironmentRow, error) {
+	rows, err := q.db.Query(ctx, listDeploymentsForFeatureInEnvironment, arg.EnvironmentID, arg.FeatureName)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListDeploymentsForEnvironmentFeatureRow{}
+	items := []ListDeploymentsForFeatureInEnvironmentRow{}
 	for rows.Next() {
-		var i ListDeploymentsForEnvironmentFeatureRow
+		var i ListDeploymentsForFeatureInEnvironmentRow
 		if err := rows.Scan(
 			&i.Deployment.ID,
 			&i.Deployment.FeatureName,

@@ -10,6 +10,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteReleaseStatusesInEnvironment = `-- name: DeleteReleaseStatusesInEnvironment :exec
+DELETE FROM release_statuses
+WHERE environment_id = $1
+`
+
+func (q *Queries) DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteReleaseStatusesInEnvironment, environmentID)
+	return err
+}
+
 const listReleaseStatuses = `-- name: ListReleaseStatuses :many
 SELECT
 	environment_id, feature, version, status, revision, last_deployed, created, last_modified
@@ -48,16 +58,6 @@ func (q *Queries) ListReleaseStatuses(ctx context.Context, environmentID uuid.UU
 		return nil, err
 	}
 	return items, nil
-}
-
-const releaseStatusDeleteByEnvironment = `-- name: ReleaseStatusDeleteByEnvironment :exec
-DELETE FROM release_statuses
-WHERE environment_id = $1
-`
-
-func (q *Queries) ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, releaseStatusDeleteByEnvironment, environmentID)
-	return err
 }
 
 const setReleaseStatus = `-- name: SetReleaseStatus :one

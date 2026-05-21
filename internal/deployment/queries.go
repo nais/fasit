@@ -130,7 +130,7 @@ func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uui
 }
 
 func List(ctx context.Context) ([]*Deployment, error) {
-	rows, err := querier(ctx).List(ctx)
+	rows, err := querier(ctx).ListDeployments(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 }
 
 func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
-	rows, err := querier(ctx).ListByFeature(ctx, featureName)
+	rows, err := querier(ctx).ListDeploymentsByFeature(ctx, featureName)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +307,7 @@ func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName str
 }
 
 func mostSpecificDeployment(ctx context.Context, envID uuid.UUID, featureName string) (*Deployment, error) {
-	rows, err := querier(ctx).ListDeploymentsForEnvironmentFeature(ctx, deploymentsql.ListDeploymentsForEnvironmentFeatureParams{
+	rows, err := querier(ctx).ListDeploymentsForFeatureInEnvironment(ctx, deploymentsql.ListDeploymentsForFeatureInEnvironmentParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
 	})
@@ -387,7 +387,7 @@ func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*model
 }
 
 func DeleteReleaseStatus(ctx context.Context, environmentID uuid.UUID) error {
-	return querier(ctx).ReleaseStatusDeleteByEnvironment(ctx, environmentID)
+	return querier(ctx).DeleteReleaseStatusesInEnvironment(ctx, environmentID)
 }
 
 func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {

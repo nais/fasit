@@ -245,7 +245,7 @@ func (d *deployer) missingDependencies(ctx context.Context, dependencies []strin
 	if len(dependencies) == 0 {
 		return []string{}, nil
 	}
-	deployedFeatures, err := d.querier.DeployInstructionsGetDeployedFeatures(ctx, deploymentsql.DeployInstructionsGetDeployedFeaturesParams{
+	deployedFeatures, err := d.querier.ListDeployedFeaturesInEnvironment(ctx, deploymentsql.ListDeployedFeaturesInEnvironmentParams{
 		FeatureNames:  dependencies,
 		EnvironmentID: environmentID,
 	})
