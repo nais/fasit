@@ -64,4 +64,3 @@ func timeWithTitle(t time.Time) g.Node {
 	}
 	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }
-
