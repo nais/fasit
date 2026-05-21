@@ -252,7 +252,7 @@ func RedeployHandler() http.HandlerFunc {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		audit.Create(r.Context(), audit.CreateParams{
+		_ = audit.Create(r.Context(), audit.CreateParams{
 			Description: "triggered redeploy",
 			ObjectType:  "deployment",
 			ObjectID:    env.ID.String() + ":" + feature.Name,

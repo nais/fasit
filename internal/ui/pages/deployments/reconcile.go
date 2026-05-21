@@ -11,7 +11,7 @@ import (
 func ReconcileHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
-		audit.Create(r.Context(), audit.CreateParams{
+		_ = audit.Create(r.Context(), audit.CreateParams{
 			Description: "triggered full reconcile",
 			ObjectType:  "deployments",
 			ObjectID:    "all",
