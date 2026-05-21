@@ -60,6 +60,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		sort.Slice(depRows, func(i, j int) bool {
 			return depRows[i].Created.After(depRows[j].Created)
 		})
+		depRows = depRows[:min(10, len(depRows))]
 
 		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features), depRows, audits)})
 	}
