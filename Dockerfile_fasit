@@ -3,7 +3,7 @@ ARG GO_VERSION=1.26
 FROM golang:${GO_VERSION} AS builder
 
 WORKDIR /workspace
-COPY go.* ./
+COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . /workspace
@@ -15,6 +15,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /
 
-COPY --from=builder /workspace/fasit .
+COPY --from=builder /workspace/fasit /usr/local/bin/fasit
 
-ENTRYPOINT ["/fasit"]
+ENTRYPOINT ["/usr/local/bin/fasit"]

@@ -20,6 +20,6 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /
 
 COPY --from=helm /linux-amd64/helm /usr/local/bin/helm
-COPY --from=builder /workspace/naisd .
+COPY --from=builder /workspace/naisd /usr/local/bin/naisd
 
-ENTRYPOINT ["/naisd"]
+ENTRYPOINT ["/usr/local/bin/naisd"]
