@@ -18,9 +18,9 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
 	FeatureName, Chart, Version, Status, Target, Created, Completed, DeploymentID string
-	TargetLabels                                                           map[string]string
-	createdAt                                                              time.Time
-	disabledCount                                                          int
+	TargetLabels                                                                  map[string]string
+	createdAt                                                                     time.Time
+	disabledCount                                                                 int
 }
 
 func versionCell(s Summary) g.Node {

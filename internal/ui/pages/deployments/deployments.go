@@ -134,7 +134,7 @@ func listPage(rows []Summary, query string) g.Node {
 							g.If(query != "", h.Value(query)),
 						),
 					),
-				h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "new-deployment"), g.Text("+ New deployment")),
+					h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "new-deployment"), g.Text("+ New deployment")),
 					newDeploymentPopover(),
 				),
 				deploymentsTable(rows),
