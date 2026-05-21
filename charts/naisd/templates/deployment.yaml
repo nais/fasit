@@ -4,8 +4,6 @@ metadata:
   name: {{ include "naisd.fullname" . }}
   labels:
     {{- include "naisd.labels" . | nindent 4 }}
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
   replicas: 1
   selector:
@@ -13,10 +11,11 @@ spec:
       {{- include "naisd.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "naisd.selectorLabels" . | nindent 8 }}
         tenant: {{ .Values.tenantName }}
