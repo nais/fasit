@@ -60,11 +60,12 @@ WHERE
 ORDER BY
 	di.created DESC;
 
--- name: InvalidateDeployInstructionHash :exec
+-- name: InvalidateDeployInstruction :exec
 UPDATE
 	deploy_instructions
 SET
-	hash = ''
+	hash = '',
+	status = 'invalidated'
 WHERE
 	id =(
 		SELECT

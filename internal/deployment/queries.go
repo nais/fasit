@@ -252,7 +252,7 @@ func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string
 }
 
 func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
-	err := querier(ctx).InvalidateDeployInstructionHash(ctx, deploymentsql.InvalidateDeployInstructionHashParams{
+	err := querier(ctx).InvalidateDeployInstruction(ctx, deploymentsql.InvalidateDeployInstructionParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
 	})

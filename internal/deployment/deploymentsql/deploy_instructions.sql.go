@@ -123,11 +123,12 @@ func (q *Queries) GetDeployInstructionByDeploymentAndEnvironmentID(ctx context.C
 	return i, err
 }
 
-const invalidateDeployInstructionHash = `-- name: InvalidateDeployInstructionHash :exec
+const invalidateDeployInstruction = `-- name: InvalidateDeployInstruction :exec
 UPDATE
 	deploy_instructions
 SET
-	hash = ''
+	hash = '',
+	status = 'invalidated'
 WHERE
 	id =(
 		SELECT
@@ -142,13 +143,13 @@ WHERE
 		LIMIT 1)
 `
 
-type InvalidateDeployInstructionHashParams struct {
+type InvalidateDeployInstructionParams struct {
 	FeatureName   string
 	EnvironmentID uuid.UUID
 }
 
-func (q *Queries) InvalidateDeployInstructionHash(ctx context.Context, arg InvalidateDeployInstructionHashParams) error {
-	_, err := q.db.Exec(ctx, invalidateDeployInstructionHash, arg.FeatureName, arg.EnvironmentID)
+func (q *Queries) InvalidateDeployInstruction(ctx context.Context, arg InvalidateDeployInstructionParams) error {
+	_, err := q.db.Exec(ctx, invalidateDeployInstruction, arg.FeatureName, arg.EnvironmentID)
 	return err
 }
 

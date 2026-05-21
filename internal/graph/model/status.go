@@ -9,16 +9,17 @@ import (
 type RolloutStatus string
 
 const (
-	RolloutStatusUnknown  RolloutStatus = ""
-	RolloutStatusCreated  RolloutStatus = "created"
-	RolloutStatusPending  RolloutStatus = "pending"
-	RolloutStatusDeployed RolloutStatus = "deployed"
-	RolloutStatusFailed   RolloutStatus = "failed"
+	RolloutStatusUnknown     RolloutStatus = ""
+	RolloutStatusCreated     RolloutStatus = "created"
+	RolloutStatusPending     RolloutStatus = "pending"
+	RolloutStatusDeployed    RolloutStatus = "deployed"
+	RolloutStatusFailed      RolloutStatus = "failed"
+	RolloutStatusInvalidated RolloutStatus = "invalidated"
 )
 
 func (r RolloutStatus) IsValid() bool {
 	switch r {
-	case RolloutStatusUnknown, RolloutStatusCreated, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed:
+	case RolloutStatusUnknown, RolloutStatusCreated, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed, RolloutStatusInvalidated:
 		return true
 	}
 	return false
