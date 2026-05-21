@@ -1,4 +1,4 @@
--- name: Set :one
+-- name: SetNaisdHealthStatus :one
 INSERT INTO health_statuses(
 	environment_id,
 	reported_at)
@@ -12,7 +12,7 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: Get :one
+-- name: GetNaisdHealthStatus :one
 SELECT
 	*
 FROM

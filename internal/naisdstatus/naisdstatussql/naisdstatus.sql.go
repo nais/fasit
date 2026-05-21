@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const get = `-- name: Get :one
+const getNaisdHealthStatus = `-- name: GetNaisdHealthStatus :one
 SELECT
 	environment_id, reported_at
 FROM
@@ -19,14 +19,14 @@ WHERE
 	environment_id = $1
 `
 
-func (q *Queries) Get(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error) {
-	row := q.db.QueryRow(ctx, get, environmentID)
+func (q *Queries) GetNaisdHealthStatus(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error) {
+	row := q.db.QueryRow(ctx, getNaisdHealthStatus, environmentID)
 	var i HealthStatus
 	err := row.Scan(&i.EnvironmentID, &i.ReportedAt)
 	return i, err
 }
 
-const set = `-- name: Set :one
+const setNaisdHealthStatus = `-- name: SetNaisdHealthStatus :one
 INSERT INTO health_statuses(
 	environment_id,
 	reported_at)
@@ -41,13 +41,13 @@ ON CONFLICT (
 		environment_id, reported_at
 `
 
-type SetParams struct {
+type SetNaisdHealthStatusParams struct {
 	EnvironmentID uuid.UUID
 	ReportedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) Set(ctx context.Context, arg SetParams) (HealthStatus, error) {
-	row := q.db.QueryRow(ctx, set, arg.EnvironmentID, arg.ReportedAt)
+func (q *Queries) SetNaisdHealthStatus(ctx context.Context, arg SetNaisdHealthStatusParams) (HealthStatus, error) {
+	row := q.db.QueryRow(ctx, setNaisdHealthStatus, arg.EnvironmentID, arg.ReportedAt)
 	var i HealthStatus
 	err := row.Scan(&i.EnvironmentID, &i.ReportedAt)
 	return i, err

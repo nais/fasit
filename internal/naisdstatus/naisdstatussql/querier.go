@@ -9,8 +9,8 @@ import (
 )
 
 type Querier interface {
-	Get(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
-	Set(ctx context.Context, arg SetParams) (HealthStatus, error)
+	GetNaisdHealthStatus(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
+	SetNaisdHealthStatus(ctx context.Context, arg SetNaisdHealthStatusParams) (HealthStatus, error)
 }
 
 var _ Querier = (*Queries)(nil)

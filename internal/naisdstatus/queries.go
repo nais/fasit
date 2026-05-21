@@ -8,27 +8,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
 )
 
-type ctxKey int
-
-// QuerierKey is exposed so tests can inject fake queriers on the context.
-const QuerierKey ctxKey = iota
-
-func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	return context.WithValue(ctx, QuerierKey, naisdstatussql.New(pool))
-}
-
-func querier(ctx context.Context) naisdstatussql.Querier {
-	return ctx.Value(QuerierKey).(naisdstatussql.Querier)
-}
-
 func Get(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
-	res, err := querier(ctx).Get(ctx, environmentID)
+	res, err := querier(ctx).GetNaisdHealthStatus(ctx, environmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &model.Health{
@@ -44,7 +30,7 @@ func Get(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
 }
 
 func Set(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
-	_, err := querier(ctx).Set(ctx, naisdstatussql.SetParams{
+	_, err := querier(ctx).SetNaisdHealthStatus(ctx, naisdstatussql.SetNaisdHealthStatusParams{
 		EnvironmentID: environmentID,
 		ReportedAt: pgtype.Timestamptz{
 			Time:  h.ReportedAt,
