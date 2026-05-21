@@ -155,6 +155,11 @@ nav .menu .item.active {
   color: var(--text-primary);
   background: var(--btn-bg);
 }
+.external-link-icon {
+  vertical-align: -0.1em;
+  margin-left: 0.25rem;
+  opacity: 0.6;
+}
 nav .user {
   color: var(--text-faintest);
   font-size: 0.85rem;
