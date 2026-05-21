@@ -15,6 +15,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -276,30 +277,9 @@ func renderStatus(status string) g.Node {
 }
 
 func resourceLinkNode(e *audit.Entry) g.Node {
-	label := e.ObjectType.Display() + " " + e.ObjectID
-	var href string
-	switch e.ObjectType {
-	case audit.ObjectTypeFeature, audit.ObjectTypeDeployment:
-		href = "/features/" + e.ObjectID
-	case audit.ObjectTypeConfiguration:
-		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
-			href = "/features/" + e.ObjectID[:i]
-		}
-	case audit.ObjectTypeEnvironment, audit.ObjectTypeEnvironmentValue:
-		if e.TenantName != "" && e.EnvironmentName != "" {
-			href = "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
-		}
-	}
-	if href == "" {
-		return g.Text(label)
-	}
-	return h.A(h.Href(href), g.Text(label))
+	return auditlog.ResourceLink(e)
 }
 
 func envLinkNode(e *audit.Entry) g.Node {
-	if e.TenantName == "" || e.EnvironmentName == "" {
-		return g.Text("")
-	}
-	label := e.TenantName + "/" + e.EnvironmentName
-	return h.A(h.Href("/tenants/"+e.TenantName+"/envs/"+e.EnvironmentName), g.Text(label))
+	return auditlog.EnvLink(e)
 }

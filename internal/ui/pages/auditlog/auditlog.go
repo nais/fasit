@@ -89,8 +89,8 @@ func activityTable(entries []*audit.Entry) g.Node {
 	for _, e := range entries {
 		rows = append(rows, h.Tr(
 			h.Td(g.Text(string(e.Action))),
-			h.Td(resourceLink(e)),
-			h.Td(envLink(e)),
+			h.Td(ResourceLink(e)),
+			h.Td(EnvLink(e)),
 			h.Td(h.Class("text-muted"), g.Text(e.Description)),
 			h.Td(g.Text(e.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(e.CreatedAt))),
@@ -110,16 +110,16 @@ func activityTable(entries []*audit.Entry) g.Node {
 	)
 }
 
-func resourceLink(e *audit.Entry) g.Node {
+func ResourceLink(e *audit.Entry) g.Node {
 	label := e.ObjectType.Display() + " " + e.ObjectID
-	href := resourceHref(e)
+	href := ResourceHref(e)
 	if href == "" {
 		return g.Text(label)
 	}
 	return h.A(h.Href(href), g.Text(label))
 }
 
-func resourceHref(e *audit.Entry) string {
+func ResourceHref(e *audit.Entry) string {
 	switch e.ObjectType {
 	case audit.ObjectTypeFeature, audit.ObjectTypeDeployment:
 		return "/features/" + e.ObjectID
@@ -139,7 +139,7 @@ func resourceHref(e *audit.Entry) string {
 	}
 }
 
-func envLink(e *audit.Entry) g.Node {
+func EnvLink(e *audit.Entry) g.Node {
 	if e.TenantName == "" || e.EnvironmentName == "" {
 		return g.Text("")
 	}
