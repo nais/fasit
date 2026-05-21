@@ -1,10 +1,11 @@
 package deployments
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"net/http"
-	"strings"
+	"sort"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -12,6 +13,7 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	envpkg "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -88,6 +90,9 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 		allByFeature, _ := deployment.ListByFeature(r.Context(), dep.Feature.Name)
 		var matching []matchingDeployment
 		for _, d := range allByFeature {
+			if d.ID == dep.ID {
+				continue
+			}
 			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
 				continue
 			}
@@ -98,15 +103,19 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			})
 		}
 
-		renderPage(w, r, layout.Props{Title: fmt.Sprintf("Deployment %s %s", dep.Feature.Name, dep.Feature.Version), CurrentPage: components.PageDeployments, Content: detailPage(dep, rows, deployInstructions, matching)})
+		renderPage(w, r, layout.Props{
+			Title:       fmt.Sprintf("Deployment %s %s", dep.Feature.Name, dep.Feature.Version),
+			CurrentPage: components.PageDeployments,
+			Content:     detailPage(dep, rows, deployInstructions, matching),
+		})
 	}
 }
 
 func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsRow, matching []matchingDeployment) g.Node {
 	meta := []g.Node{
-		metaRow("Feature", h.A(h.Href("/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
-		metaRow("Version", g.Text(d.Feature.Version)),
+		metaRow("Chart", g.Text(d.Feature.Chart)),
 		metaRow("Target", targetPills(deploymentTargetLabels(d))),
+		metaRow("Version", g.Text(d.Feature.Version)),
 		metaRow("Created", timeWithTitle(d.Created)),
 	}
 
@@ -114,119 +123,201 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
 
-	if ref := ghRefNode(d.GHRef); ref != nil {
-		meta = append(meta, metaRow("GitHub ref", ref))
+	if ref := parseGHRef(d.GHRef); ref != nil {
+		meta = append(meta, metaRow("Commit", ghRefLink(ref)))
 	}
-
-	meta = append(meta, metaRow("Actions", h.Div(
-		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete")),
-		h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),
-			h.H3(g.Text("Delete deployment")),
-			h.P(g.Textf("Delete deployment %s %s?", d.Feature.Name, d.Feature.Version)),
-			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete"),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
-			),
-		),
-	)))
 
 	content := []g.Node{
-		h.H1(g.Textf("Deployment: %s %s", d.Feature.Name, d.Feature.Version)),
-		h.Table(h.Class("table"), h.TBody(g.Group(meta))),
-		h.H2(g.Text("Environment Statuses")),
-	}
-
-	if len(statuses) == 0 {
-		content = append(content, h.P(g.Text("No statuses.")))
-	} else {
-		content = append(content, h.Table(
-			h.Class("table sortable"),
-			g.Attr("data-sort-key", "deployment-detail-envs"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Tenant")),
-				h.Th(g.Text("Environment")),
-				h.Th(g.Text("State")),
-				h.Th(g.Text("Message")),
-				h.Th(g.Text("Last Modified")),
-				h.Th(g.Text("Logs")),
-			)),
-			h.TBody(g.Group(g.Map(statuses, func(s deploymentStatusRow) g.Node {
-				return h.Tr(
-					h.Td(g.Text(s.TenantName)),
-					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name), g.Text(s.EnvironmentName))),
-					h.Td(renderStatus(s.State)),
-					h.Td(g.Text(s.Message)),
-					h.Td(timeWithTitle(s.LastModified)),
-					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+s.EnvironmentID), g.Attr("title", "View logs"), g.Text("📋"))),
-				)
-			}))),
-		))
-	}
-
-	content = append(content,
-		h.H2(g.Text("All deployments matching target")),
-		h.Table(
-			h.Class("table"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Version")),
-				h.Th(g.Text("Created")),
-			)),
-			h.TBody(g.Group(g.Map(matching, func(m matchingDeployment) g.Node {
-				return h.Tr(
-					h.Td(h.A(h.Href("/deployments/"+m.ID), g.Text(m.Version))),
-					h.Td(timeWithTitle(m.Created)),
-				)
-			}))),
-		),
-		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-all-deployments"), g.Text("Delete all deployments")),
-		g.Textf(" (%d)", len(matching)),
-		h.Div(g.Attr("popover", ""), h.ID("delete-all-deployments"),
-			h.H3(g.Text("Delete all deployments")),
-			h.P(g.Textf("Delete all %d deployments for %s?", len(matching), d.Feature.Name)),
-			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete all")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-all-deployments"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
+		h.Div(h.Class("deploy-detail-topbar"),
+			h.Details(h.Class("env-actions"),
+				h.Summary(h.Class("env-actions-toggle"), g.Attr("title", "Actions"), g.Text("\u22ee")),
+				h.Div(h.Class("env-actions-menu"),
+					h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version")),
+					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete deployment")),
+				),
 			),
 		),
-	)
+		setVersionPopover(d),
+		deleteDeploymentPopover(d, len(matching)),
+		h.Table(h.Class("table meta-table table-compact"), h.TBody(g.Group(meta))),
+	}
 
-	var naidInstructionsContent g.Node
-	if len(deployInstructions) == 0 {
-		naidInstructionsContent = h.P(g.Text("No NAISD instructions."))
-	} else {
-		naidInstructionsContent = h.Table(
-			h.Class("table sortable"),
-			g.Attr("data-sort-key", "deployment-detail-instructions"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Environment")),
-				h.Th(g.Text("Status")),
-				h.Th(g.Text("Created")),
-				h.Th(g.Text("Last Modified")),
-				h.Th(g.Text("Logs")),
-			)),
-			h.TBody(g.Group(g.Map(deployInstructions, func(di deploymentsql.ListDeployInstructionsRow) g.Node {
-				return h.Tr(
-					h.Td(h.A(h.Href("/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
-					h.Td(renderStatus(strings.ToUpper(di.DeployInstruction.Status))),
-					h.Td(timeWithTitle(di.DeployInstruction.Created.Time)),
-					h.Td(timeWithTitle(di.DeployInstruction.LastModified.Time)),
-					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+di.DeployInstruction.EnvironmentID.String()), g.Attr("title", "View logs"), g.Text("📋"))),
-				)
-			}))),
+	// Environments — merged view of deployment statuses and instructions
+	type envRow struct {
+		TenantName      string
+		EnvironmentName string
+		EnvironmentID   string
+		State           string
+		Message         string
+		LastModified    time.Time
+	}
+
+	envRows := make(map[string]*envRow)
+	for _, s := range statuses {
+		envRows[s.EnvironmentID] = &envRow{
+			TenantName:      s.TenantName,
+			EnvironmentName: s.EnvironmentName,
+			EnvironmentID:   s.EnvironmentID,
+			State:           s.State,
+			Message:         s.Message,
+			LastModified:    s.LastModified,
+		}
+	}
+	for _, di := range deployInstructions {
+		envID := di.DeployInstruction.EnvironmentID.String()
+		if _, ok := envRows[envID]; !ok {
+			envRows[envID] = &envRow{
+				TenantName:      di.TenantName,
+				EnvironmentName: di.EnvironmentName,
+				EnvironmentID:   envID,
+				LastModified:    di.DeployInstruction.LastModified.Time,
+			}
+		}
+	}
+
+	var sortedEnvRows []*envRow
+	for _, r := range envRows {
+		sortedEnvRows = append(sortedEnvRows, r)
+	}
+	sort.Slice(sortedEnvRows, func(i, j int) bool {
+		if sortedEnvRows[i].TenantName != sortedEnvRows[j].TenantName {
+			return sortedEnvRows[i].TenantName < sortedEnvRows[j].TenantName
+		}
+		return sortedEnvRows[i].EnvironmentName < sortedEnvRows[j].EnvironmentName
+	})
+
+	if len(sortedEnvRows) > 0 {
+		content = append(content,
+			h.H2(g.Text("Instances")),
+			h.Table(
+				h.Class("table sortable"),
+				g.Attr("data-sort-key", "deployment-detail-envs"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Tenant")),
+					h.Th(g.Text("Environment")),
+					h.Th(g.Text("State")),
+					h.Th(g.Text("Message")),
+					h.Th(g.Text("Last Modified")),
+					h.Th(g.Text("")),
+				)),
+				h.TBody(g.Group(g.Map(sortedEnvRows, func(r *envRow) g.Node {
+					return h.Tr(
+						h.Td(g.Text(r.TenantName)),
+						h.Td(h.A(h.Href("/tenants/"+r.TenantName+"/envs/"+r.EnvironmentName+"/"+d.Feature.Name), g.Text(r.EnvironmentName))),
+						h.Td(renderStatus(r.State)),
+						h.Td(g.Text(r.Message)),
+						h.Td(timeWithTitle(r.LastModified)),
+						h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+r.EnvironmentID), g.Text("View logs"))),
+					)
+				}))),
+			),
 		)
 	}
-	content = append(content,
-		h.H2(g.Text("NAISD Instructions")),
-		h.Details(
-			h.Summary(g.Text("Show")),
-			naidInstructionsContent,
-		),
-	)
+
+	// Previous versions
+	if len(matching) > 0 {
+		content = append(content,
+			h.H2(g.Text("Previous versions")),
+			h.Table(
+				h.Class("table"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Version")),
+					h.Th(g.Text("Created")),
+				)),
+				h.TBody(g.Group(g.Map(matching, func(m matchingDeployment) g.Node {
+					return h.Tr(
+						h.Td(h.A(h.Href("/deployments/"+m.ID), g.Text(m.Version))),
+						h.Td(timeWithTitle(m.Created)),
+					)
+				}))),
+			),
+		)
+	}
 
 	return h.Div(
 		h.Class("container"),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments(), breadcrumb.Deployment(d.ID.String(), d.Feature.Name, d.Feature.Version)}),
+			components.Breadcrumbs([]breadcrumb.Crumb{
+				breadcrumb.Deployments(),
+				{Label: d.Feature.Name, URL: "/features/" + d.Feature.Name},
+				{Content: targetPills(deploymentTargetLabels(d))},
+			}),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"), g.Group(content))),
 		),
 	)
+}
+
+func parseGHRef(raw []byte) *model.GHRef {
+	if len(raw) == 0 {
+		return nil
+	}
+	var ref model.GHRef
+	if err := json.Unmarshal(raw, &ref); err != nil {
+		return nil
+	}
+	if ref.Owner == "" && ref.Repo == "" && ref.Ref == "" {
+		return nil
+	}
+	return &ref
+}
+
+func ghRefLink(ref *model.GHRef) g.Node {
+	if ref == nil {
+		return nil
+	}
+
+	shortSHA := ref.Ref
+	if len(shortSHA) > 7 {
+		shortSHA = shortSHA[:7]
+	}
+
+	label := shortSHA
+	if ref.Repo != "" {
+		label = ref.Repo + "@" + shortSHA
+	}
+
+	if ref.Owner != "" && ref.Repo != "" && ref.Ref != "" {
+		href := fmt.Sprintf("https://github.com/%s/%s/commit/%s", ref.Owner, ref.Repo, ref.Ref)
+		return h.A(h.Href(href), h.Target("_blank"), h.Class("gh-ref-link"), g.Text(label))
+	}
+
+	return g.Text(label)
+}
+
+func deleteDeploymentPopover(d *deployment.Deployment, versionCount int) g.Node {
+	return h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),
+		h.H3(g.Text("Delete deployment")),
+		h.P(g.Textf("This will permanently delete %s and all %d previous versions with this target. This cannot be undone.", d.Feature.Name, versionCount)),
+		h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Delete")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", "delete-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		),
+	)
+}
+
+func setVersionPopover(d *deployment.Deployment) g.Node {
+	return h.Div(g.Attr("popover", ""), h.ID("set-version"),
+		h.H3(g.Text("Set version")),
+		h.Form(h.Method("POST"), h.Action("/deployments"),
+			h.Input(h.Type("hidden"), h.Name("chart"), h.Value(d.Feature.Chart)),
+			targetHiddenInputs(deploymentTargetLabels(d)),
+			h.Label(g.Text("Version")),
+			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("placeholder", "e.g. 2026-05-21-001"), h.Value(d.Feature.Version)),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Deploy")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		),
+	)
+}
+
+func targetHiddenInputs(labels map[string]string) g.Node {
+	inputs := make([]g.Node, 0, len(labels))
+	for k, v := range labels {
+		inputs = append(inputs, h.Input(h.Type("hidden"), h.Name("target_label"), h.Value(k+"="+v)))
+	}
+	return g.Group(inputs)
 }

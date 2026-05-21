@@ -99,6 +99,7 @@ html {
 body {
   margin: 0;
   height: 100%;
+  overflow: hidden;
 }
 a {
   color: var(--accent);
@@ -347,6 +348,7 @@ nav .nav-btn:hover {
 }
 .card-body {
   padding: 1.5rem;
+  position: relative;
 }
 .card-body.card-compact {
   padding: 1rem 1.5rem 1.25rem;
@@ -1711,7 +1713,10 @@ a:hover .feature-nav-badge {
 .deploy-detail-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 .deploy-detail-topbar h1 {

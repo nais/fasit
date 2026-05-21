@@ -53,7 +53,10 @@ func PreviewTargetsHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(matched)
+		if err := json.NewEncoder(w).Encode(matched); err != nil {
+			http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

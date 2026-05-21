@@ -1,10 +1,12 @@
 package deployments
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment"
 )
@@ -21,6 +23,12 @@ func DeleteHandler() http.HandlerFunc {
 			http.Error(w, "Failed to delete deployment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		_ = audit.Create(r.Context(), audit.CreateParams{
+			Description: fmt.Sprintf("deleted deployment %s", id),
+			ObjectType:  "deployment",
+			ObjectID:    id.String(),
+		})
 
 		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
 	}
@@ -44,6 +52,12 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		_ = audit.Create(r.Context(), audit.CreateParams{
+			Description: fmt.Sprintf("deleted all deployments for %s", dep.Feature.Name),
+			ObjectType:  "deployment",
+			ObjectID:    dep.Feature.Name,
+		})
 
 		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
 	}

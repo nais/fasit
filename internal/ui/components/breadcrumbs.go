@@ -18,7 +18,12 @@ func Breadcrumbs(crumbs []breadcrumb.Crumb) g.Node {
 		case len(crumb.Alternatives) > 0:
 			children = append(children, breadcrumbWithDropdown(crumb, isLast))
 		case isLast:
-			label := []g.Node{g.Text(crumb.Label)}
+			var label []g.Node
+			if crumb.Content != nil {
+				label = append(label, crumb.Content)
+			} else {
+				label = append(label, g.Text(crumb.Label))
+			}
 			if crumb.Subtitle != "" {
 				label = append(label, h.Span(h.Class("breadcrumb-subtitle"), g.Text(" ("+crumb.Subtitle+")")))
 			}
