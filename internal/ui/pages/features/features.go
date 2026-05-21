@@ -159,7 +159,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 				h.Th(g.Text("Action")),
 				h.Th(g.Text("Resource")),
 				h.Th(g.Text("Environment")),
-				h.Th(g.Text("Detail")),
+				h.Th(g.Text("Details")),
 				h.Th(g.Text("Actor")),
 				h.Th(g.Text("When")),
 			)),
