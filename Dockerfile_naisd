@@ -12,12 +12,14 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 go build -o naisd ./cmd/naisd
 
-FROM alpine
+FROM scratch AS helm
+ARG HELM_VERSION=3.17.3
+ADD https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz /
+
+FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /
 
-RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community helm
-
+COPY --from=helm /linux-amd64/helm /usr/local/bin/helm
 COPY --from=builder /workspace/naisd .
-USER 65532:65532
 
 ENTRYPOINT ["/naisd"]
