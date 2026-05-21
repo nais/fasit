@@ -27,7 +27,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/site.js", s.JS)
 	r.Get("/favicon.ico", s.Favicon)
 
-	r.Get("/", tenants.Handler(s.renderPage))
+	r.Get("/", features.ListHandler(s.renderPage))
+	r.Get("/environments", tenants.Handler(s.renderPage))
 
 	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage))
 

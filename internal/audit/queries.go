@@ -75,3 +75,23 @@ func actorOrUnknown(ctx context.Context, description, objectType string) string 
 	}
 	return actor
 }
+
+func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListRecent(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor:       r.Actor,
+			Description: r.Description,
+			ObjectType:  r.ObjectType,
+			ObjectID:    r.ObjectID,
+			CreatedAt:   r.CreatedAt.Time,
+			Metadata:    r.Metadata,
+		})
+	}
+	return ret, nil
+}

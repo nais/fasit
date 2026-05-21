@@ -1,7 +1,6 @@
 package features
 
 import (
-	"math/rand/v2"
 	"net/http"
 	"slices"
 	"sort"
@@ -9,6 +8,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/deployment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -36,7 +37,31 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
-		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features))})
+
+		deps, _ := deployment.List(r.Context())
+		var depRows []depRow
+		for _, dep := range deps {
+			status := "UNKNOWN"
+			if statuses, err := deployment.ListDeploymentStatuses(r.Context(), dep.ID); err == nil && len(statuses) > 0 {
+				status = string(statuses[0].State)
+			}
+			depRows = append(depRows, depRow{
+				FeatureName: dep.Feature.Name,
+				Version:     dep.Feature.Version,
+				Labels:      dep.TargetLabels,
+				Status:      status,
+				Created:     dep.Created,
+				DepID:       dep.ID.String(),
+			})
+		}
+
+		audits, _ := audit.ListRecent(r.Context(), 10)
+
+		sort.Slice(depRows, func(i, j int) bool {
+			return depRows[i].Created.After(depRows[j].Created)
+		})
+
+		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features), depRows, audits)})
 	}
 }
 
@@ -52,29 +77,101 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func listPage(features []view.FeatureNav) g.Node {
-	return h.Div(h.Class("container"), components.FeaturesSidebar(features, ""), h.Main(h.Class("main-content"), components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()}), h.Div(h.Class("card"), h.Div(h.Class("card-body"), jokeOfTheMoment()))))
+func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) g.Node {
+	return h.Div(h.Class("container"),
+		components.FeaturesSidebar(features, ""),
+		h.Main(h.Class("main-content"),
+			h.Div(h.Class("card"), h.Div(h.Class("card-body card-compact"),
+				recentDeployments(deps),
+			)),
+			h.Div(h.Class("card"), h.Div(h.Class("card-body card-compact"),
+				recentActivity(audits),
+			)),
+		),
+	)
 }
 
-func jokeOfTheMoment() g.Node {
-	jokes := []struct{ Q, A string }{
-		{"Why did the feature flag break up with the deployment?", "It just couldn’t commit."},
-		{"How many SREs does it take to change a light bulb?", "None — it’s a hardware problem, page the on-call."},
-		{"Why don’t Helm charts ever get invited to parties?", "They always bring too many values."},
-		{"What did the rollout say to the deployment?", "“Stop overriding me, you’re not my real parent.”"},
-		{"Why did the YAML file go to therapy?", "Indentation issues."},
-		{"What’s a Kubernetes cluster’s favorite music?", "Heavy metal — because everything’s controlled by operators."},
-		{"Why did naisd cross the road?", "To reconcile the other side."},
-		{"Why was the OCI registry always calm?", "It had great pull."},
-		{"How does a feature deploy itself?", "With a little Helm."},
-		{"What did the PENDING status say to the DEPLOYED status?", "“Must be nice.”"},
+type depRow struct {
+	FeatureName string
+	Version     string
+	Labels      map[string]string
+	Status      string
+	Created     time.Time
+	DepID       string
+}
+
+func recentDeployments(rows []depRow) g.Node {
+	if len(rows) == 0 {
+		return h.P(h.Class("text-muted"), g.Text("No deployments."))
 	}
-	j := jokes[rand.IntN(len(jokes))] // #nosec G404 -- joke picker, no security relevance
-	return h.Div(h.Class("joke"),
-		h.P(h.Class("joke-q"), g.Text(j.Q)),
-		h.P(h.Class("joke-a"), g.Text(j.A)),
-		h.P(h.Class("text-muted joke-hint"), g.Text("Pick a feature from the sidebar to get back to work.")),
-	)
+
+	tableRows := make([]g.Node, 0, len(rows))
+	for _, r := range rows {
+		tableRows = append(tableRows, h.Tr(
+			h.Td(h.A(h.Href("/features/"+r.FeatureName), g.Text(r.FeatureName))),
+			h.Td(depLabelPills(r.Labels)),
+			h.Td(h.A(h.Href("/deployments/"+r.DepID), g.Text(r.Version))),
+			h.Td(renderStatus(r.Status)),
+			h.Td(h.Class("text-muted text-right"), g.Text(view.RelativeTime(r.Created))),
+		))
+	}
+
+	return g.Group([]g.Node{
+		h.H3(g.Text("Recent deployments")),
+		h.Table(h.Class("table table-compact"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Feature")),
+				h.Th(g.Text("Target")),
+				h.Th(g.Text("Version")),
+				h.Th(g.Text("Status")),
+				h.Th(h.Class("text-right"), g.Text("When")),
+			)),
+			h.TBody(g.Group(tableRows)),
+		),
+	})
+}
+
+func recentActivity(audits []*audit.Entry) g.Node {
+	if len(audits) == 0 {
+		return h.P(h.Class("text-muted"), g.Text("No recent activity."))
+	}
+
+	tableRows := make([]g.Node, 0, len(audits))
+	for _, a := range audits {
+		tableRows = append(tableRows, h.Tr(
+			h.Td(g.Text(a.Description)),
+			h.Td(g.Text(a.Actor)),
+			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
+		))
+	}
+
+	return g.Group([]g.Node{
+		h.H3(g.Text("Recent activity")),
+		h.Table(h.Class("table table-compact"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Action")),
+				h.Th(g.Text("Actor")),
+				h.Th(g.Text("When")),
+			)),
+			h.TBody(g.Group(tableRows)),
+		),
+	})
+}
+
+func depLabelPills(labels map[string]string) g.Node {
+	if len(labels) == 0 {
+		return h.Span(h.Class("label-filter-tag"), g.Text("all environments"))
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pills := make([]g.Node, 0, len(keys))
+	for _, k := range keys {
+		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+	}
+	return g.Group(pills)
 }
 
 func detailPage(data *DetailPage) g.Node {

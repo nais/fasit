@@ -33,3 +33,7 @@ func (f *Querier) List(ctx context.Context, arg auditsql.ListParams) ([]auditsql
 	}
 	return f.AuditForEnvironmentFunc(ctx, arg)
 }
+
+func (f *Querier) ListRecent(_ context.Context, _ int32) ([]auditsql.Audit, error) {
+	return nil, nil
+}

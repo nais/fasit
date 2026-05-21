@@ -33,3 +33,12 @@ ORDER BY
 	created_at DESC
 LIMIT @page_size;
 
+-- name: ListRecent :many
+SELECT
+	*
+FROM
+	audits
+ORDER BY
+	created_at DESC
+LIMIT @page_size;
+

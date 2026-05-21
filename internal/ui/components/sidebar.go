@@ -10,7 +10,7 @@ import (
 
 func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.Node {
 	return h.Aside(h.Class("sidebar"),
-		sidebarFilter(),
+		sidebarFilter("Features"),
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(features, func(feature view.FeatureNav) g.Node {
 				attrs := []g.Node{h.Href("/features/" + feature.Name)}
@@ -26,8 +26,13 @@ func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.No
 	)
 }
 
-func sidebarFilter() g.Node {
+func sidebarFilter(title string) g.Node {
+	var heading g.Node
+	if title != "" {
+		heading = h.H4(h.Class("sidebar-heading"), g.Text(title))
+	}
 	return h.Div(h.Class("sidebar-filter-wrap"),
+		heading,
 		h.Input(
 			h.Type("search"),
 			h.Class("sidebar-filter"),
@@ -66,7 +71,7 @@ func StatusCountsBadge(failed, pending int) g.Node {
 
 func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, allFeatures []view.FeatureNav) g.Node {
 	return h.Aside(h.Class("sidebar"),
-		sidebarFilter(),
+		sidebarFilter(""),
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(allFeatures, func(feature view.FeatureNav) g.Node {
 				attrs := []g.Node{
