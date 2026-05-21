@@ -89,6 +89,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 
 		allByFeature, _ := deployment.ListByFeature(r.Context(), dep.Feature.Name)
 		var matching []matchingDeployment
+		var supersededBy *matchingDeployment
 		for _, d := range allByFeature {
 			if d.ID == dep.ID {
 				continue
@@ -96,22 +97,27 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
 				continue
 			}
-			matching = append(matching, matchingDeployment{
+			m := matchingDeployment{
 				ID:      d.ID.String(),
 				Version: d.Feature.Version,
 				Created: d.Created,
-			})
+			}
+			matching = append(matching, m)
+			if d.Created.After(dep.Created) && (supersededBy == nil || d.Created.After(supersededBy.Created)) {
+				copy := m
+				supersededBy = &copy
+			}
 		}
 
 		renderPage(w, r, layout.Props{
 			Title:       fmt.Sprintf("Deployment %s %s", dep.Feature.Name, dep.Feature.Version),
 			CurrentPage: components.PageDeployments,
-			Content:     detailPage(dep, rows, deployInstructions, matching),
+			Content:     detailPage(dep, rows, deployInstructions, matching, supersededBy),
 		})
 	}
 }
 
-func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsRow, matching []matchingDeployment) g.Node {
+func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsRow, matching []matchingDeployment, supersededBy *matchingDeployment) g.Node {
 	meta := []g.Node{
 		metaRow("Chart", g.Text(d.Feature.Chart)),
 		metaRow("Target", targetPills(deploymentTargetLabels(d))),
@@ -139,8 +145,18 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 		),
 		setVersionPopover(d),
 		deleteDeploymentPopover(d, len(matching)),
-		h.Table(h.Class("table meta-table table-compact"), h.TBody(g.Group(meta))),
 	}
+
+	if supersededBy != nil {
+		content = append(content, h.Div(h.Class("banner banner-warning"),
+			h.P(
+				g.Text("This is a previous version. Currently active: "),
+				h.A(h.Href("/deployments/"+supersededBy.ID), g.Text(supersededBy.Version)),
+			),
+		))
+	}
+
+	content = append(content, h.Table(h.Class("table meta-table table-compact"), h.TBody(g.Group(meta))))
 
 	// Environments — merged view of deployment statuses and instructions
 	type envRow struct {

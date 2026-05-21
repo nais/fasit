@@ -1793,3 +1793,18 @@ a:hover .feature-nav-badge {
 .env-actions-danger {
   color: var(--status-error, #e55) !important;
 }
+
+.banner {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.banner p {
+  margin: 0;
+}
+.banner-warning {
+  background: color-mix(in srgb, var(--status-warning, #f5a623) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-warning, #f5a623) 40%, transparent);
+  color: var(--text-primary);
+}
