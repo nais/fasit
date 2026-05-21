@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment"
@@ -429,7 +430,7 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 		return fmt.Errorf("marshal details to json: %w", err)
 	}
 
-	return querier(ctx).FeatureDataCreate(ctx, featuresql.FeatureDataCreateParams{
+	err = querier(ctx).FeatureDataCreate(ctx, featuresql.FeatureDataCreateParams{
 		FeatureName:   feat.Name,
 		Version:       feat.Version,
 		Chart:         feat.Chart,
@@ -442,6 +443,23 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 		Timeout:       feat.Timeout.Milliseconds(),
 		TplDetails:    detailsBytes,
 	})
+	if err != nil {
+		return err
+	}
+
+	_ = audit.Create(ctx, audit.CreateParams{
+		Action:      audit.ActionUpdated,
+		Description: fmt.Sprintf("updated feature %s to version %s", feat.Name, feat.Version),
+		ObjectType:  audit.ObjectTypeFeature,
+		ObjectID:    feat.Name,
+		Metadata: map[string]any{
+			"feature": feat.Name,
+			"version": feat.Version,
+			"chart":   feat.Chart,
+		},
+	})
+
+	return nil
 }
 
 func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {

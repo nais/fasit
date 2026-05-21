@@ -5,37 +5,47 @@ package auditsql
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const create = `-- name: Create :exec
 INSERT INTO audits(
 	actor,
+	action,
 	description,
 	object_type,
 	object_id,
+	environment_id,
 	metadata)
 VALUES (
 	$1,
 	$2,
 	$3,
 	$4,
-	$5)
+	$5,
+	$6,
+	$7)
 `
 
 type CreateParams struct {
-	Actor       string
-	Description string
-	ObjectType  string
-	ObjectID    string
-	Metadata    []byte
+	Actor         string
+	Action        string
+	Description   string
+	ObjectType    string
+	ObjectID      string
+	EnvironmentID *uuid.UUID
+	Metadata      []byte
 }
 
 func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 	_, err := q.db.Exec(ctx, create,
 		arg.Actor,
+		arg.Action,
 		arg.Description,
 		arg.ObjectType,
 		arg.ObjectID,
+		arg.EnvironmentID,
 		arg.Metadata,
 	)
 	return err
@@ -43,7 +53,7 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 
 const list = `-- name: List :many
 SELECT
-	id, actor, description, object_type, object_id, created_at, metadata
+	id, actor, description, object_type, object_id, created_at, metadata, action, environment_id
 FROM
 	audits
 WHERE
@@ -86,6 +96,55 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
 			&i.ObjectID,
 			&i.CreatedAt,
 			&i.Metadata,
+			&i.Action,
+			&i.EnvironmentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listForEnvironment = `-- name: ListForEnvironment :many
+SELECT
+	id, actor, description, object_type, object_id, created_at, metadata, action, environment_id
+FROM
+	audits
+WHERE
+	environment_id = $1
+ORDER BY
+	created_at DESC
+LIMIT $2
+`
+
+type ListForEnvironmentParams struct {
+	EnvID    *uuid.UUID
+	PageSize int32
+}
+
+func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]Audit, error) {
+	rows, err := q.db.Query(ctx, listForEnvironment, arg.EnvID, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Audit{}
+	for rows.Next() {
+		var i Audit
+		if err := rows.Scan(
+			&i.ID,
+			&i.Actor,
+			&i.Description,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.CreatedAt,
+			&i.Metadata,
+			&i.Action,
+			&i.EnvironmentID,
 		); err != nil {
 			return nil, err
 		}
@@ -99,7 +158,7 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
 
 const listRecent = `-- name: ListRecent :many
 SELECT
-	id, actor, description, object_type, object_id, created_at, metadata
+	id, actor, description, object_type, object_id, created_at, metadata, action, environment_id
 FROM
 	audits
 ORDER BY
@@ -124,6 +183,8 @@ func (q *Queries) ListRecent(ctx context.Context, pageSize int32) ([]Audit, erro
 			&i.ObjectID,
 			&i.CreatedAt,
 			&i.Metadata,
+			&i.Action,
+			&i.EnvironmentID,
 		); err != nil {
 			return nil, err
 		}

@@ -42,8 +42,9 @@ func Create(ctx context.Context, env *model.EnvironmentCreate) (*model.Environme
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "created",
-			ObjectType:  "environments",
+			Action:      audit.ActionCreated,
+			Description: "created environment " + env.Name,
+			ObjectType:  audit.ObjectTypeEnvironment,
 			ObjectID:    ret.ID.String(),
 		})
 	})
@@ -64,9 +65,21 @@ func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) erro
 	maps.Copy(lbls, existing)
 	maps.Copy(lbls, labels)
 
-	return querier(ctx).SetEnvironmentLabels(ctx, environmentsql.SetEnvironmentLabelsParams{
+	err = querier(ctx).SetEnvironmentLabels(ctx, environmentsql.SetEnvironmentLabelsParams{
 		Labels: lbls,
 		ID:     environmentID,
+	})
+	if err != nil {
+		return err
+	}
+
+	return audit.Create(ctx, audit.CreateParams{
+		Action:        audit.ActionUpdated,
+		Description:   "updated labels",
+		ObjectType:    audit.ObjectTypeEnvironment,
+		ObjectID:      environmentID.String(),
+		EnvironmentID: &environmentID,
+		Metadata:      labels,
 	})
 }
 
@@ -92,9 +105,15 @@ func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key strin
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "created or updated",
-			ObjectType:  "environment_values",
-			Metadata:    environmentID.String() + ":" + key,
+			Action:        audit.ActionUpdated,
+			Description:   "set environment value " + key,
+			ObjectType:    audit.ObjectTypeEnvironmentValue,
+			ObjectID:      environmentID.String() + ":" + key,
+			EnvironmentID: &environmentID,
+			Metadata: map[string]any{
+				"key":    key,
+				"secret": secret,
+			},
 		})
 	})
 }
@@ -184,9 +203,10 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "created",
-			ObjectType:  "tenants",
-			Metadata:    tenant.ID.String(),
+			Action:      audit.ActionCreated,
+			Description: "created tenant " + t.Name,
+			ObjectType:  audit.ObjectTypeTenant,
+			ObjectID:    tenant.ID.String(),
 		})
 	})
 	if err != nil {
@@ -262,9 +282,14 @@ func DeleteEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key st
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "deleted",
-			ObjectType:  "environment_values",
-			Metadata:    environmentID.String() + ":" + key,
+			Action:        audit.ActionDeleted,
+			Description:   "deleted environment value " + key,
+			ObjectType:    audit.ObjectTypeEnvironmentValue,
+			ObjectID:      environmentID.String() + ":" + key,
+			EnvironmentID: &environmentID,
+			Metadata: map[string]any{
+				"key": key,
+			},
 		})
 	})
 }

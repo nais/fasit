@@ -47,11 +47,12 @@ func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason st
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "disabled: " + descReason,
-			ObjectType:  "disabled_features",
-			ObjectID:    envID.String() + ":" + featureName,
+			Action:        audit.ActionDisabled,
+			Description:   "disabled: " + descReason,
+			ObjectType:    audit.ObjectTypeFeature,
+			ObjectID:      envID.String() + ":" + featureName,
+			EnvironmentID: &envID,
 			Metadata: map[string]any{
-				"verb":    "disable",
 				"feature": featureName,
 				"envId":   envID.String(),
 				"reason":  reason,
@@ -73,11 +74,12 @@ func FeatureEnable(ctx context.Context, envID uuid.UUID, featureName string) err
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "enabled",
-			ObjectType:  "disabled_features",
-			ObjectID:    envID.String() + ":" + featureName,
+			Action:        audit.ActionEnabled,
+			Description:   "enabled " + featureName,
+			ObjectType:    audit.ObjectTypeFeature,
+			ObjectID:      envID.String() + ":" + featureName,
+			EnvironmentID: &envID,
 			Metadata: map[string]any{
-				"verb":    "enable",
 				"feature": featureName,
 				"envId":   envID.String(),
 			},

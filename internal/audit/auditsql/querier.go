@@ -9,6 +9,7 @@ import (
 type Querier interface {
 	Create(ctx context.Context, arg CreateParams) error
 	List(ctx context.Context, arg ListParams) ([]Audit, error)
+	ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]Audit, error)
 	ListRecent(ctx context.Context, pageSize int32) ([]Audit, error)
 }
 

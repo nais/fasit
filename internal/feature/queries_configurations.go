@@ -119,14 +119,13 @@ func configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte
 	}
 
 	if err := writeConfigUpsertAudit(ctx, hadExisting, configAuditInfo{
-		objectType: "configurations_environment",
-		objectID:   config.ID.String(),
-		feature:    config.Feature,
-		key:        config.Key,
-		envID:      &config.EnvironmentID,
-		secret:     config.Secret,
-		before:     existing.Value,
-		after:      value,
+		objectID: config.ID.String(),
+		feature:  config.Feature,
+		key:      config.Key,
+		envID:    &config.EnvironmentID,
+		secret:   config.Secret,
+		before:   existing.Value,
+		after:    value,
 	}); err != nil {
 		return nil, err
 	}
@@ -163,14 +162,13 @@ func configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []b
 	}
 
 	if err := writeConfigUpsertAudit(ctx, hadExisting, configAuditInfo{
-		objectType: "configurations_global",
-		objectID:   config.ID.String(),
-		feature:    config.Feature,
-		key:        config.Key,
-		envID:      nil,
-		secret:     config.Secret,
-		before:     existing.Value,
-		after:      value,
+		objectID: config.ID.String(),
+		feature:  config.Feature,
+		key:      config.Key,
+		envID:    nil,
+		secret:   config.Secret,
+		before:   existing.Value,
+		after:    value,
 	}); err != nil {
 		return nil, err
 	}
@@ -202,8 +200,9 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
+			Action:      audit.ActionUpdated,
 			Description: configDescription("updated", conf.Key, conf.Secret),
-			ObjectType:  "configurations_global",
+			ObjectType:  audit.ObjectTypeConfiguration,
 			ObjectID:    conf.ID.String(),
 			Metadata: configMetadata("update", configMetadataInput{
 				feature: conf.Feature,
@@ -237,8 +236,9 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
+			Action:      audit.ActionDeleted,
 			Description: configDescription("deleted", existing.Key, existing.Secret),
-			ObjectType:  "configurations_global",
+			ObjectType:  audit.ObjectTypeConfiguration,
 			ObjectID:    id.String(),
 			Metadata: configMetadata("delete", configMetadataInput{
 				feature: existing.Feature,
@@ -252,21 +252,22 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 type configAuditInfo struct {
-	objectType string
-	objectID   string
-	feature    string
-	key        string
-	envID      *uuid.UUID
-	secret     bool
-	before     []byte // empty for create
-	after      []byte
+	objectID string
+	feature  string
+	key      string
+	envID    *uuid.UUID
+	secret   bool
+	before   []byte // empty for create
+	after    []byte
 }
 
 func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAuditInfo) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
 		verb := "create"
+		action := audit.ActionCreated
 		if hadExisting {
 			verb = "update"
+			action = audit.ActionUpdated
 		}
 
 		metaIn := configMetadataInput{
@@ -281,10 +282,12 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Description: configDescription(verb+"d", info.key, info.secret),
-			ObjectType:  info.objectType,
-			ObjectID:    info.objectID,
-			Metadata:    configMetadata(verb, metaIn),
+			Action:        action,
+			Description:   configDescription(verb+"d", info.key, info.secret),
+			ObjectType:    audit.ObjectTypeConfiguration,
+			ObjectID:      info.objectID,
+			EnvironmentID: info.envID,
+			Metadata:      configMetadata(verb, metaIn),
 		})
 	})
 }

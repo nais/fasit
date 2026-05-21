@@ -8,11 +8,13 @@ import (
 )
 
 type Audit struct {
-	ID          uuid.UUID
-	Actor       string
-	Description string
-	ObjectType  string
-	ObjectID    string
-	CreatedAt   pgtype.Timestamptz
-	Metadata    []byte
+	ID            uuid.UUID
+	Actor         string
+	Description   string
+	ObjectType    string
+	ObjectID      string
+	CreatedAt     pgtype.Timestamptz
+	Metadata      []byte
+	Action        string
+	EnvironmentID *uuid.UUID
 }

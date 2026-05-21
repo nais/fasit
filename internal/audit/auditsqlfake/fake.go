@@ -1,4 +1,4 @@
-// Package auditfake provides a test fake for auditsql.Querier.
+// Package auditsqlfake provides a test fake for auditsql.Querier.
 package auditsqlfake
 
 import (
@@ -15,7 +15,7 @@ type Querier struct {
 	AuditCreateFunc         func(ctx context.Context, arg auditsql.CreateParams) error
 	AuditForEnvironmentFunc func(ctx context.Context, arg auditsql.ListParams) ([]auditsql.Audit, error)
 
-	// Creates records every AuditCreate call for assertion.
+	// Creates records every Create call for assertion.
 	Creates []auditsql.CreateParams
 }
 
@@ -32,6 +32,10 @@ func (f *Querier) List(ctx context.Context, arg auditsql.ListParams) ([]auditsql
 		panic("auditfake: AuditForEnvironmentFunc not set")
 	}
 	return f.AuditForEnvironmentFunc(ctx, arg)
+}
+
+func (f *Querier) ListForEnvironment(_ context.Context, _ auditsql.ListForEnvironmentParams) ([]auditsql.Audit, error) {
+	return nil, nil
 }
 
 func (f *Querier) ListRecent(_ context.Context, _ int32) ([]auditsql.Audit, error) {

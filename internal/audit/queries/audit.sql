@@ -1,15 +1,19 @@
 -- name: Create :exec
 INSERT INTO audits(
 	actor,
+	action,
 	description,
 	object_type,
 	object_id,
+	environment_id,
 	metadata)
 VALUES (
 	@actor,
+	@action,
 	@description,
 	@object_type,
 	@object_id,
+	@environment_id,
 	@metadata);
 
 -- name: List :many
@@ -33,6 +37,17 @@ ORDER BY
 	created_at DESC
 LIMIT @page_size;
 
+-- name: ListForEnvironment :many
+SELECT
+	*
+FROM
+	audits
+WHERE
+	environment_id = @env_id
+ORDER BY
+	created_at DESC
+LIMIT @page_size;
+
 -- name: ListRecent :many
 SELECT
 	*
@@ -41,4 +56,3 @@ FROM
 ORDER BY
 	created_at DESC
 LIMIT @page_size;
-

@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
@@ -251,11 +250,6 @@ func RedeployHandler() http.HandlerFunc {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		_ = audit.Create(r.Context(), audit.CreateParams{
-			Description: "triggered redeploy",
-			ObjectType:  "deployment",
-			ObjectID:    env.ID.String() + ":" + feature.Name,
-		})
 
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}

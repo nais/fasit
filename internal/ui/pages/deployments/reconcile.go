@@ -12,8 +12,9 @@ func ReconcileHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
 		_ = audit.Create(r.Context(), audit.CreateParams{
+			Action:      audit.ActionTriggered,
 			Description: "triggered full reconcile",
-			ObjectType:  "deployments",
+			ObjectType:  audit.ObjectTypeDeployment,
 			ObjectID:    "all",
 		})
 		http.Redirect(w, r, safeRefererPath(r.Header.Get("Referer")), http.StatusSeeOther)
