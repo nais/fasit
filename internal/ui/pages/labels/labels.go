@@ -184,22 +184,18 @@ func page(rows []envRow, labelKeys []labelKeyInfo, activeFilters map[string]stri
 
 	return h.Div(h.Class("labels-page"),
 		h.H1(g.Text("Environment Labels")),
+		h.P(h.Class("labels-desc"), g.Text("Explore available labels and see which environments a given label selection targets.")),
 		activeFiltersSection(activeFilters),
 		h.Div(h.Class("labels-grid"),
 			h.Div(h.Class("labels-main"),
-				environmentsSection(filteredRows, activeFilters, len(rows)),
 				availableLabelsSection(labelKeys, activeFilters, len(rows)),
 			),
-			sidebar(activeFilters, filteredRows),
+			sidebar(activeFilters, filteredRows, len(rows)),
 		),
 	)
 }
 
 func activeFiltersSection(filters map[string]string) g.Node {
-	if len(filters) == 0 {
-		return nil
-	}
-
 	keys := make([]string, 0, len(filters))
 	for k := range filters {
 		keys = append(keys, k)
@@ -215,49 +211,18 @@ func activeFiltersSection(filters map[string]string) g.Node {
 		))
 	}
 
-	return h.Div(h.Class("labels-active-filters"),
-		h.Span(h.Class("filter-label"), g.Text("Active filters: ")),
-		g.Group(tags),
-		h.A(h.Href("/labels"), h.Class("btn-small"), g.Text("Clear all")),
-	)
-}
-
-func environmentsSection(rows []envRow, activeFilters map[string]string, totalCount int) g.Node {
-	countText := fmt.Sprintf("Environments (%d", len(rows))
-	if len(activeFilters) > 0 {
-		countText += fmt.Sprintf(" of %d", totalCount)
-	}
-	countText += ")"
-
-	return h.Section(h.Class("labels-section"),
-		h.H2(g.Text(countText)),
-		h.P(h.Class("labels-desc"), g.Text("All environments with their labels. Click labels to filter.")),
-		environmentsTable(rows, activeFilters),
-	)
-}
-
-func environmentsTable(rows []envRow, activeFilters map[string]string) g.Node {
-	if len(rows) == 0 {
-		return h.P(h.Class("labels-empty"), g.Text("No environments match the selected filters."))
+	var content []g.Node
+	content = append(content, h.Span(h.Class("filter-label"), g.Text("Selected labels: ")))
+	if len(tags) > 0 {
+		content = append(content, g.Group(tags))
+		content = append(content, h.A(h.Href("/labels"), h.Class("btn-small"), g.Text("Clear all")))
+	} else {
+		content = append(content, h.Span(h.Class("text-muted"), g.Text("(none)")))
 	}
 
-	tableRows := g.Map(rows, func(row envRow) g.Node {
-		return h.Tr(
-			h.Td(h.Strong(g.Text(row.Tenant))),
-			h.Td(g.Text(row.Environment)),
-			h.Td(h.Class("labels-cell"), labelTags(row.Labels, activeFilters)),
-		)
-	})
-
-	return h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "labels-envs"),
-		h.THead(h.Tr(
-			h.Th(g.Text("Tenant")),
-			h.Th(g.Text("Environment")),
-			h.Th(g.Text("Labels")),
-		)),
-		h.TBody(g.Group(tableRows)),
-	)
+	return h.Div(h.Class("labels-active-filters"), g.Group(content))
 }
+
 
 func labelTags(labels map[string]string, activeFilters map[string]string) g.Node {
 	keys := make([]string, 0, len(labels))
@@ -318,8 +283,14 @@ func availableLabelsSection(labelKeys []labelKeyInfo, activeFilters map[string]s
 	)
 }
 
-func sidebar(activeFilters map[string]string, filteredRows []envRow) g.Node {
+func sidebar(activeFilters map[string]string, filteredRows []envRow, totalCount int) g.Node {
 	jsonStr := targetJSON(activeFilters)
+
+	matchTitle := fmt.Sprintf("Matched Environments (%d", len(filteredRows))
+	if len(activeFilters) > 0 {
+		matchTitle += fmt.Sprintf(" of %d", totalCount)
+	}
+	matchTitle += ")"
 
 	return h.Aside(h.Class("labels-sidebar"),
 		h.Div(h.Class("labels-sidebar-card"),
@@ -328,7 +299,7 @@ func sidebar(activeFilters map[string]string, filteredRows []envRow) g.Node {
 				h.Pre(g.Text(jsonStr)),
 			),
 			h.P(h.Class("labels-desc"), targetDescription(activeFilters, len(filteredRows))),
-			h.H4(g.Text(fmt.Sprintf("Matched Environments (%d)", len(filteredRows)))),
+			h.H4(g.Text(matchTitle)),
 			matchedEnvironmentsTable(filteredRows, activeFilters),
 		),
 	)
