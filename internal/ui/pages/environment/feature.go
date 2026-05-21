@@ -690,7 +690,7 @@ func auditTab(page *FeaturePage) g.Node {
 		cells := []g.Node{
 			h.Td(g.Text(view.FormatTime(e.CreatedAt))),
 			h.Td(g.Text(e.Actor)),
-			h.Td(g.Text(e.Description)),
+			h.Td(g.Text(e.Summary())),
 		}
 		if len(e.Metadata) > 0 {
 			var pretty bytes.Buffer

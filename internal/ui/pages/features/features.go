@@ -141,7 +141,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	tableRows := make([]g.Node, 0, len(audits))
 	for _, a := range audits {
 		tableRows = append(tableRows, h.Tr(
-			h.Td(g.Text(a.Description)),
+			h.Td(g.Text(a.Summary())),
 			h.Td(g.Text(a.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
 		))

@@ -42,10 +42,9 @@ func Create(ctx context.Context, env *model.EnvironmentCreate) (*model.Environme
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Action:      audit.ActionCreated,
-			Description: "created environment " + env.Name,
-			ObjectType:  audit.ObjectTypeEnvironment,
-			ObjectID:    ret.ID.String(),
+			Action:     audit.ActionCreated,
+			ObjectType: audit.ObjectTypeEnvironment,
+			ObjectID:   tenant.Name + "/" + env.Name,
 		})
 	})
 	if err != nil {
@@ -75,9 +74,8 @@ func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) erro
 
 	return audit.Create(ctx, audit.CreateParams{
 		Action:        audit.ActionUpdated,
-		Description:   "updated labels",
 		ObjectType:    audit.ObjectTypeEnvironment,
-		ObjectID:      environmentID.String(),
+		ObjectID:      "labels",
 		EnvironmentID: &environmentID,
 		Metadata:      labels,
 	})
@@ -106,12 +104,10 @@ func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key strin
 
 		return audit.Create(ctx, audit.CreateParams{
 			Action:        audit.ActionUpdated,
-			Description:   "set environment value " + key,
 			ObjectType:    audit.ObjectTypeEnvironmentValue,
-			ObjectID:      environmentID.String() + ":" + key,
+			ObjectID:      key,
 			EnvironmentID: &environmentID,
 			Metadata: map[string]any{
-				"key":    key,
 				"secret": secret,
 			},
 		})
@@ -203,10 +199,9 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Action:      audit.ActionCreated,
-			Description: "created tenant " + t.Name,
-			ObjectType:  audit.ObjectTypeTenant,
-			ObjectID:    tenant.ID.String(),
+			Action:     audit.ActionCreated,
+			ObjectType: audit.ObjectTypeTenant,
+			ObjectID:   t.Name,
 		})
 	})
 	if err != nil {
@@ -283,13 +278,9 @@ func DeleteEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key st
 
 		return audit.Create(ctx, audit.CreateParams{
 			Action:        audit.ActionDeleted,
-			Description:   "deleted environment value " + key,
 			ObjectType:    audit.ObjectTypeEnvironmentValue,
-			ObjectID:      environmentID.String() + ":" + key,
+			ObjectID:      key,
 			EnvironmentID: &environmentID,
-			Metadata: map[string]any{
-				"key": key,
-			},
 		})
 	})
 }

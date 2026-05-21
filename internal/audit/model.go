@@ -41,12 +41,39 @@ type CreateParams struct {
 }
 
 type Entry struct {
-	Actor         string
-	Action        Action
-	Description   string
-	ObjectType    ObjectType
-	ObjectID      string
-	EnvironmentID *uuid.UUID
-	CreatedAt     time.Time
-	Metadata      json.RawMessage
+	Actor           string
+	Action          Action
+	Description     string
+	ObjectType      ObjectType
+	ObjectID        string
+	EnvironmentID   *uuid.UUID
+	EnvironmentName string
+	TenantName      string
+	CreatedAt       time.Time
+	Metadata        json.RawMessage
+}
+
+// Summary returns a human-readable one-liner composed from the structured
+// fields. Example: "created deployment naiserator in nav/dev".
+func (e *Entry) Summary() string {
+	s := string(e.Action) + " " + e.ObjectType.Display() + " " + e.ObjectID
+	if e.TenantName != "" && e.EnvironmentName != "" {
+		s += " in " + e.TenantName + "/" + e.EnvironmentName
+	} else if e.EnvironmentName != "" {
+		s += " in " + e.EnvironmentName
+	}
+	if e.Description != "" {
+		s += " (" + e.Description + ")"
+	}
+	return s
+}
+
+// Display returns a human-friendly label for the object type.
+func (t ObjectType) Display() string {
+	switch t {
+	case ObjectTypeEnvironmentValue:
+		return "env value"
+	default:
+		return string(t)
+	}
 }

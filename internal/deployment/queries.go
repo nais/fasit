@@ -66,13 +66,9 @@ func Create(ctx context.Context, req Request) (uuid.UUID, error) {
 
 	_ = audit.Create(ctx, audit.CreateParams{
 		Action:      audit.ActionCreated,
-		Description: fmt.Sprintf("set version %s for %s", req.Version, req.Chart),
+		Description: "version " + req.Version,
 		ObjectType:  audit.ObjectTypeDeployment,
-		ObjectID:    id.String(),
-		Metadata: map[string]any{
-			"chart":   req.Chart,
-			"version": req.Version,
-		},
+		ObjectID:    req.Chart,
 	})
 
 	return id, nil
@@ -238,10 +234,9 @@ func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 			return err
 		}
 		return audit.Create(ctx, audit.CreateParams{
-			Action:      audit.ActionDeleted,
-			Description: "deleted deployment",
-			ObjectType:  audit.ObjectTypeDeployment,
-			ObjectID:    deploymentID.String(),
+			Action:     audit.ActionDeleted,
+			ObjectType: audit.ObjectTypeDeployment,
+			ObjectID:   deploymentID.String(),
 		})
 	})
 }
@@ -256,13 +251,11 @@ func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string
 			return err
 		}
 		return audit.Create(ctx, audit.CreateParams{
-			Action:      audit.ActionDeleted,
-			Description: "deleted deployments for " + featureName,
-			ObjectType:  audit.ObjectTypeDeployment,
-			ObjectID:    featureName,
+			Action:     audit.ActionDeleted,
+			ObjectType: audit.ObjectTypeDeployment,
+			ObjectID:   featureName,
 			Metadata: map[string]any{
-				"feature": featureName,
-				"target":  target,
+				"target": target,
 			},
 		})
 	})
@@ -288,14 +281,9 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 
 	_ = audit.Create(ctx, audit.CreateParams{
 		Action:        audit.ActionTriggered,
-		Description:   "triggered redeploy of " + featureName,
 		ObjectType:    audit.ObjectTypeDeployment,
-		ObjectID:      envID.String() + ":" + featureName,
+		ObjectID:      featureName,
 		EnvironmentID: &envID,
-		Metadata: map[string]any{
-			"feature": featureName,
-			"envId":   envID.String(),
-		},
 	})
 
 	TriggerReconcile(ctx, ReconcileTriggerEvent{})

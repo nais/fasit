@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -119,13 +118,9 @@ func configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte
 	}
 
 	if err := writeConfigUpsertAudit(ctx, hadExisting, configAuditInfo{
-		objectID: config.ID.String(),
-		feature:  config.Feature,
-		key:      config.Key,
-		envID:    &config.EnvironmentID,
-		secret:   config.Secret,
-		before:   existing.Value,
-		after:    value,
+		feature: config.Feature,
+		key:     config.Key,
+		envID:   &config.EnvironmentID,
 	}); err != nil {
 		return nil, err
 	}
@@ -162,13 +157,9 @@ func configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []b
 	}
 
 	if err := writeConfigUpsertAudit(ctx, hadExisting, configAuditInfo{
-		objectID: config.ID.String(),
-		feature:  config.Feature,
-		key:      config.Key,
-		envID:    nil,
-		secret:   config.Secret,
-		before:   existing.Value,
-		after:    value,
+		feature: config.Feature,
+		key:     config.Key,
+		envID:   nil,
 	}); err != nil {
 		return nil, err
 	}
@@ -188,7 +179,6 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 		if bytes.Equal(conf.Value, c.Value) && stringPtrEqual(conf.Description, c.Description) {
 			return nil
 		}
-		beforeValue := conf.Value
 
 		conf, err = querier(ctx).ConfigUpdate(ctx, featuresql.ConfigUpdateParams{
 			Description: c.Description,
@@ -200,18 +190,9 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Action:      audit.ActionUpdated,
-			Description: configDescription("updated", conf.Key, conf.Secret),
-			ObjectType:  audit.ObjectTypeConfiguration,
-			ObjectID:    conf.ID.String(),
-			Metadata: configMetadata("update", configMetadataInput{
-				feature: conf.Feature,
-				key:     conf.Key,
-				envID:   nil,
-				secret:  conf.Secret,
-				before:  beforeValue,
-				after:   c.Value,
-			}),
+			Action:     audit.ActionUpdated,
+			ObjectType: audit.ObjectTypeConfiguration,
+			ObjectID:   conf.Feature + "/" + conf.Key,
 		})
 	})
 	if err != nil {
@@ -236,107 +217,31 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 		}
 
 		return audit.Create(ctx, audit.CreateParams{
-			Action:      audit.ActionDeleted,
-			Description: configDescription("deleted", existing.Key, existing.Secret),
-			ObjectType:  audit.ObjectTypeConfiguration,
-			ObjectID:    id.String(),
-			Metadata: configMetadata("delete", configMetadataInput{
-				feature: existing.Feature,
-				key:     existing.Key,
-				envID:   nil,
-				secret:  existing.Secret,
-				before:  existing.Value,
-			}),
+			Action:     audit.ActionDeleted,
+			ObjectType: audit.ObjectTypeConfiguration,
+			ObjectID:   existing.Feature + "/" + existing.Key,
 		})
+	})
+}
+
+func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAuditInfo) error {
+	action := audit.ActionCreated
+	if hadExisting {
+		action = audit.ActionUpdated
+	}
+
+	return audit.Create(ctx, audit.CreateParams{
+		Action:        action,
+		ObjectType:    audit.ObjectTypeConfiguration,
+		ObjectID:      info.feature + "/" + info.key,
+		EnvironmentID: info.envID,
 	})
 }
 
 type configAuditInfo struct {
-	objectID string
-	feature  string
-	key      string
-	envID    *uuid.UUID
-	secret   bool
-	before   []byte // empty for create
-	after    []byte
-}
-
-func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAuditInfo) error {
-	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		verb := "create"
-		action := audit.ActionCreated
-		if hadExisting {
-			verb = "update"
-			action = audit.ActionUpdated
-		}
-
-		metaIn := configMetadataInput{
-			feature: info.feature,
-			key:     info.key,
-			envID:   info.envID,
-			secret:  info.secret,
-			after:   info.after,
-		}
-		if hadExisting {
-			metaIn.before = info.before
-		}
-
-		return audit.Create(ctx, audit.CreateParams{
-			Action:        action,
-			Description:   configDescription(verb+"d", info.key, info.secret),
-			ObjectType:    audit.ObjectTypeConfiguration,
-			ObjectID:      info.objectID,
-			EnvironmentID: info.envID,
-			Metadata:      configMetadata(verb, metaIn),
-		})
-	})
-}
-
-type configMetadataInput struct {
 	feature string
 	key     string
 	envID   *uuid.UUID
-	secret  bool
-	before  []byte
-	after   []byte
-}
-
-func configMetadata(verb string, in configMetadataInput) map[string]any {
-	m := map[string]any{
-		"verb":    verb,
-		"feature": in.feature,
-		"key":     in.key,
-		"secret":  in.secret,
-	}
-	if in.envID != nil {
-		m["envId"] = in.envID.String()
-	}
-	if in.before != nil {
-		m["before"] = configValueForMetadata(in.before, in.secret)
-	}
-	if in.after != nil {
-		m["after"] = configValueForMetadata(in.after, in.secret)
-	}
-	return m
-}
-
-func configValueForMetadata(raw []byte, secret bool) any {
-	if secret {
-		return "<redacted>"
-	}
-	var v any
-	if err := json.Unmarshal(raw, &v); err != nil {
-		return string(raw)
-	}
-	return v
-}
-
-func configDescription(verbPast, key string, secret bool) string {
-	s := fmt.Sprintf("%s config %s", verbPast, key)
-	if secret {
-		s += " (secret)"
-	}
-	return s
 }
 
 func stringPtrEqual(a, b *string) bool {

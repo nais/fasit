@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const create = `-- name: Create :exec
@@ -53,41 +54,54 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 
 const list = `-- name: List :many
 SELECT
-	id, actor, description, object_type, object_id, created_at, metadata, action, environment_id
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name
 FROM
-	audits
+	audits a
+LEFT JOIN environments e ON e.id = a.environment_id
+LEFT JOIN tenants t ON t.id = e.tenant_id
 WHERE
-	CASE WHEN $1::TEXT != '' THEN
-		object_id = CONCAT($2::TEXT, ':', $1::TEXT)
-		OR (metadata IS NOT NULL
-			AND metadata ->> 'feature' = $1::TEXT
-			AND (metadata ->> 'envId' = $2::TEXT
-				OR NOT (metadata ? 'envId')))
-	ELSE
-		STARTS_WITH(object_id, $2::TEXT)
-		OR (metadata IS NOT NULL
-			AND metadata ->> 'envId' = $2::TEXT)
-	END
+	a.environment_id = $1::UUID
+	AND (
+		$2::TEXT = ''
+		OR a.object_id = $2::TEXT
+		OR STARTS_WITH(a.object_id, CONCAT($2::TEXT, '/'))
+	)
 ORDER BY
-	created_at DESC
+	a.created_at DESC
 LIMIT $3
 `
 
 type ListParams struct {
+	EnvironmentID uuid.UUID
 	FeatureName   string
-	EnvironmentID string
 	PageSize      int32
 }
 
-func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
-	rows, err := q.db.Query(ctx, list, arg.FeatureName, arg.EnvironmentID, arg.PageSize)
+type ListRow struct {
+	ID              uuid.UUID
+	Actor           string
+	Description     string
+	ObjectType      string
+	ObjectID        string
+	CreatedAt       pgtype.Timestamptz
+	Metadata        []byte
+	Action          string
+	EnvironmentID   *uuid.UUID
+	EnvironmentName *string
+	TenantName      *string
+}
+
+func (q *Queries) List(ctx context.Context, arg ListParams) ([]ListRow, error) {
+	rows, err := q.db.Query(ctx, list, arg.EnvironmentID, arg.FeatureName, arg.PageSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Audit{}
+	items := []ListRow{}
 	for rows.Next() {
-		var i Audit
+		var i ListRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Actor,
@@ -98,6 +112,8 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
 			&i.Metadata,
 			&i.Action,
 			&i.EnvironmentID,
+			&i.EnvironmentName,
+			&i.TenantName,
 		); err != nil {
 			return nil, err
 		}
@@ -111,13 +127,17 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]Audit, error) {
 
 const listForEnvironment = `-- name: ListForEnvironment :many
 SELECT
-	id, actor, description, object_type, object_id, created_at, metadata, action, environment_id
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name
 FROM
-	audits
+	audits a
+LEFT JOIN environments e ON e.id = a.environment_id
+LEFT JOIN tenants t ON t.id = e.tenant_id
 WHERE
-	environment_id = $1
+	a.environment_id = $1
 ORDER BY
-	created_at DESC
+	a.created_at DESC
 LIMIT $2
 `
 
@@ -126,15 +146,29 @@ type ListForEnvironmentParams struct {
 	PageSize int32
 }
 
-func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]Audit, error) {
+type ListForEnvironmentRow struct {
+	ID              uuid.UUID
+	Actor           string
+	Description     string
+	ObjectType      string
+	ObjectID        string
+	CreatedAt       pgtype.Timestamptz
+	Metadata        []byte
+	Action          string
+	EnvironmentID   *uuid.UUID
+	EnvironmentName *string
+	TenantName      *string
+}
+
+func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]ListForEnvironmentRow, error) {
 	rows, err := q.db.Query(ctx, listForEnvironment, arg.EnvID, arg.PageSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Audit{}
+	items := []ListForEnvironmentRow{}
 	for rows.Next() {
-		var i Audit
+		var i ListForEnvironmentRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Actor,
@@ -145,6 +179,8 @@ func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironment
 			&i.Metadata,
 			&i.Action,
 			&i.EnvironmentID,
+			&i.EnvironmentName,
+			&i.TenantName,
 		); err != nil {
 			return nil, err
 		}
@@ -158,23 +194,41 @@ func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironment
 
 const listRecent = `-- name: ListRecent :many
 SELECT
-	id, actor, description, object_type, object_id, created_at, metadata, action, environment_id
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name
 FROM
-	audits
+	audits a
+LEFT JOIN environments e ON e.id = a.environment_id
+LEFT JOIN tenants t ON t.id = e.tenant_id
 ORDER BY
-	created_at DESC
+	a.created_at DESC
 LIMIT $1
 `
 
-func (q *Queries) ListRecent(ctx context.Context, pageSize int32) ([]Audit, error) {
+type ListRecentRow struct {
+	ID              uuid.UUID
+	Actor           string
+	Description     string
+	ObjectType      string
+	ObjectID        string
+	CreatedAt       pgtype.Timestamptz
+	Metadata        []byte
+	Action          string
+	EnvironmentID   *uuid.UUID
+	EnvironmentName *string
+	TenantName      *string
+}
+
+func (q *Queries) ListRecent(ctx context.Context, pageSize int32) ([]ListRecentRow, error) {
 	rows, err := q.db.Query(ctx, listRecent, pageSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Audit{}
+	items := []ListRecentRow{}
 	for rows.Next() {
-		var i Audit
+		var i ListRecentRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Actor,
@@ -185,6 +239,8 @@ func (q *Queries) ListRecent(ctx context.Context, pageSize int32) ([]Audit, erro
 			&i.Metadata,
 			&i.Action,
 			&i.EnvironmentID,
+			&i.EnvironmentName,
+			&i.TenantName,
 		); err != nil {
 			return nil, err
 		}

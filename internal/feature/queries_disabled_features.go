@@ -14,10 +14,6 @@ import (
 	"github.com/nais/fasit/internal/feature/featuresql"
 )
 
-// reasonDescriptionMax bounds the prefix of the disable reason embedded in
-// the audit description; the full reason is in metadata.
-const reasonDescriptionMax = 200
-
 // FeatureDisable marks a (feature, environment) combination as disabled in the
 // authoritative disabled_features table and writes an audit entry. Insert and
 // audit are committed together via dbtx.WithTx; nested calls reuse the outer
@@ -39,24 +35,12 @@ func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason st
 			return err
 		}
 
-		// Audit description is bounded so list rendering stays cheap; the
-		// full reason is preserved in metadata for callers that need it.
-		descReason := reason
-		if r := []rune(descReason); len(r) > reasonDescriptionMax {
-			descReason = string(r[:reasonDescriptionMax])
-		}
-
 		return audit.Create(ctx, audit.CreateParams{
 			Action:        audit.ActionDisabled,
-			Description:   "disabled: " + descReason,
+			Description:   reason,
 			ObjectType:    audit.ObjectTypeFeature,
-			ObjectID:      envID.String() + ":" + featureName,
+			ObjectID:      featureName,
 			EnvironmentID: &envID,
-			Metadata: map[string]any{
-				"feature": featureName,
-				"envId":   envID.String(),
-				"reason":  reason,
-			},
 		})
 	})
 }
@@ -75,14 +59,9 @@ func FeatureEnable(ctx context.Context, envID uuid.UUID, featureName string) err
 
 		return audit.Create(ctx, audit.CreateParams{
 			Action:        audit.ActionEnabled,
-			Description:   "enabled " + featureName,
 			ObjectType:    audit.ObjectTypeFeature,
-			ObjectID:      envID.String() + ":" + featureName,
+			ObjectID:      featureName,
 			EnvironmentID: &envID,
-			Metadata: map[string]any{
-				"feature": featureName,
-				"envId":   envID.String(),
-			},
 		})
 	})
 }

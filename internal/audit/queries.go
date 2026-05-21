@@ -38,7 +38,7 @@ func Create(ctx context.Context, p CreateParams) error {
 
 func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*Entry, error) {
 	rows, err := querier(ctx).List(ctx, auditsql.ListParams{
-		EnvironmentID: environmentId.String(),
+		EnvironmentID: environmentId,
 		FeatureName:   featureName,
 		PageSize:      50,
 	})
@@ -46,7 +46,22 @@ func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*
 		return nil, err
 	}
 
-	return entriesFromRows(rows), nil
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor:           r.Actor,
+			Action:          Action(r.Action),
+			Description:     r.Description,
+			ObjectType:      ObjectType(r.ObjectType),
+			ObjectID:        r.ObjectID,
+			EnvironmentID:   r.EnvironmentID,
+			EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName:      ptrOr(r.TenantName),
+			CreatedAt:       r.CreatedAt.Time,
+			Metadata:        r.Metadata,
+		})
+	}
+	return ret, nil
 }
 
 func ListForEnvironment(ctx context.Context, envID uuid.UUID, limit int32) ([]*Entry, error) {
@@ -58,7 +73,22 @@ func ListForEnvironment(ctx context.Context, envID uuid.UUID, limit int32) ([]*E
 		return nil, err
 	}
 
-	return entriesFromRows(rows), nil
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor:           r.Actor,
+			Action:          Action(r.Action),
+			Description:     r.Description,
+			ObjectType:      ObjectType(r.ObjectType),
+			ObjectID:        r.ObjectID,
+			EnvironmentID:   r.EnvironmentID,
+			EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName:      ptrOr(r.TenantName),
+			CreatedAt:       r.CreatedAt.Time,
+			Metadata:        r.Metadata,
+		})
+	}
+	return ret, nil
 }
 
 func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
@@ -67,24 +97,29 @@ func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
 		return nil, err
 	}
 
-	return entriesFromRows(rows), nil
-}
-
-func entriesFromRows(rows []auditsql.Audit) []*Entry {
 	ret := make([]*Entry, 0, len(rows))
 	for _, r := range rows {
 		ret = append(ret, &Entry{
-			Actor:         r.Actor,
-			Action:        Action(r.Action),
-			Description:   r.Description,
-			ObjectType:    ObjectType(r.ObjectType),
-			ObjectID:      r.ObjectID,
-			EnvironmentID: r.EnvironmentID,
-			CreatedAt:     r.CreatedAt.Time,
-			Metadata:      r.Metadata,
+			Actor:           r.Actor,
+			Action:          Action(r.Action),
+			Description:     r.Description,
+			ObjectType:      ObjectType(r.ObjectType),
+			ObjectID:        r.ObjectID,
+			EnvironmentID:   r.EnvironmentID,
+			EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName:      ptrOr(r.TenantName),
+			CreatedAt:       r.CreatedAt.Time,
+			Metadata:        r.Metadata,
 		})
 	}
-	return ret
+	return ret, nil
+}
+
+func ptrOr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func sanitizeForLog(s string) string {

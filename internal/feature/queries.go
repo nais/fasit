@@ -449,14 +449,9 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 
 	_ = audit.Create(ctx, audit.CreateParams{
 		Action:      audit.ActionUpdated,
-		Description: fmt.Sprintf("updated feature %s to version %s", feat.Name, feat.Version),
+		Description: "version " + feat.Version,
 		ObjectType:  audit.ObjectTypeFeature,
 		ObjectID:    feat.Name,
-		Metadata: map[string]any{
-			"feature": feat.Name,
-			"version": feat.Version,
-			"chart":   feat.Chart,
-		},
 	})
 
 	return nil

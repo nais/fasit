@@ -13,7 +13,7 @@ func ReconcileHandler() http.HandlerFunc {
 		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
 		_ = audit.Create(r.Context(), audit.CreateParams{
 			Action:      audit.ActionTriggered,
-			Description: "triggered full reconcile",
+			Description: "full reconcile",
 			ObjectType:  audit.ObjectTypeDeployment,
 			ObjectID:    "all",
 		})

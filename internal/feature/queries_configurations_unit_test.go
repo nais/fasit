@@ -2,7 +2,6 @@ package feature
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,7 +17,7 @@ func TestConfigCreate(t *testing.T) {
 		existingErr error
 		existing    featuresql.ConfigurationsGlobal
 		wantWrite   bool
-		wantAudit   string // verb in metadata, empty = no audit
+		wantAudit   bool
 	}{
 		{
 			name: "ConfigCreate(global, new): creates and audits",
@@ -27,7 +26,7 @@ func TestConfigCreate(t *testing.T) {
 			},
 			existingErr: pgx.ErrNoRows,
 			wantWrite:   true,
-			wantAudit:   "create",
+			wantAudit:   true,
 		},
 		{
 			name: "ConfigCreate(global, same value): no-op",
@@ -70,13 +69,13 @@ func TestConfigCreate(t *testing.T) {
 			if !tc.wantWrite && wrote {
 				t.Error("unexpected write")
 			}
-			if tc.wantAudit != "" && len(aq.Creates) == 0 {
+			if tc.wantAudit && len(aq.Creates) == 0 {
 				t.Fatal("expected audit")
 			}
-			if tc.wantAudit != "" {
-				assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", tc.wantAudit)
+			if tc.wantAudit && aq.Creates[0].ObjectID != "f1/my.key" {
+				t.Errorf("audit ObjectID = %q, want %q", aq.Creates[0].ObjectID, "f1/my.key")
 			}
-			if tc.wantAudit == "" && len(aq.Creates) != 0 {
+			if !tc.wantAudit && len(aq.Creates) != 0 {
 				t.Errorf("got %d audit calls, want 0", len(aq.Creates))
 			}
 		})
@@ -84,65 +83,46 @@ func TestConfigCreate(t *testing.T) {
 }
 
 func TestConfigCreate_Env(t *testing.T) {
-	tests := []struct {
-		name      string
-		existing  *featuresql.ConfigurationsEnvironment
-		secret    bool
-		wantAudit map[string]any
-	}{
-		{
-			name: "ConfigCreate(env, update secret): redacted audit",
-			existing: &featuresql.ConfigurationsEnvironment{
-				ID: uuid.New(), Feature: "f1", Key: "k",
-				Value: []byte(`"old"`), Secret: true,
-			},
-			secret: true,
-			wantAudit: map[string]any{
-				"verb":   "update",
-				"secret": true,
-				"before": "<redacted>",
-				"after":  "<redacted>",
-			},
-		},
+	ctx, fq, aq := newTestCtx(t)
+	envID := uuid.New()
+
+	fq.configEnvGetFunc = func(_ context.Context, _ featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
+		return featuresql.ConfigurationsEnvironment{
+			ID: uuid.New(), Feature: "f1", Key: "k",
+			Value: []byte(`"old"`), Secret: true,
+		}, nil
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx, fq, aq := newTestCtx(t)
-			envID := uuid.New()
+	fq.configEnvUpdateOrCreateFunc = func(_ context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {
+		return featuresql.ConfigurationsEnvironment{
+			ID: uuid.New(), EnvironmentID: envID,
+			Feature: arg.Feature, Key: arg.Key, Value: arg.Value, Secret: arg.Secret,
+		}, nil
+	}
 
-			fq.configEnvGetFunc = func(_ context.Context, _ featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
-				if tc.existing == nil {
-					return featuresql.ConfigurationsEnvironment{}, pgx.ErrNoRows
-				}
-				return *tc.existing, nil
-			}
+	_, err := ConfigCreate(ctx, model.NewConfiguration{
+		EnvironmentID: &envID,
+		Feature:       "f1",
+		Key:           "k",
+		Value:         []byte(`"new"`),
+		Secret:        true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-			fq.configEnvUpdateOrCreateFunc = func(_ context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {
-				return featuresql.ConfigurationsEnvironment{
-					ID: uuid.New(), EnvironmentID: envID,
-					Feature: arg.Feature, Key: arg.Key, Value: arg.Value, Secret: arg.Secret,
-				}, nil
-			}
-
-			_, err := ConfigCreate(ctx, model.NewConfiguration{
-				EnvironmentID: &envID,
-				Feature:       "f1",
-				Key:           "k",
-				Value:         []byte(`"new"`),
-				Secret:        tc.secret,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(aq.Creates) != 1 {
-				t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
-			}
-			for k, want := range tc.wantAudit {
-				assertAuditMetadataAny(t, aq.Creates[0].Metadata, k, want)
-			}
-		})
+	if len(aq.Creates) != 1 {
+		t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
+	}
+	got := aq.Creates[0]
+	if got.ObjectID != "f1/k" {
+		t.Errorf("ObjectID = %q, want %q", got.ObjectID, "f1/k")
+	}
+	if got.EnvironmentID == nil || *got.EnvironmentID != envID {
+		t.Errorf("EnvironmentID = %v, want %v", got.EnvironmentID, envID)
+	}
+	if got.Action != "updated" {
+		t.Errorf("Action = %q, want %q", got.Action, "updated")
 	}
 }
 
@@ -152,7 +132,7 @@ func TestConfigUpdate(t *testing.T) {
 		existing  featuresql.ConfigurationsGlobal
 		newValue  []byte
 		wantWrite bool
-		wantAudit string
+		wantAudit bool
 	}{
 		{
 			name:     "ConfigUpdate(same value): no-op",
@@ -164,7 +144,7 @@ func TestConfigUpdate(t *testing.T) {
 			existing:  featuresql.ConfigurationsGlobal{ID: uuid.New(), Feature: "f1", Key: "k", Value: []byte(`"old"`)},
 			newValue:  []byte(`"new"`),
 			wantWrite: true,
-			wantAudit: "update",
+			wantAudit: true,
 		},
 	}
 
@@ -192,11 +172,16 @@ func TestConfigUpdate(t *testing.T) {
 			if tc.wantWrite != wrote {
 				t.Errorf("wrote = %v, want %v", wrote, tc.wantWrite)
 			}
-			if tc.wantAudit != "" {
+			if tc.wantAudit {
 				if len(aq.Creates) != 1 {
 					t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
 				}
-				assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", tc.wantAudit)
+				if aq.Creates[0].Action != "updated" {
+					t.Errorf("Action = %q, want %q", aq.Creates[0].Action, "updated")
+				}
+				if aq.Creates[0].ObjectID != "f1/k" {
+					t.Errorf("ObjectID = %q, want %q", aq.Creates[0].ObjectID, "f1/k")
+				}
 			}
 		})
 	}
@@ -232,20 +217,11 @@ func TestConfigDelete(t *testing.T) {
 	if len(aq.Creates) != 1 {
 		t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
 	}
-	assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", "delete")
-	assertAuditMetadata(t, aq.Creates[0].Metadata, "before", "v")
-}
-
-func assertAuditMetadataAny(t *testing.T, raw []byte, key string, want any) {
-	t.Helper()
-	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		t.Fatalf("unmarshal audit metadata: %v", err)
+	got := aq.Creates[0]
+	if got.Action != "deleted" {
+		t.Errorf("Action = %q, want %q", got.Action, "deleted")
 	}
-	got := m[key]
-	wantJSON, _ := json.Marshal(want)
-	gotJSON, _ := json.Marshal(got)
-	if string(gotJSON) != string(wantJSON) {
-		t.Errorf("audit metadata[%q] = %s, want %s", key, gotJSON, wantJSON)
+	if got.ObjectID != "f1/k" {
+		t.Errorf("ObjectID = %q, want %q", got.ObjectID, "f1/k")
 	}
 }
