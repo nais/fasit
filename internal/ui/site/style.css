@@ -957,6 +957,14 @@ nav .nav-btn:hover {
   margin: 1.25rem 0 0.5rem 0;
   font-size: 0.95rem;
 }
+.labels-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.labels-sidebar-header h4 {
+  margin: 1.25rem 0 0.5rem 0;
+}
 .labels-json {
   background: var(--bg-inset);
   border: 1px solid var(--border);

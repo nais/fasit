@@ -183,9 +183,7 @@ func page(rows []envRow, labelKeys []labelKeyInfo, activeFilters map[string]stri
 	}
 
 	return h.Div(h.Class("labels-page"),
-		h.H1(g.Text("Environment Labels")),
-		h.P(h.Class("labels-desc"), g.Text("Explore available labels and see which environments a given label selection targets.")),
-		activeFiltersSection(activeFilters),
+		h.P(h.Class("labels-desc"), g.Text("Select labels to see which environments a target configuration matches.")),
 		h.Div(h.Class("labels-grid"),
 			h.Div(h.Class("labels-main"),
 				availableLabelsSection(labelKeys, activeFilters, len(rows)),
@@ -193,34 +191,6 @@ func page(rows []envRow, labelKeys []labelKeyInfo, activeFilters map[string]stri
 			sidebar(activeFilters, filteredRows, len(rows)),
 		),
 	)
-}
-
-func activeFiltersSection(filters map[string]string) g.Node {
-	keys := make([]string, 0, len(filters))
-	for k := range filters {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	tags := make([]g.Node, 0, len(keys))
-	for _, k := range keys {
-		tags = append(tags, h.A(
-			h.Href(removeFilterURL(filters, k)),
-			h.Class("label-filter-tag active"),
-			g.Text(k+": "+filters[k]+" ✕"),
-		))
-	}
-
-	var content []g.Node
-	content = append(content, h.Span(h.Class("filter-label"), g.Text("Selected labels: ")))
-	if len(tags) > 0 {
-		content = append(content, g.Group(tags))
-		content = append(content, h.A(h.Href("/labels"), h.Class("btn-small"), g.Text("Clear all")))
-	} else {
-		content = append(content, h.Span(h.Class("text-muted"), g.Text("(none)")))
-	}
-
-	return h.Div(h.Class("labels-active-filters"), g.Group(content))
 }
 
 func availableLabelsSection(labelKeys []labelKeyInfo, activeFilters map[string]string, totalEnvs int) g.Node {
@@ -250,8 +220,6 @@ func availableLabelsSection(labelKeys []labelKeyInfo, activeFilters map[string]s
 	})
 
 	return h.Section(h.Class("labels-section"),
-		h.H2(g.Text("Available Labels")),
-		h.P(h.Class("labels-desc"), g.Text("All label keys and values across all environments. Click values to filter.")),
 		h.Table(h.Class("table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Label")),
@@ -279,7 +247,10 @@ func sidebar(activeFilters map[string]string, filteredRows []envRow, totalCount 
 				h.Pre(g.Text(jsonStr)),
 			),
 			h.P(h.Class("labels-desc"), targetDescription(activeFilters, len(filteredRows))),
-			h.H4(g.Text(matchTitle)),
+			h.Div(h.Class("labels-sidebar-header"),
+				h.H4(g.Text(matchTitle)),
+				g.If(len(activeFilters) > 0, h.A(h.Href("/labels"), h.Class("btn-small"), g.Text("Clear all"))),
+			),
 			matchedEnvironmentsTable(filteredRows, activeFilters),
 		),
 	)
