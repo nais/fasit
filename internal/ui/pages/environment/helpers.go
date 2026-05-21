@@ -16,7 +16,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/view"
-	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -131,27 +130,6 @@ func getEnvironmentMetadata(ctx context.Context, env *model.Environment) []Metad
 	addMetadata(&metadata, "Created", view.FormatTime(env.Created))
 	addMetadata(&metadata, "Last Modified", view.FormatTime(env.LastModified))
 	addMetadataBool(&metadata, "Reconcile", env.Reconcile)
-
-	values, err := envpkg.ListEnvironmentValuesForEnvironment(ctx, env.ID, true)
-	if err == nil {
-		refs, err := deployment.ValueRefsForEnvironment(ctx, env.ID)
-		if err != nil {
-			logrus.WithError(err).Warn("failed to load value refs for environment")
-		}
-		for _, val := range values {
-			item := MetadataItem{Key: val.Key}
-			if refs != nil {
-				features := refs[val.Key]
-				item.ReferencedBy = features
-			}
-			if val.Secret {
-				item.IsSecret = true
-			} else {
-				item.Value = rawValueToString(val.Value)
-			}
-			metadata = append(metadata, item)
-		}
-	}
 
 	return metadata
 }

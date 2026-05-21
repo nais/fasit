@@ -122,16 +122,16 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Env
 						g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
 							return h.Span(h.Class("label-filter-tag"), g.Textf("%s: %s", k, labels[k]))
 						})),
-						g.If(gcpProjectID != "",
-							h.A(
-								h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
-								h.Class("label-filter-tag gcp-link"),
-								g.Attr("target", "_blank"),
-								g.Attr("rel", "noopener noreferrer"),
-								g.Attr("title", "Open GCP project "+gcpProjectID),
-								g.Text("GCP: "+gcpProjectID),
-								components.ExternalLinkIcon(),
-							),
+					),
+					g.If(gcpProjectID != "",
+						h.A(
+							h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+							h.Class("btn btn-secondary"),
+							g.Attr("target", "_blank"),
+							g.Attr("rel", "noopener noreferrer"),
+							g.Attr("title", "Open GCP project "+gcpProjectID),
+							g.Text("Open GCP project"),
+							components.ExternalLinkIcon(),
 						),
 					),
 					h.H2(g.Text("Metadata")),
