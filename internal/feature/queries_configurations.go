@@ -193,6 +193,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 			Action:     audit.ActionUpdated,
 			ObjectType: audit.ObjectTypeConfiguration,
 			ObjectID:   conf.Feature + "/" + conf.Key,
+			Feature:    conf.Feature,
 		})
 	})
 	if err != nil {
@@ -220,6 +221,7 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 			Action:     audit.ActionDeleted,
 			ObjectType: audit.ObjectTypeConfiguration,
 			ObjectID:   existing.Feature + "/" + existing.Key,
+			Feature:    existing.Feature,
 		})
 	})
 }
@@ -234,6 +236,7 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 		Action:        action,
 		ObjectType:    audit.ObjectTypeConfiguration,
 		ObjectID:      info.feature + "/" + info.key,
+		Feature:       info.feature,
 		EnvironmentID: info.envID,
 	})
 }

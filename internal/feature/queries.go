@@ -452,6 +452,7 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 		Description: "version " + feat.Version,
 		ObjectType:  audit.ObjectTypeFeature,
 		ObjectID:    feat.Name,
+		Feature:     feat.Name,
 	})
 
 	return nil

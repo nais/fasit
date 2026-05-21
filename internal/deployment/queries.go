@@ -283,6 +283,7 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 		Action:        audit.ActionTriggered,
 		ObjectType:    audit.ObjectTypeDeployment,
 		ObjectID:      featureName,
+		Feature:       featureName,
 		EnvironmentID: &envID,
 	})
 

@@ -157,7 +157,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	}
 
 	return g.Group([]g.Node{
-		h.H3(g.Text("Recent activity")),
+		h.H3(h.A(h.Href("/auditlog"), g.Text("Recent activity"))),
 		h.Table(h.Class("table table-compact"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Action")),

@@ -17,6 +17,7 @@ INSERT INTO audits(
 	description,
 	object_type,
 	object_id,
+	feature,
 	environment_id,
 	metadata)
 VALUES (
@@ -26,7 +27,8 @@ VALUES (
 	$4,
 	$5,
 	$6,
-	$7)
+	$7,
+	$8)
 `
 
 type CreateParams struct {
@@ -35,6 +37,7 @@ type CreateParams struct {
 	Description   string
 	ObjectType    string
 	ObjectID      string
+	Feature       string
 	EnvironmentID *uuid.UUID
 	Metadata      []byte
 }
@@ -46,88 +49,16 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 		arg.Description,
 		arg.ObjectType,
 		arg.ObjectID,
+		arg.Feature,
 		arg.EnvironmentID,
 		arg.Metadata,
 	)
 	return err
 }
 
-const list = `-- name: List :many
-SELECT
-	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id,
-	e.name AS environment_name,
-	t.name AS tenant_name
-FROM
-	audits a
-LEFT JOIN environments e ON e.id = a.environment_id
-LEFT JOIN tenants t ON t.id = e.tenant_id
-WHERE
-	a.environment_id = $1::UUID
-	AND (
-		$2::TEXT = ''
-		OR a.object_id = $2::TEXT
-		OR STARTS_WITH(a.object_id, CONCAT($2::TEXT, '/'))
-	)
-ORDER BY
-	a.created_at DESC
-LIMIT $3
-`
-
-type ListParams struct {
-	EnvironmentID uuid.UUID
-	FeatureName   string
-	PageSize      int32
-}
-
-type ListRow struct {
-	ID              uuid.UUID
-	Actor           string
-	Description     string
-	ObjectType      string
-	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
-	Metadata        []byte
-	Action          string
-	EnvironmentID   *uuid.UUID
-	EnvironmentName *string
-	TenantName      *string
-}
-
-func (q *Queries) List(ctx context.Context, arg ListParams) ([]ListRow, error) {
-	rows, err := q.db.Query(ctx, list, arg.EnvironmentID, arg.FeatureName, arg.PageSize)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListRow{}
-	for rows.Next() {
-		var i ListRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Actor,
-			&i.Description,
-			&i.ObjectType,
-			&i.ObjectID,
-			&i.CreatedAt,
-			&i.Metadata,
-			&i.Action,
-			&i.EnvironmentID,
-			&i.EnvironmentName,
-			&i.TenantName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listForEnvironment = `-- name: ListForEnvironment :many
 SELECT
-	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id,
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id, a.feature,
 	e.name AS environment_name,
 	t.name AS tenant_name
 FROM
@@ -156,6 +87,7 @@ type ListForEnvironmentRow struct {
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
+	Feature         string
 	EnvironmentName *string
 	TenantName      *string
 }
@@ -179,6 +111,147 @@ func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironment
 			&i.Metadata,
 			&i.Action,
 			&i.EnvironmentID,
+			&i.Feature,
+			&i.EnvironmentName,
+			&i.TenantName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listForFeature = `-- name: ListForFeature :many
+SELECT
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id, a.feature,
+	e.name AS environment_name,
+	t.name AS tenant_name
+FROM
+	audits a
+LEFT JOIN environments e ON e.id = a.environment_id
+LEFT JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	a.feature = $1
+ORDER BY
+	a.created_at DESC
+LIMIT $2
+`
+
+type ListForFeatureParams struct {
+	Feature  string
+	PageSize int32
+}
+
+type ListForFeatureRow struct {
+	ID              uuid.UUID
+	Actor           string
+	Description     string
+	ObjectType      string
+	ObjectID        string
+	CreatedAt       pgtype.Timestamptz
+	Metadata        []byte
+	Action          string
+	EnvironmentID   *uuid.UUID
+	Feature         string
+	EnvironmentName *string
+	TenantName      *string
+}
+
+func (q *Queries) ListForFeature(ctx context.Context, arg ListForFeatureParams) ([]ListForFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listForFeature, arg.Feature, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListForFeatureRow{}
+	for rows.Next() {
+		var i ListForFeatureRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Actor,
+			&i.Description,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.CreatedAt,
+			&i.Metadata,
+			&i.Action,
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.EnvironmentName,
+			&i.TenantName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listForFeatureInEnvironment = `-- name: ListForFeatureInEnvironment :many
+SELECT
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id, a.feature,
+	e.name AS environment_name,
+	t.name AS tenant_name
+FROM
+	audits a
+LEFT JOIN environments e ON e.id = a.environment_id
+LEFT JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	a.feature = $1
+	AND a.environment_id = $2
+ORDER BY
+	a.created_at DESC
+LIMIT $3
+`
+
+type ListForFeatureInEnvironmentParams struct {
+	Feature  string
+	EnvID    *uuid.UUID
+	PageSize int32
+}
+
+type ListForFeatureInEnvironmentRow struct {
+	ID              uuid.UUID
+	Actor           string
+	Description     string
+	ObjectType      string
+	ObjectID        string
+	CreatedAt       pgtype.Timestamptz
+	Metadata        []byte
+	Action          string
+	EnvironmentID   *uuid.UUID
+	Feature         string
+	EnvironmentName *string
+	TenantName      *string
+}
+
+func (q *Queries) ListForFeatureInEnvironment(ctx context.Context, arg ListForFeatureInEnvironmentParams) ([]ListForFeatureInEnvironmentRow, error) {
+	rows, err := q.db.Query(ctx, listForFeatureInEnvironment, arg.Feature, arg.EnvID, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListForFeatureInEnvironmentRow{}
+	for rows.Next() {
+		var i ListForFeatureInEnvironmentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Actor,
+			&i.Description,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.CreatedAt,
+			&i.Metadata,
+			&i.Action,
+			&i.EnvironmentID,
+			&i.Feature,
 			&i.EnvironmentName,
 			&i.TenantName,
 		); err != nil {
@@ -194,7 +267,7 @@ func (q *Queries) ListForEnvironment(ctx context.Context, arg ListForEnvironment
 
 const listRecent = `-- name: ListRecent :many
 SELECT
-	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id,
+	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id, a.feature,
 	e.name AS environment_name,
 	t.name AS tenant_name
 FROM
@@ -216,6 +289,7 @@ type ListRecentRow struct {
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
+	Feature         string
 	EnvironmentName *string
 	TenantName      *string
 }
@@ -239,6 +313,7 @@ func (q *Queries) ListRecent(ctx context.Context, pageSize int32) ([]ListRecentR
 			&i.Metadata,
 			&i.Action,
 			&i.EnvironmentID,
+			&i.Feature,
 			&i.EnvironmentName,
 			&i.TenantName,
 		); err != nil {

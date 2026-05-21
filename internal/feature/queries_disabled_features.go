@@ -40,6 +40,7 @@ func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason st
 			Description:   reason,
 			ObjectType:    audit.ObjectTypeFeature,
 			ObjectID:      featureName,
+			Feature:       featureName,
 			EnvironmentID: &envID,
 		})
 	})
@@ -61,6 +62,7 @@ func FeatureEnable(ctx context.Context, envID uuid.UUID, featureName string) err
 			Action:        audit.ActionEnabled,
 			ObjectType:    audit.ObjectTypeFeature,
 			ObjectID:      featureName,
+			Feature:       featureName,
 			EnvironmentID: &envID,
 		})
 	})

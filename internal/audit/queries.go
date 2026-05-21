@@ -31,34 +31,48 @@ func Create(ctx context.Context, p CreateParams) error {
 		Description:   p.Description,
 		ObjectType:    string(p.ObjectType),
 		ObjectID:      p.ObjectID,
+		Feature:       p.Feature,
 		EnvironmentID: p.EnvironmentID,
 		Metadata:      meta,
 	})
 }
 
-func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*Entry, error) {
-	rows, err := querier(ctx).List(ctx, auditsql.ListParams{
-		EnvironmentID: environmentId,
-		FeatureName:   featureName,
-		PageSize:      50,
+func ListForFeature(ctx context.Context, feature string, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListForFeature(ctx, auditsql.ListForFeatureParams{
+		Feature:  feature,
+		PageSize: limit,
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	ret := make([]*Entry, 0, len(rows))
 	for _, r := range rows {
 		ret = append(ret, &Entry{
-			Actor:           r.Actor,
-			Action:          Action(r.Action),
-			Description:     r.Description,
-			ObjectType:      ObjectType(r.ObjectType),
-			ObjectID:        r.ObjectID,
-			EnvironmentID:   r.EnvironmentID,
-			EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName:      ptrOr(r.TenantName),
-			CreatedAt:       r.CreatedAt.Time,
-			Metadata:        r.Metadata,
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+		})
+	}
+	return ret, nil
+}
+
+func ListForFeatureInEnvironment(ctx context.Context, feature string, envID uuid.UUID, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListForFeatureInEnvironment(ctx, auditsql.ListForFeatureInEnvironmentParams{
+		Feature:  feature,
+		EnvID:    &envID,
+		PageSize: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -72,20 +86,13 @@ func ListForEnvironment(ctx context.Context, envID uuid.UUID, limit int32) ([]*E
 	if err != nil {
 		return nil, err
 	}
-
 	ret := make([]*Entry, 0, len(rows))
 	for _, r := range rows {
 		ret = append(ret, &Entry{
-			Actor:           r.Actor,
-			Action:          Action(r.Action),
-			Description:     r.Description,
-			ObjectType:      ObjectType(r.ObjectType),
-			ObjectID:        r.ObjectID,
-			EnvironmentID:   r.EnvironmentID,
-			EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName:      ptrOr(r.TenantName),
-			CreatedAt:       r.CreatedAt.Time,
-			Metadata:        r.Metadata,
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -96,20 +103,13 @@ func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	ret := make([]*Entry, 0, len(rows))
 	for _, r := range rows {
 		ret = append(ret, &Entry{
-			Actor:           r.Actor,
-			Action:          Action(r.Action),
-			Description:     r.Description,
-			ObjectType:      ObjectType(r.ObjectType),
-			ObjectID:        r.ObjectID,
-			EnvironmentID:   r.EnvironmentID,
-			EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName:      ptrOr(r.TenantName),
-			CreatedAt:       r.CreatedAt.Time,
-			Metadata:        r.Metadata,
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil

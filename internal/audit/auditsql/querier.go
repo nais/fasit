@@ -8,8 +8,9 @@ import (
 
 type Querier interface {
 	Create(ctx context.Context, arg CreateParams) error
-	List(ctx context.Context, arg ListParams) ([]ListRow, error)
 	ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]ListForEnvironmentRow, error)
+	ListForFeature(ctx context.Context, arg ListForFeatureParams) ([]ListForFeatureRow, error)
+	ListForFeatureInEnvironment(ctx context.Context, arg ListForFeatureInEnvironmentParams) ([]ListForFeatureInEnvironmentRow, error)
 	ListRecent(ctx context.Context, pageSize int32) ([]ListRecentRow, error)
 }
 

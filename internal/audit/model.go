@@ -36,6 +36,7 @@ type CreateParams struct {
 	Description   string
 	ObjectType    ObjectType
 	ObjectID      string
+	Feature       string
 	EnvironmentID *uuid.UUID
 	Metadata      any
 }

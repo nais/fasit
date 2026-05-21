@@ -26,7 +26,11 @@ func (f *Querier) Create(ctx context.Context, arg auditsql.CreateParams) error {
 	return nil
 }
 
-func (f *Querier) List(ctx context.Context, arg auditsql.ListParams) ([]auditsql.ListRow, error) {
+func (f *Querier) ListForFeature(_ context.Context, _ auditsql.ListForFeatureParams) ([]auditsql.ListForFeatureRow, error) {
+	return nil, nil
+}
+
+func (f *Querier) ListForFeatureInEnvironment(_ context.Context, _ auditsql.ListForFeatureInEnvironmentParams) ([]auditsql.ListForFeatureInEnvironmentRow, error) {
 	return nil, nil
 }
 
