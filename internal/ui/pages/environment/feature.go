@@ -689,8 +689,10 @@ func auditTab(page *FeaturePage) g.Node {
 	for _, e := range page.AuditEntries {
 		cells := []g.Node{
 			h.Td(g.Text(view.FormatTime(e.CreatedAt))),
+			h.Td(g.Text(string(e.Action))),
+			h.Td(g.Text(e.ObjectType.Display()+" "+e.ObjectID)),
+			h.Td(g.Text(e.Description)),
 			h.Td(g.Text(e.Actor)),
-			h.Td(g.Text(e.Summary())),
 		}
 		if len(e.Metadata) > 0 {
 			var pretty bytes.Buffer
@@ -714,8 +716,10 @@ func auditTab(page *FeaturePage) g.Node {
 		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-audit"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Time")),
+				h.Th(g.Text("Action")),
+				h.Th(g.Text("Resource")),
+				h.Th(g.Text("Detail")),
 				h.Th(g.Text("Actor")),
-				h.Th(g.Text("Description")),
 				h.Th(g.Text("Metadata")),
 			)),
 			h.TBody(rows...),

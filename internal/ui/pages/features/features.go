@@ -140,8 +140,17 @@ func recentActivity(audits []*audit.Entry) g.Node {
 
 	tableRows := make([]g.Node, 0, len(audits))
 	for _, a := range audits {
+		env := ""
+		if a.TenantName != "" && a.EnvironmentName != "" {
+			env = a.TenantName + "/" + a.EnvironmentName
+		} else if a.EnvironmentName != "" {
+			env = a.EnvironmentName
+		}
 		tableRows = append(tableRows, h.Tr(
-			h.Td(g.Text(a.Summary())),
+			h.Td(g.Text(string(a.Action))),
+			h.Td(g.Text(a.ObjectType.Display()+" "+a.ObjectID)),
+			h.Td(g.Text(env)),
+			h.Td(h.Class("text-muted"), g.Text(a.Description)),
 			h.Td(g.Text(a.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
 		))
@@ -152,6 +161,9 @@ func recentActivity(audits []*audit.Entry) g.Node {
 		h.Table(h.Class("table table-compact"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Action")),
+				h.Th(g.Text("Resource")),
+				h.Th(g.Text("Environment")),
+				h.Th(g.Text("Detail")),
 				h.Th(g.Text("Actor")),
 				h.Th(g.Text("When")),
 			)),
