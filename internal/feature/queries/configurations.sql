@@ -156,7 +156,7 @@ WHERE
 
 -- name: ConfigUpdate :one
 UPDATE
-	configurations_global
+	ONLY configurations_global
 SET
 	description = @description,
 	value = @value
@@ -166,7 +166,7 @@ RETURNING
 	*;
 
 -- name: ConfigDelete :exec
-DELETE FROM configurations_global
+DELETE FROM ONLY configurations_global
 WHERE id = @id;
 
 -- name: ConfigOverridesByFeature :many
@@ -186,9 +186,32 @@ ORDER BY
 SELECT
 	*
 FROM
-	configurations_global
+	ONLY configurations_global
 WHERE
 	id = @id;
+
+-- name: ConfigEnvGetByID :one
+SELECT
+	*
+FROM
+	ONLY configurations_environment
+WHERE
+	id = @id;
+
+-- name: ConfigEnvUpdate :one
+UPDATE
+	ONLY configurations_environment
+SET
+	description = @description,
+	value = @value
+WHERE
+	id = @id
+RETURNING
+	*;
+
+-- name: ConfigEnvDelete :exec
+DELETE FROM ONLY configurations_environment
+WHERE id = @id;
 
 -- name: ConfigRenameGlobal :exec
 UPDATE

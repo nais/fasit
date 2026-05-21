@@ -15,24 +15,12 @@ import (
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
+	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/view"
 	yaml "gopkg.in/yaml.v3"
 )
 
-type FeatureConfigItem struct {
-	ID             string
-	Key            string
-	DisplayName    string
-	Description    string
-	Value          string
-	Source         string
-	Type           string
-	IsSecret       bool
-	IsComputed     bool
-	IsConfigurable bool
-	Template       string
-	MappedCount    int
-}
+type FeatureConfigItem = components.ConfigItem
 
 type FeaturePage struct {
 	Breadcrumbs      []breadcrumb.Crumb
@@ -144,46 +132,6 @@ func addMetadataBool(items *[]MetadataItem, key string, value bool) {
 	*items = append(*items, MetadataItem{Key: key, Value: fmt.Sprintf("%t", value)})
 }
 
-func rawValueToString(value json.RawMessage) string {
-	if len(value) == 0 {
-		return ""
-	}
-	var v any
-	if err := json.Unmarshal(value, &v); err != nil {
-		return string(value)
-	}
-	switch typed := v.(type) {
-	case string:
-		return typed
-	default:
-		b, err := json.Marshal(typed)
-		if err != nil {
-			return string(value)
-		}
-		return string(b)
-	}
-}
-
-func rawValueForInput(value json.RawMessage) string {
-	if len(value) == 0 {
-		return ""
-	}
-	var v any
-	if err := json.Unmarshal(value, &v); err != nil {
-		return string(value)
-	}
-	switch typed := v.(type) {
-	case string:
-		return typed
-	default:
-		b, err := json.MarshalIndent(typed, "", "  ")
-		if err != nil {
-			return string(value)
-		}
-		return string(b)
-	}
-}
-
 func isEmptyConfigValue(value string) bool {
 	if value == "" {
 		return true
@@ -209,7 +157,7 @@ func isEmptyConfigValue(value string) bool {
 func gcpProjectIDFromValues(values []*model.EnvironmentValue) string {
 	for _, v := range values {
 		if v.Key == "project_id" && !v.Secret {
-			return rawValueToString(v.Value)
+			return components.RawValueForDisplay(v.Value)
 		}
 	}
 	return ""
@@ -356,7 +304,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 			ID:          cfg.ID.String(),
 			Key:         cfg.Key,
 			Source:      string(cfg.Source),
-			Value:       rawValueForInput(cfg.Content),
+			Value:       components.RawValueForDisplay(cfg.Content),
 			MappedCount: countTemplateRefs(feat.Values, cfg.Key),
 		}
 		if cfg.Value != nil {
@@ -554,56 +502,6 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *
 	}
 	ret.HelmDiff, _ = featurepkg.HelmValueDiff(ctx, di, feat.SecretKeys())
 	return ret
-}
-
-func parseConfigValue(value, configType, mode string) (any, error) {
-	switch configType {
-	case "INT":
-		var intVal int
-		if _, err := fmt.Sscan(value, &intVal); err != nil {
-			return nil, err
-		}
-		return intVal, nil
-	case "BOOL":
-		lower := strings.ToLower(value)
-		if lower == "true" {
-			return true, nil
-		}
-		if lower == "false" {
-			return false, nil
-		}
-		return nil, fmt.Errorf("invalid bool")
-	case "STRING_ARRAY":
-		if mode == "json" {
-			var arr []string
-			if err := json.Unmarshal([]byte(value), &arr); err != nil {
-				return nil, fmt.Errorf("invalid JSON array: %w", err)
-			}
-			return arr, nil
-		}
-		var arr []string
-		if err := json.Unmarshal([]byte(value), &arr); err == nil {
-			return arr, nil
-		}
-		parts := strings.Split(value, ",")
-		for i := range parts {
-			parts[i] = strings.TrimSpace(parts[i])
-		}
-		return parts, nil
-	default:
-		if mode == "json" {
-			var v any
-			if err := json.Unmarshal([]byte(value), &v); err != nil {
-				return nil, fmt.Errorf("invalid JSON: %w", err)
-			}
-			b, err := json.Marshal(v)
-			if err != nil {
-				return nil, err
-			}
-			return string(b), nil
-		}
-		return value, nil
-	}
 }
 
 func stripNoValue(m map[string]any) {

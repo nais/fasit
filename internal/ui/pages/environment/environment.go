@@ -151,7 +151,7 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Env
 								if val.Secret {
 									valNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
 								} else {
-									valNode = g.Text(rawValueToString(val.Value))
+									valNode = g.Text(components.RawValueForDisplay(val.Value))
 								}
 								if refs := valueRefs[val.Key]; len(refs) > 0 {
 									tooltip := strings.Join(refs, ", ")

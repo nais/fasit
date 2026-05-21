@@ -28,6 +28,8 @@ type DetailPage struct {
 	CurrentFeature *model.Feature
 	DeploymentEnvs []DeploymentEnvStatus
 	Prefs          ViewPrefs
+	ActiveTab      string
+	ConfigItems    []components.ConfigItem
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -74,7 +76,25 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		data.Prefs = parseViewPrefs(r)
+		data.ActiveTab = "overview"
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
+	}
+}
+
+func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := loadFeatureData(r)
+		if err != nil {
+			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
+			return
+		}
+		data.ActiveTab = "config"
+		data.ConfigItems, err = loadGlobalConfigItems(r.Context(), data.CurrentFeature)
+		if err != nil {
+			http.Error(w, "Failed to load config", http.StatusInternalServerError)
+			return
+		}
+		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 
@@ -82,12 +102,12 @@ func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) 
 	return h.Div(h.Class("container"),
 		components.FeaturesSidebar(features, ""),
 		h.Main(h.Class("main-content"),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body card-compact"),
+			components.CardCompact(
 				recentDeployments(deps),
-			)),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body card-compact"),
+			),
+			components.CardCompact(
 				recentActivity(audits),
-			)),
+			),
 		),
 	)
 }
@@ -176,13 +196,29 @@ func depLabelPills(labels map[string]string) g.Node {
 	return g.Group(pills)
 }
 
+func featureTabs(featureName string) []components.Tab {
+	return []components.Tab{
+		{ID: "overview", Href: "/features/" + featureName, Label: "Overview"},
+		{ID: "config", Href: "/features/" + featureName + "/config", Label: "Config"},
+	}
+}
+
 func detailPage(data *DetailPage) g.Node {
-	content := deploymentDetailContent(data)
+	var content g.Node
+	switch data.ActiveTab {
+	case "config":
+		content = globalConfigContent(data)
+	default:
+		content = deploymentDetailContent(data)
+	}
 	return h.Div(h.Class("container"),
 		components.FeaturesSidebar(data.Features, data.CurrentFeature.Name),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(data.Breadcrumbs),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"), content)),
+			components.Card(
+				components.TabsNav(data.ActiveTab, featureTabs(data.CurrentFeature.Name)),
+				content,
+			),
 		),
 	)
 }

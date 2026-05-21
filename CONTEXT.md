@@ -11,7 +11,9 @@ An OCI Helm chart with declared values (configs + computed) managed by Fasit and
 A helm value whose output is derived from a Go template at render time, potentially referencing configs, environment values, or management values.
 
 **Config value**:
-A helm value supplied by operators per environment. May be marked `secret`.
+A helm value supplied by operators. May be marked `secret`. Exists at two scopes:
+- **Global config**: set once on the feature, inherited by all environments.
+- **Environment config override**: set per environment, takes precedence over the global config for that environment.
 
 **Secret taint**:
 A computed value is "tainted" when its rendered output depends on at least one secret input (a secret config or a secret environment value). Tainted values are masked in the overview UI.

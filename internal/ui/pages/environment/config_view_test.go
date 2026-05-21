@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/components"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,36 +14,36 @@ import (
 func TestParseConfigValue_JSONMode(t *testing.T) {
 	t.Parallel()
 	t.Run("STRING json mode minifies valid JSON", func(t *testing.T) {
-		v, err := parseConfigValue("{\n  \"a\": 1,\n  \"b\": [2, 3]\n}", "STRING", "json")
+		v, err := components.ParseConfigValue("{\n  \"a\": 1,\n  \"b\": [2, 3]\n}", "STRING", "json")
 		require.NoError(t, err)
 		assert.Equal(t, `{"a":1,"b":[2,3]}`, v)
 	})
 
 	t.Run("STRING json mode rejects invalid JSON", func(t *testing.T) {
-		_, err := parseConfigValue("not json", "STRING", "json")
+		_, err := components.ParseConfigValue("not json", "STRING", "json")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid JSON")
 	})
 
 	t.Run("STRING raw mode accepts arbitrary text", func(t *testing.T) {
-		v, err := parseConfigValue("not json at all\nmultiline", "STRING", "raw")
+		v, err := components.ParseConfigValue("not json at all\nmultiline", "STRING", "raw")
 		require.NoError(t, err)
 		assert.Equal(t, "not json at all\nmultiline", v)
 	})
 
 	t.Run("STRING_ARRAY json mode rejects non-array JSON", func(t *testing.T) {
-		_, err := parseConfigValue(`{"not":"array"}`, "STRING_ARRAY", "json")
+		_, err := components.ParseConfigValue(`{"not":"array"}`, "STRING_ARRAY", "json")
 		require.Error(t, err)
 	})
 
 	t.Run("STRING_ARRAY json mode parses array", func(t *testing.T) {
-		v, err := parseConfigValue(`["FOO=bar","BAZ=qux"]`, "STRING_ARRAY", "json")
+		v, err := components.ParseConfigValue(`["FOO=bar","BAZ=qux"]`, "STRING_ARRAY", "json")
 		require.NoError(t, err)
 		assert.Equal(t, []string{"FOO=bar", "BAZ=qux"}, v)
 	})
 
 	t.Run("STRING_ARRAY raw mode falls back to comma split", func(t *testing.T) {
-		v, err := parseConfigValue("a, b ,c", "STRING_ARRAY", "raw")
+		v, err := components.ParseConfigValue("a, b ,c", "STRING_ARRAY", "raw")
 		require.NoError(t, err)
 		assert.Equal(t, []string{"a", "b", "c"}, v)
 	})
@@ -51,24 +52,24 @@ func TestParseConfigValue_JSONMode(t *testing.T) {
 func TestTryPrettyJSON(t *testing.T) {
 	t.Parallel()
 	t.Run("detects object", func(t *testing.T) {
-		out, ok := tryPrettyJSON(`{"a":1,"b":2}`)
+		out, ok := components.TryPrettyJSON(`{"a":1,"b":2}`)
 		require.True(t, ok)
 		assert.Contains(t, out, "\n")
 		assert.Contains(t, out, `"a": 1`)
 	})
 
 	t.Run("rejects plain string", func(t *testing.T) {
-		_, ok := tryPrettyJSON("just text")
+		_, ok := components.TryPrettyJSON("just text")
 		assert.False(t, ok)
 	})
 
 	t.Run("rejects empty", func(t *testing.T) {
-		_, ok := tryPrettyJSON("")
+		_, ok := components.TryPrettyJSON("")
 		assert.False(t, ok)
 	})
 
 	t.Run("rejects malformed JSON", func(t *testing.T) {
-		_, ok := tryPrettyJSON(`{"a":}`)
+		_, ok := components.TryPrettyJSON(`{"a":}`)
 		assert.False(t, ok)
 	})
 }
@@ -142,7 +143,7 @@ func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 	assert.Less(t, configIdx, computedIdx, "Configuration should render before Computed")
 
 	// Source pills tag each row with where its value came from.
-	assert.Contains(t, html, `source-label">default`, "configurable item without override should be tagged default")
+	assert.Contains(t, html, `source-label">helm value`, "configurable item without override should be tagged helm value")
 	assert.Contains(t, html, `source-label">mapping`, "computed item should be tagged mapping")
 	// Actions column should be marked non-sortable.
 	assert.Contains(t, html, `data-no-sort`)
@@ -174,7 +175,7 @@ func TestOverviewTab_SourceLabels(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, overviewTab(page).Render(&buf))
 	html := buf.String()
-	// Override row → "config" pill; non-override row → "default" pill.
-	assert.Contains(t, html, `>config<`, "env-override item should display 'config' source pill")
-	assert.Contains(t, html, `>default<`, "non-overridden item should display 'default' source pill")
+	// Override row → "env config" pill; non-override row → "helm value" pill.
+	assert.Contains(t, html, `>env config<`, "env-override item should display 'env config' source pill")
+	assert.Contains(t, html, `>helm value<`, "non-overridden item should display 'helm value' source pill")
 }

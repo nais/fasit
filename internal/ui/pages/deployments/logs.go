@@ -87,7 +87,7 @@ func logsPage(dep *deployment.Deployment, log *model.RolloutLog) g.Node {
 				breadcrumb.Deployment(dep.ID.String(), dep.Feature.Name, dep.Feature.Version),
 				{Label: "Logs"},
 			}),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"), g.Group(content))),
+			components.Card(content...),
 		),
 	)
 }

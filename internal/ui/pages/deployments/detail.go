@@ -259,7 +259,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 				{Label: d.Feature.Name, URL: "/features/" + d.Feature.Name},
 				{Content: targetPills(deploymentTargetLabels(d))},
 			}),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"), g.Group(content))),
+			components.Card(content...),
 		),
 	)
 }

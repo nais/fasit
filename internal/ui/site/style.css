@@ -710,6 +710,10 @@ nav .nav-btn:hover {
 .config-warning {
   border-left: 3px solid var(--status-warning);
 }
+.config-orphaned {
+  opacity: 0.6;
+  border-left: 3px solid var(--status-error);
+}
 .edit-icon {
   color: var(--text-muted);
   text-decoration: none;

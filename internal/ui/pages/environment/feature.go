@@ -54,7 +54,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 			return
 		}
 
-		value, err := parseConfigValue(r.FormValue("value"), r.FormValue("type"), r.FormValue("mode"))
+		value, err := components.ParseConfigValue(r.FormValue("value"), r.FormValue("type"), r.FormValue("mode"))
 		if err != nil {
 			http.Error(w, "Invalid value format: "+err.Error(), http.StatusBadRequest)
 			return
@@ -67,7 +67,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigUpdate(ctx, configID, model.UpdateConfiguration{Value: raw})
+			_, err := featurepkg.ConfigEnvUpdate(ctx, configID, model.UpdateConfiguration{Value: raw})
 			return err
 		}); err != nil {
 			http.Error(w, "Failed to update configuration: "+err.Error(), http.StatusInternalServerError)
@@ -86,7 +86,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			return
 		}
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			return featurepkg.ConfigDelete(ctx, configID)
+			return featurepkg.ConfigEnvDelete(ctx, configID)
 		}); err != nil {
 			http.Error(w, "Failed to delete configuration: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -113,7 +113,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 			return
 		}
 
-		value, err := parseConfigValue(r.FormValue("value"), r.FormValue("type"), r.FormValue("mode"))
+		value, err := components.ParseConfigValue(r.FormValue("value"), r.FormValue("type"), r.FormValue("mode"))
 		if err != nil {
 			http.Error(w, "Invalid value format: "+err.Error(), http.StatusBadRequest)
 			return
@@ -282,20 +282,16 @@ func featurePageContent(page *FeaturePage) g.Node {
 		components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(page.Breadcrumbs),
-			h.Div(h.Class("card"),
-				h.Div(h.Class("card-body"),
-					h.Div(h.Class("card-header-row"),
-						h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
-						redeployButton(page),
-					),
-					featureMetadataHeader(page),
+			components.Card(
+				h.Div(h.Class("card-header-row"),
+					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+					redeployButton(page),
 				),
+				featureMetadataHeader(page),
 			),
-			h.Div(h.Class("card"),
-				h.Div(h.Class("card-body"),
-					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name)),
-					tabContent,
-				),
+			components.Card(
+				components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name)),
+				tabContent,
 			),
 		),
 	)
@@ -436,10 +432,10 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 				valDef := page.Feature.Values[item.Key]
 				warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
 				return h.Tr(g.If(warn, h.Class("config-warning")),
-					h.Td(configKeyCell(item)),
-					h.Td(h.Class("config-actions-col"), configActionsCell(page, item)),
-					h.Td(configValueCell(item)),
-					h.Td(sourceLabelCell(item)),
+					components.ConfigKeyCell(item),
+					components.ConfigActionsCell(configActionsCell(page, item)),
+					components.ConfigValueCell(item),
+					sourceLabelCell(item),
 				)
 			})))),
 	)
@@ -460,27 +456,31 @@ func computedTable(items []FeatureConfigItem) g.Node {
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				return h.Tr(
-					h.Td(configKeyCell(item)),
-					h.Td(h.Class("config-actions-col")),
-					h.Td(computedValueCell(item)),
-					h.Td(sourceLabelCell(item)),
+					components.ConfigKeyCell(item),
+					components.ConfigActionsCell(),
+					components.ComputedValueCell(item),
+					sourceLabelCell(item),
 				)
 			})))),
 	)
 }
 
 func sourceLabelCell(item FeatureConfigItem) g.Node {
-	return h.Span(h.Class("source-label"), g.Text(sourceLabel(item)))
+	return h.Td(h.Span(h.Class("source-label"), g.Text(sourceLabel(item))))
 }
 
 func sourceLabel(item FeatureConfigItem) string {
-	if item.Source == string(model.ConfigSourceEnv) {
-		return "config"
+	switch item.Source {
+	case string(model.ConfigSourceEnv):
+		return "env config"
+	case string(model.ConfigSourceGlobal):
+		return "global config"
+	default:
+		if item.IsComputed {
+			return "mapping"
+		}
+		return "helm value"
 	}
-	if item.IsComputed {
-		return "mapping"
-	}
-	return "default"
 }
 
 func logsTab(page *FeaturePage) g.Node {
@@ -729,211 +729,37 @@ func auditTab(page *FeaturePage) g.Node {
 	)
 }
 
-func configKeyCell(item FeatureConfigItem) g.Node {
-	label := item.Key
-	if item.DisplayName != "" {
-		label = item.DisplayName
-	}
-	children := []g.Node{h.Strong(g.Text(label))}
-	if item.Description != "" {
-		children = append(children, h.Br(), h.Small(h.Class("text-muted"), g.Text(item.Description)))
-	}
-	return g.Group(children)
-}
-
-func configValueCell(item FeatureConfigItem) g.Node {
-	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"))
-	}
-	return valueDisplay(item)
-}
-
 func configActionsCell(page *FeaturePage, item FeatureConfigItem) g.Node {
-	var (
-		popoverID   string
-		action      string
-		title       = "Edit Configuration"
-		submitLabel = "Save changes"
-		formFields  []g.Node
-	)
+	basePath := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name)
 	if item.Source == string(model.ConfigSourceEnv) {
-		popoverID = "edit-" + item.ID
-		action = featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/edit/" + item.ID
-		formFields = []g.Node{h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type))}
-	} else {
-		popoverID = "override-" + item.Key
-		action = featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/override"
-		title, submitLabel = "Override Configuration", "Save override"
-		formFields = []g.Node{h.Input(h.Type("hidden"), h.Name("key"), h.Value(item.Key)), h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type))}
-	}
-	return g.Group([]g.Node{
-		h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("\u270e")),
-		g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID),
-			h.H3(g.Text(title)),
-			h.Form(h.Method("POST"), h.Action(action),
-				g.Group(formFields),
-				h.Label(g.Text("Configuration Key")),
-				h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")),
-				configValueEditor(item, item.Value),
-				h.Div(h.Class("popover-actions"),
-					h.Button(h.Type("submit"), g.Text(submitLabel)),
-					h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
-				),
+		return g.Group([]g.Node{
+			components.ConfigEditPopover(
+				"edit-"+item.ID,
+				basePath+"/config/edit/"+item.ID,
+				"Edit Configuration", "Save changes",
+				item,
+				h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type)),
 			),
-		),
-	})
-}
-
-func computedValueCell(item FeatureConfigItem) g.Node {
-	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"))
+			deleteOverrideButton(page, item),
+		})
 	}
-	value := item.Value
-	if isMultilineValue(value) {
-		return h.Div(
-			h.Code(h.Class("text-muted"), h.Title(item.Template), g.Text("computed")),
-			readonlyValueTextarea(value),
-		)
-	}
-	return h.Code(h.Title(item.Template), g.Text(value))
-}
-
-func valueDisplay(item FeatureConfigItem) g.Node {
-	value := item.Value
-	display := value
-	if item.Type == "STRING" {
-		if pretty, ok := tryPrettyJSON(value); ok {
-			display = pretty
-		}
-	}
-	if isMultilineValue(display) {
-		return readonlyValueTextarea(display)
-	}
-	return h.Span(g.Text(display))
-}
-
-func readonlyValueTextarea(value string) g.Node {
-	rows := max(min(strings.Count(value, "\n")+1, 10), 2)
-	return h.Textarea(
-		g.Attr("readonly", ""),
-		h.Class("value-readonly"),
-		h.Rows(fmt.Sprintf("%d", rows)),
-		g.Text(value),
+	return components.ConfigEditPopover(
+		"override-"+item.Key,
+		basePath+"/config/override",
+		"Override Configuration", "Save override",
+		item,
+		h.Input(h.Type("hidden"), h.Name("key"), h.Value(item.Key)),
+		h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type)),
 	)
-}
-
-func isMultilineValue(s string) bool {
-	return strings.Contains(s, "\n")
-}
-
-func tryPrettyJSON(s string) (string, bool) {
-	trimmed := strings.TrimSpace(s)
-	if trimmed == "" {
-		return s, false
-	}
-	switch trimmed[0] {
-	case '{', '[':
-	default:
-		return s, false
-	}
-	var v any
-	if err := json.Unmarshal([]byte(trimmed), &v); err != nil {
-		return s, false
-	}
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return s, false
-	}
-	return string(b), true
 }
 
 func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
-	popoverID := "delete-" + item.ID
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/delete/" + item.ID
-	return g.Group([]g.Node{
-		h.Button(h.Type("button"), h.Class("edit-icon delete-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text("Remove Override")), h.P(g.Textf("Remove the environment override for %s? The global default will be used instead.", item.Key)), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Remove override")), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))),
-	})
-}
-
-func configValueEditor(item FeatureConfigItem, currentValue string) g.Node {
-	switch item.Type {
-	case "BOOL":
-		return g.Group([]g.Node{
-			h.Label(g.Text("Value")),
-			h.Select(h.Name("value"), option("true", currentValue), option("false", currentValue)),
-		})
-	case "INT":
-		return g.Group([]g.Node{
-			h.Label(g.Text("Value")),
-			h.Input(h.Type("number"), h.Name("value"), h.Value(currentValue)),
-		})
-	case "STRING", "STRING_ARRAY":
-		return stringEditor(item, currentValue)
-	default:
-		return g.Group([]g.Node{
-			h.Label(g.Text("Value")),
-			h.Input(h.Type("text"), h.Name("value"), h.Value(currentValue)),
-		})
-	}
-}
-
-func stringEditor(item FeatureConfigItem, currentValue string) g.Node {
-	display := currentValue
-	isJSON := false
-	if item.Type == "STRING_ARRAY" {
-		if pretty, ok := tryPrettyJSON(currentValue); ok {
-			display = pretty
-			isJSON = true
-		}
-	} else {
-		if pretty, ok := tryPrettyJSON(currentValue); ok {
-			display = pretty
-			isJSON = true
-		}
-	}
-	rows := min(max(strings.Count(display, "\n")+1, 4), 20)
-	initialMode := "raw"
-	if isJSON {
-		initialMode = "json"
-	}
-	return g.Group([]g.Node{
-		h.Div(h.Class("value-editor-toolbar"),
-			h.Label(g.Text("Value")),
-			h.Span(h.Class("mode-toggle"),
-				h.Label(
-					h.Input(h.Type("radio"), h.Name("mode"), h.Value("json"),
-						g.If(initialMode == "json", g.Attr("checked", "checked")),
-						g.Attr("data-mode-toggle", ""),
-					),
-					g.Text(" JSON"),
-				),
-				g.Text(" "),
-				h.Label(
-					h.Input(h.Type("radio"), h.Name("mode"), h.Value("raw"),
-						g.If(initialMode == "raw", g.Attr("checked", "checked")),
-						g.Attr("data-mode-toggle", ""),
-					),
-					g.Text(" RAW"),
-				),
-			),
-		),
-		h.Textarea(
-			h.Name("value"),
-			h.Rows(fmt.Sprintf("%d", rows)),
-			g.Attr("data-mode-target", ""),
-			g.Text(display),
-		),
-	})
-}
-
-func option(value, current string) g.Node {
-	attrs := []g.Node{h.Value(value)}
-	if value == current {
-		attrs = append(attrs, g.Attr("selected", "selected"))
-	}
-	return h.Option(append(attrs, g.Text(value))...)
+	return components.ConfigDeletePopover(
+		"delete-"+item.ID,
+		action,
+		fmt.Sprintf("Remove the environment override for %s? The global default will be used instead.", item.Key),
+	)
 }
 
 func renderStatus(status string) g.Node {
