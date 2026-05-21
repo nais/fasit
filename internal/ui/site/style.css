@@ -1080,7 +1080,7 @@ nav .nav-btn:hover {
   background: var(--accent-bg);
   color: var(--accent);
 }
-.label-filter-tag:hover {
+a.label-filter-tag:hover {
   background: var(--accent-hover);
   color: var(--text-heading);
   text-decoration: none;
@@ -1102,7 +1102,7 @@ nav .nav-btn:hover {
   background: var(--btn-bg);
   color: var(--text-secondary);
 }
-.label-value-tag:hover {
+a.label-value-tag:hover {
   background: var(--btn-hover-bg);
   color: var(--text-heading);
   text-decoration: none;

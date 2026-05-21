@@ -4,12 +4,18 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/deployment"
 )
 
 func ReconcileHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
+		audit.Create(r.Context(), audit.CreateParams{
+			Description: "triggered full reconcile",
+			ObjectType:  "deployments",
+			ObjectID:    "all",
+		})
 		http.Redirect(w, r, safeRefererPath(r.Header.Get("Referer")), http.StatusSeeOther)
 	}
 }
