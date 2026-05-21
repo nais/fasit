@@ -223,30 +223,6 @@ func activeFiltersSection(filters map[string]string) g.Node {
 	return h.Div(h.Class("labels-active-filters"), g.Group(content))
 }
 
-
-func labelTags(labels map[string]string, activeFilters map[string]string) g.Node {
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	tags := make([]g.Node, 0, len(keys))
-	for _, k := range keys {
-		v := labels[k]
-		class := "label-filter-tag"
-		if activeFilters[k] == v {
-			class += " active"
-		}
-		tags = append(tags, h.A(
-			h.Href(filterURL(activeFilters, k, v)),
-			h.Class(class),
-			g.Text(k+": "+v),
-		))
-	}
-	return g.Group(tags)
-}
-
 func availableLabelsSection(labelKeys []labelKeyInfo, activeFilters map[string]string, totalEnvs int) g.Node {
 	tableRows := g.Map(labelKeys, func(info labelKeyInfo) g.Node {
 		valueTags := make([]g.Node, 0, len(info.Values))
