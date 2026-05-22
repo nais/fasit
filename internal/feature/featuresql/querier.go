@@ -13,6 +13,7 @@ type Querier interface {
 	ConfigEnvDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error)
 	ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
+	ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
 	ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error)
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error)

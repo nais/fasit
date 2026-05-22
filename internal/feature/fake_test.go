@@ -51,6 +51,10 @@ func (f *fakeQuerier) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (featu
 	panic("not implemented")
 }
 
+func (f *fakeQuerier) ConfigEnvListByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsEnvironment, error) {
+	panic("not implemented")
+}
+
 func (f *fakeQuerier) ConfigEnvUpdate(ctx context.Context, arg featuresql.ConfigEnvUpdateParams) (featuresql.ConfigurationsEnvironment, error) {
 	panic("not implemented")
 }

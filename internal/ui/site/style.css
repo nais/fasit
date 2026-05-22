@@ -714,6 +714,18 @@ nav .nav-btn:hover {
   opacity: 0.6;
   border-left: 3px solid var(--status-error);
 }
+.config-explorer-wrapper {
+  overflow-x: auto;
+}
+.config-explorer td, .config-explorer th {
+  white-space: nowrap;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.config-explorer .source-label {
+  font-size: 0.75rem;
+}
 .edit-icon {
   color: var(--text-muted);
   text-decoration: none;

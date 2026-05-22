@@ -26,12 +26,14 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type DetailPage struct {
 	Breadcrumbs    []breadcrumb.Crumb
-	Features       []view.FeatureNav
-	CurrentFeature *model.Feature
-	DeploymentEnvs []DeploymentEnvStatus
-	Prefs          ViewPrefs
-	ActiveTab      string
-	ConfigItems    []components.ConfigItem
+	Features        []view.FeatureNav
+	CurrentFeature  *model.Feature
+	DeploymentEnvs  []DeploymentEnvStatus
+	Prefs           ViewPrefs
+	ActiveTab       string
+	ConfigItems     []components.ConfigItem
+	ExplorerEnvs    []configExplorerEnv
+	ExplorerRows    []configExplorerRow
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -96,6 +98,23 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config", CurrentPage: components.PageFeatures, Content: detailPage(data)})
+	}
+}
+
+func ConfigExplorerHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := loadFeatureData(r)
+		if err != nil {
+			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
+			return
+		}
+		data.ActiveTab = "config-explorer"
+		data.ExplorerEnvs, data.ExplorerRows, err = loadConfigExplorerData(r.Context(), data.CurrentFeature)
+		if err != nil {
+			http.Error(w, "Failed to load config explorer", http.StatusInternalServerError)
+			return
+		}
+		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config Explorer", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 
@@ -246,6 +265,7 @@ func featureTabs(featureName string) []components.Tab {
 	return []components.Tab{
 		{ID: "overview", Href: "/features/" + featureName, Label: "Overview"},
 		{ID: "config", Href: "/features/" + featureName + "/config", Label: "Config"},
+		{ID: "config-explorer", Href: "/features/" + featureName + "/config-explorer", Label: "Config Explorer"},
 	}
 }
 
@@ -254,6 +274,8 @@ func detailPage(data *DetailPage) g.Node {
 	switch data.ActiveTab {
 	case "config":
 		content = globalConfigContent(data)
+	case "config-explorer":
+		content = configExplorerContent(data.ExplorerEnvs, data.ExplorerRows)
 	default:
 		content = deploymentDetailContent(data)
 	}

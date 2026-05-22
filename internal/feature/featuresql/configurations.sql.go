@@ -87,6 +87,46 @@ func (q *Queries) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (Configura
 	return i, err
 }
 
+const configEnvListByFeature = `-- name: ConfigEnvListByFeature :many
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	ONLY configurations_environment
+WHERE
+	feature = $1
+ORDER BY
+	environment_id, key ASC
+`
+
+func (q *Queries) ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error) {
+	rows, err := q.db.Query(ctx, configEnvListByFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigurationsEnvironment{}
+	for rows.Next() {
+		var i ConfigurationsEnvironment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Created,
+			&i.EnvironmentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const configEnvUpdate = `-- name: ConfigEnvUpdate :one
 UPDATE
 	ONLY configurations_environment

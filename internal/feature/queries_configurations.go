@@ -78,6 +78,30 @@ func ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, err
 	return retVal, nil
 }
 
+// EnvConfigOverride holds a single environment config override row.
+type EnvConfigOverride struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Content       []byte
+}
+
+// ConfigEnvListByFeature returns all environment config overrides for a feature.
+func ConfigEnvListByFeature(ctx context.Context, feature string) ([]EnvConfigOverride, error) {
+	rows, err := querier(ctx).ConfigEnvListByFeature(ctx, feature)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]EnvConfigOverride, len(rows))
+	for i, r := range rows {
+		result[i] = EnvConfigOverride{
+			EnvironmentID: r.EnvironmentID,
+			Key:           r.Key,
+			Content:       r.Value,
+		}
+	}
+	return result, nil
+}
+
 func ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {

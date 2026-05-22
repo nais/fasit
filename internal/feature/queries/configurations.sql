@@ -59,6 +59,16 @@ WHERE
 	AND feature = @feature
 	AND key = @key;
 
+-- name: ConfigEnvListByFeature :many
+SELECT
+	*
+FROM
+	ONLY configurations_environment
+WHERE
+	feature = @feature
+ORDER BY
+	environment_id, key ASC;
+
 -- name: ConfigGlobalGetByKey :one
 SELECT
 	*
