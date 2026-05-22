@@ -47,6 +47,14 @@ sql:
         !!merge <<: *default_go
         package: "grpcsql"
         out: "internal/grpc/grpcsql"
+  - name: "REST API SQL"
+    !!merge <<: *default_domain
+    queries: "internal/restapi/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "restapisql"
+        out: "internal/restapi/restapisql"
   - name: "Environment SQL"
     !!merge <<: *default_domain
     queries: "internal/environment/queries"

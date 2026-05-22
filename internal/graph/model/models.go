@@ -6,12 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type GHRef struct {
-	Owner string `json:"owner"`
-	Repo  string `json:"repo"`
-	Ref   string `json:"ref"`
-}
-
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string            `json:"name"`
