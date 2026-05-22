@@ -417,7 +417,7 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 		return h.Div(h.H2(g.Text("Configuration")), h.P(h.Class("text-muted"), g.Text("No configurable values.")))
 	}
 	return h.Div(
-		h.H2(g.Text("Configuration")),
+		h.H3(g.Text("Configuration")),
 		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "env-feature-config-configurable"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
@@ -443,7 +443,7 @@ func computedTable(items []FeatureConfigItem) g.Node {
 		return nil
 	}
 	return h.Div(
-		h.H2(g.Text("Computed")),
+		h.H3(g.Text("Computed")),
 		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "env-feature-config-computed"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
