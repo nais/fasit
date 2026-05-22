@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+option go_package = "internal/grpc/protogen;protogen";
+
+service Provider {
+  rpc CreateTenant(CreateTenantRequest) returns (CreateTenantResponse) {}
+  rpc GetTenant(GetTenantRequest) returns (Tenant) {}
+  rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse) {}
+  rpc GetEnvironment(GetEnvironmentRequest) returns (Environment) {}
+  rpc SetEnvironmentValue(SetEnvironmentValueRequest) returns (SetEnvironmentValueResponse) {}
+  rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValue) {}
+  rpc ListEnvironmentValues(ListEnvironmentValuesRequest) returns (ListEnvironmentValuesResponse) {}
+  rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest) returns (DeleteEnvironmentValueResponse) {}
+  rpc SetEnvironmentLabels(SetEnvironmentLabelsRequest) returns (SetEnvironmentLabelsResponse) {}
+}
+
+message CreateTenantRequest {
+  string name = 1;
+  optional string description = 2;
+}
+
+message GetTenantRequest {
+  string name = 1;
+}
+
+message CreateTenantResponse {
+  Tenant tenant = 1;
+}
+
+message Tenant {
+  string id = 1;
+  string name = 2;
+}
+
+message CreateEnvironmentRequest {
+  string tenant_id = 1;
+  string name = 2;
+  EnvironmentKind kind = 3;
+  repeated EnvironmentLabel labels = 4;
+}
+
+message SetEnvironmentLabelsRequest {
+  string environment_id = 1;
+  repeated EnvironmentLabel labels = 2;
+}
+
+message SetEnvironmentLabelsResponse {
+  Environment environment = 1;
+}
+
+message EnvironmentLabel {
+  string key = 1;
+  string value = 2;
+}
+
+message GetEnvironmentRequest {
+  string tenant_id = 1;
+  string name = 2;
+}
+
+message Environment {
+  string id = 1;
+  string tenant_id = 2;
+  string name = 3;
+  repeated EnvironmentLabel labels = 4;
+}
+
+message CreateEnvironmentResponse {
+  Environment environment = 1;
+}
+
+enum EnvironmentKind {
+  UNKNOWN = 0;
+  MANAGEMENT = 1;
+  TENANT = 2;
+  ONPREM = 3;
+  LEGACY = 4;
+}
+
+message SetEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+  bytes value = 3;
+  bool secret = 4;
+}
+
+message SetEnvironmentValueResponse {
+  bool success = 1;
+}
+
+message GetEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+}
+
+message EnvironmentValue {
+  string environment_id = 1;
+  string key = 2;
+  bytes value = 3;
+  bool secret = 4;
+  string tenant_id = 5;
+  string environment_name = 6;
+  string tenant_name = 7;
+}
+
+message ListEnvironmentValuesRequest {
+  string key = 1;
+}
+
+message ListEnvironmentValuesResponse {
+  repeated EnvironmentValue values = 1;
+}
+
+message DeleteEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+}
+
+message DeleteEnvironmentValueResponse {
+  bool success = 1;
+}

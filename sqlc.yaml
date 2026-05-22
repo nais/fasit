@@ -39,6 +39,14 @@ sql:
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
+  - name: "gRPC SQL"
+    !!merge <<: *default_domain
+    queries: "internal/grpc/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "grpcsql"
+        out: "internal/grpc/grpcsql"
   - name: "Environment SQL"
     !!merge <<: *default_domain
     queries: "internal/environment/queries"
