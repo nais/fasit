@@ -66,12 +66,13 @@ func Create(ctx context.Context, req Request) (uuid.UUID, error) {
 
 	_ = audit.Create(ctx, audit.CreateParams{
 		Action:      audit.ActionCreated,
-		Description: "version " + req.Version,
+		Description: "version " + req.Version + " → " + formatLabels(req.Target),
 		ObjectType:  audit.ObjectTypeDeployment,
 		ObjectID:    feat.Name,
 		Feature:     feat.Name,
 		Metadata: map[string]any{
-			"chart": req.Chart,
+			"chart":  req.Chart,
+			"target": req.Target,
 		},
 	})
 
@@ -433,4 +434,17 @@ func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status mod
 		ID:     id,
 		Status: status.String(),
 	})
+}
+
+func formatLabels(labels map[string]string) string {
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+":"+labels[k])
+	}
+	return strings.Join(parts, " ")
 }
