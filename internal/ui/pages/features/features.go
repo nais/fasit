@@ -260,6 +260,10 @@ func renderAggStatus(statuses []string) g.Node {
 	if deployed == total {
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("\u2713")), g.Text(" DEPLOYED")})
 	}
+	if failed == 0 {
+		label := fmt.Sprintf("%d/%d deployed", deployed, total)
+		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("\u23f3")), g.Text(" " + label)})
+	}
 	var parts []string
 	if deployed > 0 {
 		parts = append(parts, fmt.Sprintf("%d deployed", deployed))
@@ -275,10 +279,7 @@ func renderAggStatus(statuses []string) g.Node {
 		parts = append(parts, fmt.Sprintf("%d unknown", other))
 	}
 	label := strings.Join(parts, ", ")
-	if failed > 0 {
-		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("\u2717")), g.Text(" " + label)})
-	}
-	return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("\u23f3")), g.Text(" " + label)})
+	return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("\u2717")), g.Text(" " + label)})
 }
 
 func featureTabs(featureName string) []components.Tab {
