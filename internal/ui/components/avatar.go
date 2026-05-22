@@ -56,5 +56,5 @@ func initialColor(name string) string {
 	for _, c := range name {
 		h = h*31 + uint32(c)
 	}
-	return colors[h%uint32(len(colors))] // #nosec G115 -- len(colors) is a small constant
+	return colors[h%uint32(len(colors))] // #nosec G115 -- h is a hash of a short string, overflow is harmless
 }

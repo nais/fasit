@@ -23,6 +23,6 @@ func ServeLogoHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		_, _ = w.Write(data) // #nosec G705 -- data is from embedded FS, not user input
+		_, _ = w.Write(data) // #nosec G104,G705 -- embedded static SVG, not user-supplied
 	}
 }

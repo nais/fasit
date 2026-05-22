@@ -505,16 +505,17 @@ nav .nav-btn:hover {
 .dashboard {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 1.5rem;
+  padding: 2rem;
+  justify-content: center;
 }
 .dash-card {
   background: var(--bg-dash);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0;
   flex: 0 1 auto;
-  min-width: 13rem;
+  min-width: 16rem;
   box-shadow: 0 1px 3px var(--shadow);
   transition:
     box-shadow 0.15s,
@@ -527,12 +528,12 @@ nav .nav-btn:hover {
 .dash-card h3 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
+  gap: 0.6rem;
+  font-size: 1.35rem;
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   background: var(--bg-elevated);
-  border-radius: 6px 6px 0 0;
+  border-radius: 8px 8px 0 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 .dash-card h3 a {
@@ -541,11 +542,12 @@ nav .nav-btn:hover {
 }
 .dash-card a {
   display: block;
-  margin: 0.25rem 0;
+  margin: 0.3rem 0;
+  font-size: 1.15rem;
 }
 .dash-card ul {
   list-style: none;
-  padding: 0.5rem 1rem 0.75rem;
+  padding: 0.75rem 1.25rem 1rem;
   margin: 0;
 }
 
@@ -624,28 +626,10 @@ nav .nav-btn:hover {
 .icon {
   display: inline-block;
 }
-.tenant-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
-.tenant-icon-lg {
-  width: 2.25rem;
-  height: 2.25rem;
-  font-size: 0.85rem;
-}
 .breadcrumbs {
   padding: 0;
   margin: 0 0 0.75rem 0;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--text-muted);
   background: transparent;
   border: none;
