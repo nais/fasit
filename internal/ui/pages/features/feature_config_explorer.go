@@ -2,8 +2,9 @@ package features
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment"
@@ -15,22 +16,18 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-// configExplorerEnv represents one environment column in the explorer.
 type configExplorerEnv struct {
 	ID         uuid.UUID
 	Name       string
 	TenantName string
 }
 
-// configExplorerRow represents one config key row across all environments.
-type configExplorerRow struct {
+type configExplorerKey struct {
 	Key         string
 	DisplayName string
 	Description string
 	IsSecret    bool
 	IsComputed  bool
-	// Values per environment ID. Missing key = helm default applies.
-	EnvValues map[uuid.UUID]configExplorerCell
 }
 
 type configExplorerCell struct {
@@ -38,29 +35,57 @@ type configExplorerCell struct {
 	Source string // "helm value", "global config", "env config"
 }
 
-func loadConfigExplorerData(ctx context.Context, feat *model.Feature) ([]configExplorerEnv, []configExplorerRow, error) {
-	// 1. Find all environments where this feature deploys
+type configExplorerData struct {
+	Envs         []configExplorerEnv
+	AllKeys      []configExplorerKey
+	SelectedKeys []string
+	// Cells[envID][key]
+	Cells map[uuid.UUID]map[string]configExplorerCell
+}
+
+func parseExplorerKeys(r *http.Request, allKeys []configExplorerKey) []string {
+	qkeys := r.URL.Query()["keys"]
+	if len(qkeys) == 0 {
+		// default: all keys
+		result := make([]string, len(allKeys))
+		for i, k := range allKeys {
+			result[i] = k.Key
+		}
+		return result
+	}
+	// validate against known keys
+	known := make(map[string]bool, len(allKeys))
+	for _, k := range allKeys {
+		known[k.Key] = true
+	}
+	var result []string
+	for _, k := range qkeys {
+		if known[k] {
+			result = append(result, k)
+		}
+	}
+	return result
+}
+
+func loadConfigExplorerData(ctx context.Context, feat *model.Feature) (*configExplorerData, error) {
 	envs, err := featureEnvironments(ctx, feat)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// 2. Load global configs
 	globalConfigs, err := featurepkg.ConfigGet(ctx, feat.Name)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	globalByKey := make(map[string][]byte, len(globalConfigs))
 	for _, gc := range globalConfigs {
 		globalByKey[gc.Key] = gc.Content
 	}
 
-	// 3. Load all env overrides for this feature
 	envOverrides, err := featurepkg.ConfigEnvListByFeature(ctx, feat.Name)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	// envOverridesByEnvKey[envID][key] = value
 	envOverridesByEnvKey := make(map[uuid.UUID]map[string][]byte)
 	for _, ov := range envOverrides {
 		if _, ok := envOverridesByEnvKey[ov.EnvironmentID]; !ok {
@@ -69,33 +94,38 @@ func loadConfigExplorerData(ctx context.Context, feat *model.Feature) ([]configE
 		envOverridesByEnvKey[ov.EnvironmentID][ov.Key] = ov.Content
 	}
 
-	// 4. Build rows for configurable keys
-	var rows []configExplorerRow
+	var allKeys []configExplorerKey
+	cells := make(map[uuid.UUID]map[string]configExplorerCell)
+
+	for _, env := range envs {
+		cells[env.ID] = make(map[string]configExplorerCell)
+	}
+
 	for key, val := range feat.Values {
 		if val.Config == nil && val.Computed == nil {
 			continue
 		}
-		row := configExplorerRow{
-			Key:       key,
-			IsSecret:  val.Config != nil && val.Config.Secret,
-			EnvValues: make(map[uuid.UUID]configExplorerCell, len(envs)),
+		ek := configExplorerKey{
+			Key:      key,
+			IsSecret: val.Config != nil && val.Config.Secret,
 		}
 		if val.DisplayName != "" {
-			row.DisplayName = val.DisplayName
+			ek.DisplayName = val.DisplayName
 		}
 		if val.Description != "" {
-			row.Description = val.Description
+			ek.Description = val.Description
 		}
 		if val.Computed != nil {
-			row.IsComputed = true
+			ek.IsComputed = true
 		}
+		allKeys = append(allKeys, ek)
 
 		helmDefault := components.RawValueForDisplay(feat.ValuesYAML[key])
 
 		for _, env := range envs {
 			if envKeys, ok := envOverridesByEnvKey[env.ID]; ok {
 				if raw, ok := envKeys[key]; ok {
-					row.EnvValues[env.ID] = configExplorerCell{
+					cells[env.ID][key] = configExplorerCell{
 						Value:  components.RawValueForDisplay(raw),
 						Source: "env config",
 					}
@@ -103,29 +133,30 @@ func loadConfigExplorerData(ctx context.Context, feat *model.Feature) ([]configE
 				}
 			}
 			if raw, ok := globalByKey[key]; ok {
-				row.EnvValues[env.ID] = configExplorerCell{
+				cells[env.ID][key] = configExplorerCell{
 					Value:  components.RawValueForDisplay(raw),
 					Source: "global config",
 				}
 				continue
 			}
-			row.EnvValues[env.ID] = configExplorerCell{
+			cells[env.ID][key] = configExplorerCell{
 				Value:  helmDefault,
 				Source: "helm value",
 			}
 		}
-
-		rows = append(rows, row)
 	}
 
-	sort.Slice(rows, func(i, j int) bool {
-		return rows[i].Key < rows[j].Key
+	sort.Slice(allKeys, func(i, j int) bool {
+		return allKeys[i].Key < allKeys[j].Key
 	})
 
-	return envs, rows, nil
+	return &configExplorerData{
+		Envs:    envs,
+		AllKeys: allKeys,
+		Cells:   cells,
+	}, nil
 }
 
-// featureEnvironments returns all environments where this feature has a matching deployment.
 func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExplorerEnv, error) {
 	deployments, err := deployment.ListByFeature(ctx, feat.Name)
 	if err != nil {
@@ -186,54 +217,132 @@ func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExpl
 	return result, nil
 }
 
-func configExplorerContent(envs []configExplorerEnv, rows []configExplorerRow) g.Node {
-	if len(rows) == 0 {
+func configExplorerContent(featureName string, data *configExplorerData) g.Node {
+	if len(data.AllKeys) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No configurable values."))
 	}
 
-	// Table headers: Key | env1 | env2 | ...
-	headers := []g.Node{h.Th(g.Text("Configuration Key"))}
-	for _, env := range envs {
-		headers = append(headers, h.Th(g.Text(fmt.Sprintf("%s / %s", env.TenantName, env.Name))))
+	selectedSet := make(map[string]bool, len(data.SelectedKeys))
+	for _, k := range data.SelectedKeys {
+		selectedSet[k] = true
 	}
 
-	tableRows := g.Map(rows, func(row configExplorerRow) g.Node {
-		cells := []g.Node{configExplorerKeyCell(row)}
-		for _, env := range envs {
-			cells = append(cells, configExplorerValueCell(row, env.ID))
+	allSelected := len(data.SelectedKeys) == len(data.AllKeys)
+
+	// Key selector
+	keySelector := configExplorerKeySelector(featureName, data.AllKeys, selectedSet, allSelected)
+
+	// Find the selected key objects in order
+	var selectedKeys []configExplorerKey
+	for _, k := range data.AllKeys {
+		if selectedSet[k.Key] {
+			selectedKeys = append(selectedKeys, k)
+		}
+	}
+
+	if len(selectedKeys) == 0 {
+		return h.Div(keySelector, h.P(h.Class("text-muted"), g.Text("Select at least one config key to compare.")))
+	}
+
+	// Table: rows = envs, columns = selected keys
+	headers := []g.Node{h.Th(g.Text("Environment"))}
+	for _, k := range selectedKeys {
+		label := k.Key
+		if k.DisplayName != "" {
+			label = k.DisplayName
+		}
+		th := h.Th(h.Title(k.Key), g.Text(label))
+		headers = append(headers, th)
+	}
+
+	tableRows := g.Map(data.Envs, func(env configExplorerEnv) g.Node {
+		cells := []g.Node{
+			h.Td(h.Strong(g.Text(env.TenantName)), g.Text(" / "), g.Text(env.Name)),
+		}
+		envCells := data.Cells[env.ID]
+		for _, k := range selectedKeys {
+			cells = append(cells, explorerValueCell(k, envCells[k.Key]))
 		}
 		return h.Tr(g.Group(cells))
 	})
 
-	return h.Div(h.Class("config-explorer-wrapper"),
-		h.Table(h.Class("table config-explorer"),
-			h.THead(h.Tr(g.Group(headers))),
-			h.TBody(g.Group(tableRows)),
+	return h.Div(
+		keySelector,
+		h.Div(h.Class("config-explorer-wrapper"),
+			h.Table(h.Class("table config-explorer"),
+				h.THead(h.Tr(g.Group(headers))),
+				h.TBody(g.Group(tableRows)),
+			),
 		),
 	)
 }
 
-func configExplorerKeyCell(row configExplorerRow) g.Node {
-	label := row.Key
-	if row.DisplayName != "" {
-		label = row.DisplayName
+func configExplorerKeySelector(featureName string, allKeys []configExplorerKey, selectedSet map[string]bool, allSelected bool) g.Node {
+	baseURL := "/features/" + featureName + "/config-explorer"
+
+	var chips []g.Node
+	for _, k := range allKeys {
+		label := k.Key
+		if k.DisplayName != "" {
+			label = k.DisplayName
+		}
+		selected := selectedSet[k.Key]
+
+		var href string
+		if selected {
+			// remove this key
+			href = buildExplorerURL(baseURL, allKeys, selectedSet, k.Key, false)
+		} else {
+			// add this key
+			href = buildExplorerURL(baseURL, allKeys, selectedSet, k.Key, true)
+		}
+
+		cls := "explorer-chip"
+		if selected {
+			cls += " selected"
+		}
+		chips = append(chips, h.A(h.Class(cls), h.Href(href), h.Title(k.Key), g.Text(label)))
 	}
-	children := []g.Node{h.Strong(g.Text(label))}
-	if row.Description != "" {
-		children = append(children, h.Br(), h.Small(h.Class("text-muted"), g.Text(row.Description)))
+
+	// all/none toggle
+	var toggleHref, toggleLabel string
+	if allSelected {
+		toggleHref = baseURL + "?keys=_none"
+		toggleLabel = "Deselect all"
+	} else {
+		toggleHref = baseURL
+		toggleLabel = "Select all"
 	}
-	if row.IsComputed {
-		children = append(children, h.Br(), h.Small(h.Class("text-muted"), g.Text("(computed)")))
-	}
-	return h.Td(g.Group(children))
+
+	return h.Div(h.Class("explorer-key-selector"),
+		h.Span(h.Class("text-muted text-sm"), g.Text("Compare: ")),
+		h.A(h.Class("explorer-chip toggle"), h.Href(toggleHref), g.Text(toggleLabel)),
+		g.Group(chips),
+	)
 }
 
-func configExplorerValueCell(row configExplorerRow, envID uuid.UUID) g.Node {
-	cell, ok := row.EnvValues[envID]
-	if !ok {
-		return h.Td(h.Class("text-muted"), g.Text("—"))
+func buildExplorerURL(baseURL string, allKeys []configExplorerKey, selectedSet map[string]bool, toggleKey string, add bool) string {
+	var keys []string
+	for _, k := range allKeys {
+		sel := selectedSet[k.Key]
+		if k.Key == toggleKey {
+			sel = add
+		}
+		if sel {
+			keys = append(keys, k.Key)
+		}
 	}
-	if row.IsSecret {
+	if len(keys) == 0 {
+		return baseURL + "?keys=_none"
+	}
+	if len(keys) == len(allKeys) {
+		return baseURL
+	}
+	return baseURL + "?keys=" + strings.Join(keys, "&keys=")
+}
+
+func explorerValueCell(key configExplorerKey, cell configExplorerCell) g.Node {
+	if key.IsSecret {
 		return h.Td(
 			h.Span(h.Class("text-muted"), g.Text("••••••••")),
 			h.Br(),

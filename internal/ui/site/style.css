@@ -726,6 +726,39 @@ nav .nav-btn:hover {
 .config-explorer .source-label {
   font-size: 0.75rem;
 }
+.explorer-key-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.explorer-chip {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.explorer-chip:visited { color: var(--text-secondary); }
+.explorer-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.explorer-chip.selected {
+  background: var(--accent);
+  color: var(--bg-surface);
+  border-color: var(--accent);
+}
+.explorer-chip.selected:visited { color: var(--bg-surface); }
+.explorer-chip.toggle {
+  font-weight: 600;
+}
 .edit-icon {
   color: var(--text-muted);
   text-decoration: none;

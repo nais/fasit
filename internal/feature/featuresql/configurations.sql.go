@@ -95,7 +95,8 @@ FROM
 WHERE
 	feature = $1
 ORDER BY
-	environment_id, key ASC
+	environment_id,
+	key ASC
 `
 
 func (q *Queries) ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error) {

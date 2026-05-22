@@ -26,14 +26,13 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type DetailPage struct {
 	Breadcrumbs    []breadcrumb.Crumb
-	Features        []view.FeatureNav
-	CurrentFeature  *model.Feature
-	DeploymentEnvs  []DeploymentEnvStatus
-	Prefs           ViewPrefs
-	ActiveTab       string
-	ConfigItems     []components.ConfigItem
-	ExplorerEnvs    []configExplorerEnv
-	ExplorerRows    []configExplorerRow
+	Features       []view.FeatureNav
+	CurrentFeature *model.Feature
+	DeploymentEnvs []DeploymentEnvStatus
+	Prefs          ViewPrefs
+	ActiveTab      string
+	ConfigItems    []components.ConfigItem
+	ExplorerData   *configExplorerData
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -109,11 +108,12 @@ func ConfigExplorerHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		data.ActiveTab = "config-explorer"
-		data.ExplorerEnvs, data.ExplorerRows, err = loadConfigExplorerData(r.Context(), data.CurrentFeature)
+		data.ExplorerData, err = loadConfigExplorerData(r.Context(), data.CurrentFeature)
 		if err != nil {
 			http.Error(w, "Failed to load config explorer", http.StatusInternalServerError)
 			return
 		}
+		data.ExplorerData.SelectedKeys = parseExplorerKeys(r, data.ExplorerData.AllKeys)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config Explorer", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
@@ -275,7 +275,7 @@ func detailPage(data *DetailPage) g.Node {
 	case "config":
 		content = globalConfigContent(data)
 	case "config-explorer":
-		content = configExplorerContent(data.ExplorerEnvs, data.ExplorerRows)
+		content = configExplorerContent(data.CurrentFeature.Name, data.ExplorerData)
 	default:
 		content = deploymentDetailContent(data)
 	}

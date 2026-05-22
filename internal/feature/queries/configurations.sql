@@ -67,7 +67,8 @@ FROM
 WHERE
 	feature = @feature
 ORDER BY
-	environment_id, key ASC;
+	environment_id,
+	key ASC;
 
 -- name: ConfigGlobalGetByKey :one
 SELECT
