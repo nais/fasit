@@ -64,6 +64,12 @@ func TestComputeAggStatus(t *testing.T) {
 			wantLabel: "2/3 deployed",
 		},
 		{
+			name:      "disabled counts as deployed",
+			statuses:  []string{"DEPLOYED", "DEPLOYED", "DISABLED"},
+			wantClass: "status-success",
+			wantLabel: "DEPLOYED",
+		},
+		{
 			name:      "realistic: 15 deployed 2 failed 1 pending",
 			statuses:  repeat("DEPLOYED", 15, "FAILED", 2, "PENDING", 1),
 			wantClass: "status-error",

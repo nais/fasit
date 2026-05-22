@@ -256,7 +256,7 @@ func computeAggStatus(statuses []string) aggStatus {
 		switch strings.ToUpper(s) {
 		case "FAILED":
 			failed++
-		case "DEPLOYED":
+		case "DEPLOYED", "DISABLED":
 			deployed++
 		case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK", "CREATED":
 			pending++
