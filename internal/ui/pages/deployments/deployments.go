@@ -180,7 +180,7 @@ func deploymentsTable(rows []Summary) g.Node {
 			h.Td(targetPills(dep.TargetLabels)),
 			h.Td(h.A(h.Href("/deployments/"+dep.DeploymentID), g.Text(dep.Version))),
 			h.Td(statusCell(dep)),
-			h.Td(g.Attr("data-sort-value", dep.createdAt.Format(time.RFC3339)), g.Text(view.RelativeTime(dep.createdAt))),
+			h.Td(g.Attr("data-sort-value", dep.createdAt.Format(time.RFC3339)), h.Title(view.FormatTime(dep.createdAt)), g.Text(view.RelativeTime(dep.createdAt))),
 		))
 	}
 

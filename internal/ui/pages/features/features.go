@@ -134,7 +134,7 @@ func recentDeployments(rows []depRow) g.Node {
 			h.Td(depLabelPills(r.Labels)),
 			h.Td(h.A(h.Href("/deployments/"+r.DepID), g.Text(r.Version))),
 			h.Td(renderStatus(r.Status)),
-			h.Td(h.Class("text-muted text-right"), g.Text(view.RelativeTime(r.Created))),
+			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(r.Created)), g.Text(view.RelativeTime(r.Created))),
 		))
 	}
 
@@ -167,7 +167,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 			h.Td(resource),
 			h.Td(h.Class("text-muted"), g.Text(a.Description)),
 			h.Td(view.ActorNode(a.Actor)),
-			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
+			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
 		))
 	}
 
@@ -312,4 +312,3 @@ func renderStatus(status string) g.Node {
 func resourceLinkNode(e *audit.Entry) g.Node {
 	return auditlog.ResourceLink(e)
 }
-

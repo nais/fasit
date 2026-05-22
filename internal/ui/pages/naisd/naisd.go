@@ -93,7 +93,7 @@ func page(rows []agentRow, now time.Time) g.Node {
 					h.Td(g.Text(row.Environment)),
 					h.Td(healthCell(row, now)),
 					h.Td(g.Text(lastReportedCell(row))),
-					h.Td(g.Text(ageCell(row, now))),
+					h.Td(ageCellTitle(row), g.Text(ageCell(row, now))),
 				)
 			}))),
 		),
@@ -125,6 +125,10 @@ func lastReportedCell(row agentRow) string {
 		return "never"
 	}
 	return view.FormatTime(row.ReportedAt)
+}
+
+func ageCellTitle(row agentRow) g.Node {
+	return g.If(row.HasReport, h.Title(view.FormatTime(row.ReportedAt)))
 }
 
 func ageCell(row agentRow, now time.Time) string {

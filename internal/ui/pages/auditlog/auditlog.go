@@ -94,7 +94,7 @@ func activityTable(entries []*audit.Entry) g.Node {
 			h.Td(ResourceLink(e)),
 			h.Td(h.Class("text-muted"), g.Text(e.Description)),
 			h.Td(view.ActorNode(e.Actor)),
-			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(e.CreatedAt))),
+			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
 		))
 	}
 
