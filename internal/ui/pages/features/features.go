@@ -15,6 +15,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -160,8 +161,13 @@ func recentActivity(audits []*audit.Entry) g.Node {
 
 	tableRows := make([]g.Node, 0, len(audits))
 	for _, a := range audits {
+		env := envLinkNode(a)
+		resource := resourceLinkNode(a)
 		tableRows = append(tableRows, h.Tr(
-			h.Td(g.Text(a.Description)),
+			h.Td(g.Text(string(a.Action))),
+			h.Td(resource),
+			h.Td(env),
+			h.Td(h.Class("text-muted"), g.Text(a.Description)),
 			h.Td(g.Text(a.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
 		))
@@ -172,11 +178,15 @@ func recentActivity(audits []*audit.Entry) g.Node {
 		h.Table(h.Class("table table-compact"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Action")),
+				h.Th(g.Text("Resource")),
+				h.Th(g.Text("Environment")),
+				h.Th(g.Text("Details")),
 				h.Th(g.Text("Actor")),
 				h.Th(g.Text("When")),
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
+		h.Div(h.Style("margin-top: 0.75rem; font-size: 0.85rem;"), h.A(h.Href("/auditlog"), h.Class("link-muted"), g.Text("All activity →"))),
 	})
 }
 
@@ -300,4 +310,12 @@ func renderStatus(status string) g.Node {
 	default:
 		return g.Text(status)
 	}
+}
+
+func resourceLinkNode(e *audit.Entry) g.Node {
+	return auditlog.ResourceLink(e)
+}
+
+func envLinkNode(e *audit.Entry) g.Node {
+	return auditlog.EnvLink(e)
 }

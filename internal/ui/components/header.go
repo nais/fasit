@@ -45,6 +45,7 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 			),
 			h.Div(h.Class("kebab-menu"), h.ID("nav-kebab"),
 				h.A(h.Href("/deployments"), h.Class("kebab-item"), g.Text("Deployments")),
+				h.A(h.Href("/auditlog"), h.Class("kebab-item"), g.Text("Activity Log")),
 				h.A(h.Href("/labels"), h.Class("kebab-item"), g.Text("Labels")),
 				h.A(h.Href("/naisd"), h.Class("kebab-item"), g.Text("Naisd")),
 				h.A(

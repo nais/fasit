@@ -15,7 +15,7 @@ import (
 const unknownActor = "unknown"
 
 func Create(ctx context.Context, p CreateParams) error {
-	actor := actorOrUnknown(ctx, p.Description, p.ObjectType)
+	actor := actorOrUnknown(ctx, p.Description, string(p.ObjectType))
 	var meta []byte
 	if p.Metadata != nil {
 		b, err := json.Marshal(p.Metadata)
@@ -26,36 +26,100 @@ func Create(ctx context.Context, p CreateParams) error {
 	}
 
 	return querier(ctx).Create(ctx, auditsql.CreateParams{
-		Actor:       actor,
-		Description: p.Description,
-		ObjectType:  p.ObjectType,
-		ObjectID:    p.ObjectID,
-		Metadata:    meta,
+		Actor:         actor,
+		Action:        string(p.Action),
+		Description:   p.Description,
+		ObjectType:    string(p.ObjectType),
+		ObjectID:      p.ObjectID,
+		Feature:       p.Feature,
+		EnvironmentID: p.EnvironmentID,
+		Metadata:      meta,
 	})
 }
 
-func List(ctx context.Context, environmentId uuid.UUID, featureName string) ([]*Entry, error) {
-	rows, err := querier(ctx).List(ctx, auditsql.ListParams{
-		EnvironmentID: environmentId.String(),
-		FeatureName:   featureName,
-		PageSize:      50,
+func ListForFeature(ctx context.Context, feature string, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListForFeature(ctx, auditsql.ListForFeatureParams{
+		Feature:  feature,
+		PageSize: limit,
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	ret := make([]*Entry, 0, len(rows))
 	for _, r := range rows {
 		ret = append(ret, &Entry{
-			Actor:       r.Actor,
-			Description: r.Description,
-			ObjectType:  r.ObjectType,
-			ObjectID:    r.ObjectID,
-			CreatedAt:   r.CreatedAt.Time,
-			Metadata:    r.Metadata,
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
+}
+
+func ListForFeatureInEnvironment(ctx context.Context, feature string, envID uuid.UUID, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListForFeatureInEnvironment(ctx, auditsql.ListForFeatureInEnvironmentParams{
+		Feature:  feature,
+		EnvID:    &envID,
+		PageSize: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+		})
+	}
+	return ret, nil
+}
+
+func ListForEnvironment(ctx context.Context, envID uuid.UUID, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListForEnvironment(ctx, auditsql.ListForEnvironmentParams{
+		EnvID:    &envID,
+		PageSize: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+		})
+	}
+	return ret, nil
+}
+
+func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).ListRecent(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+		})
+	}
+	return ret, nil
+}
+
+func ptrOr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func sanitizeForLog(s string) string {
@@ -74,24 +138,4 @@ func actorOrUnknown(ctx context.Context, description, objectType string) string 
 		return unknownActor
 	}
 	return actor
-}
-
-func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
-	rows, err := querier(ctx).ListRecent(ctx, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*Entry, 0, len(rows))
-	for _, r := range rows {
-		ret = append(ret, &Entry{
-			Actor:       r.Actor,
-			Description: r.Description,
-			ObjectType:  r.ObjectType,
-			ObjectID:    r.ObjectID,
-			CreatedAt:   r.CreatedAt.Time,
-			Metadata:    r.Metadata,
-		})
-	}
-	return ret, nil
 }

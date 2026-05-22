@@ -64,6 +64,17 @@ func Create(ctx context.Context, req Request) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 
+	_ = audit.Create(ctx, audit.CreateParams{
+		Action:      audit.ActionCreated,
+		Description: "version " + req.Version,
+		ObjectType:  audit.ObjectTypeDeployment,
+		ObjectID:    feat.Name,
+		Feature:     feat.Name,
+		Metadata: map[string]any{
+			"chart": req.Chart,
+		},
+	})
+
 	return id, nil
 }
 
@@ -222,14 +233,27 @@ func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, erro
 
 func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		objectID := deploymentID.String()
+		featureName := ""
+		if row, err := querier(ctx).GetDeployment(ctx, deploymentID); err == nil {
+			objectID = row.Deployment.FeatureName
+			featureName = row.Deployment.FeatureName
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+
 		err := querier(ctx).DeleteDeployment(ctx, deploymentID)
 		if err != nil {
 			return err
 		}
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "deleted",
-			ObjectType:  "deployments",
-			ObjectID:    deploymentID.String(),
+			Action:     audit.ActionDeleted,
+			ObjectType: audit.ObjectTypeDeployment,
+			ObjectID:   objectID,
+			Feature:    featureName,
+			Metadata: map[string]any{
+				"deploymentID": deploymentID.String(),
+			},
 		})
 	})
 }
@@ -244,9 +268,12 @@ func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string
 			return err
 		}
 		return audit.Create(ctx, audit.CreateParams{
-			Description: "deleted all deployments matching feature and target",
-			ObjectType:  "deployments",
-			ObjectID:    featureName,
+			Action:     audit.ActionDeleted,
+			ObjectType: audit.ObjectTypeDeployment,
+			ObjectID:   featureName,
+			Metadata: map[string]any{
+				"target": target,
+			},
 		})
 	})
 }
@@ -268,6 +295,14 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 			Message:       "redeploy triggered",
 		})
 	}
+
+	_ = audit.Create(ctx, audit.CreateParams{
+		Action:        audit.ActionTriggered,
+		ObjectType:    audit.ObjectTypeDeployment,
+		ObjectID:      featureName,
+		Feature:       featureName,
+		EnvironmentID: &envID,
+	})
 
 	TriggerReconcile(ctx, ReconcileTriggerEvent{})
 	return nil

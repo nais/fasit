@@ -475,6 +475,61 @@ func main() {
 		}
 	}
 
+	// Seed additional audit log entries to exercise the full range of actions
+	// and make the audit tab useful during local development.
+	{
+		// Simulate different actors performing actions
+		actors := []string{"johnny@nais.io", "kim@nais.io", "system:naisd", "setup_local_env"}
+
+		// Enable a previously disabled feature (re-enable dependencytrack in a different env)
+		devNaisDev := envID("dev-nais", "dev")
+		_ = feature.FeatureEnable(ctx, devNaisDev, "dependencytrack")
+		// Then disable it again with a different reason (generates disable+enable+disable sequence)
+		_ = feature.FeatureDisable(ctx, devNaisDev, "dependencytrack", "re-disabled after testing: broken metrics endpoint")
+
+		// Trigger a redeploy (exercises ActionTriggered)
+		ctx = auth.SetEmail(ctx, actors[0])
+		testPartnerDev := envID("test-partner", "dev")
+		_ = deployment.TriggerRedeploy(ctx, testPartnerDev, "naiserator")
+
+		// Update environment labels (exercises SetLabels audit)
+		ctx = auth.SetEmail(ctx, actors[1])
+		_ = environment.SetLabels(ctx, testPartnerDev, environment.Labels{
+			"monitoring": "enabled",
+			"tier":       "development",
+		})
+
+		// Update a config value (exercises ActionUpdated for configs)
+		ctx = auth.SetEmail(ctx, actors[0])
+		confs, _ := feature.ConfigGet(ctx, "naiserator")
+		for _, c := range confs {
+			if c.Key == "logLevel" {
+				_, _ = feature.ConfigUpdate(ctx, c.ID, model.UpdateConfiguration{
+					Value: json.RawMessage(`"warn"`),
+				})
+				break
+			}
+		}
+
+		// Delete a config (exercises ActionDeleted for configs)
+		ctx = auth.SetEmail(ctx, actors[1])
+		confs, _ = feature.ConfigGet(ctx, "hookd")
+		for _, c := range confs {
+			if c.Key == "slackChannel" {
+				_ = feature.ConfigDelete(ctx, c.ID)
+				break
+			}
+		}
+
+		// Delete an environment value
+		ctx = auth.SetEmail(ctx, actors[2])
+		testPartnerProd := envID("test-partner", "prod")
+		_ = environment.DeleteEnvironmentValue(ctx, testPartnerProd, "updated_at")
+
+		// Restore actor for the rest of the seeder
+		ctx = auth.SetEmail(ctx, "setup_local_env")
+	}
+
 	// Set up pubsub topics and subscriptions.
 	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {

@@ -2,11 +2,9 @@ package deployments
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 )
@@ -68,12 +66,6 @@ func CreateHandler() http.HandlerFunc {
 		}
 
 		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
-
-		_ = audit.Create(r.Context(), audit.CreateParams{
-			Description: fmt.Sprintf("set version %s for %s", version, chart),
-			ObjectType:  "deployment",
-			ObjectID:    chart,
-		})
 
 		redirect := r.Referer()
 		if redirect == "" {
