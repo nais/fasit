@@ -92,7 +92,6 @@ func activityTable(entries []*audit.Entry) g.Node {
 		rows = append(rows, h.Tr(
 			h.Td(g.Text(string(e.Action))),
 			h.Td(ResourceLink(e)),
-			h.Td(EnvLink(e)),
 			h.Td(h.Class("text-muted"), g.Text(e.Description)),
 			h.Td(view.ActorNode(e.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(e.CreatedAt))),
@@ -103,7 +102,6 @@ func activityTable(entries []*audit.Entry) g.Node {
 		h.THead(h.Tr(
 			h.Th(g.Text("Action")),
 			h.Th(g.Text("Resource")),
-			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Details")),
 			h.Th(g.Text("Actor")),
 			h.Th(g.Text("When")),
@@ -113,23 +111,37 @@ func activityTable(entries []*audit.Entry) g.Node {
 }
 
 func ResourceLink(e *audit.Entry) g.Node {
+	var nodes []g.Node
+
 	// Deployment with metadata deploymentId: "deployment of feature" with two links
 	if e.ObjectType == audit.ObjectTypeDeployment && e.ObjectID != "all" {
 		if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
-			return g.Group([]g.Node{
+			nodes = append(nodes,
 				h.A(h.Href("/deployments/"+depID), g.Text("deployment")),
 				g.Text(" of "),
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
-			})
+			)
 		}
 	}
 
-	label := e.ObjectType.Display() + " " + e.ObjectID
-	href := ResourceHref(e)
-	if href == "" {
-		return g.Text(label)
+	if len(nodes) == 0 {
+		label := e.ObjectType.Display() + " " + e.ObjectID
+		href := ResourceHref(e)
+		if href == "" {
+			nodes = append(nodes, g.Text(label))
+		} else {
+			nodes = append(nodes, h.A(h.Href(href), g.Text(label)))
+		}
 	}
-	return h.A(h.Href(href), g.Text(label))
+
+	// Append "in tenant/env" with link when environment context exists
+	if e.TenantName != "" && e.EnvironmentName != "" {
+		envLabel := e.TenantName + "/" + e.EnvironmentName
+		envHref := "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
+		nodes = append(nodes, g.Text(" in "), h.A(h.Href(envHref), g.Text(envLabel)))
+	}
+
+	return g.Group(nodes)
 }
 
 func ResourceHref(e *audit.Entry) string {
