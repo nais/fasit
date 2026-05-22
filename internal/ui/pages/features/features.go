@@ -244,7 +244,12 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	})
 }
 
-func renderAggStatus(statuses []string) g.Node {
+type aggStatus struct {
+	class string // "status-success", "status-pending", "status-error"
+	label string
+}
+
+func computeAggStatus(statuses []string) aggStatus {
 	var failed, deployed, pending, total int
 	for _, s := range statuses {
 		total++
@@ -258,11 +263,10 @@ func renderAggStatus(statuses []string) g.Node {
 		}
 	}
 	if deployed == total {
-		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("\u2713")), g.Text(" DEPLOYED")})
+		return aggStatus{"status-success", "DEPLOYED"}
 	}
 	if failed == 0 {
-		label := fmt.Sprintf("%d/%d deployed", deployed, total)
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("\u23f3")), g.Text(" " + label)})
+		return aggStatus{"status-pending", fmt.Sprintf("%d/%d deployed", deployed, total)}
 	}
 	var parts []string
 	if deployed > 0 {
@@ -278,8 +282,21 @@ func renderAggStatus(statuses []string) g.Node {
 	if other > 0 {
 		parts = append(parts, fmt.Sprintf("%d unknown", other))
 	}
-	label := strings.Join(parts, ", ")
-	return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("\u2717")), g.Text(" " + label)})
+	return aggStatus{"status-error", strings.Join(parts, ", ")}
+}
+
+func renderAggStatus(statuses []string) g.Node {
+	s := computeAggStatus(statuses)
+	var icon string
+	switch s.class {
+	case "status-success":
+		icon = "\u2713"
+	case "status-pending":
+		icon = "\u23f3"
+	case "status-error":
+		icon = "\u2717"
+	}
+	return g.Group([]g.Node{h.Span(h.Class(s.class), g.Text(icon)), g.Text(" " + s.label)})
 }
 
 func featureTabs(featureName string) []components.Tab {
