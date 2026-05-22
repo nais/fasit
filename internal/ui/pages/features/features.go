@@ -64,7 +64,6 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		sort.Slice(depRows, func(i, j int) bool {
 			return depRows[i].Created.After(depRows[j].Created)
 		})
-		depRows = depRows[:min(10, len(depRows))]
 
 		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features), depRows, audits)})
 	}
@@ -156,6 +155,9 @@ func recentDeployments(rows []depRow) g.Node {
 		}
 	}
 
+	if len(ordered) > 10 {
+		ordered = ordered[:10]
+	}
 	tableRows := make([]g.Node, 0, len(ordered))
 	for _, k := range ordered {
 		agg := seen[k]
