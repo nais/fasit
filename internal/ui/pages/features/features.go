@@ -129,10 +129,9 @@ func recentDeployments(rows []depRow) g.Node {
 
 	tableRows := make([]g.Node, 0, len(rows))
 	for _, r := range rows {
+		label := r.FeatureName + " → " + formatDepTarget(r.Labels) + " @ " + r.Version
 		tableRows = append(tableRows, h.Tr(
-			h.Td(h.A(h.Href("/features/"+r.FeatureName), g.Text(r.FeatureName))),
-			h.Td(depLabelPills(r.Labels)),
-			h.Td(h.A(h.Href("/deployments/"+r.DepID), g.Text(r.Version))),
+			h.Td(h.A(h.Href("/deployments/"+r.DepID), g.Text(label))),
 			h.Td(renderStatus(r.Status)),
 			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(r.Created)), g.Text(view.RelativeTime(r.Created))),
 		))
@@ -142,9 +141,7 @@ func recentDeployments(rows []depRow) g.Node {
 		h.H3(g.Text("Recent deployments")),
 		h.Table(h.Class("table table-compact"),
 			h.THead(h.Tr(
-				h.Th(g.Text("Feature")),
-				h.Th(g.Text("Target")),
-				h.Th(g.Text("Version")),
+				h.Th(g.Text("Deployment")),
 				h.Th(g.Text("Status")),
 				h.Th(h.Class("text-right"), g.Text("When")),
 			)),
@@ -187,20 +184,20 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	})
 }
 
-func depLabelPills(labels map[string]string) g.Node {
+func formatDepTarget(labels map[string]string) string {
 	if len(labels) == 0 {
-		return h.Span(h.Class("label-filter-tag"), g.Text("all environments"))
+		return "all"
 	}
 	keys := make([]string, 0, len(labels))
 	for k := range labels {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	pills := make([]g.Node, 0, len(keys))
+	parts := make([]string, 0, len(keys))
 	for _, k := range keys {
-		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+		parts = append(parts, k+":"+labels[k])
 	}
-	return g.Group(pills)
+	return strings.Join(parts, " ")
 }
 
 func featureTabs(featureName string) []components.Tab {
