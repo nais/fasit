@@ -1164,8 +1164,8 @@ const file_internal_grpc_schema_fasit_proto_rawDesc = "" +
 	"\n" +
 	"\x06ONPREM\x10\x03\x12\n" +
 	"\n" +
-	"\x06LEGACY\x10\x042\xa7\x05\n" +
-	"\bProvider\x12=\n" +
+	"\x06LEGACY\x10\x042\xa4\x05\n" +
+	"\x05Fasit\x12=\n" +
 	"\fCreateTenant\x12\x14.CreateTenantRequest\x1a\x15.CreateTenantResponse\"\x00\x12)\n" +
 	"\tGetTenant\x12\x11.GetTenantRequest\x1a\a.Tenant\"\x00\x12L\n" +
 	"\x11CreateEnvironment\x12\x19.CreateEnvironmentRequest\x1a\x1a.CreateEnvironmentResponse\"\x00\x128\n" +
@@ -1221,24 +1221,24 @@ var file_internal_grpc_schema_fasit_proto_depIdxs = []int32{
 	8,  // 5: Environment.labels:type_name -> EnvironmentLabel
 	10, // 6: CreateEnvironmentResponse.environment:type_name -> Environment
 	15, // 7: ListEnvironmentValuesResponse.values:type_name -> EnvironmentValue
-	1,  // 8: Provider.CreateTenant:input_type -> CreateTenantRequest
-	2,  // 9: Provider.GetTenant:input_type -> GetTenantRequest
-	5,  // 10: Provider.CreateEnvironment:input_type -> CreateEnvironmentRequest
-	9,  // 11: Provider.GetEnvironment:input_type -> GetEnvironmentRequest
-	12, // 12: Provider.SetEnvironmentValue:input_type -> SetEnvironmentValueRequest
-	14, // 13: Provider.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
-	16, // 14: Provider.ListEnvironmentValues:input_type -> ListEnvironmentValuesRequest
-	18, // 15: Provider.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
-	6,  // 16: Provider.SetEnvironmentLabels:input_type -> SetEnvironmentLabelsRequest
-	3,  // 17: Provider.CreateTenant:output_type -> CreateTenantResponse
-	4,  // 18: Provider.GetTenant:output_type -> Tenant
-	11, // 19: Provider.CreateEnvironment:output_type -> CreateEnvironmentResponse
-	10, // 20: Provider.GetEnvironment:output_type -> Environment
-	13, // 21: Provider.SetEnvironmentValue:output_type -> SetEnvironmentValueResponse
-	15, // 22: Provider.GetEnvironmentValue:output_type -> EnvironmentValue
-	17, // 23: Provider.ListEnvironmentValues:output_type -> ListEnvironmentValuesResponse
-	19, // 24: Provider.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
-	7,  // 25: Provider.SetEnvironmentLabels:output_type -> SetEnvironmentLabelsResponse
+	1,  // 8: Fasit.CreateTenant:input_type -> CreateTenantRequest
+	2,  // 9: Fasit.GetTenant:input_type -> GetTenantRequest
+	5,  // 10: Fasit.CreateEnvironment:input_type -> CreateEnvironmentRequest
+	9,  // 11: Fasit.GetEnvironment:input_type -> GetEnvironmentRequest
+	12, // 12: Fasit.SetEnvironmentValue:input_type -> SetEnvironmentValueRequest
+	14, // 13: Fasit.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
+	16, // 14: Fasit.ListEnvironmentValues:input_type -> ListEnvironmentValuesRequest
+	18, // 15: Fasit.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
+	6,  // 16: Fasit.SetEnvironmentLabels:input_type -> SetEnvironmentLabelsRequest
+	3,  // 17: Fasit.CreateTenant:output_type -> CreateTenantResponse
+	4,  // 18: Fasit.GetTenant:output_type -> Tenant
+	11, // 19: Fasit.CreateEnvironment:output_type -> CreateEnvironmentResponse
+	10, // 20: Fasit.GetEnvironment:output_type -> Environment
+	13, // 21: Fasit.SetEnvironmentValue:output_type -> SetEnvironmentValueResponse
+	15, // 22: Fasit.GetEnvironmentValue:output_type -> EnvironmentValue
+	17, // 23: Fasit.ListEnvironmentValues:output_type -> ListEnvironmentValuesResponse
+	19, // 24: Fasit.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
+	7,  // 25: Fasit.SetEnvironmentLabels:output_type -> SetEnvironmentLabelsResponse
 	17, // [17:26] is the sub-list for method output_type
 	8,  // [8:17] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name

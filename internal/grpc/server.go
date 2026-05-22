@@ -8,7 +8,6 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database/types"
-	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/grpc/grpcsql"
 	"github.com/nais/fasit/internal/grpc/protogen"
 	"google.golang.org/grpc"
@@ -16,10 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var querier grpcsql.Querier
-
 type server struct {
-	protogen.UnimplementedProviderServer
+	protogen.UnimplementedFasitServer
+	querier grpcsql.Querier
 }
 
 func NewGrpcServer(loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) *grpc.Server {
@@ -27,8 +25,7 @@ func NewGrpcServer(loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) *gr
 		grpc.ChainUnaryInterceptor(newContextInterceptor(loadContext)),
 	}
 	s := grpc.NewServer(opts...)
-	protogen.RegisterProviderServer(s, newServer())
-	querier = grpcsql.New(pool)
+	protogen.RegisterFasitServer(s, &server{querier: grpcsql.New(pool)})
 	return s
 }
 
@@ -39,18 +36,16 @@ func newContextInterceptor(loadContext contextloader.LoaderFunc) grpc.UnaryServe
 	}
 }
 
-func newServer() protogen.ProviderServer {
-	return &server{}
-}
-
 func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.CreateTenantResponse, error) {
+	// TODO: remember to add audit logs, in this func and other funcs in the server
+
 	ctx = auth.SetEmail(ctx, "system:provider")
 
 	if len(in.Name) < 2 {
 		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 2 characters long")
 	}
 
-	tenant, err := querier.CreateTenant(ctx, grpcsql.CreateTenantParams{
+	tenant, err := s.querier.CreateTenant(ctx, grpcsql.CreateTenantParams{
 		Name:        in.Name,
 		Description: in.Description,
 	})
@@ -67,7 +62,7 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 }
 
 func (s *server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (*protogen.Tenant, error) {
-	tenant, err := querier.GetTenantByName(ctx, in.Name)
+	tenant, err := s.querier.GetTenantByName(ctx, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
@@ -90,7 +85,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
 	}
 
-	tenant, err := querier.GetTenant(ctx, tenantID)
+	tenant, err := s.querier.GetTenant(ctx, tenantID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
@@ -105,7 +100,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		labels[l.Key] = l.Value
 	}
 
-	env, err := querier.CreateEnvironment(ctx, grpcsql.CreateEnvironmentParams{
+	env, err := s.querier.CreateEnvironment(ctx, grpcsql.CreateEnvironmentParams{
 		Name:     in.Name,
 		TenantID: tenant.ID,
 		Kind:     kind,
@@ -130,7 +125,7 @@ func (s *server) SetEnvironmentLabels(ctx context.Context, in *protogen.SetEnvir
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	env, err := querier.GetEnvironment(ctx, environmentID)
+	env, err := s.querier.GetEnvironment(ctx, environmentID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
@@ -140,7 +135,7 @@ func (s *server) SetEnvironmentLabels(ctx context.Context, in *protogen.SetEnvir
 		labels[l.Key] = l.Value
 	}
 
-	if err := querier.SetEnvironmentLabels(ctx, grpcsql.SetEnvironmentLabelsParams{
+	if err := s.querier.SetEnvironmentLabels(ctx, grpcsql.SetEnvironmentLabelsParams{
 		ID:     env.ID,
 		Labels: labels,
 	}); err != nil {
@@ -162,7 +157,7 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
 	}
 
-	env, err := querier.GetEnvironmentByName(ctx, grpcsql.GetEnvironmentByNameParams{
+	env, err := s.querier.GetEnvironmentByName(ctx, grpcsql.GetEnvironmentByNameParams{
 		TenantID: tenantID,
 		Name:     in.Name,
 	})
@@ -185,7 +180,7 @@ func (s *server) SetEnvironmentValue(ctx context.Context, in *protogen.SetEnviro
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	err = querier.SetEnvironmentValue(ctx, grpcsql.SetEnvironmentValueParams{
+	err = s.querier.SetEnvironmentValue(ctx, grpcsql.SetEnvironmentValueParams{
 		EnvironmentID: envID,
 		Key:           in.Key,
 		Value:         in.Value,
@@ -205,7 +200,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	ev, err := querier.GetEnvironmentValue(ctx, grpcsql.GetEnvironmentValueParams{
+	ev, err := s.querier.GetEnvironmentValue(ctx, grpcsql.GetEnvironmentValueParams{
 		EnvironmentID: envID,
 		Key:           in.Key,
 		ShowSensitive: true,
@@ -214,12 +209,12 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	env, err := querier.GetEnvironment(ctx, envID)
+	env, err := s.querier.GetEnvironment(ctx, envID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	tenant, err := querier.GetTenant(ctx, env.TenantID)
+	tenant, err := s.querier.GetTenant(ctx, env.TenantID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
@@ -236,7 +231,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 }
 
 func (s *server) ListEnvironmentValues(ctx context.Context, input *protogen.ListEnvironmentValuesRequest) (*protogen.ListEnvironmentValuesResponse, error) {
-	es, err := environment.ListEnvironmentValuesForKey(ctx, input.GetKey())
+	es, err := s.querier.ListEnvironmentValuesForKey(ctx, input.GetKey())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -268,7 +263,7 @@ func (s *server) DeleteEnvironmentValue(ctx context.Context, req *protogen.Delet
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	if err := environment.DeleteEnvironmentValue(ctx, uid, req.Key); err != nil {
+	if err := s.querier.DeleteEnvironmentValue(ctx, grpcsql.DeleteEnvironmentValueParams{EnvironmentID: uid, Key: req.Key}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

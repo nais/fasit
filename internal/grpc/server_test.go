@@ -13,8 +13,8 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/grpc/protogen"
 	"github.com/nais/fasit/internal/ioconvenience"
-	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -47,8 +47,8 @@ func TestProvider(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got.GetId() != want.GetId() {
-			t.Fatalf("Expected tenant id %s, got %s", want.GetId(), got.GetId())
+		if got.GetId() != want.GetTenant().GetId() {
+			t.Fatalf("Expected tenant id %s, got %s", want.GetTenant().GetId(), got.GetId())
 		}
 	})
 
@@ -88,11 +88,11 @@ func TestProvider(t *testing.T) {
 }
 
 // startGrpcServer initializes an in-memory gRPC server
-func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) protogen.ProviderClient {
+func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) protogen.FasitClient {
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
 	log, _ := test.NewNullLogger()
-	grpcServer := NewGrpcServer(loadContext)
+	grpcServer := NewGrpcServer(loadContext, pool)
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
@@ -111,7 +111,7 @@ func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc, pool *p
 		t.Fatal(err)
 	}
 
-	c := protogen.NewProviderClient(conn)
+	c := protogen.NewFasitClient(conn)
 
 	t.Cleanup(func() {
 		grpcServer.Stop()

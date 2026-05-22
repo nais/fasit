@@ -88,6 +88,22 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) (Ten
 	return i, err
 }
 
+const deleteEnvironmentValue = `-- name: DeleteEnvironmentValue :exec
+DELETE FROM environment_values
+WHERE environment_id = $1
+	AND key = $2
+`
+
+type DeleteEnvironmentValueParams struct {
+	EnvironmentID uuid.UUID
+	Key           string
+}
+
+func (q *Queries) DeleteEnvironmentValue(ctx context.Context, arg DeleteEnvironmentValueParams) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentValue, arg.EnvironmentID, arg.Key)
+	return err
+}
+
 const getEnvironment = `-- name: GetEnvironment :one
 SELECT
 	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
@@ -237,6 +253,63 @@ func (q *Queries) GetTenantByName(ctx context.Context, name string) (Tenant, err
 		&i.Ci,
 	)
 	return i, err
+}
+
+const listEnvironmentValuesForKey = `-- name: ListEnvironmentValuesForKey :many
+SELECT
+	ev.environment_id,
+	ev.key,
+	ev.secret,
+	ev.value,
+	t.id AS tenant_id,
+	t.name AS tenant_name,
+	e.name AS environment_name
+FROM
+	environment_values ev
+	JOIN environments e ON e.id = ev.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	ev.key = $1
+ORDER BY
+	e.name ASC
+`
+
+type ListEnvironmentValuesForKeyRow struct {
+	EnvironmentID   uuid.UUID
+	Key             string
+	Secret          bool
+	Value           []byte
+	TenantID        uuid.UUID
+	TenantName      string
+	EnvironmentName string
+}
+
+func (q *Queries) ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error) {
+	rows, err := q.db.Query(ctx, listEnvironmentValuesForKey, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListEnvironmentValuesForKeyRow{}
+	for rows.Next() {
+		var i ListEnvironmentValuesForKeyRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Key,
+			&i.Secret,
+			&i.Value,
+			&i.TenantID,
+			&i.TenantName,
+			&i.EnvironmentName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const setEnvironmentLabels = `-- name: SetEnvironmentLabels :exec

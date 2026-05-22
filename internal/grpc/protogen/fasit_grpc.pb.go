@@ -19,21 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Provider_CreateTenant_FullMethodName           = "/Provider/CreateTenant"
-	Provider_GetTenant_FullMethodName              = "/Provider/GetTenant"
-	Provider_CreateEnvironment_FullMethodName      = "/Provider/CreateEnvironment"
-	Provider_GetEnvironment_FullMethodName         = "/Provider/GetEnvironment"
-	Provider_SetEnvironmentValue_FullMethodName    = "/Provider/SetEnvironmentValue"
-	Provider_GetEnvironmentValue_FullMethodName    = "/Provider/GetEnvironmentValue"
-	Provider_ListEnvironmentValues_FullMethodName  = "/Provider/ListEnvironmentValues"
-	Provider_DeleteEnvironmentValue_FullMethodName = "/Provider/DeleteEnvironmentValue"
-	Provider_SetEnvironmentLabels_FullMethodName   = "/Provider/SetEnvironmentLabels"
+	Fasit_CreateTenant_FullMethodName           = "/Fasit/CreateTenant"
+	Fasit_GetTenant_FullMethodName              = "/Fasit/GetTenant"
+	Fasit_CreateEnvironment_FullMethodName      = "/Fasit/CreateEnvironment"
+	Fasit_GetEnvironment_FullMethodName         = "/Fasit/GetEnvironment"
+	Fasit_SetEnvironmentValue_FullMethodName    = "/Fasit/SetEnvironmentValue"
+	Fasit_GetEnvironmentValue_FullMethodName    = "/Fasit/GetEnvironmentValue"
+	Fasit_ListEnvironmentValues_FullMethodName  = "/Fasit/ListEnvironmentValues"
+	Fasit_DeleteEnvironmentValue_FullMethodName = "/Fasit/DeleteEnvironmentValue"
+	Fasit_SetEnvironmentLabels_FullMethodName   = "/Fasit/SetEnvironmentLabels"
 )
 
-// ProviderClient is the client API for Provider service.
+// FasitClient is the client API for Fasit service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ProviderClient interface {
+type FasitClient interface {
 	CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*CreateTenantResponse, error)
 	GetTenant(ctx context.Context, in *GetTenantRequest, opts ...grpc.CallOption) (*Tenant, error)
 	CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*CreateEnvironmentResponse, error)
@@ -45,108 +45,108 @@ type ProviderClient interface {
 	SetEnvironmentLabels(ctx context.Context, in *SetEnvironmentLabelsRequest, opts ...grpc.CallOption) (*SetEnvironmentLabelsResponse, error)
 }
 
-type providerClient struct {
+type fasitClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewProviderClient(cc grpc.ClientConnInterface) ProviderClient {
-	return &providerClient{cc}
+func NewFasitClient(cc grpc.ClientConnInterface) FasitClient {
+	return &fasitClient{cc}
 }
 
-func (c *providerClient) CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*CreateTenantResponse, error) {
+func (c *fasitClient) CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*CreateTenantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateTenantResponse)
-	err := c.cc.Invoke(ctx, Provider_CreateTenant_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_CreateTenant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) GetTenant(ctx context.Context, in *GetTenantRequest, opts ...grpc.CallOption) (*Tenant, error) {
+func (c *fasitClient) GetTenant(ctx context.Context, in *GetTenantRequest, opts ...grpc.CallOption) (*Tenant, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Tenant)
-	err := c.cc.Invoke(ctx, Provider_GetTenant_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_GetTenant_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*CreateEnvironmentResponse, error) {
+func (c *fasitClient) CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*CreateEnvironmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateEnvironmentResponse)
-	err := c.cc.Invoke(ctx, Provider_CreateEnvironment_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_CreateEnvironment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error) {
+func (c *fasitClient) GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Environment)
-	err := c.cc.Invoke(ctx, Provider_GetEnvironment_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_GetEnvironment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) SetEnvironmentValue(ctx context.Context, in *SetEnvironmentValueRequest, opts ...grpc.CallOption) (*SetEnvironmentValueResponse, error) {
+func (c *fasitClient) SetEnvironmentValue(ctx context.Context, in *SetEnvironmentValueRequest, opts ...grpc.CallOption) (*SetEnvironmentValueResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetEnvironmentValueResponse)
-	err := c.cc.Invoke(ctx, Provider_SetEnvironmentValue_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_SetEnvironmentValue_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValue, error) {
+func (c *fasitClient) GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValue, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnvironmentValue)
-	err := c.cc.Invoke(ctx, Provider_GetEnvironmentValue_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_GetEnvironmentValue_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) ListEnvironmentValues(ctx context.Context, in *ListEnvironmentValuesRequest, opts ...grpc.CallOption) (*ListEnvironmentValuesResponse, error) {
+func (c *fasitClient) ListEnvironmentValues(ctx context.Context, in *ListEnvironmentValuesRequest, opts ...grpc.CallOption) (*ListEnvironmentValuesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListEnvironmentValuesResponse)
-	err := c.cc.Invoke(ctx, Provider_ListEnvironmentValues_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_ListEnvironmentValues_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error) {
+func (c *fasitClient) DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteEnvironmentValueResponse)
-	err := c.cc.Invoke(ctx, Provider_DeleteEnvironmentValue_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_DeleteEnvironmentValue_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *providerClient) SetEnvironmentLabels(ctx context.Context, in *SetEnvironmentLabelsRequest, opts ...grpc.CallOption) (*SetEnvironmentLabelsResponse, error) {
+func (c *fasitClient) SetEnvironmentLabels(ctx context.Context, in *SetEnvironmentLabelsRequest, opts ...grpc.CallOption) (*SetEnvironmentLabelsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetEnvironmentLabelsResponse)
-	err := c.cc.Invoke(ctx, Provider_SetEnvironmentLabels_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Fasit_SetEnvironmentLabels_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ProviderServer is the server API for Provider service.
-// All implementations must embed UnimplementedProviderServer
+// FasitServer is the server API for Fasit service.
+// All implementations must embed UnimplementedFasitServer
 // for forward compatibility.
-type ProviderServer interface {
+type FasitServer interface {
 	CreateTenant(context.Context, *CreateTenantRequest) (*CreateTenantResponse, error)
 	GetTenant(context.Context, *GetTenantRequest) (*Tenant, error)
 	CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*CreateEnvironmentResponse, error)
@@ -156,268 +156,268 @@ type ProviderServer interface {
 	ListEnvironmentValues(context.Context, *ListEnvironmentValuesRequest) (*ListEnvironmentValuesResponse, error)
 	DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error)
 	SetEnvironmentLabels(context.Context, *SetEnvironmentLabelsRequest) (*SetEnvironmentLabelsResponse, error)
-	mustEmbedUnimplementedProviderServer()
+	mustEmbedUnimplementedFasitServer()
 }
 
-// UnimplementedProviderServer must be embedded to have
+// UnimplementedFasitServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedProviderServer struct{}
+type UnimplementedFasitServer struct{}
 
-func (UnimplementedProviderServer) CreateTenant(context.Context, *CreateTenantRequest) (*CreateTenantResponse, error) {
+func (UnimplementedFasitServer) CreateTenant(context.Context, *CreateTenantRequest) (*CreateTenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTenant not implemented")
 }
-func (UnimplementedProviderServer) GetTenant(context.Context, *GetTenantRequest) (*Tenant, error) {
+func (UnimplementedFasitServer) GetTenant(context.Context, *GetTenantRequest) (*Tenant, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTenant not implemented")
 }
-func (UnimplementedProviderServer) CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*CreateEnvironmentResponse, error) {
+func (UnimplementedFasitServer) CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*CreateEnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnvironment not implemented")
 }
-func (UnimplementedProviderServer) GetEnvironment(context.Context, *GetEnvironmentRequest) (*Environment, error) {
+func (UnimplementedFasitServer) GetEnvironment(context.Context, *GetEnvironmentRequest) (*Environment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironment not implemented")
 }
-func (UnimplementedProviderServer) SetEnvironmentValue(context.Context, *SetEnvironmentValueRequest) (*SetEnvironmentValueResponse, error) {
+func (UnimplementedFasitServer) SetEnvironmentValue(context.Context, *SetEnvironmentValueRequest) (*SetEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetEnvironmentValue not implemented")
 }
-func (UnimplementedProviderServer) GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValue, error) {
+func (UnimplementedFasitServer) GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValue, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValue not implemented")
 }
-func (UnimplementedProviderServer) ListEnvironmentValues(context.Context, *ListEnvironmentValuesRequest) (*ListEnvironmentValuesResponse, error) {
+func (UnimplementedFasitServer) ListEnvironmentValues(context.Context, *ListEnvironmentValuesRequest) (*ListEnvironmentValuesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEnvironmentValues not implemented")
 }
-func (UnimplementedProviderServer) DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error) {
+func (UnimplementedFasitServer) DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteEnvironmentValue not implemented")
 }
-func (UnimplementedProviderServer) SetEnvironmentLabels(context.Context, *SetEnvironmentLabelsRequest) (*SetEnvironmentLabelsResponse, error) {
+func (UnimplementedFasitServer) SetEnvironmentLabels(context.Context, *SetEnvironmentLabelsRequest) (*SetEnvironmentLabelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetEnvironmentLabels not implemented")
 }
-func (UnimplementedProviderServer) mustEmbedUnimplementedProviderServer() {}
-func (UnimplementedProviderServer) testEmbeddedByValue()                  {}
+func (UnimplementedFasitServer) mustEmbedUnimplementedFasitServer() {}
+func (UnimplementedFasitServer) testEmbeddedByValue()               {}
 
-// UnsafeProviderServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ProviderServer will
+// UnsafeFasitServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FasitServer will
 // result in compilation errors.
-type UnsafeProviderServer interface {
-	mustEmbedUnimplementedProviderServer()
+type UnsafeFasitServer interface {
+	mustEmbedUnimplementedFasitServer()
 }
 
-func RegisterProviderServer(s grpc.ServiceRegistrar, srv ProviderServer) {
-	// If the following call pancis, it indicates UnimplementedProviderServer was
+func RegisterFasitServer(s grpc.ServiceRegistrar, srv FasitServer) {
+	// If the following call pancis, it indicates UnimplementedFasitServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&Provider_ServiceDesc, srv)
+	s.RegisterService(&Fasit_ServiceDesc, srv)
 }
 
-func _Provider_CreateTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_CreateTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateTenantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).CreateTenant(ctx, in)
+		return srv.(FasitServer).CreateTenant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_CreateTenant_FullMethodName,
+		FullMethod: Fasit_CreateTenant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).CreateTenant(ctx, req.(*CreateTenantRequest))
+		return srv.(FasitServer).CreateTenant(ctx, req.(*CreateTenantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_GetTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_GetTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTenantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).GetTenant(ctx, in)
+		return srv.(FasitServer).GetTenant(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_GetTenant_FullMethodName,
+		FullMethod: Fasit_GetTenant_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).GetTenant(ctx, req.(*GetTenantRequest))
+		return srv.(FasitServer).GetTenant(ctx, req.(*GetTenantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_CreateEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_CreateEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateEnvironmentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).CreateEnvironment(ctx, in)
+		return srv.(FasitServer).CreateEnvironment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_CreateEnvironment_FullMethodName,
+		FullMethod: Fasit_CreateEnvironment_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).CreateEnvironment(ctx, req.(*CreateEnvironmentRequest))
+		return srv.(FasitServer).CreateEnvironment(ctx, req.(*CreateEnvironmentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_GetEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_GetEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetEnvironmentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).GetEnvironment(ctx, in)
+		return srv.(FasitServer).GetEnvironment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_GetEnvironment_FullMethodName,
+		FullMethod: Fasit_GetEnvironment_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).GetEnvironment(ctx, req.(*GetEnvironmentRequest))
+		return srv.(FasitServer).GetEnvironment(ctx, req.(*GetEnvironmentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_SetEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_SetEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetEnvironmentValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).SetEnvironmentValue(ctx, in)
+		return srv.(FasitServer).SetEnvironmentValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_SetEnvironmentValue_FullMethodName,
+		FullMethod: Fasit_SetEnvironmentValue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).SetEnvironmentValue(ctx, req.(*SetEnvironmentValueRequest))
+		return srv.(FasitServer).SetEnvironmentValue(ctx, req.(*SetEnvironmentValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_GetEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_GetEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetEnvironmentValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).GetEnvironmentValue(ctx, in)
+		return srv.(FasitServer).GetEnvironmentValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_GetEnvironmentValue_FullMethodName,
+		FullMethod: Fasit_GetEnvironmentValue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).GetEnvironmentValue(ctx, req.(*GetEnvironmentValueRequest))
+		return srv.(FasitServer).GetEnvironmentValue(ctx, req.(*GetEnvironmentValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_ListEnvironmentValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_ListEnvironmentValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListEnvironmentValuesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).ListEnvironmentValues(ctx, in)
+		return srv.(FasitServer).ListEnvironmentValues(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_ListEnvironmentValues_FullMethodName,
+		FullMethod: Fasit_ListEnvironmentValues_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).ListEnvironmentValues(ctx, req.(*ListEnvironmentValuesRequest))
+		return srv.(FasitServer).ListEnvironmentValues(ctx, req.(*ListEnvironmentValuesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_DeleteEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_DeleteEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteEnvironmentValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).DeleteEnvironmentValue(ctx, in)
+		return srv.(FasitServer).DeleteEnvironmentValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_DeleteEnvironmentValue_FullMethodName,
+		FullMethod: Fasit_DeleteEnvironmentValue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).DeleteEnvironmentValue(ctx, req.(*DeleteEnvironmentValueRequest))
+		return srv.(FasitServer).DeleteEnvironmentValue(ctx, req.(*DeleteEnvironmentValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_SetEnvironmentLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Fasit_SetEnvironmentLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetEnvironmentLabelsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProviderServer).SetEnvironmentLabels(ctx, in)
+		return srv.(FasitServer).SetEnvironmentLabels(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Provider_SetEnvironmentLabels_FullMethodName,
+		FullMethod: Fasit_SetEnvironmentLabels_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).SetEnvironmentLabels(ctx, req.(*SetEnvironmentLabelsRequest))
+		return srv.(FasitServer).SetEnvironmentLabels(ctx, req.(*SetEnvironmentLabelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Provider_ServiceDesc is the grpc.ServiceDesc for Provider service.
+// Fasit_ServiceDesc is the grpc.ServiceDesc for Fasit service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Provider_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Provider",
-	HandlerType: (*ProviderServer)(nil),
+var Fasit_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "Fasit",
+	HandlerType: (*FasitServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "CreateTenant",
-			Handler:    _Provider_CreateTenant_Handler,
+			Handler:    _Fasit_CreateTenant_Handler,
 		},
 		{
 			MethodName: "GetTenant",
-			Handler:    _Provider_GetTenant_Handler,
+			Handler:    _Fasit_GetTenant_Handler,
 		},
 		{
 			MethodName: "CreateEnvironment",
-			Handler:    _Provider_CreateEnvironment_Handler,
+			Handler:    _Fasit_CreateEnvironment_Handler,
 		},
 		{
 			MethodName: "GetEnvironment",
-			Handler:    _Provider_GetEnvironment_Handler,
+			Handler:    _Fasit_GetEnvironment_Handler,
 		},
 		{
 			MethodName: "SetEnvironmentValue",
-			Handler:    _Provider_SetEnvironmentValue_Handler,
+			Handler:    _Fasit_SetEnvironmentValue_Handler,
 		},
 		{
 			MethodName: "GetEnvironmentValue",
-			Handler:    _Provider_GetEnvironmentValue_Handler,
+			Handler:    _Fasit_GetEnvironmentValue_Handler,
 		},
 		{
 			MethodName: "ListEnvironmentValues",
-			Handler:    _Provider_ListEnvironmentValues_Handler,
+			Handler:    _Fasit_ListEnvironmentValues_Handler,
 		},
 		{
 			MethodName: "DeleteEnvironmentValue",
-			Handler:    _Provider_DeleteEnvironmentValue_Handler,
+			Handler:    _Fasit_DeleteEnvironmentValue_Handler,
 		},
 		{
 			MethodName: "SetEnvironmentLabels",
-			Handler:    _Provider_SetEnvironmentLabels_Handler,
+			Handler:    _Fasit_SetEnvironmentLabels_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

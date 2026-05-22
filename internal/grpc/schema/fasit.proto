@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "internal/grpc/protogen;protogen";
 
-service Provider {
+service Fasit {
   rpc CreateTenant(CreateTenantRequest) returns (CreateTenantResponse) {}
   rpc GetTenant(GetTenantRequest) returns (Tenant) {}
   rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse) {}
