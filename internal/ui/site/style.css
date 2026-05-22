@@ -1052,6 +1052,7 @@ nav .nav-btn:hover {
   color: var(--text-muted);
   font-size: 0.85rem;
 }
+.text-sm { font-size: 0.85rem; }
 .labels-sidebar {
   position: sticky;
   top: 2rem;
