@@ -1,6 +1,7 @@
 package features
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"sort"
@@ -127,13 +128,42 @@ func recentDeployments(rows []depRow) g.Node {
 		return h.P(h.Class("text-muted"), g.Text("No deployments."))
 	}
 
-	tableRows := make([]g.Node, 0, len(rows))
+	// Aggregate by feature+version
+	type aggKey struct{ feature, version string }
+	type aggRow struct {
+		FeatureName string
+		Version     string
+		Statuses    []string
+		Latest      time.Time
+	}
+	seen := make(map[aggKey]*aggRow)
+	var ordered []aggKey
 	for _, r := range rows {
-		label := r.FeatureName + " → " + formatDepTarget(r.Labels) + " @ " + r.Version
+		k := aggKey{r.FeatureName, r.Version}
+		if agg, ok := seen[k]; ok {
+			agg.Statuses = append(agg.Statuses, r.Status)
+			if r.Created.After(agg.Latest) {
+				agg.Latest = r.Created
+			}
+		} else {
+			seen[k] = &aggRow{
+				FeatureName: r.FeatureName,
+				Version:     r.Version,
+				Statuses:    []string{r.Status},
+				Latest:      r.Created,
+			}
+			ordered = append(ordered, k)
+		}
+	}
+
+	tableRows := make([]g.Node, 0, len(ordered))
+	for _, k := range ordered {
+		agg := seen[k]
 		tableRows = append(tableRows, h.Tr(
-			h.Td(h.A(h.Href("/deployments/"+r.DepID), g.Text(label))),
-			h.Td(renderStatus(r.Status)),
-			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(r.Created)), g.Text(view.RelativeTime(r.Created))),
+			h.Td(h.A(h.Href("/features/"+agg.FeatureName), g.Text(agg.FeatureName))),
+			h.Td(h.Class("text-muted"), g.Text(agg.Version)),
+			h.Td(renderAggStatus(agg.Statuses)),
+			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(agg.Latest)), g.Text(view.RelativeTime(agg.Latest))),
 		))
 	}
 
@@ -141,7 +171,8 @@ func recentDeployments(rows []depRow) g.Node {
 		h.H3(g.Text("Recent deployments")),
 		h.Table(h.Class("table table-compact"),
 			h.THead(h.Tr(
-				h.Th(g.Text("Deployment")),
+				h.Th(g.Text("Feature")),
+				h.Th(g.Text("Version")),
 				h.Th(g.Text("Status")),
 				h.Th(h.Class("text-right"), g.Text("When")),
 			)),
@@ -184,20 +215,29 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	})
 }
 
-func formatDepTarget(labels map[string]string) string {
-	if len(labels) == 0 {
-		return "all"
+func renderAggStatus(statuses []string) g.Node {
+	var failed, deployed, total int
+	for _, s := range statuses {
+		total++
+		switch strings.ToUpper(s) {
+		case "FAILED":
+			failed++
+		case "DEPLOYED":
+			deployed++
+		}
 	}
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
+	if failed > 0 {
+		label := "FAILED"
+		if total > 1 {
+			label = fmt.Sprintf("%d/%d FAILED", failed, total)
+		}
+		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("\u2717")), g.Text(" " + label)})
 	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, k := range keys {
-		parts = append(parts, k+":"+labels[k])
+	if deployed == total {
+		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("\u2713")), g.Text(" DEPLOYED")})
 	}
-	return strings.Join(parts, " ")
+	label := fmt.Sprintf("%d/%d DEPLOYED", deployed, total)
+	return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("\u23f3")), g.Text(" " + label)})
 }
 
 func featureTabs(featureName string) []components.Tab {
