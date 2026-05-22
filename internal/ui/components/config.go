@@ -3,6 +3,7 @@ package components
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	g "maragu.dev/gomponents"
@@ -72,6 +73,28 @@ func TemplateCell(item ConfigItem) g.Node {
 // Callers pass action nodes (edit/delete popovers) as children.
 func ConfigActionsCell(children ...g.Node) g.Node {
 	return h.Td(h.Class("config-actions-col"), g.Group(children))
+}
+
+// ConfigKebab renders a kebab menu for a config row with a link to the config explorer.
+func ConfigKebab(featureName, configKey string, extraItems ...g.Node) g.Node {
+	kebabID := "config-kebab-" + strings.ReplaceAll(configKey, ".", "-")
+	explorerHref := "/features/" + featureName + "/config-explorer?keys=" + url.QueryEscape(configKey)
+	items := []g.Node{
+		h.A(h.Href(explorerHref), h.Class("kebab-item"), g.Text("Compare across environments")),
+	}
+	items = append(items, extraItems...)
+	return h.Div(h.Class("kebab-wrap"),
+		h.Button(
+			h.Type("button"),
+			h.Class("kebab-btn"),
+			g.Attr("data-kebab-toggle", kebabID),
+			g.Attr("aria-label", "Actions"),
+			g.Text("\u22ee"),
+		),
+		h.Div(h.Class("kebab-menu"), h.ID(kebabID),
+			g.Group(items),
+		),
+	)
 }
 
 // ValueDisplay renders a value, pretty-printing JSON when applicable.

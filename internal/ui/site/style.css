@@ -813,6 +813,12 @@ nav .nav-btn:hover {
 .config-actions-col {
   white-space: nowrap;
   text-align: right;
+  width: 1%;
+}
+.config-kebab-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
 }
 .config-actions-col .edit-icon {
   margin-right: 0;

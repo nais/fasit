@@ -108,7 +108,7 @@ func globalConfigContent(data *DetailPage) g.Node {
 
 	return g.Group([]g.Node{
 		globalConfigurableTable(data.CurrentFeature.Name, configurable),
-		globalComputedTable(computed),
+		globalComputedTable(data.CurrentFeature.Name, computed),
 		orphanedConfigTable(data.CurrentFeature.Name, orphaned),
 	})
 }
@@ -125,6 +125,7 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
+				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
 				return h.Tr(
@@ -132,13 +133,14 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 					components.ConfigActionsCell(globalConfigActionsCell(featureName, item)),
 					components.ConfigValueCell(item),
 					globalSourceLabel(item),
+					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(featureName, item.Key)),
 				)
 			}))),
 		),
 	)
 }
 
-func globalComputedTable(items []components.ConfigItem) g.Node {
+func globalComputedTable(featureName string, items []components.ConfigItem) g.Node {
 	if len(items) == 0 {
 		return nil
 	}
@@ -148,11 +150,13 @@ func globalComputedTable(items []components.ConfigItem) g.Node {
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(g.Text("Template")),
+				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
 				return h.Tr(
 					components.ConfigKeyCell(item),
 					components.TemplateCell(item),
+					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(featureName, item.Key)),
 				)
 			}))),
 		),

@@ -2,14 +2,16 @@ package features
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 	g "maragu.dev/gomponents"
@@ -31,8 +33,9 @@ type configExplorerKey struct {
 }
 
 type configExplorerCell struct {
-	Value  string
-	Source string // "helm value", "global config", "env config"
+	Value    string
+	Source   string // "helm value", "global config", "env config"
+	IsSecret bool
 }
 
 type configExplorerData struct {
@@ -40,7 +43,8 @@ type configExplorerData struct {
 	AllKeys      []configExplorerKey
 	SelectedKeys []string
 	// Cells[envID][key]
-	Cells map[uuid.UUID]map[string]configExplorerCell
+	Cells        map[uuid.UUID]map[string]configExplorerCell
+	computedKeys map[string]bool
 }
 
 func parseExplorerKeys(r *http.Request, allKeys []configExplorerKey) []string {
@@ -101,6 +105,8 @@ func loadConfigExplorerData(ctx context.Context, feat *model.Feature) (*configEx
 		cells[env.ID] = make(map[string]configExplorerCell)
 	}
 
+	// 4. Collect all configurable/computed keys and populate config-based cells
+	computedKeys := make(map[string]bool)
 	for key, val := range feat.Values {
 		if val.Config == nil && val.Computed == nil {
 			continue
@@ -117,44 +123,97 @@ func loadConfigExplorerData(ctx context.Context, feat *model.Feature) (*configEx
 		}
 		if val.Computed != nil {
 			ek.IsComputed = true
+			computedKeys[key] = true
 		}
 		allKeys = append(allKeys, ek)
 
-		helmDefault := components.RawValueForDisplay(feat.ValuesYAML[key])
-
-		for _, env := range envs {
-			if envKeys, ok := envOverridesByEnvKey[env.ID]; ok {
-				if raw, ok := envKeys[key]; ok {
+		if !ek.IsComputed {
+			// Configurable keys: resolve from env override → global → helm default
+			helmDefault := components.RawValueForDisplay(feat.ValuesYAML[key])
+			for _, env := range envs {
+				if envKeys, ok := envOverridesByEnvKey[env.ID]; ok {
+					if raw, ok := envKeys[key]; ok {
+						cells[env.ID][key] = configExplorerCell{
+							Value:    components.RawValueForDisplay(raw),
+							Source:   "env config",
+							IsSecret: ek.IsSecret,
+						}
+						continue
+					}
+				}
+				if raw, ok := globalByKey[key]; ok {
 					cells[env.ID][key] = configExplorerCell{
-						Value:  components.RawValueForDisplay(raw),
-						Source: "env config",
+						Value:    components.RawValueForDisplay(raw),
+						Source:   "global config",
+						IsSecret: ek.IsSecret,
 					}
 					continue
 				}
-			}
-			if raw, ok := globalByKey[key]; ok {
 				cells[env.ID][key] = configExplorerCell{
-					Value:  components.RawValueForDisplay(raw),
-					Source: "global config",
+					Value:    helmDefault,
+					Source:   "helm value",
+					IsSecret: ek.IsSecret,
 				}
-				continue
-			}
-			cells[env.ID][key] = configExplorerCell{
-				Value:  helmDefault,
-				Source: "helm value",
 			}
 		}
 	}
+
+	// 5. Computed cells are rendered lazily by renderComputedCells after key selection
 
 	sort.Slice(allKeys, func(i, j int) bool {
 		return allKeys[i].Key < allKeys[j].Key
 	})
 
 	return &configExplorerData{
-		Envs:    envs,
-		AllKeys: allKeys,
-		Cells:   cells,
+		Envs:         envs,
+		AllKeys:      allKeys,
+		Cells:        cells,
+		computedKeys: computedKeys,
 	}, nil
+}
+
+// renderComputedCells populates cells for selected computed keys only.
+func renderComputedCells(ctx context.Context, feat *model.Feature, data *configExplorerData, selectedKeys []string) {
+	selectedComputed := make(map[string]bool)
+	for _, k := range selectedKeys {
+		if data.computedKeys[k] {
+			selectedComputed[k] = true
+		}
+	}
+	if len(selectedComputed) == 0 {
+		return
+	}
+	for _, env := range data.Envs {
+		rendered, secretTaint, _, rerr := featurepkg.HelmValuesWithSecretTaint(ctx, feat, env.ID)
+		for key := range selectedComputed {
+			if rerr != nil {
+				data.Cells[env.ID][key] = configExplorerCell{
+					Value:  "(render error)",
+					Source: "mapping",
+				}
+				continue
+			}
+			if secretTaint[key] {
+				data.Cells[env.ID][key] = configExplorerCell{
+					Value:    "••••••••",
+					Source:   "mapping",
+					IsSecret: true,
+				}
+				continue
+			}
+			if v, ok := lookupRenderedValue(rendered, key); ok {
+				data.Cells[env.ID][key] = configExplorerCell{
+					Value:  v,
+					Source: "mapping",
+				}
+			} else {
+				data.Cells[env.ID][key] = configExplorerCell{
+					Value:  "—",
+					Source: "mapping",
+				}
+			}
+		}
+	}
 }
 
 func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExplorerEnv, error) {
@@ -178,7 +237,7 @@ func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExpl
 	for _, tenant := range tenants {
 		envs, err := envpkg.List(ctx, tenant.ID)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("list environments for tenant %s: %w", tenant.Name, err)
 		}
 		for _, env := range envs {
 			if !featureTargetsKind(feat.EnvironmentKinds, env.Kind) {
@@ -186,7 +245,7 @@ func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExpl
 			}
 			labels, err := envpkg.GetLabels(ctx, env.ID)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("get labels for environment %s: %w", env.Name, err)
 			}
 			allEnvs = append(allEnvs, envInfo{env: env, tenantName: tenant.Name, labels: labels})
 		}
@@ -338,11 +397,15 @@ func buildExplorerURL(baseURL string, allKeys []configExplorerKey, selectedSet m
 	if len(keys) == len(allKeys) {
 		return baseURL
 	}
-	return baseURL + "?keys=" + strings.Join(keys, "&keys=")
+	vals := url.Values{}
+	for _, k := range keys {
+		vals.Add("keys", k)
+	}
+	return baseURL + "?" + vals.Encode()
 }
 
 func explorerValueCell(key configExplorerKey, cell configExplorerCell) g.Node {
-	if key.IsSecret {
+	if cell.IsSecret || key.IsSecret {
 		return h.Td(
 			h.Span(h.Class("text-muted"), g.Text("••••••••")),
 			h.Br(),
@@ -361,4 +424,30 @@ func truncateValue(s string, max int) string {
 		return s
 	}
 	return s[:max] + "…"
+}
+
+func lookupRenderedValue(m map[string]any, key string) (string, bool) {
+	keys, err := featureutil.SmartDotSplit(key)
+	if err != nil || len(keys) == 0 {
+		return "", false
+	}
+	var cur any = m
+	for _, k := range keys {
+		mm, ok := cur.(map[string]any)
+		if !ok {
+			return "", false
+		}
+		cur, ok = mm[k]
+		if !ok {
+			return "", false
+		}
+	}
+	switch v := cur.(type) {
+	case string:
+		return v, true
+	case nil:
+		return "", true
+	default:
+		return fmt.Sprintf("%v", v), true
+	}
 }

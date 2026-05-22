@@ -408,7 +408,7 @@ func overviewTab(page *FeaturePage) g.Node {
 			),
 		),
 		configurableTable(page, configurable),
-		computedTable(computed),
+		computedTable(page, computed),
 	)
 }
 
@@ -424,6 +424,7 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
+				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				valDef := page.Feature.Values[item.Key]
@@ -433,12 +434,13 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 					components.ConfigActionsCell(configActionsCell(page, item)),
 					components.ConfigValueCell(item),
 					sourceLabelCell(item),
+					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key)),
 				)
 			})))),
 	)
 }
 
-func computedTable(items []FeatureConfigItem) g.Node {
+func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 	if len(items) == 0 {
 		return nil
 	}
@@ -450,6 +452,7 @@ func computedTable(items []FeatureConfigItem) g.Node {
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
+				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				return h.Tr(
@@ -457,6 +460,7 @@ func computedTable(items []FeatureConfigItem) g.Node {
 					components.ConfigActionsCell(),
 					components.ComputedValueCell(item),
 					sourceLabelCell(item),
+					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key)),
 				)
 			})))),
 	)
