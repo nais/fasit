@@ -69,7 +69,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			Title:       tenant.Name + " / " + env.Name,
 			CurrentPage: components.PageEnvironments,
 			Content: page([]breadcrumb.Crumb{
-				breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),
+				tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
 				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
 			}, tenant, environment, allFeatures, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues)),
 		})

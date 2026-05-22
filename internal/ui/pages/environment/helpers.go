@@ -74,6 +74,12 @@ type PlaygroundResult struct {
 	Errors []string
 }
 
+func tenantCrumb(name string, allTenants []view.TenantNav) breadcrumb.Crumb {
+	c := breadcrumb.TenantWithSwitcher(name, allTenants)
+	c.Icon = components.TenantAvatar(name, components.HasTenantLogo(name), "18px")
+	return c
+}
+
 func toTenantNavs(tenants []*model.Tenant) []view.TenantNav {
 	ret := make([]view.TenantNav, 0, len(tenants))
 	for _, tenant := range tenants {
@@ -194,7 +200,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 
 	page := &FeaturePage{
 		Breadcrumbs: []breadcrumb.Crumb{
-			breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),
+			tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
 			breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
 			breadcrumb.EnvironmentFeature(tenant.Name, env.Name, featureName),
 		},

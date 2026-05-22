@@ -63,8 +63,12 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 
 func page(tenants []tenantCard) g.Node {
 	articles := g.Map(tenants, func(tenant tenantCard) g.Node {
+		hasLogo := components.HasTenantLogo(tenant.Tenant.Name)
 		return h.Article(h.Class("dash-card"),
-			h.H3(g.Text(tenant.Tenant.Name)),
+			h.H3(
+				components.TenantAvatar(tenant.Tenant.Name, hasLogo, "36px"),
+				g.Text(tenant.Tenant.Name),
+			),
 			h.Ul(g.Group(g.Map(tenant.Environments, func(envc envCard) g.Node {
 				return h.Li(
 					h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+envc.Environment.Name),

@@ -483,7 +483,7 @@ nav .nav-btn:hover {
 }
 .dash-card h3 {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
   font-size: 1rem;
   margin: 0;
@@ -617,6 +617,9 @@ nav .nav-btn:hover {
 .breadcrumbs a:hover {
   color: var(--text-secondary);
   text-decoration: underline;
+}
+.breadcrumbs .tenant-avatar {
+  margin-right: 0.3rem;
 }
 .breadcrumbs span {
   color: var(--text-faint);
@@ -1865,4 +1868,21 @@ a:hover .feature-nav-badge {
   background: color-mix(in srgb, var(--status-warning, #f5a623) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--status-warning, #f5a623) 40%, transparent);
   color: var(--text-primary);
+}
+
+/* Tenant avatar */
+.tenant-avatar {
+  border-radius: 4px;
+  object-fit: contain;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.tenant-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
 }

@@ -8,6 +8,7 @@ import (
 type Crumb struct {
 	Label        string
 	URL          string
+	Icon         g.Node // if set, rendered before Label
 	Subtitle     string // shown in parentheses after Label on the last crumb
 	SourceURL    string // shown as icon link to the right on the last crumb
 	Content      g.Node // if set, rendered instead of Label for last crumb

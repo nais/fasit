@@ -19,6 +19,9 @@ func Breadcrumbs(crumbs []breadcrumb.Crumb) g.Node {
 			children = append(children, breadcrumbWithDropdown(crumb, isLast))
 		case isLast:
 			var label []g.Node
+			if crumb.Icon != nil {
+				label = append(label, crumb.Icon)
+			}
 			if crumb.Content != nil {
 				label = append(label, crumb.Content)
 			} else {
@@ -29,9 +32,19 @@ func Breadcrumbs(crumbs []breadcrumb.Crumb) g.Node {
 			}
 			children = append(children, h.Span(h.Class("active"), g.Group(label)))
 		case crumb.URL != "":
-			children = append(children, h.A(h.Href(crumb.URL), g.Text(crumb.Label)))
+			var nodes []g.Node
+			if crumb.Icon != nil {
+				nodes = append(nodes, crumb.Icon)
+			}
+			nodes = append(nodes, g.Text(crumb.Label))
+			children = append(children, h.A(h.Href(crumb.URL), g.Group(nodes)))
 		default:
-			children = append(children, h.Span(g.Text(crumb.Label)))
+			var nodes []g.Node
+			if crumb.Icon != nil {
+				nodes = append(nodes, crumb.Icon)
+			}
+			nodes = append(nodes, g.Text(crumb.Label))
+			children = append(children, h.Span(g.Group(nodes)))
 		}
 
 		if !isLast {
@@ -60,11 +73,17 @@ func breadcrumbWithDropdown(crumb breadcrumb.Crumb, isActive bool) g.Node {
 		items = append(items, h.A(h.Href(alt.URL), g.Text(alt.Label)))
 	}
 
+	var labelNodes []g.Node
+	if crumb.Icon != nil {
+		labelNodes = append(labelNodes, crumb.Icon)
+	}
+	labelNodes = append(labelNodes, g.Text(crumb.Label+" ▾"))
+
 	var label g.Node
 	if isActive {
-		label = h.Span(h.Class("active"), g.Text(crumb.Label+" ▾"))
+		label = h.Span(h.Class("active"), g.Group(labelNodes))
 	} else {
-		label = h.A(h.Href(crumb.URL), g.Text(crumb.Label+" ▾"))
+		label = h.A(h.Href(crumb.URL), g.Group(labelNodes))
 	}
 
 	return h.Span(h.Class("breadcrumb-switcher"),

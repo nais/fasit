@@ -30,6 +30,7 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/", features.ListHandler(s.renderPage))
 	r.Get("/environments", tenants.Handler(s.renderPage))
+	r.Get("/tenants/{tenant}/logo", tenants.ServeLogoHandler())
 
 	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage))
 
