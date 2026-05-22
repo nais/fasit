@@ -121,6 +121,11 @@ func ResourceLink(e *audit.Entry) g.Node {
 				g.Text(" of "),
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)
+		} else if e.Action == audit.ActionTriggered {
+			nodes = append(nodes,
+				g.Text("re-deployment of "),
+				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
+			)
 		}
 	}
 
