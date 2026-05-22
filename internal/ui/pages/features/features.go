@@ -168,7 +168,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 			h.Td(resource),
 			h.Td(env),
 			h.Td(h.Class("text-muted"), g.Text(a.Description)),
-			h.Td(g.Text(a.Actor)),
+			h.Td(view.ActorNode(a.Actor)),
 			h.Td(h.Class("text-muted"), g.Text(view.RelativeTime(a.CreatedAt))),
 		))
 	}

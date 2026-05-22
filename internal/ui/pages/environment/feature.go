@@ -692,7 +692,7 @@ func auditTab(page *FeaturePage) g.Node {
 			h.Td(g.Text(string(e.Action))),
 			h.Td(g.Text(e.ObjectType.Display() + " " + e.ObjectID)),
 			h.Td(g.Text(e.Description)),
-			h.Td(g.Text(e.Actor)),
+			h.Td(view.ActorNode(e.Actor)),
 		}
 		if len(e.Metadata) > 0 {
 			var pretty bytes.Buffer
