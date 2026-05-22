@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment"
@@ -442,14 +441,6 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 	if err != nil {
 		return err
 	}
-
-	_ = audit.Create(ctx, audit.CreateParams{
-		Action:      audit.ActionUpdated,
-		Description: "version " + feat.Version,
-		ObjectType:  audit.ObjectTypeFeature,
-		ObjectID:    feat.Name,
-		Feature:     feat.Name,
-	})
 
 	return nil
 }
