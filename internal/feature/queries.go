@@ -30,7 +30,6 @@ type ctxKey int
 // QuerierKey is exposed so tests can inject fake queriers on the context.
 const (
 	QuerierKey ctxKey = iota
-	HelmValuesFuncKey
 )
 
 func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
@@ -355,9 +354,6 @@ func lookupNested(m map[string]any, dottedKey string) (any, bool) {
 }
 
 func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
-	if ctx.Value(HelmValuesFuncKey) != nil {
-		return ctx.Value(HelmValuesFuncKey).(func(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error))(ctx, f, envID)
-	}
 	return helmValues(ctx, f, envID)
 }
 
