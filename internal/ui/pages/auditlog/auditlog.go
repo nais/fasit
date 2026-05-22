@@ -1,6 +1,7 @@
 package auditlog
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -112,6 +113,17 @@ func activityTable(entries []*audit.Entry) g.Node {
 }
 
 func ResourceLink(e *audit.Entry) g.Node {
+	// Deployment with metadata deploymentId: "deployment of feature" with two links
+	if e.ObjectType == audit.ObjectTypeDeployment && e.ObjectID != "all" {
+		if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
+			return g.Group([]g.Node{
+				h.A(h.Href("/deployments/"+depID), g.Text("deployment")),
+				g.Text(" of "),
+				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
+			})
+		}
+	}
+
 	label := e.ObjectType.Display() + " " + e.ObjectID
 	href := ResourceHref(e)
 	if href == "" {
@@ -155,4 +167,16 @@ func EnvLink(e *audit.Entry) g.Node {
 	label := e.TenantName + "/" + e.EnvironmentName
 	href := "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
 	return h.A(h.Href(href), g.Text(label))
+}
+
+func metadataString(meta []byte, key string) string {
+	if len(meta) == 0 {
+		return ""
+	}
+	var m map[string]any
+	if err := json.Unmarshal(meta, &m); err != nil {
+		return ""
+	}
+	v, _ := m[key].(string)
+	return v
 }

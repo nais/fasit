@@ -66,13 +66,14 @@ func Create(ctx context.Context, req Request) (uuid.UUID, error) {
 
 	_ = audit.Create(ctx, audit.CreateParams{
 		Action:      audit.ActionCreated,
-		Description: "version " + req.Version + " → " + formatLabels(req.Target),
+		Description: "version " + req.Version + " \u2192 " + formatLabels(req.Target),
 		ObjectType:  audit.ObjectTypeDeployment,
 		ObjectID:    feat.Name,
 		Feature:     feat.Name,
 		Metadata: map[string]any{
-			"chart":  req.Chart,
-			"target": req.Target,
+			"deploymentId": id.String(),
+			"chart":        req.Chart,
+			"target":       req.Target,
 		},
 	})
 
