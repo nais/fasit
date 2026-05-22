@@ -279,9 +279,9 @@ func featurePageContent(page *FeaturePage) g.Node {
 			components.Card(
 				h.Div(h.Class("card-header-row"),
 					h.Div(
-					h.H2(g.Text(page.Feature.Name)),
-					h.A(h.Class("text-muted text-sm"), h.Href("/features/"+page.Feature.Name), g.Text("View feature →")),
-				),
+						h.H2(g.Text(page.Feature.Name)),
+						h.A(h.Class("text-muted text-sm"), h.Href("/features/"+page.Feature.Name), g.Text("View feature →")),
+					),
 					redeployButton(page),
 				),
 				featureMetadataHeader(page),
