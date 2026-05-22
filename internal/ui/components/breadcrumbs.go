@@ -48,7 +48,7 @@ func Breadcrumbs(crumbs []breadcrumb.Crumb) g.Node {
 		}
 
 		if !isLast {
-			children = append(children, g.Text(" / "))
+			children = append(children, h.Span(h.Class("breadcrumb-sep"), g.Raw("&#x203A;")))
 		}
 	}
 

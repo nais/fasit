@@ -280,7 +280,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 				h.Div(h.Class("card-header-row"),
 					h.Div(
 						h.H2(g.Text(page.Feature.Name)),
-						h.A(h.Class("text-muted text-sm"), h.Href("/features/"+page.Feature.Name), g.Text("View feature →")),
+						h.A(h.Href("/features/"+page.Feature.Name), g.Text("View feature →")),
 					),
 					redeployButton(page),
 				),
@@ -305,10 +305,14 @@ func featureMetadataHeader(page *FeaturePage) g.Node {
 	rows = append(rows, metaRow("Current version", g.Text(currentVersion)))
 
 	if page.Status != "" {
-		rows = append(rows, metaRow("Status", renderStatus(page.Status)))
-	}
-	if page.StatusMessage != "" {
-		rows = append(rows, metaRow("", h.Span(h.Class("status-message"), g.Text(page.StatusMessage))))
+		statusNode := renderStatus(page.Status)
+		if page.StatusMessage != "" {
+			statusNode = g.Group([]g.Node{
+				statusNode,
+				h.Span(h.Class("status-message"), g.Textf(" (%s)", page.StatusMessage)),
+			})
+		}
+		rows = append(rows, metaRow("Status", statusNode))
 	}
 
 	if feat.Chart != "" {

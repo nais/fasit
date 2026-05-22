@@ -116,60 +116,69 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Env
 		components.EnvironmentSidebar(tenant.Name, environment.Name, "", allFeatures),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(breadcrumbs),
-			h.Div(h.Class("card"),
-				h.Div(h.Class("card-body"),
-					h.Div(h.Class("label-pills"),
-						g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
-							return h.Span(h.Class("label-filter-tag"), g.Textf("%s: %s", k, labels[k]))
-						})),
-					),
-					g.If(gcpProjectID != "",
-						h.A(
-							h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
-							h.Class("btn btn-secondary"),
-							g.Attr("target", "_blank"),
-							g.Attr("rel", "noopener noreferrer"),
-							g.Attr("title", "Open GCP project "+gcpProjectID),
-							g.Text("Open GCP project"),
-							components.ExternalLinkIcon(),
-						),
-					),
-					h.H2(g.Text("Metadata")),
-					h.Table(h.Class("table"),
-						h.TBody(g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
-							return h.Tr(
-								h.Td(h.Class("th-like width-md"), g.Text(item.Key)),
-								h.Td(metadataValue(item)),
-							)
-						}))),
-					),
-					g.If(len(envValues) > 0, h.Div(
-						h.H2(g.Text("Environment Values")),
-						h.Table(h.Class("table"),
-							h.TBody(g.Group(g.Map(envValues, func(val *model.EnvironmentValue) g.Node {
-								var valNode g.Node
-								if val.Secret {
-									valNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
-								} else {
-									valNode = g.Text(components.RawValueForDisplay(val.Value))
-								}
-								if refs := valueRefs[val.Key]; len(refs) > 0 {
-									tooltip := strings.Join(refs, ", ")
-									valNode = g.Group([]g.Node{
-										valNode,
-										g.Text(" "),
-										h.Span(h.Class("badge"), h.Title(tooltip), g.Textf("%d ref%s", len(refs), plural(len(refs)))),
-									})
-								}
-								return h.Tr(
-									h.Td(h.Class("th-like width-md"), g.Text(val.Key)),
-									h.Td(valNode),
-								)
-							}))),
+
+			// Environment header: name, kind, labels, actions
+			h.Div(h.Class("env-header"),
+				h.Div(h.Class("env-header-top"),
+					h.H1(h.Class("env-title"), g.Text(environment.Name)),
+				),
+				h.Div(h.Class("env-meta-row"),
+					g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
+						return h.Span(h.Class("env-meta-item"),
+							h.Span(h.Class("env-meta-label"), g.Text(item.Key)),
+							h.Span(h.Class("env-meta-value"), metadataValue(item)),
+						)
+					})),
+					g.If(gcpProjectID != "", h.Span(h.Class("env-meta-item"),
+						h.Span(h.Class("env-meta-label"), g.Text("GCP Project")),
+						h.Span(h.Class("env-meta-value"),
+							g.Text(gcpProjectID),
+							g.Text(" "),
+							h.A(
+								h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+								g.Attr("target", "_blank"),
+								g.Attr("rel", "noopener noreferrer"),
+								g.Attr("title", "Open GCP project "+gcpProjectID),
+								components.ExternalLinkIcon(),
+							),
 						),
 					)),
 				),
+				g.If(len(labels) > 0, h.Div(h.Class("label-pills env-labels"),
+					g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
+						return h.Span(h.Class("label-filter-tag"), g.Textf("%s: %s", k, labels[k]))
+					})),
+				)),
 			),
+
+			// Environment values
+			g.If(len(envValues) > 0, h.Div(h.Class("card"),
+				h.Div(h.Class("card-body"),
+					h.H2(h.Style("margin-top:0"), g.Text("Environment Values")),
+					h.Table(h.Class("table"),
+						h.TBody(g.Group(g.Map(envValues, func(val *model.EnvironmentValue) g.Node {
+							var valNode g.Node
+							if val.Secret {
+								valNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
+							} else {
+								valNode = g.Text(components.RawValueForDisplay(val.Value))
+							}
+							if refs := valueRefs[val.Key]; len(refs) > 0 {
+								tooltip := strings.Join(refs, ", ")
+								valNode = g.Group([]g.Node{
+									valNode,
+									g.Text(" "),
+									h.Span(h.Class("badge"), h.Title(tooltip), g.Textf("%d ref%s", len(refs), plural(len(refs)))),
+								})
+							}
+							return h.Tr(
+								h.Td(h.Class("th-like width-md"), g.Text(val.Key)),
+								h.Td(valNode),
+							)
+						}))),
+					),
+				),
+			)),
 		),
 	)
 }

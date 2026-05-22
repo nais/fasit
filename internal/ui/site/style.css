@@ -459,6 +459,49 @@ nav .nav-btn:hover {
   border: none;
 }
 
+/* Environment overview header */
+.env-header {
+  margin-bottom: 1.25rem;
+}
+.env-header-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.env-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-heading);
+}
+.env-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.env-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.env-meta-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.env-meta-label::after {
+  content: ':';
+}
+.env-meta-value {
+  color: var(--text-primary);
+}
+.env-labels {
+  margin-top: 0.25rem;
+}
+
 .dashboard {
   display: flex;
   flex-wrap: wrap;
@@ -603,32 +646,49 @@ nav .nav-btn:hover {
   padding: 0;
   margin: 0 0 0.75rem 0;
   font-size: 0.95rem;
-  color: var(--text-faint);
+  color: var(--text-muted);
   background: transparent;
   border: none;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 0.15rem;
+}
+.breadcrumb-sep {
+  color: var(--text-faintest);
+  margin: 0 0.2rem;
+  font-size: 0.75em;
 }
 .breadcrumbs a {
-  color: var(--text-faint);
+  color: var(--text-heading);
+  font-weight: 600;
   text-decoration: none;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.1s, color 0.1s;
 }
 .breadcrumbs a:hover {
-  color: var(--text-secondary);
-  text-decoration: underline;
+  color: var(--text-heading);
+  background: var(--btn-bg);
+  text-decoration: none;
 }
 .breadcrumbs .tenant-avatar {
   margin-right: 0.3rem;
 }
 .breadcrumbs span {
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 .breadcrumbs span.active {
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  font-weight: normal;
+  padding: 0.15rem 0.35rem;
+  display: inline-flex;
+  align-items: center;
 }
 .breadcrumb-subtitle {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-weight: normal;
 }
 .breadcrumb-source {
@@ -636,24 +696,28 @@ nav .nav-btn:hover {
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  transition: color 0.15s;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
 }
 .breadcrumb-source:hover {
   color: var(--text-heading);
+  background: var(--btn-bg);
 }
 .breadcrumb-switcher {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 .breadcrumb-dropdown {
   display: none;
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  padding: 0.25rem 0;
+  border-radius: 6px;
+  padding: 0.3rem 0;
   min-width: 10rem;
   max-height: 20rem;
   overflow-y: auto;
@@ -665,10 +729,11 @@ nav .nav-btn:hover {
 }
 .breadcrumb-dropdown a {
   display: block;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   color: var(--text-secondary);
   text-decoration: none;
   white-space: nowrap;
+  border-radius: 0;
 }
 .breadcrumb-dropdown a:hover {
   background: var(--btn-bg);
