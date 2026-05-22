@@ -513,7 +513,7 @@ nav .nav-btn:hover {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 0;
-  flex: 1 1 13rem;
+  flex: 0 1 auto;
   min-width: 13rem;
   box-shadow: 0 1px 3px var(--shadow);
   transition:
