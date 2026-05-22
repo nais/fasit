@@ -245,7 +245,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 }
 
 func renderAggStatus(statuses []string) g.Node {
-	var failed, deployed, total int
+	var failed, deployed, pending, total int
 	for _, s := range statuses {
 		total++
 		switch strings.ToUpper(s) {
@@ -253,19 +253,31 @@ func renderAggStatus(statuses []string) g.Node {
 			failed++
 		case "DEPLOYED":
 			deployed++
+		case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK", "CREATED":
+			pending++
 		}
-	}
-	if failed > 0 {
-		label := "FAILED"
-		if total > 1 {
-			label = fmt.Sprintf("%d/%d FAILED", failed, total)
-		}
-		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("\u2717")), g.Text(" " + label)})
 	}
 	if deployed == total {
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("\u2713")), g.Text(" DEPLOYED")})
 	}
-	label := fmt.Sprintf("%d/%d DEPLOYED", deployed, total)
+	var parts []string
+	if deployed > 0 {
+		parts = append(parts, fmt.Sprintf("%d deployed", deployed))
+	}
+	if failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failed", failed))
+	}
+	if pending > 0 {
+		parts = append(parts, fmt.Sprintf("%d pending", pending))
+	}
+	other := total - deployed - failed - pending
+	if other > 0 {
+		parts = append(parts, fmt.Sprintf("%d unknown", other))
+	}
+	label := strings.Join(parts, ", ")
+	if failed > 0 {
+		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("\u2717")), g.Text(" " + label)})
+	}
 	return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("\u23f3")), g.Text(" " + label)})
 }
 
