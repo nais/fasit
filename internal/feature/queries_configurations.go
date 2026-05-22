@@ -53,11 +53,15 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 }
 
 func envConfigFromSQL(conf featuresql.EnvConfigRow) *model.Configuration {
+	source := model.ConfigSourceGlobal
+	if conf.EnvironmentID != nil {
+		source = model.ConfigSourceEnv
+	}
 	return &model.Configuration{
 		ID:      conf.ID,
 		Key:     conf.Key,
 		Content: conf.Value,
-		Source:  model.ConfigSourceEnv,
+		Source:  source,
 	}
 }
 
@@ -238,6 +242,67 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 		ObjectID:      info.feature + "/" + info.key,
 		Feature:       info.feature,
 		EnvironmentID: info.envID,
+	})
+}
+
+func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
+	var conf featuresql.ConfigurationsEnvironment
+	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
+		var err error
+		conf, err = querier(ctx).ConfigEnvGetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if bytes.Equal(conf.Value, c.Value) && stringPtrEqual(conf.Description, c.Description) {
+			return nil
+		}
+
+		conf, err = querier(ctx).ConfigEnvUpdate(ctx, featuresql.ConfigEnvUpdateParams{
+			Description: c.Description,
+			Value:       c.Value,
+			ID:          id,
+		})
+		if err != nil {
+			return err
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Action:        audit.ActionUpdated,
+			ObjectType:    audit.ObjectTypeConfiguration,
+			ObjectID:      conf.Feature + "/" + conf.Key,
+			Feature:       conf.Feature,
+			EnvironmentID: &conf.EnvironmentID,
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return environmentConfigurationFromSQL(conf), nil
+}
+
+func ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
+	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+		existing, err := querier(ctx).ConfigEnvGetByID(ctx, id)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil
+			}
+			return err
+		}
+
+		if err := querier(ctx).ConfigEnvDelete(ctx, id); err != nil {
+			return err
+		}
+
+		return audit.Create(ctx, audit.CreateParams{
+			Action:        audit.ActionDeleted,
+			ObjectType:    audit.ObjectTypeConfiguration,
+			ObjectID:      existing.Feature + "/" + existing.Key,
+			Feature:       existing.Feature,
+			EnvironmentID: &existing.EnvironmentID,
+		})
 	})
 }
 

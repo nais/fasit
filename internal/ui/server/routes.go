@@ -60,6 +60,10 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/features", features.ListHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
+	r.Get("/features/{feature}/config", features.ConfigTabHandler(s.renderPage))
+	r.Post("/features/{feature}/config/{id}", features.UpdateGlobalConfigHandler())
+	r.Post("/features/{feature}/config/{id}/delete", features.DeleteGlobalConfigHandler())
+	r.Post("/features/{feature}/config/set", features.SetGlobalConfigHandler())
 
 	r.Get("/auditlog", auditlog.Handler(s.renderPage))
 

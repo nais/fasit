@@ -10,12 +10,22 @@ import (
 )
 
 const configDelete = `-- name: ConfigDelete :exec
-DELETE FROM configurations_global
+DELETE FROM ONLY configurations_global
 WHERE id = $1
 `
 
 func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, configDelete, id)
+	return err
+}
+
+const configEnvDelete = `-- name: ConfigEnvDelete :exec
+DELETE FROM ONLY configurations_environment
+WHERE id = $1
+`
+
+func (q *Queries) ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, configEnvDelete, id)
 	return err
 }
 
@@ -38,6 +48,65 @@ type ConfigEnvGetParams struct {
 
 func (q *Queries) ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error) {
 	row := q.db.QueryRow(ctx, configEnvGet, arg.EnvironmentID, arg.Feature, arg.Key)
+	var i ConfigurationsEnvironment
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+		&i.EnvironmentID,
+	)
+	return i, err
+}
+
+const configEnvGetByID = `-- name: ConfigEnvGetByID :one
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	ONLY configurations_environment
+WHERE
+	id = $1
+`
+
+func (q *Queries) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error) {
+	row := q.db.QueryRow(ctx, configEnvGetByID, id)
+	var i ConfigurationsEnvironment
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+		&i.EnvironmentID,
+	)
+	return i, err
+}
+
+const configEnvUpdate = `-- name: ConfigEnvUpdate :one
+UPDATE
+	ONLY configurations_environment
+SET
+	description = $1,
+	value = $2
+WHERE
+	id = $3
+RETURNING
+	id, feature, key, value, description, secret, created, environment_id
+`
+
+type ConfigEnvUpdateParams struct {
+	Description *string
+	Value       []byte
+	ID          uuid.UUID
+}
+
+func (q *Queries) ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error) {
+	row := q.db.QueryRow(ctx, configEnvUpdate, arg.Description, arg.Value, arg.ID)
 	var i ConfigurationsEnvironment
 	err := row.Scan(
 		&i.ID,
@@ -237,7 +306,7 @@ const configGetByID = `-- name: ConfigGetByID :one
 SELECT
 	id, feature, key, value, description, secret, created
 FROM
-	configurations_global
+	ONLY configurations_global
 WHERE
 	id = $1
 `
@@ -438,7 +507,7 @@ func (q *Queries) ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobal
 
 const configUpdate = `-- name: ConfigUpdate :one
 UPDATE
-	configurations_global
+	ONLY configurations_global
 SET
 	description = $1,
 	value = $2

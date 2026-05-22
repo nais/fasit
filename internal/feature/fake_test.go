@@ -39,8 +39,20 @@ func (f *fakeQuerier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return f.configDeleteFunc(ctx, id)
 }
 
+func (f *fakeQuerier) ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
+	panic("not implemented")
+}
+
 func (f *fakeQuerier) ConfigEnvGet(ctx context.Context, arg featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
 	return f.configEnvGetFunc(ctx, arg)
+}
+
+func (f *fakeQuerier) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsEnvironment, error) {
+	panic("not implemented")
+}
+
+func (f *fakeQuerier) ConfigEnvUpdate(ctx context.Context, arg featuresql.ConfigEnvUpdateParams) (featuresql.ConfigurationsEnvironment, error) {
+	panic("not implemented")
 }
 
 func (f *fakeQuerier) ConfigEnvUpdateOrCreate(ctx context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {

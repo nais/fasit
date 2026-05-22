@@ -710,6 +710,10 @@ nav .nav-btn:hover {
 .config-warning {
   border-left: 3px solid var(--status-warning);
 }
+.config-orphaned {
+  opacity: 0.6;
+  border-left: 3px solid var(--status-error);
+}
 .edit-icon {
   color: var(--text-muted);
   text-decoration: none;
@@ -840,6 +844,8 @@ nav .nav-btn:hover {
   padding: 1.5rem;
   max-width: 28.5rem;
   min-width: 21.5rem;
+  overflow: visible;
+  max-height: none;
 }
 [popover]::backdrop {
   background: var(--popover-backdrop);
