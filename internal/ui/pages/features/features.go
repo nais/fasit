@@ -46,18 +46,26 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		deps, _ := deployment.List(r.Context())
 		var depRows []depRow
 		for _, dep := range deps {
-			status := "UNKNOWN"
-			if statuses, err := deployment.ListDeploymentStatuses(r.Context(), dep.ID); err == nil && len(statuses) > 0 {
-				status = string(statuses[0].State)
+			statuses, err := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
+			if err != nil || len(statuses) == 0 {
+				depRows = append(depRows, depRow{
+					FeatureName: dep.Feature.Name,
+					Version:     dep.Feature.Version,
+					Status:      "UNKNOWN",
+					Created:     dep.Created,
+					DepID:       dep.ID.String(),
+				})
+			} else {
+				for _, s := range statuses {
+					depRows = append(depRows, depRow{
+						FeatureName: dep.Feature.Name,
+						Version:     dep.Feature.Version,
+						Status:      string(s.State),
+						Created:     dep.Created,
+						DepID:       dep.ID.String(),
+					})
+				}
 			}
-			depRows = append(depRows, depRow{
-				FeatureName: dep.Feature.Name,
-				Version:     dep.Feature.Version,
-				Labels:      dep.TargetLabels,
-				Status:      status,
-				Created:     dep.Created,
-				DepID:       dep.ID.String(),
-			})
 		}
 
 		audits, _ := audit.ListRecent(r.Context(), 10)
@@ -136,7 +144,6 @@ func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) 
 type depRow struct {
 	FeatureName string
 	Version     string
-	Labels      map[string]string
 	Status      string
 	Created     time.Time
 	DepID       string
