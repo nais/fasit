@@ -35,12 +35,12 @@ func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *model.Configuration
 }
 
 func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
-	globalConfigs, err := querier(ctx).ConfigGet(ctx, feature.Name)
+	globalConfigs, err := querier(ctx).ConfigGlobalListByFeature(ctx, feature.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	envConfigs, err := querier(ctx).ConfigEnvByFeatureAndEnv(ctx, featuresql.ConfigEnvByFeatureAndEnvParams{
+	envConfigs, err := querier(ctx).ConfigEnvListByFeatureAndEnv(ctx, featuresql.ConfigEnvListByFeatureAndEnvParams{
 		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
@@ -56,8 +56,10 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 			source = model.ConfigSourceEnv
 		}
 		retVal = append(retVal, &model.Configuration{
+			ID:      conf.ID,
 			Key:     conf.Key,
 			Content: conf.Value,
+			Created: conf.Created.Time,
 			Source:  source,
 		})
 	}
@@ -66,7 +68,7 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 }
 
 func ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
-	config, err := querier(ctx).ConfigGet(ctx, feature)
+	config, err := querier(ctx).ConfigGlobalListByFeature(ctx, feature)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +118,7 @@ func ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configu
 }
 
 func configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
-	existing, err := querier(ctx).ConfigEnvGet(ctx, featuresql.ConfigEnvGetParams{
+	existing, err := querier(ctx).ConfigEnvGetByKey(ctx, featuresql.ConfigEnvGetByKeyParams{
 		EnvironmentID: *c.EnvironmentID,
 		Feature:       c.Feature,
 		Key:           c.Key,
@@ -133,7 +135,7 @@ func configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte
 		return environmentConfigurationFromSQL(existing), nil
 	}
 
-	config, err := querier(ctx).ConfigEnvUpdateOrCreate(ctx, featuresql.ConfigEnvUpdateOrCreateParams{
+	config, err := querier(ctx).ConfigEnvUpsert(ctx, featuresql.ConfigEnvUpsertParams{
 		EnvironmentID: *c.EnvironmentID,
 		Feature:       c.Feature,
 		Description:   c.Description,
@@ -173,7 +175,7 @@ func configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []b
 		return globalConfigFromSQL(existing), nil
 	}
 
-	config, err := querier(ctx).ConfigGlobalUpdateOrCreate(ctx, featuresql.ConfigGlobalUpdateOrCreateParams{
+	config, err := querier(ctx).ConfigGlobalUpsert(ctx, featuresql.ConfigGlobalUpsertParams{
 		Feature:     c.Feature,
 		Description: c.Description,
 		Secret:      c.Secret,
@@ -199,7 +201,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 	var conf featuresql.ConfigurationsGlobal
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
-		conf, err = querier(ctx).ConfigGetByID(ctx, id)
+		conf, err = querier(ctx).ConfigGlobalGetByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -208,7 +210,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 			return nil
 		}
 
-		conf, err = querier(ctx).ConfigUpdate(ctx, featuresql.ConfigUpdateParams{
+		conf, err = querier(ctx).ConfigGlobalUpdate(ctx, featuresql.ConfigGlobalUpdateParams{
 			Description: c.Description,
 			Value:       c.Value,
 			ID:          id,
@@ -233,7 +235,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 
 func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		existing, err := querier(ctx).ConfigGetByID(ctx, id)
+		existing, err := querier(ctx).ConfigGlobalGetByID(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil
@@ -241,7 +243,7 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 			return err
 		}
 
-		if err := querier(ctx).ConfigDelete(ctx, id); err != nil {
+		if err := querier(ctx).ConfigGlobalDelete(ctx, id); err != nil {
 			return err
 		}
 

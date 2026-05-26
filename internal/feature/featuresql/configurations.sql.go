@@ -9,62 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const configDelete = `-- name: ConfigDelete :exec
-DELETE FROM configurations_global
-WHERE id = $1
-`
-
-func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, configDelete, id)
-	return err
-}
-
-const configEnvByFeatureAndEnv = `-- name: ConfigEnvByFeatureAndEnv :many
-SELECT
-	id, feature, key, value, description, secret, created, environment_id
-FROM
-	configurations_environment
-WHERE
-	feature = $1
-	AND environment_id = $2
-ORDER BY
-	key ASC
-`
-
-type ConfigEnvByFeatureAndEnvParams struct {
-	Feature       string
-	EnvironmentID uuid.UUID
-}
-
-func (q *Queries) ConfigEnvByFeatureAndEnv(ctx context.Context, arg ConfigEnvByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error) {
-	rows, err := q.db.Query(ctx, configEnvByFeatureAndEnv, arg.Feature, arg.EnvironmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ConfigurationsEnvironment{}
-	for rows.Next() {
-		var i ConfigurationsEnvironment
-		if err := rows.Scan(
-			&i.ID,
-			&i.Feature,
-			&i.Key,
-			&i.Value,
-			&i.Description,
-			&i.Secret,
-			&i.Created,
-			&i.EnvironmentID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const configEnvDelete = `-- name: ConfigEnvDelete :exec
 DELETE FROM configurations_environment
 WHERE id = $1
@@ -75,25 +19,17 @@ func (q *Queries) ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const configEnvGet = `-- name: ConfigEnvGet :one
+const configEnvGetByID = `-- name: ConfigEnvGetByID :one
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
 	configurations_environment
 WHERE
-	environment_id = $1
-	AND feature = $2
-	AND key = $3
+	id = $1
 `
 
-type ConfigEnvGetParams struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Key           string
-}
-
-func (q *Queries) ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error) {
-	row := q.db.QueryRow(ctx, configEnvGet, arg.EnvironmentID, arg.Feature, arg.Key)
+func (q *Queries) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error) {
+	row := q.db.QueryRow(ctx, configEnvGetByID, id)
 	var i ConfigurationsEnvironment
 	err := row.Scan(
 		&i.ID,
@@ -108,17 +44,25 @@ func (q *Queries) ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (Con
 	return i, err
 }
 
-const configEnvGetByID = `-- name: ConfigEnvGetByID :one
+const configEnvGetByKey = `-- name: ConfigEnvGetByKey :one
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
 	configurations_environment
 WHERE
-	id = $1
+	environment_id = $1
+	AND feature = $2
+	AND key = $3
 `
 
-func (q *Queries) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error) {
-	row := q.db.QueryRow(ctx, configEnvGetByID, id)
+type ConfigEnvGetByKeyParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Key           string
+}
+
+func (q *Queries) ConfigEnvGetByKey(ctx context.Context, arg ConfigEnvGetByKeyParams) (ConfigurationsEnvironment, error) {
+	row := q.db.QueryRow(ctx, configEnvGetByKey, arg.EnvironmentID, arg.Feature, arg.Key)
 	var i ConfigurationsEnvironment
 	err := row.Scan(
 		&i.ID,
@@ -147,6 +91,52 @@ ORDER BY
 
 func (q *Queries) ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error) {
 	rows, err := q.db.Query(ctx, configEnvListByFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigurationsEnvironment{}
+	for rows.Next() {
+		var i ConfigurationsEnvironment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Created,
+			&i.EnvironmentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const configEnvListByFeatureAndEnv = `-- name: ConfigEnvListByFeatureAndEnv :many
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	configurations_environment
+WHERE
+	feature = $1
+	AND environment_id = $2
+ORDER BY
+	key ASC
+`
+
+type ConfigEnvListByFeatureAndEnvParams struct {
+	Feature       string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) ConfigEnvListByFeatureAndEnv(ctx context.Context, arg ConfigEnvListByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error) {
+	rows, err := q.db.Query(ctx, configEnvListByFeatureAndEnv, arg.Feature, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +198,7 @@ func (q *Queries) ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams
 	return i, err
 }
 
-const configEnvUpdateOrCreate = `-- name: ConfigEnvUpdateOrCreate :one
+const configEnvUpsert = `-- name: ConfigEnvUpsert :one
 INSERT INTO configurations_environment(
 	environment_id,
 	feature,
@@ -234,7 +224,7 @@ ON CONFLICT (
 		id, feature, key, value, description, secret, created, environment_id
 `
 
-type ConfigEnvUpdateOrCreateParams struct {
+type ConfigEnvUpsertParams struct {
 	EnvironmentID uuid.UUID
 	Feature       string
 	Description   *string
@@ -243,8 +233,8 @@ type ConfigEnvUpdateOrCreateParams struct {
 	Value         []byte
 }
 
-func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error) {
-	row := q.db.QueryRow(ctx, configEnvUpdateOrCreate,
+func (q *Queries) ConfigEnvUpsert(ctx context.Context, arg ConfigEnvUpsertParams) (ConfigurationsEnvironment, error) {
+	row := q.db.QueryRow(ctx, configEnvUpsert,
 		arg.EnvironmentID,
 		arg.Feature,
 		arg.Description,
@@ -266,46 +256,17 @@ func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpda
 	return i, err
 }
 
-const configGet = `-- name: ConfigGet :many
-SELECT
-	id, feature, key, value, description, secret, created
-FROM
-	configurations_global
-WHERE
-	feature = $1
-ORDER BY
-	key ASC
+const configGlobalDelete = `-- name: ConfigGlobalDelete :exec
+DELETE FROM configurations_global
+WHERE id = $1
 `
 
-func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
-	rows, err := q.db.Query(ctx, configGet, feature)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ConfigurationsGlobal{}
-	for rows.Next() {
-		var i ConfigurationsGlobal
-		if err := rows.Scan(
-			&i.ID,
-			&i.Feature,
-			&i.Key,
-			&i.Value,
-			&i.Description,
-			&i.Secret,
-			&i.Created,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, configGlobalDelete, id)
+	return err
 }
 
-const configGetByID = `-- name: ConfigGetByID :one
+const configGlobalGetByID = `-- name: ConfigGlobalGetByID :one
 SELECT
 	id, feature, key, value, description, secret, created
 FROM
@@ -314,8 +275,8 @@ WHERE
 	id = $1
 `
 
-func (q *Queries) ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error) {
-	row := q.db.QueryRow(ctx, configGetByID, id)
+func (q *Queries) ConfigGlobalGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error) {
+	row := q.db.QueryRow(ctx, configGlobalGetByID, id)
 	var i ConfigurationsGlobal
 	err := row.Scan(
 		&i.ID,
@@ -359,7 +320,79 @@ func (q *Queries) ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetB
 	return i, err
 }
 
-const configGlobalUpdateOrCreate = `-- name: ConfigGlobalUpdateOrCreate :one
+const configGlobalListByFeature = `-- name: ConfigGlobalListByFeature :many
+SELECT
+	id, feature, key, value, description, secret, created
+FROM
+	configurations_global
+WHERE
+	feature = $1
+ORDER BY
+	key ASC
+`
+
+func (q *Queries) ConfigGlobalListByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
+	rows, err := q.db.Query(ctx, configGlobalListByFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigurationsGlobal{}
+	for rows.Next() {
+		var i ConfigurationsGlobal
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const configGlobalUpdate = `-- name: ConfigGlobalUpdate :one
+UPDATE
+	configurations_global
+SET
+	description = $1,
+	value = $2
+WHERE
+	id = $3
+RETURNING
+	id, feature, key, value, description, secret, created
+`
+
+type ConfigGlobalUpdateParams struct {
+	Description *string
+	Value       []byte
+	ID          uuid.UUID
+}
+
+func (q *Queries) ConfigGlobalUpdate(ctx context.Context, arg ConfigGlobalUpdateParams) (ConfigurationsGlobal, error) {
+	row := q.db.QueryRow(ctx, configGlobalUpdate, arg.Description, arg.Value, arg.ID)
+	var i ConfigurationsGlobal
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+	)
+	return i, err
+}
+
+const configGlobalUpsert = `-- name: ConfigGlobalUpsert :one
 INSERT INTO configurations_global(
 	feature,
 	description,
@@ -382,7 +415,7 @@ ON CONFLICT (
 		id, feature, key, value, description, secret, created
 `
 
-type ConfigGlobalUpdateOrCreateParams struct {
+type ConfigGlobalUpsertParams struct {
 	Feature     string
 	Description *string
 	Secret      bool
@@ -390,47 +423,14 @@ type ConfigGlobalUpdateOrCreateParams struct {
 	Value       []byte
 }
 
-func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error) {
-	row := q.db.QueryRow(ctx, configGlobalUpdateOrCreate,
+func (q *Queries) ConfigGlobalUpsert(ctx context.Context, arg ConfigGlobalUpsertParams) (ConfigurationsGlobal, error) {
+	row := q.db.QueryRow(ctx, configGlobalUpsert,
 		arg.Feature,
 		arg.Description,
 		arg.Secret,
 		arg.Key,
 		arg.Value,
 	)
-	var i ConfigurationsGlobal
-	err := row.Scan(
-		&i.ID,
-		&i.Feature,
-		&i.Key,
-		&i.Value,
-		&i.Description,
-		&i.Secret,
-		&i.Created,
-	)
-	return i, err
-}
-
-const configUpdate = `-- name: ConfigUpdate :one
-UPDATE
-	configurations_global
-SET
-	description = $1,
-	value = $2
-WHERE
-	id = $3
-RETURNING
-	id, feature, key, value, description, secret, created
-`
-
-type ConfigUpdateParams struct {
-	Description *string
-	Value       []byte
-	ID          uuid.UUID
-}
-
-func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error) {
-	row := q.db.QueryRow(ctx, configUpdate, arg.Description, arg.Value, arg.ID)
 	var i ConfigurationsGlobal
 	err := row.Scan(
 		&i.ID,

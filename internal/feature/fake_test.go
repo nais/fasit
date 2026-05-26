@@ -14,13 +14,15 @@ import (
 // fakeQuerier implements featuresql.Querier for unit tests.
 // Set function fields for methods your test exercises; unset fields panic.
 type fakeQuerier struct {
-	configDeleteFunc               func(ctx context.Context, id uuid.UUID) error
-	configEnvGetFunc               func(ctx context.Context, arg featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error)
-	configEnvUpdateOrCreateFunc    func(ctx context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error)
-	configGetByIDFunc              func(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error)
-	configGlobalGetByKeyFunc       func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)
-	configGlobalUpdateOrCreateFunc func(ctx context.Context, arg featuresql.ConfigGlobalUpdateOrCreateParams) (featuresql.ConfigurationsGlobal, error)
-	configUpdateFunc               func(ctx context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalDeleteFunc           func(ctx context.Context, id uuid.UUID) error
+	configEnvGetByKeyFunc            func(ctx context.Context, arg featuresql.ConfigEnvGetByKeyParams) (featuresql.ConfigurationsEnvironment, error)
+	configEnvUpsertFunc              func(ctx context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error)
+	configGlobalGetByIDFunc          func(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error)
+	configGlobalGetByKeyFunc         func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalUpsertFunc           func(ctx context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalUpdateFunc           func(ctx context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalListByFeatureFunc    func(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error)
+	configEnvListByFeatureAndEnvFunc func(ctx context.Context, arg featuresql.ConfigEnvListByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error)
 }
 
 func (f *fakeQuerier) GetLatestDeployedDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployedDeployInstructionParams) (featuresql.DeployInstruction, error) {
@@ -35,16 +37,16 @@ func (f *fakeQuerier) GetPreviousDeployInstruction(ctx context.Context, id uuid.
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
-	return f.configDeleteFunc(ctx, id)
+func (f *fakeQuerier) ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error {
+	return f.configGlobalDeleteFunc(ctx, id)
 }
 
 func (f *fakeQuerier) ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) ConfigEnvGet(ctx context.Context, arg featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
-	return f.configEnvGetFunc(ctx, arg)
+func (f *fakeQuerier) ConfigEnvGetByKey(ctx context.Context, arg featuresql.ConfigEnvGetByKeyParams) (featuresql.ConfigurationsEnvironment, error) {
+	return f.configEnvGetByKeyFunc(ctx, arg)
 }
 
 func (f *fakeQuerier) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsEnvironment, error) {
@@ -59,32 +61,32 @@ func (f *fakeQuerier) ConfigEnvUpdate(ctx context.Context, arg featuresql.Config
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) ConfigEnvUpdateOrCreate(ctx context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {
-	return f.configEnvUpdateOrCreateFunc(ctx, arg)
+func (f *fakeQuerier) ConfigEnvUpsert(ctx context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error) {
+	return f.configEnvUpsertFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigEnvByFeatureAndEnv(context.Context, featuresql.ConfigEnvByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error) {
-	panic("not implemented")
+func (f *fakeQuerier) ConfigEnvListByFeatureAndEnv(ctx context.Context, arg featuresql.ConfigEnvListByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error) {
+	return f.configEnvListByFeatureAndEnvFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigGet(context.Context, string) ([]featuresql.ConfigurationsGlobal, error) {
-	panic("not implemented")
+func (f *fakeQuerier) ConfigGlobalListByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error) {
+	return f.configGlobalListByFeatureFunc(ctx, feature)
 }
 
-func (f *fakeQuerier) ConfigGetByID(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
-	return f.configGetByIDFunc(ctx, id)
+func (f *fakeQuerier) ConfigGlobalGetByID(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
+	return f.configGlobalGetByIDFunc(ctx, id)
 }
 
 func (f *fakeQuerier) ConfigGlobalGetByKey(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error) {
 	return f.configGlobalGetByKeyFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigGlobalUpdateOrCreate(ctx context.Context, arg featuresql.ConfigGlobalUpdateOrCreateParams) (featuresql.ConfigurationsGlobal, error) {
-	return f.configGlobalUpdateOrCreateFunc(ctx, arg)
+func (f *fakeQuerier) ConfigGlobalUpsert(ctx context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error) {
+	return f.configGlobalUpsertFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigUpdate(ctx context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error) {
-	return f.configUpdateFunc(ctx, arg)
+func (f *fakeQuerier) ConfigGlobalUpdate(ctx context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error) {
+	return f.configGlobalUpdateFunc(ctx, arg)
 }
 
 func (f *fakeQuerier) DisabledFeatureDelete(context.Context, featuresql.DisabledFeatureDeleteParams) error {

@@ -9,19 +9,19 @@ import (
 )
 
 type Querier interface {
-	ConfigDelete(ctx context.Context, id uuid.UUID) error
-	ConfigEnvByFeatureAndEnv(ctx context.Context, arg ConfigEnvByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error)
 	ConfigEnvDelete(ctx context.Context, id uuid.UUID) error
-	ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error)
 	ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
+	ConfigEnvGetByKey(ctx context.Context, arg ConfigEnvGetByKeyParams) (ConfigurationsEnvironment, error)
 	ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
+	ConfigEnvListByFeatureAndEnv(ctx context.Context, arg ConfigEnvListByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error)
 	ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error)
-	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
-	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
-	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
+	ConfigEnvUpsert(ctx context.Context, arg ConfigEnvUpsertParams) (ConfigurationsEnvironment, error)
+	ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error
+	ConfigGlobalGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
 	ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error)
-	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
-	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
+	ConfigGlobalListByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
+	ConfigGlobalUpdate(ctx context.Context, arg ConfigGlobalUpdateParams) (ConfigurationsGlobal, error)
+	ConfigGlobalUpsert(ctx context.Context, arg ConfigGlobalUpsertParams) (ConfigurationsGlobal, error)
 	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
 	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
 	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error

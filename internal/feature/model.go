@@ -1,21 +1,26 @@
 package feature
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 type mergedConfigRow struct {
+	ID            uuid.UUID
 	Key           string
 	Value         []byte
 	Secret        bool
+	Created       pgtype.Timestamptz
 	EnvironmentID *uuid.UUID
 }
 
@@ -25,14 +30,14 @@ func mergeConfigs(global []featuresql.ConfigurationsGlobal, env []featuresql.Con
 		keySet[k] = struct{}{}
 	}
 
-	m := make(map[string]mergedConfigRow, len(global))
+	m := make(map[string]mergedConfigRow, len(global)+len(env))
 	for _, g := range global {
 		if len(keySet) > 0 {
 			if _, ok := keySet[g.Key]; !ok {
 				continue
 			}
 		}
-		m[g.Key] = mergedConfigRow{Key: g.Key, Value: g.Value, Secret: g.Secret}
+		m[g.Key] = mergedConfigRow{ID: g.ID, Key: g.Key, Value: g.Value, Secret: g.Secret, Created: g.Created}
 	}
 	for _, e := range env {
 		if len(keySet) > 0 {
@@ -41,19 +46,40 @@ func mergeConfigs(global []featuresql.ConfigurationsGlobal, env []featuresql.Con
 			}
 		}
 		eid := e.EnvironmentID
-		m[e.Key] = mergedConfigRow{Key: e.Key, Value: e.Value, Secret: e.Secret, EnvironmentID: &eid}
+		m[e.Key] = mergedConfigRow{ID: e.ID, Key: e.Key, Value: e.Value, Secret: e.Secret, Created: e.Created, EnvironmentID: &eid}
 	}
 
 	result := make([]mergedConfigRow, 0, len(m))
 	for _, v := range m {
 		result = append(result, v)
 	}
+	// Sort by key for deterministic iteration order downstream.
+	slices.SortFunc(result, func(a, b mergedConfigRow) int {
+		return cmp.Compare(a.Key, b.Key)
+	})
 	return result
 }
 
 func makeHelmConfigMap(vals []mergedConfigRow) (map[string]any, error) {
-	val := make(map[string]any)
+	// Pre-scan: a leaf key cannot also be a strict dotted prefix of another key.
+	leaves := make(map[string]bool, len(vals))
+	for _, v := range vals {
+		leaves[v.Key] = true
+	}
+	for _, v := range vals {
+		keys, err := featureutil.SmartDotSplit(v.Key)
+		if err != nil {
+			return nil, err
+		}
+		for i := 1; i < len(keys); i++ {
+			prefix := strings.Join(keys[:i], ".")
+			if leaves[prefix] {
+				return nil, fmt.Errorf("key %v is not nestable", prefix)
+			}
+		}
+	}
 
+	val := make(map[string]any)
 	for _, v := range vals {
 		keys, err := featureutil.SmartDotSplit(v.Key)
 		if err != nil {
@@ -66,14 +92,8 @@ func makeHelmConfigMap(vals []mergedConfigRow) (map[string]any, error) {
 				continue
 			}
 			if e, ok := parent[key]; ok {
-				if p, ok := e.(map[string]any); ok {
-					if index == len(keys)-1 {
-						return nil, fmt.Errorf("key %v is not nestable", v.Key)
-					}
-					parent = p
-					continue
-				}
-				return nil, fmt.Errorf("key %v is not nestable", v.Key)
+				parent = e.(map[string]any)
+				continue
 			}
 			f := make(map[string]any)
 			parent[key] = f

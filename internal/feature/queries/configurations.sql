@@ -1,4 +1,4 @@
--- name: ConfigEnvByFeatureAndEnv :many
+-- name: ConfigEnvListByFeatureAndEnv :many
 SELECT
 	*
 FROM
@@ -9,7 +9,7 @@ WHERE
 ORDER BY
 	key ASC;
 
--- name: ConfigGet :many
+-- name: ConfigGlobalListByFeature :many
 SELECT
 	*
 FROM
@@ -19,7 +19,7 @@ WHERE
 ORDER BY
 	key ASC;
 
--- name: ConfigEnvGet :one
+-- name: ConfigEnvGetByKey :one
 SELECT
 	*
 FROM
@@ -49,7 +49,7 @@ WHERE
 	feature = @feature
 	AND key = @key;
 
--- name: ConfigEnvUpdateOrCreate :one
+-- name: ConfigEnvUpsert :one
 INSERT INTO configurations_environment(
 	environment_id,
 	feature,
@@ -74,7 +74,7 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ConfigGlobalUpdateOrCreate :one
+-- name: ConfigGlobalUpsert :one
 INSERT INTO configurations_global(
 	feature,
 	description,
@@ -96,7 +96,7 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ConfigUpdate :one
+-- name: ConfigGlobalUpdate :one
 UPDATE
 	configurations_global
 SET
@@ -107,11 +107,11 @@ WHERE
 RETURNING
 	*;
 
--- name: ConfigDelete :exec
+-- name: ConfigGlobalDelete :exec
 DELETE FROM configurations_global
 WHERE id = @id;
 
--- name: ConfigGetByID :one
+-- name: ConfigGlobalGetByID :one
 SELECT
 	*
 FROM

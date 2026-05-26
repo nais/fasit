@@ -3,9 +3,11 @@ package feature
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -51,7 +53,7 @@ func TestConfigCreate(t *testing.T) {
 			}
 
 			var wrote bool
-			fq.configGlobalUpdateOrCreateFunc = func(_ context.Context, arg featuresql.ConfigGlobalUpdateOrCreateParams) (featuresql.ConfigurationsGlobal, error) {
+			fq.configGlobalUpsertFunc = func(_ context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error) {
 				wrote = true
 				return featuresql.ConfigurationsGlobal{
 					ID: uuid.New(), Feature: arg.Feature, Key: arg.Key, Value: arg.Value,
@@ -86,14 +88,14 @@ func TestConfigCreate_Env(t *testing.T) {
 	ctx, fq, aq := newTestCtx(t)
 	envID := uuid.New()
 
-	fq.configEnvGetFunc = func(_ context.Context, _ featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
+	fq.configEnvGetByKeyFunc = func(_ context.Context, _ featuresql.ConfigEnvGetByKeyParams) (featuresql.ConfigurationsEnvironment, error) {
 		return featuresql.ConfigurationsEnvironment{
 			ID: uuid.New(), Feature: "f1", Key: "k",
 			Value: []byte(`"old"`), Secret: true,
 		}, nil
 	}
 
-	fq.configEnvUpdateOrCreateFunc = func(_ context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {
+	fq.configEnvUpsertFunc = func(_ context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error) {
 		return featuresql.ConfigurationsEnvironment{
 			ID: uuid.New(), EnvironmentID: envID,
 			Feature: arg.Feature, Key: arg.Key, Value: arg.Value, Secret: arg.Secret,
@@ -152,12 +154,12 @@ func TestConfigUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, fq, aq := newTestCtx(t)
 
-			fq.configGetByIDFunc = func(_ context.Context, _ uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
+			fq.configGlobalGetByIDFunc = func(_ context.Context, _ uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
 				return tc.existing, nil
 			}
 
 			var wrote bool
-			fq.configUpdateFunc = func(_ context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error) {
+			fq.configGlobalUpdateFunc = func(_ context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error) {
 				wrote = true
 				return featuresql.ConfigurationsGlobal{
 					ID: tc.existing.ID, Feature: tc.existing.Feature, Key: tc.existing.Key, Value: arg.Value,
@@ -191,7 +193,7 @@ func TestConfigDelete(t *testing.T) {
 	ctx, fq, aq := newTestCtx(t)
 	id := uuid.New()
 
-	fq.configGetByIDFunc = func(_ context.Context, got uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
+	fq.configGlobalGetByIDFunc = func(_ context.Context, got uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
 		if got != id {
 			t.Fatalf("ConfigGetByID(%v), want %v", got, id)
 		}
@@ -199,7 +201,7 @@ func TestConfigDelete(t *testing.T) {
 	}
 
 	var deleted bool
-	fq.configDeleteFunc = func(_ context.Context, got uuid.UUID) error {
+	fq.configGlobalDeleteFunc = func(_ context.Context, got uuid.UUID) error {
 		if got != id {
 			t.Fatalf("ConfigDelete(%v), want %v", got, id)
 		}
@@ -223,5 +225,49 @@ func TestConfigDelete(t *testing.T) {
 	}
 	if got.ObjectID != "f1/k" {
 		t.Errorf("ObjectID = %q, want %q", got.ObjectID, "f1/k")
+	}
+}
+
+// TestEnvConfig_PreservesIDAndCreated guards against a regression where merged
+// rows lost their ID (and Created), causing UI URLs like /config/edit/<id> to
+// collapse to the zero UUID for every row.
+func TestEnvConfig_PreservesIDAndCreated(t *testing.T) {
+	ctx, fq, _ := newTestCtx(t)
+
+	globalID := uuid.New()
+	envRowID := uuid.New()
+	environmentID := uuid.New()
+	globalCreated := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	envCreated := time.Date(2025, 2, 2, 0, 0, 0, 0, time.UTC)
+
+	fq.configGlobalListByFeatureFunc = func(_ context.Context, _ string) ([]featuresql.ConfigurationsGlobal, error) {
+		return []featuresql.ConfigurationsGlobal{
+			{ID: globalID, Feature: "f", Key: "g-only", Value: []byte(`"g"`), Created: pgtype.Timestamptz{Time: globalCreated, Valid: true}},
+		}, nil
+	}
+	fq.configEnvListByFeatureAndEnvFunc = func(_ context.Context, _ featuresql.ConfigEnvListByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error) {
+		return []featuresql.ConfigurationsEnvironment{
+			{ID: envRowID, Feature: "f", Key: "e-only", Value: []byte(`"e"`), Created: pgtype.Timestamptz{Time: envCreated, Valid: true}, EnvironmentID: environmentID},
+		}, nil
+	}
+
+	got, err := EnvConfig(ctx, &model.Feature{Name: "f"}, environmentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("len(got) = %d, want 2", len(got))
+	}
+
+	byKey := map[string]*model.Configuration{}
+	for _, c := range got {
+		byKey[c.Key] = c
+	}
+
+	if g := byKey["g-only"]; g.ID != globalID || !g.Created.Equal(globalCreated) || g.Source != model.ConfigSourceGlobal {
+		t.Errorf("global row = %+v, want ID=%v Created=%v Source=global", g, globalID, globalCreated)
+	}
+	if e := byKey["e-only"]; e.ID != envRowID || !e.Created.Equal(envCreated) || e.Source != model.ConfigSourceEnv {
+		t.Errorf("env row = %+v, want ID=%v Created=%v Source=env", e, envRowID, envCreated)
 	}
 }
