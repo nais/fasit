@@ -21,9 +21,6 @@ type Querier interface {
 	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
 	ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error)
 	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
-	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
-	ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error
-	ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobalParams) error
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
 	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
 	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)

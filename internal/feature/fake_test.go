@@ -83,18 +83,6 @@ func (f *fakeQuerier) ConfigGlobalUpdateOrCreate(ctx context.Context, arg featur
 	return f.configGlobalUpdateOrCreateFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigOverridesByFeature(context.Context, string) ([]featuresql.ConfigOverridesByFeatureRow, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) ConfigRenameEnv(context.Context, featuresql.ConfigRenameEnvParams) error {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) ConfigRenameGlobal(context.Context, featuresql.ConfigRenameGlobalParams) error {
-	panic("not implemented")
-}
-
 func (f *fakeQuerier) ConfigUpdate(ctx context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error) {
 	return f.configUpdateFunc(ctx, arg)
 }
