@@ -39,6 +39,22 @@ sql:
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
+  - name: "Environment Management SQL"
+    !!merge <<: *default_domain
+    queries: "internal/environmentmanagement/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "sqlgen"
+        out: "internal/environmentmanagement/sqlgen"
+  - name: "Public API SQL"
+    !!merge <<: *default_domain
+    queries: "internal/api/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "sqlgen"
+        out: "internal/api/sqlgen"
   - name: "Environment SQL"
     !!merge <<: *default_domain
     queries: "internal/environment/queries"

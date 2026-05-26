@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/api"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/ui"
 	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -16,14 +17,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func SetupRouter(
-	ctx context.Context,
-	loadContext contextloader.LoaderFunc,
-	iapAudience string,
-	insecureSkipProxy bool,
-	meter metric.Meter,
-	log logrus.FieldLogger,
-) (http.Handler, error) {
+func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log logrus.FieldLogger) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {
@@ -36,7 +30,7 @@ func SetupRouter(
 	router.Use(contextMiddleware(loadContext))
 	router.Handle("/metrics", promhttp.Handler())
 
-	deploy, err := deployment.NewHttpHandler(ctx, log)
+	deploy, err := api.NewHttpHandler(ctx, pool, log)
 	if err != nil {
 		return nil, fmt.Errorf("error creating deployment http handler: %w", err)
 	}
