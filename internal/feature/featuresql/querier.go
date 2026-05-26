@@ -10,13 +10,13 @@ import (
 
 type Querier interface {
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigEnvByFeatureAndEnv(ctx context.Context, arg ConfigEnvByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error)
 	ConfigEnvDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error)
 	ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
 	ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
 	ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error)
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
-	ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
 	ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error)
@@ -29,7 +29,6 @@ type Querier interface {
 	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
 	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
 	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
-	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureNames(ctx context.Context) ([]string, error)
 	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (DeployInstruction, error)

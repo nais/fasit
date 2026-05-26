@@ -35,34 +35,34 @@ func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *model.Configuration
 }
 
 func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
-	config, err := querier(ctx).EnvConfig(ctx, featuresql.EnvConfigParams{
+	globalConfigs, err := querier(ctx).ConfigGet(ctx, feature.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	envConfigs, err := querier(ctx).ConfigEnvByFeatureAndEnv(ctx, featuresql.ConfigEnvByFeatureAndEnvParams{
 		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	retVal := []*model.Configuration{}
-	knownKeys := make(map[string]struct{}, len(config))
-	for _, conf := range config {
-		retVal = append(retVal, envConfigFromSQL(conf))
-		knownKeys[conf.Key] = struct{}{}
+
+	merged := mergeConfigs(globalConfigs, envConfigs, nil)
+	retVal := make([]*model.Configuration, 0, len(merged))
+	for _, conf := range merged {
+		source := model.ConfigSourceGlobal
+		if conf.EnvironmentID != nil {
+			source = model.ConfigSourceEnv
+		}
+		retVal = append(retVal, &model.Configuration{
+			Key:     conf.Key,
+			Content: conf.Value,
+			Source:  source,
+		})
 	}
 
 	return retVal, nil
-}
-
-func envConfigFromSQL(conf featuresql.EnvConfigRow) *model.Configuration {
-	source := model.ConfigSourceGlobal
-	if conf.EnvironmentID != nil {
-		source = model.ConfigSourceEnv
-	}
-	return &model.Configuration{
-		ID:      conf.ID,
-		Key:     conf.Key,
-		Content: conf.Value,
-		Source:  source,
-	}
 }
 
 func ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {

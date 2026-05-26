@@ -63,7 +63,7 @@ func (f *fakeQuerier) ConfigEnvUpdateOrCreate(ctx context.Context, arg featuresq
 	return f.configEnvUpdateOrCreateFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigForEnvironmentFilteredByKeys(context.Context, featuresql.ConfigForEnvironmentFilteredByKeysParams) ([]featuresql.ConfigForEnvironmentFilteredByKeysRow, error) {
+func (f *fakeQuerier) ConfigEnvByFeatureAndEnv(context.Context, featuresql.ConfigEnvByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error) {
 	panic("not implemented")
 }
 
@@ -112,10 +112,6 @@ func (f *fakeQuerier) DisabledFeatureSet(context.Context, featuresql.DisabledFea
 }
 
 func (f *fakeQuerier) DisabledFeaturesByEnvironment(context.Context, uuid.UUID) ([]featuresql.DisabledFeature, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) EnvConfig(context.Context, featuresql.EnvConfigParams) ([]featuresql.EnvConfigRow, error) {
 	panic("not implemented")
 }
 

@@ -6,12 +6,52 @@ import (
 	"slices"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func makeHelmConfigMap(vals []featuresql.ConfigForEnvironmentFilteredByKeysRow) (map[string]any, error) {
+type mergedConfigRow struct {
+	Key           string
+	Value         []byte
+	Secret        bool
+	EnvironmentID *uuid.UUID
+}
+
+func mergeConfigs(global []featuresql.ConfigurationsGlobal, env []featuresql.ConfigurationsEnvironment, includeKeys []string) []mergedConfigRow {
+	keySet := make(map[string]struct{}, len(includeKeys))
+	for _, k := range includeKeys {
+		keySet[k] = struct{}{}
+	}
+
+	m := make(map[string]mergedConfigRow, len(global))
+	for _, g := range global {
+		if len(keySet) > 0 {
+			if _, ok := keySet[g.Key]; !ok {
+				continue
+			}
+		}
+		m[g.Key] = mergedConfigRow{Key: g.Key, Value: g.Value, Secret: g.Secret}
+	}
+	for _, e := range env {
+		if len(keySet) > 0 {
+			if _, ok := keySet[e.Key]; !ok {
+				continue
+			}
+		}
+		eid := e.EnvironmentID
+		m[e.Key] = mergedConfigRow{Key: e.Key, Value: e.Value, Secret: e.Secret, EnvironmentID: &eid}
+	}
+
+	result := make([]mergedConfigRow, 0, len(m))
+	for _, v := range m {
+		result = append(result, v)
+	}
+	return result
+}
+
+func makeHelmConfigMap(vals []mergedConfigRow) (map[string]any, error) {
 	val := make(map[string]any)
 
 	for _, v := range vals {
@@ -43,7 +83,7 @@ func makeHelmConfigMap(vals []featuresql.ConfigForEnvironmentFilteredByKeysRow) 
 	return val, nil
 }
 
-func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []featuresql.ConfigForEnvironmentFilteredByKeysRow, mp map[string]any) []string {
+func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []mergedConfigRow, mp map[string]any) []string {
 	requiredFields := f.RequiredFields(envKind)
 
 	fields := map[string]bool{}

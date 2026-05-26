@@ -58,14 +58,20 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 		}
 	}
 
-	vals, err := querier(ctx).ConfigForEnvironmentFilteredByKeys(ctx, featuresql.ConfigForEnvironmentFilteredByKeysParams{
+	globalConfigs, err := querier(ctx).ConfigGet(ctx, f.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	envConfigs, err := querier(ctx).ConfigEnvByFeatureAndEnv(ctx, featuresql.ConfigEnvByFeatureAndEnvParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
-		Includedkeys:  includeKeys,
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	vals := mergeConfigs(globalConfigs, envConfigs, includeKeys)
 
 	mp, err := makeHelmConfigMap(vals)
 	if err != nil {
@@ -93,9 +99,9 @@ const probeSecretSentinel = "__FASIT_PROBE_a9f4e1c8d7b2__" // #nosec G101 -- pla
 type helmRenderData struct {
 	mv            *ComputedValues
 	envKind       model.EnvironmentKind
-	configVals    []featuresql.ConfigForEnvironmentFilteredByKeysRow
+	configVals    []mergedConfigRow
 	configMap     map[string]any
-	secretEnvKeys map[string]bool // set of env value keys marked as secret
+	secretEnvKeys map[string]bool
 }
 
 func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID) (*helmRenderData, error) {
@@ -111,14 +117,20 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 		}
 	}
 
-	vals, err := querier(ctx).ConfigForEnvironmentFilteredByKeys(ctx, featuresql.ConfigForEnvironmentFilteredByKeysParams{
+	globalConfigs, err := querier(ctx).ConfigGet(ctx, f.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	envConfigs, err := querier(ctx).ConfigEnvByFeatureAndEnv(ctx, featuresql.ConfigEnvByFeatureAndEnvParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
-		Includedkeys:  includeKeys,
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	vals := mergeConfigs(globalConfigs, envConfigs, includeKeys)
 
 	mp, err := makeHelmConfigMap(vals)
 	if err != nil {

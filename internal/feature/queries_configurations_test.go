@@ -19,7 +19,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
-	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/testcontainers/testcontainers-go"
@@ -32,7 +31,7 @@ func TestHelmConfigMap(t *testing.T) {
 		return b
 	}
 	tests := map[string]struct {
-		input    []featuresql.ConfigForEnvironmentFilteredByKeysRow
+		input    []mergedConfigRow
 		expected map[string]any
 	}{
 		"empty": {
@@ -40,7 +39,7 @@ func TestHelmConfigMap(t *testing.T) {
 			expected: make(map[string]any),
 		},
 		"single_level": {
-			input: []featuresql.ConfigForEnvironmentFilteredByKeysRow{
+			input: []mergedConfigRow{
 				{
 					Key:   "test1",
 					Value: jsonify("value1"),
@@ -56,7 +55,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"multi_level": {
-			input: []featuresql.ConfigForEnvironmentFilteredByKeysRow{
+			input: []mergedConfigRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -74,7 +73,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"escaped dots": {
-			input: []featuresql.ConfigForEnvironmentFilteredByKeysRow{
+			input: []mergedConfigRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),

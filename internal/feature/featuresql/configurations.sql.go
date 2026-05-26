@@ -10,7 +10,7 @@ import (
 )
 
 const configDelete = `-- name: ConfigDelete :exec
-DELETE FROM ONLY configurations_global
+DELETE FROM configurations_global
 WHERE id = $1
 `
 
@@ -19,8 +19,54 @@ func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const configEnvByFeatureAndEnv = `-- name: ConfigEnvByFeatureAndEnv :many
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	configurations_environment
+WHERE
+	feature = $1
+	AND environment_id = $2
+ORDER BY
+	key ASC
+`
+
+type ConfigEnvByFeatureAndEnvParams struct {
+	Feature       string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) ConfigEnvByFeatureAndEnv(ctx context.Context, arg ConfigEnvByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error) {
+	rows, err := q.db.Query(ctx, configEnvByFeatureAndEnv, arg.Feature, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigurationsEnvironment{}
+	for rows.Next() {
+		var i ConfigurationsEnvironment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Created,
+			&i.EnvironmentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const configEnvDelete = `-- name: ConfigEnvDelete :exec
-DELETE FROM ONLY configurations_environment
+DELETE FROM configurations_environment
 WHERE id = $1
 `
 
@@ -33,7 +79,7 @@ const configEnvGet = `-- name: ConfigEnvGet :one
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
-	ONLY configurations_environment
+	configurations_environment
 WHERE
 	environment_id = $1
 	AND feature = $2
@@ -66,7 +112,7 @@ const configEnvGetByID = `-- name: ConfigEnvGetByID :one
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
-	ONLY configurations_environment
+	configurations_environment
 WHERE
 	id = $1
 `
@@ -91,7 +137,7 @@ const configEnvListByFeature = `-- name: ConfigEnvListByFeature :many
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
-	ONLY configurations_environment
+	configurations_environment
 WHERE
 	feature = $1
 ORDER BY
@@ -130,7 +176,7 @@ func (q *Queries) ConfigEnvListByFeature(ctx context.Context, feature string) ([
 
 const configEnvUpdate = `-- name: ConfigEnvUpdate :one
 UPDATE
-	ONLY configurations_environment
+	configurations_environment
 SET
 	description = $1,
 	value = $2
@@ -220,95 +266,11 @@ func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpda
 	return i, err
 }
 
-const configForEnvironmentFilteredByKeys = `-- name: ConfigForEnvironmentFilteredByKeys :many
-WITH "combined" AS (
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		NULL::UUID AS environment_id
-	FROM
-		ONLY configurations_global glob
-	WHERE
-		glob.feature = $1
-		AND glob.key = ANY ($2::TEXT[])
-	UNION
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		"environment_id"
-	FROM
-		ONLY configurations_environment env
-	WHERE
-		env.feature = $1
-		AND environment_id = $3
-		AND env.key = ANY ($2::TEXT[])
-),
-"filtered" AS (
-	SELECT
-		id, feature, key, value, environment_id,
-		RANK() OVER (PARTITION BY "key" ORDER BY environment_id ASC,
-			key ASC)
-	FROM "combined"
-)
-SELECT
-	id, feature, key, value, environment_id, rank
-FROM
-	filtered
-WHERE
-	RANK = 1
-`
-
-type ConfigForEnvironmentFilteredByKeysParams struct {
-	Feature       string
-	Includedkeys  []string
-	EnvironmentID uuid.UUID
-}
-
-type ConfigForEnvironmentFilteredByKeysRow struct {
-	ID            uuid.UUID
-	Feature       string
-	Key           string
-	Value         []byte
-	EnvironmentID *uuid.UUID
-	Rank          int64
-}
-
-func (q *Queries) ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error) {
-	rows, err := q.db.Query(ctx, configForEnvironmentFilteredByKeys, arg.Feature, arg.Includedkeys, arg.EnvironmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ConfigForEnvironmentFilteredByKeysRow{}
-	for rows.Next() {
-		var i ConfigForEnvironmentFilteredByKeysRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Feature,
-			&i.Key,
-			&i.Value,
-			&i.EnvironmentID,
-			&i.Rank,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const configGet = `-- name: ConfigGet :many
 SELECT
 	id, feature, key, value, description, secret, created
 FROM
-	ONLY configurations_global
+	configurations_global
 WHERE
 	feature = $1
 ORDER BY
@@ -347,7 +309,7 @@ const configGetByID = `-- name: ConfigGetByID :one
 SELECT
 	id, feature, key, value, description, secret, created
 FROM
-	ONLY configurations_global
+	configurations_global
 WHERE
 	id = $1
 `
@@ -371,7 +333,7 @@ const configGlobalGetByKey = `-- name: ConfigGlobalGetByKey :one
 SELECT
 	id, feature, key, value, description, secret, created
 FROM
-	ONLY configurations_global
+	configurations_global
 WHERE
 	feature = $1
 	AND key = $2
@@ -490,7 +452,7 @@ func (q *Queries) ConfigOverridesByFeature(ctx context.Context, feature string) 
 
 const configRenameEnv = `-- name: ConfigRenameEnv :exec
 UPDATE
-	ONLY configurations_environment
+	configurations_environment
 SET
 	key = $1
 WHERE
@@ -499,7 +461,7 @@ WHERE
 		SELECT
 			1
 		FROM
-			ONLY configurations_environment nested
+			configurations_environment nested
 		WHERE
 			configurations_environment.feature = $3
 			AND nested.key = $1
@@ -519,7 +481,7 @@ func (q *Queries) ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams
 
 const configRenameGlobal = `-- name: ConfigRenameGlobal :exec
 UPDATE
-	ONLY configurations_global
+	configurations_global
 SET
 	key = $1
 WHERE
@@ -529,7 +491,7 @@ WHERE
 		SELECT
 			1
 		FROM
-			ONLY configurations_global nested
+			configurations_global nested
 		WHERE
 			nested.feature = $3
 			AND nested.key = $1)
@@ -548,7 +510,7 @@ func (q *Queries) ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobal
 
 const configUpdate = `-- name: ConfigUpdate :one
 UPDATE
-	ONLY configurations_global
+	configurations_global
 SET
 	description = $1,
 	value = $2
@@ -577,85 +539,4 @@ func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Con
 		&i.Created,
 	)
 	return i, err
-}
-
-const envConfig = `-- name: EnvConfig :many
-WITH "combined" AS (
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		NULL::UUID AS environment_id
-	FROM
-		ONLY configurations_global glob
-	WHERE
-		glob.feature = $1
-	UNION
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		"environment_id"
-	FROM
-		ONLY configurations_environment env
-	WHERE
-		env.feature = $1
-		AND environment_id = $2
-),
-"filtered" AS (
-	SELECT
-		id, feature, key, value, environment_id,
-		RANK() OVER (PARTITION BY "key" ORDER BY environment_id ASC,
-			key ASC)
-	FROM "combined"
-)
-SELECT
-	id, feature, key, value, environment_id, rank
-FROM
-	filtered
-WHERE
-	RANK = 1
-`
-
-type EnvConfigParams struct {
-	Feature       string
-	EnvironmentID uuid.UUID
-}
-
-type EnvConfigRow struct {
-	ID            uuid.UUID
-	Feature       string
-	Key           string
-	Value         []byte
-	EnvironmentID *uuid.UUID
-	Rank          int64
-}
-
-func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error) {
-	rows, err := q.db.Query(ctx, envConfig, arg.Feature, arg.EnvironmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []EnvConfigRow{}
-	for rows.Next() {
-		var i EnvConfigRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Feature,
-			&i.Key,
-			&i.Value,
-			&i.EnvironmentID,
-			&i.Rank,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }

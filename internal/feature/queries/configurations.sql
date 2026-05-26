@@ -1,49 +1,19 @@
--- name: ConfigForEnvironmentFilteredByKeys :many
-WITH "combined" AS (
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		NULL::UUID AS environment_id
-	FROM
-		ONLY configurations_global glob
-	WHERE
-		glob.feature = @feature
-		AND glob.key = ANY (@includedKeys::TEXT[])
-	UNION
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		"environment_id"
-	FROM
-		ONLY configurations_environment env
-	WHERE
-		env.feature = @feature
-		AND environment_id = @environment_id
-		AND env.key = ANY (@includedKeys::TEXT[])
-),
-"filtered" AS (
-	SELECT
-		*,
-		RANK() OVER (PARTITION BY "key" ORDER BY environment_id ASC,
-			key ASC)
-	FROM "combined"
-)
+-- name: ConfigEnvByFeatureAndEnv :many
 SELECT
 	*
 FROM
-	filtered
+	configurations_environment
 WHERE
-	RANK = 1;
+	feature = @feature
+	AND environment_id = @environment_id
+ORDER BY
+	key ASC;
 
 -- name: ConfigGet :many
 SELECT
 	*
 FROM
-	ONLY configurations_global
+	configurations_global
 WHERE
 	feature = @feature
 ORDER BY
@@ -53,7 +23,7 @@ ORDER BY
 SELECT
 	*
 FROM
-	ONLY configurations_environment
+	configurations_environment
 WHERE
 	environment_id = @environment_id
 	AND feature = @feature
@@ -63,7 +33,7 @@ WHERE
 SELECT
 	*
 FROM
-	ONLY configurations_environment
+	configurations_environment
 WHERE
 	feature = @feature
 ORDER BY
@@ -74,7 +44,7 @@ ORDER BY
 SELECT
 	*
 FROM
-	ONLY configurations_global
+	configurations_global
 WHERE
 	feature = @feature
 	AND key = @key;
@@ -126,48 +96,9 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: EnvConfig :many
-WITH "combined" AS (
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		NULL::UUID AS environment_id
-	FROM
-		ONLY configurations_global glob
-	WHERE
-		glob.feature = @feature
-	UNION
-	SELECT
-		"id",
-		"feature",
-		"key",
-		"value",
-		"environment_id"
-	FROM
-		ONLY configurations_environment env
-	WHERE
-		env.feature = @feature
-		AND environment_id = @environment_id
-),
-"filtered" AS (
-	SELECT
-		*,
-		RANK() OVER (PARTITION BY "key" ORDER BY environment_id ASC,
-			key ASC)
-	FROM "combined"
-)
-SELECT
-	*
-FROM
-	filtered
-WHERE
-	RANK = 1;
-
 -- name: ConfigUpdate :one
 UPDATE
-	ONLY configurations_global
+	configurations_global
 SET
 	description = @description,
 	value = @value
@@ -177,7 +108,7 @@ RETURNING
 	*;
 
 -- name: ConfigDelete :exec
-DELETE FROM ONLY configurations_global
+DELETE FROM configurations_global
 WHERE id = @id;
 
 -- name: ConfigOverridesByFeature :many
@@ -197,7 +128,7 @@ ORDER BY
 SELECT
 	*
 FROM
-	ONLY configurations_global
+	configurations_global
 WHERE
 	id = @id;
 
@@ -205,13 +136,13 @@ WHERE
 SELECT
 	*
 FROM
-	ONLY configurations_environment
+	configurations_environment
 WHERE
 	id = @id;
 
 -- name: ConfigEnvUpdate :one
 UPDATE
-	ONLY configurations_environment
+	configurations_environment
 SET
 	description = @description,
 	value = @value
@@ -221,12 +152,12 @@ RETURNING
 	*;
 
 -- name: ConfigEnvDelete :exec
-DELETE FROM ONLY configurations_environment
+DELETE FROM configurations_environment
 WHERE id = @id;
 
 -- name: ConfigRenameGlobal :exec
 UPDATE
-	ONLY configurations_global
+	configurations_global
 SET
 	key = @to_key
 WHERE
@@ -236,14 +167,14 @@ WHERE
 		SELECT
 			1
 		FROM
-			ONLY configurations_global nested
+			configurations_global nested
 		WHERE
 			nested.feature = @feature
 			AND nested.key = @to_key);
 
 -- name: ConfigRenameEnv :exec
 UPDATE
-	ONLY configurations_environment
+	configurations_environment
 SET
 	key = @to_key
 WHERE
@@ -252,7 +183,7 @@ WHERE
 		SELECT
 			1
 		FROM
-			ONLY configurations_environment nested
+			configurations_environment nested
 		WHERE
 			configurations_environment.feature = @feature
 			AND nested.key = @to_key
