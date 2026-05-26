@@ -109,12 +109,17 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		t.Helper()
 		b, err := json.Marshal(val)
 		require.NoError(t, err)
-		_, err = feature.ConfigCreate(ctx, model.NewConfiguration{
+		c := model.NewConfiguration{
 			Feature:       "kitchen-sink",
 			Key:           key,
 			Value:         b,
 			EnvironmentID: envID,
-		})
+		}
+		if envID != nil {
+			_, err = feature.ConfigEnvCreate(ctx, c)
+		} else {
+			_, err = feature.ConfigGlobalCreate(ctx, c)
+		}
 		require.NoError(t, err, "create config %s", key)
 	}
 

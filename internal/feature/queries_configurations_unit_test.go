@@ -60,7 +60,7 @@ func TestConfigCreate(t *testing.T) {
 				}, nil
 			}
 
-			_, err := ConfigCreate(ctx, tc.input)
+			_, err := ConfigGlobalCreate(ctx, tc.input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -102,7 +102,7 @@ func TestConfigCreate_Env(t *testing.T) {
 		}, nil
 	}
 
-	_, err := ConfigCreate(ctx, model.NewConfiguration{
+	_, err := ConfigEnvCreate(ctx, model.NewConfiguration{
 		EnvironmentID: &envID,
 		Feature:       "f1",
 		Key:           "k",

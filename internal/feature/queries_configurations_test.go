@@ -162,7 +162,7 @@ func TestConfig(t *testing.T) {
 			Value:         []byte(`"stringval"`),
 			Secret:        true,
 		}
-		got, err := ConfigCreate(ctx, config)
+		got, err := ConfigEnvCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -182,16 +182,14 @@ func TestConfig(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
-		envid := uuid.Nil
 		config := model.NewConfiguration{
-			EnvironmentID: &envid,
-			Feature:       "feature5",
-			Description:   new("description"),
-			Key:           "my.key",
-			Value:         []byte(`"stringval"`),
-			Secret:        true,
+			Feature:     "feature5",
+			Description: new("description"),
+			Key:         "my.key",
+			Value:       []byte(`"stringval"`),
+			Secret:      true,
 		}
-		got, err := ConfigCreate(ctx, config)
+		got, err := ConfigGlobalCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -219,7 +217,7 @@ func TestConfig(t *testing.T) {
 			Secret:      true,
 		}
 		// Create
-		got, err := ConfigCreate(ctx, config)
+		got, err := ConfigGlobalCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -252,7 +250,7 @@ func TestConfig(t *testing.T) {
 			Value:   []byte(`"stringval"`),
 		}
 		// Create
-		got, err := ConfigCreate(ctx, config)
+		got, err := ConfigGlobalCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -309,7 +307,7 @@ func TestConfig(t *testing.T) {
 			Secret:        true,
 		}
 		// Create
-		_, err := ConfigCreate(ctx, config)
+		_, err := ConfigEnvCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -372,7 +370,7 @@ func TestConfig(t *testing.T) {
 			Secret:        true,
 		}
 		// Create
-		_, err := ConfigCreate(ctx, config)
+		_, err := ConfigEnvCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -405,11 +403,11 @@ func TestConfig(t *testing.T) {
 			Secret:  true,
 		}
 		// Create
-		_, err := ConfigCreate(ctx, config2)
+		_, err := ConfigGlobalCreate(ctx, config2)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = ConfigCreate(ctx, config)
+		_, err = ConfigGlobalCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -573,7 +571,7 @@ ON CONFLICT (
 			Value:         json.RawMessage(`"stringval"`),
 			Secret:        true,
 		}
-		_, err := ConfigCreate(ctx, config)
+		_, err := ConfigEnvCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -584,7 +582,7 @@ ON CONFLICT (
 			Value:   []byte(`"ignore"`),
 			Secret:  true,
 		}
-		_, err = ConfigCreate(ctx, globConfig)
+		_, err = ConfigGlobalCreate(ctx, globConfig)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -649,7 +647,7 @@ ON CONFLICT (
 			Value:         []byte(`"stringval"`),
 			Secret:        true,
 		}
-		_, err := ConfigCreate(ctx, config)
+		_, err := ConfigEnvCreate(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -660,7 +658,7 @@ ON CONFLICT (
 			Value:   []byte(`"ignore"`),
 			Secret:  true,
 		}
-		_, err = ConfigCreate(ctx, globConfig)
+		_, err = ConfigGlobalCreate(ctx, globConfig)
 		if err != nil {
 			t.Fatal(err)
 		}

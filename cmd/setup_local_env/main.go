@@ -432,7 +432,7 @@ func main() {
 			if isEmptyJSONValue(b) {
 				continue
 			}
-			if _, err := feature.ConfigCreate(ctx, model.NewConfiguration{
+			if _, err := feature.ConfigGlobalCreate(ctx, model.NewConfiguration{
 				Feature: featureName,
 				Key:     key,
 				Value:   json.RawMessage(b),
@@ -465,7 +465,7 @@ func main() {
 	}
 	for _, o := range overrides {
 		id := envID(o.tenant, o.env)
-		if _, err := feature.ConfigCreate(ctx, model.NewConfiguration{
+		if _, err := feature.ConfigEnvCreate(ctx, model.NewConfiguration{
 			EnvironmentID: &id,
 			Feature:       o.feature,
 			Key:           o.key,

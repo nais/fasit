@@ -104,20 +104,12 @@ func ConfigEnvListByFeature(ctx context.Context, feature string) ([]EnvConfigOve
 	return result, nil
 }
 
-func ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
+func ConfigEnvCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
 	}
 
-	if c.EnvironmentID != nil && *c.EnvironmentID != uuid.Nil {
-		return configEnvCreate(ctx, c, value)
-	}
-
-	return configGlobalCreate(ctx, c, value)
-}
-
-func configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
 	existing, err := querier(ctx).ConfigEnvGetByKey(ctx, featuresql.ConfigEnvGetByKeyParams{
 		EnvironmentID: *c.EnvironmentID,
 		Feature:       c.Feature,
@@ -158,7 +150,12 @@ func configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte
 	return environmentConfigurationFromSQL(config), nil
 }
 
-func configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
+func ConfigGlobalCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
+	value, err := json.Marshal(c.Value)
+	if err != nil {
+		return nil, err
+	}
+
 	existing, err := querier(ctx).ConfigGlobalGetByKey(ctx, featuresql.ConfigGlobalGetByKeyParams{
 		Feature: c.Feature,
 		Key:     c.Key,

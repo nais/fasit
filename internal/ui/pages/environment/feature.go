@@ -141,7 +141,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		}
 
 		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigCreate(ctx, model.NewConfiguration{
+			_, err := featurepkg.ConfigEnvCreate(ctx, model.NewConfiguration{
 				EnvironmentID: &env.ID,
 				Feature:       featureName,
 				Key:           key,
