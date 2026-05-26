@@ -770,9 +770,6 @@ nav .nav-btn:hover {
 }
 .config-explorer td, .config-explorer th {
   white-space: nowrap;
-  max-width: 16rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .config-explorer .source-label {
   font-size: 0.75rem;
