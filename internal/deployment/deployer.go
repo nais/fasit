@@ -16,10 +16,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	commonmodel "github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
@@ -204,7 +206,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *Deplo
 	return true, nil
 }
 
-func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request) (uuid.UUID, error) {
+func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, description *string, githubRef *commonmodel.GitHubCommit, target environment.Labels) (uuid.UUID, error) {
 	details, err := featurepkg.ParseTemplateDetails(feat.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
@@ -218,8 +220,8 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 	}
 
 	var ghRef []byte
-	if req.Ref != nil {
-		b, err := json.Marshal(req.Ref)
+	if githubRef != nil {
+		b, err := json.Marshal(githubRef.Ref)
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("marshal gh ref: %w", err)
 		}
@@ -231,8 +233,8 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		FeatureName: feat.Name,
 		Version:     feat.Version,
 		GhRef:       ghRef,
-		Target:      types.EnvironmentLabels(req.Target),
-		Description: &req.Description,
+		Target:      types.EnvironmentLabels(target),
+		Description: description,
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)

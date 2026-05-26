@@ -45,8 +45,8 @@ func RunReconciler(ctx context.Context, interval time.Duration) {
 	fromContext(ctx).reconciler.Run(ctx, interval)
 }
 
-func Create(ctx context.Context, req Request) (uuid.UUID, error) {
-	feat, err := ChartDownloader(req.Chart, req.Version)
+func Create(ctx context.Context, in CreateDeployment) (uuid.UUID, error) {
+	feat, err := ChartDownloader(in.Chart, in.Version)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
 	}
@@ -59,21 +59,21 @@ func Create(ctx context.Context, req Request) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
 	}
 
-	id, err := fromContext(ctx).deployer.CreateDeployment(ctx, feat, req)
+	id, err := fromContext(ctx).deployer.CreateDeployment(ctx, feat, in.Description, in.Commit, in.Target)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	_ = audit.Create(ctx, audit.CreateParams{
 		Action:      audit.ActionCreated,
-		Description: "version " + req.Version + " \u2192 " + formatLabels(req.Target),
+		Description: "version " + in.Version + " \u2192 " + formatLabels(in.Target),
 		ObjectType:  audit.ObjectTypeDeployment,
 		ObjectID:    feat.Name,
 		Feature:     feat.Name,
 		Metadata: map[string]any{
 			"deploymentId": id.String(),
-			"chart":        req.Chart,
-			"target":       req.Target,
+			"chart":        in.Chart,
+			"target":       in.Target,
 		},
 	})
 

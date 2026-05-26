@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	commonmodel "github.com/nais/fasit/internal/model"
 )
 
 type Seeder struct {
@@ -72,12 +73,11 @@ func (s *Seeder) AddDeploymentWithValues(name, version string, target environmen
 func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, 0, len(s.deployments))
 	for _, d := range s.deployments {
-		id, err := deployment.Create(ctx, deployment.Request{
+		id, err := deployment.Create(ctx, deployment.CreateDeployment{
 			Chart:       "oci://" + d.FeatureName,
 			Version:     d.Version,
-			Description: "Setup local environment deployment",
-			Global:      true,
-			Ref:         fakeGHRef(d.FeatureName, d.Version),
+			Description: new("Setup local environment deployment"),
+			Commit:      fakeGitHubCommit(d.FeatureName, d.Version),
 			Target:      d.Target,
 		})
 		if err != nil {
@@ -128,11 +128,11 @@ func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 	}
 }
 
-// fakeGHRef produces a deterministic, realistic-looking commit SHA for seed
+// fakeGitHubCommit produces a deterministic, realistic-looking commit SHA for seed
 // deployments so the UI can render a sensible GitHub link in local dev.
-func fakeGHRef(name, version string) *model.GHRef {
+func fakeGitHubCommit(name, version string) *commonmodel.GitHubCommit {
 	sum := sha256.Sum256([]byte(name + "@" + version))
-	return &model.GHRef{
+	return &commonmodel.GitHubCommit{
 		Owner: "nais",
 		Repo:  name,
 		Ref:   hex.EncodeToString(sum[:20]),

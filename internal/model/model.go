@@ -49,7 +49,7 @@ func (states DeploymentStatusStates) Aggregate() (state DeploymentStatusState, d
 	return DeploymentStatusStatePending, disabledCount
 }
 
-type GHRef struct {
+type GitHubCommit struct {
 	Owner string `json:"owner"`
 	Repo  string `json:"repo"`
 	Ref   string `json:"ref"`

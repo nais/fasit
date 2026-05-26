@@ -1,6 +1,6 @@
 //go:build integration_test
 
-package grpc
+package environmentmanagement
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/environmentmanagement/protogen"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/grpc/protogen"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/testcontainers/testcontainers-go"

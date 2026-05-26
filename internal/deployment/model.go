@@ -9,11 +9,20 @@ import (
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	commonmodel "github.com/nais/fasit/internal/model"
 )
 
 type EnvironmentFeature struct {
 	Name            string
 	FeatureDisabled bool
+}
+
+type CreateDeployment struct {
+	Chart       string
+	Version     string
+	Description *string
+	Commit      *commonmodel.GitHubCommit
+	Target      environment.Labels
 }
 
 type Deployment struct {

@@ -1,4 +1,4 @@
-package deployment
+package api
 
 import (
 	"context"
@@ -12,27 +12,15 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/api/sqlgen"
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/model"
 	"github.com/sirupsen/logrus"
 )
 
-type HttpHandler struct {
-	provider *oidc.Provider
-	verifier *oidc.IDTokenVerifier
-	log      logrus.FieldLogger
-	AllowAll bool
-
-	programContext context.Context
-}
-
-type Claims struct {
-	Repository string `json:"repository"`
-	Owner      string `json:"repository_owner"`
-	Actor      string `json:"actor"`
-	RunID      string `json:"run_id"`
-}
-
-func NewHttpHandler(ctx context.Context, log logrus.FieldLogger) (*HttpHandler, error) {
+func NewHttpHandler(ctx context.Context, pool *pgxpool.Pool, log logrus.FieldLogger) (*HttpHandler, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -47,6 +35,7 @@ func NewHttpHandler(ctx context.Context, log logrus.FieldLogger) (*HttpHandler, 
 		verifier:       verifier,
 		log:            log.WithField("subsystem", "deployment-http"),
 		programContext: ctx,
+		querier:        sqlgen.New(pool),
 	}, nil
 }
 
@@ -64,8 +53,7 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	deployment, err := Get(ctx, deploymentID)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if _, err := h.querier.GetDeployment(ctx, deploymentID); errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "deployment does not exist", http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -74,27 +62,22 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	state := DeploymentStatusStateUnknown
-	statuses, err := ListDeploymentStatuses(ctx, deploymentID)
+	state := model.DeploymentStatusStateUnknown
+	states, err := h.listDeploymentStatuses(ctx, deploymentID)
 	if err != nil {
 		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
 		h.log.WithError(err).Warn("list deployment statuses; returning UNKNOWN")
 	} else {
-		state, _ = AggregateState(statuses)
+		state, _ = states.Aggregate()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(GetDeploymentResponse{
-		ID:    deployment.ID,
+		ID:    deploymentID,
 		State: state,
 	}); err != nil {
 		h.log.WithError(err).Error("encode deployment response")
 	}
-}
-
-type GetDeploymentResponse struct {
-	ID    uuid.UUID             `json:"id"`
-	State DeploymentStatusState `json:"state"`
 }
 
 func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request) {
@@ -107,7 +90,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 	// deployments may take a while to create
 	ctx := auth.SetEmail(h.programContext, actor)
 
-	body := Request{}
+	body := CreateDeploymentRequest{}
 	err := json.NewDecoder(req.Body).Decode(&body)
 	if err != nil {
 		http.Error(w, "Unable to decode JSON body: "+err.Error(), http.StatusBadRequest)
@@ -121,7 +104,13 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	deploymentID, err := Create(ctx, body)
+	deploymentID, err := deployment.Create(ctx, deployment.CreateDeployment{
+		Chart:       body.Chart,
+		Version:     body.Version,
+		Description: &body.Description,
+		Commit:      body.Ref,
+		Target:      body.Target,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		h.log.WithError(err).Error("create deployment")
@@ -133,7 +122,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		"id": deploymentID.String(),
 	})
 
-	TriggerReconcile(ctx, ReconcileTriggerEvent{})
+	deployment.TriggerReconcile(ctx, deployment.ReconcileTriggerEvent{})
 }
 
 func (h *HttpHandler) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {

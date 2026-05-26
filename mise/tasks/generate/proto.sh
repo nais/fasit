@@ -6,12 +6,12 @@ set -euo pipefail
 mkdir -p internal/provider/protogen
 protoc \
   -I schema/protobuf/ \
-  ./schema/protobuf/*.proto \
+  ./schema/protobuf/provider.proto \
   --go_out=. \
   --go-grpc_out=.
 
-mkdir -p internal/grpc/protogen
+mkdir -p internal/environmentmanagement/protogen
 protoc \
-  ./internal/grpc/schema/fasit.proto \
+  ./schema/protobuf/fasit.proto \
   --go_out=. \
   --go-grpc_out=.

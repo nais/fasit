@@ -1,4 +1,4 @@
-package grpc
+package environmentmanagement
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database/types"
-	"github.com/nais/fasit/internal/grpc/grpcsql"
-	"github.com/nais/fasit/internal/grpc/protogen"
+	"github.com/nais/fasit/internal/environmentmanagement/protogen"
+	"github.com/nais/fasit/internal/environmentmanagement/sqlgen"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,7 +17,7 @@ import (
 
 type server struct {
 	protogen.UnimplementedFasitServer
-	querier grpcsql.Querier
+	querier sqlgen.Querier
 }
 
 func NewGrpcServer(loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) *grpc.Server {
@@ -25,7 +25,7 @@ func NewGrpcServer(loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) *gr
 		grpc.ChainUnaryInterceptor(newContextInterceptor(loadContext)),
 	}
 	s := grpc.NewServer(opts...)
-	protogen.RegisterFasitServer(s, &server{querier: grpcsql.New(pool)})
+	protogen.RegisterFasitServer(s, &server{querier: sqlgen.New(pool)})
 	return s
 }
 
@@ -45,7 +45,7 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 2 characters long")
 	}
 
-	tenant, err := s.querier.CreateTenant(ctx, grpcsql.CreateTenantParams{
+	tenant, err := s.querier.CreateTenant(ctx, sqlgen.CreateTenantParams{
 		Name:        in.Name,
 		Description: in.Description,
 	})
@@ -100,7 +100,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		labels[l.Key] = l.Value
 	}
 
-	env, err := s.querier.CreateEnvironment(ctx, grpcsql.CreateEnvironmentParams{
+	env, err := s.querier.CreateEnvironment(ctx, sqlgen.CreateEnvironmentParams{
 		Name:     in.Name,
 		TenantID: tenant.ID,
 		Kind:     kind,
@@ -135,7 +135,7 @@ func (s *server) SetEnvironmentLabels(ctx context.Context, in *protogen.SetEnvir
 		labels[l.Key] = l.Value
 	}
 
-	if err := s.querier.SetEnvironmentLabels(ctx, grpcsql.SetEnvironmentLabelsParams{
+	if err := s.querier.SetEnvironmentLabels(ctx, sqlgen.SetEnvironmentLabelsParams{
 		ID:     env.ID,
 		Labels: labels,
 	}); err != nil {
@@ -157,7 +157,7 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
 	}
 
-	env, err := s.querier.GetEnvironmentByName(ctx, grpcsql.GetEnvironmentByNameParams{
+	env, err := s.querier.GetEnvironmentByName(ctx, sqlgen.GetEnvironmentByNameParams{
 		TenantID: tenantID,
 		Name:     in.Name,
 	})
@@ -180,7 +180,7 @@ func (s *server) SetEnvironmentValue(ctx context.Context, in *protogen.SetEnviro
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	err = s.querier.SetEnvironmentValue(ctx, grpcsql.SetEnvironmentValueParams{
+	err = s.querier.SetEnvironmentValue(ctx, sqlgen.SetEnvironmentValueParams{
 		EnvironmentID: envID,
 		Key:           in.Key,
 		Value:         in.Value,
@@ -200,7 +200,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	ev, err := s.querier.GetEnvironmentValue(ctx, grpcsql.GetEnvironmentValueParams{
+	ev, err := s.querier.GetEnvironmentValue(ctx, sqlgen.GetEnvironmentValueParams{
 		EnvironmentID: envID,
 		Key:           in.Key,
 		ShowSensitive: true,
@@ -263,7 +263,7 @@ func (s *server) DeleteEnvironmentValue(ctx context.Context, req *protogen.Delet
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	if err := s.querier.DeleteEnvironmentValue(ctx, grpcsql.DeleteEnvironmentValueParams{EnvironmentID: uid, Key: req.Key}); err != nil {
+	if err := s.querier.DeleteEnvironmentValue(ctx, sqlgen.DeleteEnvironmentValueParams{EnvironmentID: uid, Key: req.Key}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

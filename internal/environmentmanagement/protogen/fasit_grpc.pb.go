@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.33.0
-// source: internal/grpc/schema/fasit.proto
+// source: schema/protobuf/fasit.proto
 
 package protogen
 
@@ -421,5 +421,5 @@ var Fasit_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "internal/grpc/schema/fasit.proto",
+	Metadata: "schema/protobuf/fasit.proto",
 }

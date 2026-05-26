@@ -1,4 +1,4 @@
-package restapi
+package api
 
 import (
 	"context"

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "internal/grpc/protogen;protogen";
+option go_package = "internal/environmentmanagement/protogen;protogen";
 
 service Fasit {
   rpc CreateTenant(CreateTenantRequest) returns (CreateTenantResponse) {}

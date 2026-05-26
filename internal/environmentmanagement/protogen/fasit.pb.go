@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v6.33.0
-// source: internal/grpc/schema/fasit.proto
+// source: schema/protobuf/fasit.proto
 
 package protogen
 
@@ -60,11 +60,11 @@ func (x EnvironmentKind) String() string {
 }
 
 func (EnvironmentKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_internal_grpc_schema_fasit_proto_enumTypes[0].Descriptor()
+	return file_schema_protobuf_fasit_proto_enumTypes[0].Descriptor()
 }
 
 func (EnvironmentKind) Type() protoreflect.EnumType {
-	return &file_internal_grpc_schema_fasit_proto_enumTypes[0]
+	return &file_schema_protobuf_fasit_proto_enumTypes[0]
 }
 
 func (x EnvironmentKind) Number() protoreflect.EnumNumber {
@@ -73,7 +73,7 @@ func (x EnvironmentKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EnvironmentKind.Descriptor instead.
 func (EnvironmentKind) EnumDescriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{0}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{0}
 }
 
 type CreateTenantRequest struct {
@@ -86,7 +86,7 @@ type CreateTenantRequest struct {
 
 func (x *CreateTenantRequest) Reset() {
 	*x = CreateTenantRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[0]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -98,7 +98,7 @@ func (x *CreateTenantRequest) String() string {
 func (*CreateTenantRequest) ProtoMessage() {}
 
 func (x *CreateTenantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[0]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -111,7 +111,7 @@ func (x *CreateTenantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTenantRequest.ProtoReflect.Descriptor instead.
 func (*CreateTenantRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{0}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateTenantRequest) GetName() string {
@@ -137,7 +137,7 @@ type GetTenantRequest struct {
 
 func (x *GetTenantRequest) Reset() {
 	*x = GetTenantRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[1]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +149,7 @@ func (x *GetTenantRequest) String() string {
 func (*GetTenantRequest) ProtoMessage() {}
 
 func (x *GetTenantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[1]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +162,7 @@ func (x *GetTenantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTenantRequest.ProtoReflect.Descriptor instead.
 func (*GetTenantRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{1}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetTenantRequest) GetName() string {
@@ -181,7 +181,7 @@ type CreateTenantResponse struct {
 
 func (x *CreateTenantResponse) Reset() {
 	*x = CreateTenantResponse{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[2]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +193,7 @@ func (x *CreateTenantResponse) String() string {
 func (*CreateTenantResponse) ProtoMessage() {}
 
 func (x *CreateTenantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[2]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +206,7 @@ func (x *CreateTenantResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTenantResponse.ProtoReflect.Descriptor instead.
 func (*CreateTenantResponse) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{2}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateTenantResponse) GetTenant() *Tenant {
@@ -226,7 +226,7 @@ type Tenant struct {
 
 func (x *Tenant) Reset() {
 	*x = Tenant{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[3]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -238,7 +238,7 @@ func (x *Tenant) String() string {
 func (*Tenant) ProtoMessage() {}
 
 func (x *Tenant) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[3]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -251,7 +251,7 @@ func (x *Tenant) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tenant.ProtoReflect.Descriptor instead.
 func (*Tenant) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{3}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Tenant) GetId() string {
@@ -280,7 +280,7 @@ type CreateEnvironmentRequest struct {
 
 func (x *CreateEnvironmentRequest) Reset() {
 	*x = CreateEnvironmentRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[4]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -292,7 +292,7 @@ func (x *CreateEnvironmentRequest) String() string {
 func (*CreateEnvironmentRequest) ProtoMessage() {}
 
 func (x *CreateEnvironmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[4]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -305,7 +305,7 @@ func (x *CreateEnvironmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEnvironmentRequest.ProtoReflect.Descriptor instead.
 func (*CreateEnvironmentRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{4}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreateEnvironmentRequest) GetTenantId() string {
@@ -346,7 +346,7 @@ type SetEnvironmentLabelsRequest struct {
 
 func (x *SetEnvironmentLabelsRequest) Reset() {
 	*x = SetEnvironmentLabelsRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[5]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +358,7 @@ func (x *SetEnvironmentLabelsRequest) String() string {
 func (*SetEnvironmentLabelsRequest) ProtoMessage() {}
 
 func (x *SetEnvironmentLabelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[5]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +371,7 @@ func (x *SetEnvironmentLabelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetEnvironmentLabelsRequest.ProtoReflect.Descriptor instead.
 func (*SetEnvironmentLabelsRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{5}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SetEnvironmentLabelsRequest) GetEnvironmentId() string {
@@ -397,7 +397,7 @@ type SetEnvironmentLabelsResponse struct {
 
 func (x *SetEnvironmentLabelsResponse) Reset() {
 	*x = SetEnvironmentLabelsResponse{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[6]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -409,7 +409,7 @@ func (x *SetEnvironmentLabelsResponse) String() string {
 func (*SetEnvironmentLabelsResponse) ProtoMessage() {}
 
 func (x *SetEnvironmentLabelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[6]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -422,7 +422,7 @@ func (x *SetEnvironmentLabelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetEnvironmentLabelsResponse.ProtoReflect.Descriptor instead.
 func (*SetEnvironmentLabelsResponse) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{6}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SetEnvironmentLabelsResponse) GetEnvironment() *Environment {
@@ -442,7 +442,7 @@ type EnvironmentLabel struct {
 
 func (x *EnvironmentLabel) Reset() {
 	*x = EnvironmentLabel{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[7]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -454,7 +454,7 @@ func (x *EnvironmentLabel) String() string {
 func (*EnvironmentLabel) ProtoMessage() {}
 
 func (x *EnvironmentLabel) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[7]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -467,7 +467,7 @@ func (x *EnvironmentLabel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnvironmentLabel.ProtoReflect.Descriptor instead.
 func (*EnvironmentLabel) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{7}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EnvironmentLabel) GetKey() string {
@@ -494,7 +494,7 @@ type GetEnvironmentRequest struct {
 
 func (x *GetEnvironmentRequest) Reset() {
 	*x = GetEnvironmentRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[8]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -506,7 +506,7 @@ func (x *GetEnvironmentRequest) String() string {
 func (*GetEnvironmentRequest) ProtoMessage() {}
 
 func (x *GetEnvironmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[8]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -519,7 +519,7 @@ func (x *GetEnvironmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEnvironmentRequest.ProtoReflect.Descriptor instead.
 func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{8}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetEnvironmentRequest) GetTenantId() string {
@@ -548,7 +548,7 @@ type Environment struct {
 
 func (x *Environment) Reset() {
 	*x = Environment{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[9]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -560,7 +560,7 @@ func (x *Environment) String() string {
 func (*Environment) ProtoMessage() {}
 
 func (x *Environment) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[9]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +573,7 @@ func (x *Environment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Environment.ProtoReflect.Descriptor instead.
 func (*Environment) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{9}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Environment) GetId() string {
@@ -613,7 +613,7 @@ type CreateEnvironmentResponse struct {
 
 func (x *CreateEnvironmentResponse) Reset() {
 	*x = CreateEnvironmentResponse{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[10]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -625,7 +625,7 @@ func (x *CreateEnvironmentResponse) String() string {
 func (*CreateEnvironmentResponse) ProtoMessage() {}
 
 func (x *CreateEnvironmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[10]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -638,7 +638,7 @@ func (x *CreateEnvironmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEnvironmentResponse.ProtoReflect.Descriptor instead.
 func (*CreateEnvironmentResponse) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{10}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CreateEnvironmentResponse) GetEnvironment() *Environment {
@@ -660,7 +660,7 @@ type SetEnvironmentValueRequest struct {
 
 func (x *SetEnvironmentValueRequest) Reset() {
 	*x = SetEnvironmentValueRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[11]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -672,7 +672,7 @@ func (x *SetEnvironmentValueRequest) String() string {
 func (*SetEnvironmentValueRequest) ProtoMessage() {}
 
 func (x *SetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[11]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -685,7 +685,7 @@ func (x *SetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
 func (*SetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{11}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SetEnvironmentValueRequest) GetEnvironmentId() string {
@@ -725,7 +725,7 @@ type SetEnvironmentValueResponse struct {
 
 func (x *SetEnvironmentValueResponse) Reset() {
 	*x = SetEnvironmentValueResponse{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[12]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -737,7 +737,7 @@ func (x *SetEnvironmentValueResponse) String() string {
 func (*SetEnvironmentValueResponse) ProtoMessage() {}
 
 func (x *SetEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[12]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -750,7 +750,7 @@ func (x *SetEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetEnvironmentValueResponse.ProtoReflect.Descriptor instead.
 func (*SetEnvironmentValueResponse) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{12}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SetEnvironmentValueResponse) GetSuccess() bool {
@@ -770,7 +770,7 @@ type GetEnvironmentValueRequest struct {
 
 func (x *GetEnvironmentValueRequest) Reset() {
 	*x = GetEnvironmentValueRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[13]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -782,7 +782,7 @@ func (x *GetEnvironmentValueRequest) String() string {
 func (*GetEnvironmentValueRequest) ProtoMessage() {}
 
 func (x *GetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[13]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -795,7 +795,7 @@ func (x *GetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
 func (*GetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{13}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetEnvironmentValueRequest) GetEnvironmentId() string {
@@ -827,7 +827,7 @@ type EnvironmentValue struct {
 
 func (x *EnvironmentValue) Reset() {
 	*x = EnvironmentValue{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[14]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -839,7 +839,7 @@ func (x *EnvironmentValue) String() string {
 func (*EnvironmentValue) ProtoMessage() {}
 
 func (x *EnvironmentValue) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[14]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -852,7 +852,7 @@ func (x *EnvironmentValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnvironmentValue.ProtoReflect.Descriptor instead.
 func (*EnvironmentValue) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{14}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *EnvironmentValue) GetEnvironmentId() string {
@@ -913,7 +913,7 @@ type ListEnvironmentValuesRequest struct {
 
 func (x *ListEnvironmentValuesRequest) Reset() {
 	*x = ListEnvironmentValuesRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[15]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +925,7 @@ func (x *ListEnvironmentValuesRequest) String() string {
 func (*ListEnvironmentValuesRequest) ProtoMessage() {}
 
 func (x *ListEnvironmentValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[15]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +938,7 @@ func (x *ListEnvironmentValuesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEnvironmentValuesRequest.ProtoReflect.Descriptor instead.
 func (*ListEnvironmentValuesRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{15}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListEnvironmentValuesRequest) GetKey() string {
@@ -957,7 +957,7 @@ type ListEnvironmentValuesResponse struct {
 
 func (x *ListEnvironmentValuesResponse) Reset() {
 	*x = ListEnvironmentValuesResponse{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[16]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -969,7 +969,7 @@ func (x *ListEnvironmentValuesResponse) String() string {
 func (*ListEnvironmentValuesResponse) ProtoMessage() {}
 
 func (x *ListEnvironmentValuesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[16]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -982,7 +982,7 @@ func (x *ListEnvironmentValuesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEnvironmentValuesResponse.ProtoReflect.Descriptor instead.
 func (*ListEnvironmentValuesResponse) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{16}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListEnvironmentValuesResponse) GetValues() []*EnvironmentValue {
@@ -1002,7 +1002,7 @@ type DeleteEnvironmentValueRequest struct {
 
 func (x *DeleteEnvironmentValueRequest) Reset() {
 	*x = DeleteEnvironmentValueRequest{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[17]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1014,7 +1014,7 @@ func (x *DeleteEnvironmentValueRequest) String() string {
 func (*DeleteEnvironmentValueRequest) ProtoMessage() {}
 
 func (x *DeleteEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[17]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1027,7 +1027,7 @@ func (x *DeleteEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEnvironmentValueRequest.ProtoReflect.Descriptor instead.
 func (*DeleteEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{17}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *DeleteEnvironmentValueRequest) GetEnvironmentId() string {
@@ -1053,7 +1053,7 @@ type DeleteEnvironmentValueResponse struct {
 
 func (x *DeleteEnvironmentValueResponse) Reset() {
 	*x = DeleteEnvironmentValueResponse{}
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[18]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1065,7 +1065,7 @@ func (x *DeleteEnvironmentValueResponse) String() string {
 func (*DeleteEnvironmentValueResponse) ProtoMessage() {}
 
 func (x *DeleteEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_grpc_schema_fasit_proto_msgTypes[18]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1078,7 @@ func (x *DeleteEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEnvironmentValueResponse.ProtoReflect.Descriptor instead.
 func (*DeleteEnvironmentValueResponse) Descriptor() ([]byte, []int) {
-	return file_internal_grpc_schema_fasit_proto_rawDescGZIP(), []int{18}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
@@ -1088,11 +1088,11 @@ func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
 	return false
 }
 
-var File_internal_grpc_schema_fasit_proto protoreflect.FileDescriptor
+var File_schema_protobuf_fasit_proto protoreflect.FileDescriptor
 
-const file_internal_grpc_schema_fasit_proto_rawDesc = "" +
+const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\n" +
-	" internal/grpc/schema/fasit.proto\"`\n" +
+	"\x1bschema/protobuf/fasit.proto\"`\n" +
 	"\x13CreateTenantRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01B\x0e\n" +
@@ -1174,23 +1174,23 @@ const file_internal_grpc_schema_fasit_proto_rawDesc = "" +
 	"\x13GetEnvironmentValue\x12\x1b.GetEnvironmentValueRequest\x1a\x11.EnvironmentValue\"\x00\x12X\n" +
 	"\x15ListEnvironmentValues\x12\x1d.ListEnvironmentValuesRequest\x1a\x1e.ListEnvironmentValuesResponse\"\x00\x12[\n" +
 	"\x16DeleteEnvironmentValue\x12\x1e.DeleteEnvironmentValueRequest\x1a\x1f.DeleteEnvironmentValueResponse\"\x00\x12U\n" +
-	"\x14SetEnvironmentLabels\x12\x1c.SetEnvironmentLabelsRequest\x1a\x1d.SetEnvironmentLabelsResponse\"\x00B!Z\x1finternal/grpc/protogen;protogenb\x06proto3"
+	"\x14SetEnvironmentLabels\x12\x1c.SetEnvironmentLabelsRequest\x1a\x1d.SetEnvironmentLabelsResponse\"\x00B2Z0internal/environmentmanagement/protogen;protogenb\x06proto3"
 
 var (
-	file_internal_grpc_schema_fasit_proto_rawDescOnce sync.Once
-	file_internal_grpc_schema_fasit_proto_rawDescData []byte
+	file_schema_protobuf_fasit_proto_rawDescOnce sync.Once
+	file_schema_protobuf_fasit_proto_rawDescData []byte
 )
 
-func file_internal_grpc_schema_fasit_proto_rawDescGZIP() []byte {
-	file_internal_grpc_schema_fasit_proto_rawDescOnce.Do(func() {
-		file_internal_grpc_schema_fasit_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_grpc_schema_fasit_proto_rawDesc), len(file_internal_grpc_schema_fasit_proto_rawDesc)))
+func file_schema_protobuf_fasit_proto_rawDescGZIP() []byte {
+	file_schema_protobuf_fasit_proto_rawDescOnce.Do(func() {
+		file_schema_protobuf_fasit_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_schema_protobuf_fasit_proto_rawDesc), len(file_schema_protobuf_fasit_proto_rawDesc)))
 	})
-	return file_internal_grpc_schema_fasit_proto_rawDescData
+	return file_schema_protobuf_fasit_proto_rawDescData
 }
 
-var file_internal_grpc_schema_fasit_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_internal_grpc_schema_fasit_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
-var file_internal_grpc_schema_fasit_proto_goTypes = []any{
+var file_schema_protobuf_fasit_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_schema_protobuf_fasit_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_schema_protobuf_fasit_proto_goTypes = []any{
 	(EnvironmentKind)(0),                   // 0: EnvironmentKind
 	(*CreateTenantRequest)(nil),            // 1: CreateTenantRequest
 	(*GetTenantRequest)(nil),               // 2: GetTenantRequest
@@ -1212,7 +1212,7 @@ var file_internal_grpc_schema_fasit_proto_goTypes = []any{
 	(*DeleteEnvironmentValueRequest)(nil),  // 18: DeleteEnvironmentValueRequest
 	(*DeleteEnvironmentValueResponse)(nil), // 19: DeleteEnvironmentValueResponse
 }
-var file_internal_grpc_schema_fasit_proto_depIdxs = []int32{
+var file_schema_protobuf_fasit_proto_depIdxs = []int32{
 	4,  // 0: CreateTenantResponse.tenant:type_name -> Tenant
 	0,  // 1: CreateEnvironmentRequest.kind:type_name -> EnvironmentKind
 	8,  // 2: CreateEnvironmentRequest.labels:type_name -> EnvironmentLabel
@@ -1246,28 +1246,28 @@ var file_internal_grpc_schema_fasit_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_internal_grpc_schema_fasit_proto_init() }
-func file_internal_grpc_schema_fasit_proto_init() {
-	if File_internal_grpc_schema_fasit_proto != nil {
+func init() { file_schema_protobuf_fasit_proto_init() }
+func file_schema_protobuf_fasit_proto_init() {
+	if File_schema_protobuf_fasit_proto != nil {
 		return
 	}
-	file_internal_grpc_schema_fasit_proto_msgTypes[0].OneofWrappers = []any{}
+	file_schema_protobuf_fasit_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_grpc_schema_fasit_proto_rawDesc), len(file_internal_grpc_schema_fasit_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_schema_protobuf_fasit_proto_rawDesc), len(file_schema_protobuf_fasit_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_internal_grpc_schema_fasit_proto_goTypes,
-		DependencyIndexes: file_internal_grpc_schema_fasit_proto_depIdxs,
-		EnumInfos:         file_internal_grpc_schema_fasit_proto_enumTypes,
-		MessageInfos:      file_internal_grpc_schema_fasit_proto_msgTypes,
+		GoTypes:           file_schema_protobuf_fasit_proto_goTypes,
+		DependencyIndexes: file_schema_protobuf_fasit_proto_depIdxs,
+		EnumInfos:         file_schema_protobuf_fasit_proto_enumTypes,
+		MessageInfos:      file_schema_protobuf_fasit_proto_msgTypes,
 	}.Build()
-	File_internal_grpc_schema_fasit_proto = out.File
-	file_internal_grpc_schema_fasit_proto_goTypes = nil
-	file_internal_grpc_schema_fasit_proto_depIdxs = nil
+	File_schema_protobuf_fasit_proto = out.File
+	file_schema_protobuf_fasit_proto_goTypes = nil
+	file_schema_protobuf_fasit_proto_depIdxs = nil
 }

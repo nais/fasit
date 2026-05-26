@@ -13,7 +13,7 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	envpkg "github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/graph/model"
+	commonmodel "github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -264,11 +264,11 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 	)
 }
 
-func parseGHRef(raw []byte) *model.GHRef {
+func parseGHRef(raw []byte) *commonmodel.GitHubCommit {
 	if len(raw) == 0 {
 		return nil
 	}
-	var ref model.GHRef
+	var ref commonmodel.GitHubCommit
 	if err := json.Unmarshal(raw, &ref); err != nil {
 		return nil
 	}
@@ -278,7 +278,7 @@ func parseGHRef(raw []byte) *model.GHRef {
 	return &ref
 }
 
-func ghRefLink(ref *model.GHRef) g.Node {
+func ghRefLink(ref *commonmodel.GitHubCommit) g.Node {
 	if ref == nil {
 		return nil
 	}

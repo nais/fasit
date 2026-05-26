@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
-	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
@@ -28,15 +27,6 @@ type ChartDownloaderFunc func(chartURL, version string) (*model.Feature, error)
 // Override for testing
 var ChartDownloader = func(chartURL, version string) (*model.Feature, error) {
 	return model.FromChart(chartURL, version)
-}
-
-type Request struct {
-	Chart       string             `json:"chart"`
-	Version     string             `json:"version"`
-	Description string             `json:"description"`
-	Ref         *model.GHRef       `json:"ref"`
-	Global      bool               `json:"global"`
-	Target      environment.Labels `json:"target"`
 }
 
 type Option func(*Manager)

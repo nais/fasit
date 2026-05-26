@@ -1,4 +1,4 @@
-package restapi
+package api
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/api/sqlgen"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/model"
-	"github.com/nais/fasit/internal/restapi/restapisql"
 	"github.com/sirupsen/logrus"
 )
 
@@ -34,7 +34,7 @@ type HttpHandler struct {
 	AllowAll bool
 
 	programContext context.Context
-	querier        restapisql.Querier
+	querier        sqlgen.Querier
 }
 
 type Claims struct {
@@ -45,10 +45,10 @@ type Claims struct {
 }
 
 type CreateDeploymentRequest struct {
-	Chart       string             `json:"chart"`
-	Version     string             `json:"version"`
-	Description string             `json:"description"`
-	Ref         *model.GHRef       `json:"ref"`
-	Global      bool               `json:"global"`
-	Target      environment.Labels `json:"target"`
+	Chart       string              `json:"chart"`
+	Version     string              `json:"version"`
+	Description string              `json:"description"`
+	Ref         *model.GitHubCommit `json:"ref"`
+	Global      bool                `json:"global"`
+	Target      environment.Labels  `json:"target"`
 }

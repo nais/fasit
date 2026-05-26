@@ -54,10 +54,10 @@ func CreateHandler() http.HandlerFunc {
 			}
 		}
 
-		_, err := deployment.Create(r.Context(), deployment.Request{
+		_, err := deployment.Create(r.Context(), deployment.CreateDeployment{
 			Chart:       chart,
 			Version:     version,
-			Description: description,
+			Description: &description,
 			Target:      target,
 		})
 		if err != nil {
