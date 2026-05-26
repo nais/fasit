@@ -867,6 +867,7 @@ nav .nav-btn:hover {
   width: 1%;
   white-space: nowrap;
   text-align: right;
+  vertical-align: top;
 }
 .config-actions-col .edit-icon {
   margin-right: 0;
