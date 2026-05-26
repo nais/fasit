@@ -1,6 +1,7 @@
 package components
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -200,10 +201,7 @@ func ConfigDeletePopover(popoverID, action, message, fallbackValue string) g.Nod
 		h.Div(g.Attr("popover", ""), h.ID(popoverID),
 			h.H3(g.Text("Remove Configuration")),
 			h.P(g.Text(message)),
-			g.If(fallbackValue != "", h.P(
-				h.Strong(g.Text("Value after removal: ")),
-				h.Code(g.Text(fallbackValue)),
-			)),
+			g.If(fallbackValue != "", fallbackValueNode(fallbackValue)),
 			h.Form(h.Method("POST"), h.Action(action),
 				h.Div(h.Class("popover-actions"),
 					h.Button(h.Type("submit"), g.Text("Remove")),
@@ -212,6 +210,19 @@ func ConfigDeletePopover(popoverID, action, message, fallbackValue string) g.Nod
 			),
 		),
 	})
+}
+
+func fallbackValueNode(v string) g.Node {
+	if strings.Contains(v, "\n") {
+		return g.Group([]g.Node{
+			h.P(h.Strong(g.Text("Value after removal:"))),
+			h.Pre(g.Text(v)),
+		})
+	}
+	return h.P(
+		h.Strong(g.Text("Value after removal: ")),
+		h.Code(g.Text(v)),
+	)
 }
 
 // Option renders a select option, marking it selected when it matches current.
@@ -314,13 +325,23 @@ func ParseConfigValue(value, configType, mode string) (any, error) {
 }
 
 // RawValueForDisplay converts a JSON raw message to a display string.
+// Objects and arrays are pretty-printed; scalar strings are unquoted
+// (and pretty-printed if they contain embedded JSON).
 func RawValueForDisplay(raw json.RawMessage) string {
 	if len(raw) == 0 {
 		return ""
 	}
 	var s string
 	if err := json.Unmarshal(raw, &s); err == nil {
+		var buf bytes.Buffer
+		if json.Indent(&buf, []byte(s), "", "  ") == nil && len(s) > 0 && (s[0] == '{' || s[0] == '[') {
+			return strings.TrimSpace(buf.String())
+		}
 		return s
+	}
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, raw, "", "  "); err == nil {
+		return strings.TrimSpace(buf.String())
 	}
 	return strings.TrimSpace(string(raw))
 }
