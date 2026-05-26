@@ -77,7 +77,7 @@ func (q *Queries) ConfigEnvGetByKey(ctx context.Context, arg ConfigEnvGetByKeyPa
 	return i, err
 }
 
-const configEnvListByFeature = `-- name: ConfigEnvListByFeature :many
+const configEnvListAllByFeature = `-- name: ConfigEnvListAllByFeature :many
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
@@ -89,8 +89,8 @@ ORDER BY
 	key ASC
 `
 
-func (q *Queries) ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error) {
-	rows, err := q.db.Query(ctx, configEnvListByFeature, feature)
+func (q *Queries) ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error) {
+	rows, err := q.db.Query(ctx, configEnvListAllByFeature, feature)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (q *Queries) ConfigEnvListByFeature(ctx context.Context, feature string) ([
 	return items, nil
 }
 
-const configEnvListByFeatureAndEnv = `-- name: ConfigEnvListByFeatureAndEnv :many
+const configEnvListByFeature = `-- name: ConfigEnvListByFeature :many
 SELECT
 	id, feature, key, value, description, secret, created, environment_id
 FROM
@@ -130,13 +130,13 @@ ORDER BY
 	key ASC
 `
 
-type ConfigEnvListByFeatureAndEnvParams struct {
+type ConfigEnvListByFeatureParams struct {
 	Feature       string
 	EnvironmentID uuid.UUID
 }
 
-func (q *Queries) ConfigEnvListByFeatureAndEnv(ctx context.Context, arg ConfigEnvListByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error) {
-	rows, err := q.db.Query(ctx, configEnvListByFeatureAndEnv, arg.Feature, arg.EnvironmentID)
+func (q *Queries) ConfigEnvListByFeature(ctx context.Context, arg ConfigEnvListByFeatureParams) ([]ConfigurationsEnvironment, error) {
+	rows, err := q.db.Query(ctx, configEnvListByFeature, arg.Feature, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}

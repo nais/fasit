@@ -40,7 +40,7 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 		return nil, err
 	}
 
-	envConfigs, err := querier(ctx).ConfigEnvListByFeatureAndEnv(ctx, featuresql.ConfigEnvListByFeatureAndEnvParams{
+	envConfigs, err := querier(ctx).ConfigEnvListByFeature(ctx, featuresql.ConfigEnvListByFeatureParams{
 		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
@@ -87,9 +87,9 @@ type EnvConfigOverride struct {
 	Content       []byte
 }
 
-// ConfigEnvListByFeature returns all environment config overrides for a feature.
-func ConfigEnvListByFeature(ctx context.Context, feature string) ([]EnvConfigOverride, error) {
-	rows, err := querier(ctx).ConfigEnvListByFeature(ctx, feature)
+// ConfigEnvListAllByFeature returns all environment config overrides for a feature.
+func ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]EnvConfigOverride, error) {
+	rows, err := querier(ctx).ConfigEnvListAllByFeature(ctx, feature)
 	if err != nil {
 		return nil, err
 	}

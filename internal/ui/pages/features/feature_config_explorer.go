@@ -86,7 +86,7 @@ func loadConfigExplorerData(ctx context.Context, feat *model.Feature) (*configEx
 		globalByKey[gc.Key] = gc.Content
 	}
 
-	envOverrides, err := featurepkg.ConfigEnvListByFeature(ctx, feat.Name)
+	envOverrides, err := featurepkg.ConfigEnvListAllByFeature(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}

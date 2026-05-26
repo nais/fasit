@@ -1,4 +1,4 @@
--- name: ConfigEnvListByFeatureAndEnv :many
+-- name: ConfigEnvListByFeature :many
 SELECT
 	*
 FROM
@@ -29,7 +29,7 @@ WHERE
 	AND feature = @feature
 	AND key = @key;
 
--- name: ConfigEnvListByFeature :many
+-- name: ConfigEnvListAllByFeature :many
 SELECT
 	*
 FROM

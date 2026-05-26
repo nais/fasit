@@ -14,15 +14,15 @@ import (
 // fakeQuerier implements featuresql.Querier for unit tests.
 // Set function fields for methods your test exercises; unset fields panic.
 type fakeQuerier struct {
-	configGlobalDeleteFunc           func(ctx context.Context, id uuid.UUID) error
-	configEnvGetByKeyFunc            func(ctx context.Context, arg featuresql.ConfigEnvGetByKeyParams) (featuresql.ConfigurationsEnvironment, error)
-	configEnvUpsertFunc              func(ctx context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error)
-	configGlobalGetByIDFunc          func(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error)
-	configGlobalGetByKeyFunc         func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)
-	configGlobalUpsertFunc           func(ctx context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error)
-	configGlobalUpdateFunc           func(ctx context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error)
-	configGlobalListByFeatureFunc    func(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error)
-	configEnvListByFeatureAndEnvFunc func(ctx context.Context, arg featuresql.ConfigEnvListByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error)
+	configGlobalDeleteFunc        func(ctx context.Context, id uuid.UUID) error
+	configEnvGetByKeyFunc         func(ctx context.Context, arg featuresql.ConfigEnvGetByKeyParams) (featuresql.ConfigurationsEnvironment, error)
+	configEnvUpsertFunc           func(ctx context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error)
+	configGlobalGetByIDFunc       func(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error)
+	configGlobalGetByKeyFunc      func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalUpsertFunc        func(ctx context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalUpdateFunc        func(ctx context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error)
+	configGlobalListByFeatureFunc func(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error)
+	configEnvListByFeatureFunc    func(ctx context.Context, arg featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error)
 }
 
 func (f *fakeQuerier) GetLatestDeployedDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployedDeployInstructionParams) (featuresql.DeployInstruction, error) {
@@ -53,7 +53,7 @@ func (f *fakeQuerier) ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (featu
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) ConfigEnvListByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsEnvironment, error) {
+func (f *fakeQuerier) ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsEnvironment, error) {
 	panic("not implemented")
 }
 
@@ -65,8 +65,8 @@ func (f *fakeQuerier) ConfigEnvUpsert(ctx context.Context, arg featuresql.Config
 	return f.configEnvUpsertFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) ConfigEnvListByFeatureAndEnv(ctx context.Context, arg featuresql.ConfigEnvListByFeatureAndEnvParams) ([]featuresql.ConfigurationsEnvironment, error) {
-	return f.configEnvListByFeatureAndEnvFunc(ctx, arg)
+func (f *fakeQuerier) ConfigEnvListByFeature(ctx context.Context, arg featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error) {
+	return f.configEnvListByFeatureFunc(ctx, arg)
 }
 
 func (f *fakeQuerier) ConfigGlobalListByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error) {

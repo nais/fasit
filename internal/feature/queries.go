@@ -63,7 +63,7 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 		return nil, err
 	}
 
-	envConfigs, err := querier(ctx).ConfigEnvListByFeatureAndEnv(ctx, featuresql.ConfigEnvListByFeatureAndEnvParams{
+	envConfigs, err := querier(ctx).ConfigEnvListByFeature(ctx, featuresql.ConfigEnvListByFeatureParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
 	})
@@ -122,7 +122,7 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 		return nil, err
 	}
 
-	envConfigs, err := querier(ctx).ConfigEnvListByFeatureAndEnv(ctx, featuresql.ConfigEnvListByFeatureAndEnvParams{
+	envConfigs, err := querier(ctx).ConfigEnvListByFeature(ctx, featuresql.ConfigEnvListByFeatureParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
 	})

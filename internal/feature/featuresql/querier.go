@@ -12,8 +12,8 @@ type Querier interface {
 	ConfigEnvDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
 	ConfigEnvGetByKey(ctx context.Context, arg ConfigEnvGetByKeyParams) (ConfigurationsEnvironment, error)
-	ConfigEnvListByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
-	ConfigEnvListByFeatureAndEnv(ctx context.Context, arg ConfigEnvListByFeatureAndEnvParams) ([]ConfigurationsEnvironment, error)
+	ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
+	ConfigEnvListByFeature(ctx context.Context, arg ConfigEnvListByFeatureParams) ([]ConfigurationsEnvironment, error)
 	ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error)
 	ConfigEnvUpsert(ctx context.Context, arg ConfigEnvUpsertParams) (ConfigurationsEnvironment, error)
 	ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error
