@@ -9,7 +9,6 @@ on:
       - ".github/workflows/build_and_push_naisd.yaml"
       - ".github/workflows/dependabot-auto-merge.yaml"
       - ".github/workflows/push_*.yaml"
-      - "features/**"
       - "schema/jsonschema/**"
       - "cmd/generate_schema/**"
   pull_request:
