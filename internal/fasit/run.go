@@ -102,14 +102,11 @@ func Run(ctx context.Context) error {
 
 	go deployment.RunReconciler(ctx, 10*time.Minute)
 
-	if cfg.UseNewReconciler {
-		rec, err := reconciler.New(reconcilersql.New(pool), meter, log.WithField("component", "reconciler"))
-		if err != nil {
-			return fmt.Errorf("creating reconciler: %w", err)
-		}
-		ctx = reconciler.WithContext(ctx, rec)
-		log.Info("new reconciler enabled")
+	rec, err := reconciler.New(reconcilersql.New(pool), meter, log.WithField("component", "reconciler"))
+	if err != nil {
+		return fmt.Errorf("creating reconciler: %w", err)
 	}
+	ctx = reconciler.WithContext(ctx, rec)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 

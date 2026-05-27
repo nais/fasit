@@ -17,16 +17,6 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rec := reconciler.FromContext(r.Context())
-		if rec == nil {
-			renderPage(w, r, layout.Props{
-				Title:       "Reconciler",
-				CurrentPage: components.PageReconciler,
-				Content:     notEnabledPage(),
-			})
-			return
-		}
-
 		renderPage(w, r, layout.Props{
 			Title:       "Reconciler",
 			CurrentPage: components.PageReconciler,
@@ -39,7 +29,7 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rec := reconciler.FromContext(r.Context())
 		if rec == nil {
-			http.Error(w, "reconciler not enabled", http.StatusServiceUnavailable)
+			http.Error(w, "reconciler not available", http.StatusInternalServerError)
 			return
 		}
 
@@ -59,13 +49,6 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func notEnabledPage() g.Node {
-	return h.Div(h.Class("content"),
-		h.H1(g.Text("Reconciler")),
-		h.P(g.Text("The new reconciler is not enabled. Set USE_NEW_RECONCILER=true to enable.")),
-	)
-}
-
 func triggerPage() g.Node {
 	return h.Div(h.Class("content"),
 		h.H1(g.Text("Reconciler")),
@@ -77,13 +60,13 @@ func triggerPage() g.Node {
 }
 
 type actionSummary struct {
-	Deploy         int
-	Unchanged      int
-	InProgress     int
-	Disabled       int
-	MissingDeps    int
-	MissingConfig  int
-	RenderError    int
+	Deploy        int
+	Unchanged     int
+	InProgress    int
+	Disabled      int
+	MissingDeps   int
+	MissingConfig int
+	RenderError   int
 }
 
 func resultsPage(results []reconciler.Result, elapsed, fetchDur, renderDur time.Duration) g.Node {

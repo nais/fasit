@@ -46,10 +46,10 @@ FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-ORDER BY
-	d.feature_name,
-	d.target,
-	d.created DESC;
+	ORDER BY
+		d.feature_name,
+		d.target,
+		d.created DESC;
 
 -- name: ListDisabledFeatures :many
 SELECT
@@ -159,9 +159,9 @@ SELECT
 	unnest(@environment_ids::UUID[]),
 	unnest(@statuses::TEXT[]),
 	unnest(@messages::TEXT[])
-ON CONFLICT (
-	deployment_id,
+ON CONFLICT (deployment_id,
 	environment_id)
 	DO UPDATE SET
 		status = EXCLUDED.status,
 		message = EXCLUDED.message;
+

@@ -498,4 +498,3 @@ func TestReconcileGlobalDeployment(t *testing.T) {
 		assert.Contains(t, deployed, "tenant1:management")
 	})
 }
-

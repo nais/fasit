@@ -36,6 +36,17 @@ func (r *Reconciler) renderAll(snap *snapshot) []Result {
 
 		for _, dep := range winners {
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
+				mu.Lock()
+				results = append(results, Result{
+					EnvironmentID:   env.ID,
+					EnvironmentName: env.Name,
+					TenantName:      env.TenantName,
+					DeploymentID:    dep.ID,
+					Feature:         dep.Feature,
+					Action:          ActionSkipDisabled,
+					Message:         "feature reconcile disabled",
+				})
+				mu.Unlock()
 				continue
 			}
 
