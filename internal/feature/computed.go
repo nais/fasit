@@ -42,7 +42,7 @@ type ComputedValues struct {
 }
 
 func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any) error {
-	return GenerateWith(vals, kind, values, target, templateFuncs)
+	return GenerateWith(vals, kind, values, target, TemplateFuncs)
 }
 
 func GenerateWith(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any, funcs template.FuncMap) error {

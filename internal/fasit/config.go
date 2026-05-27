@@ -18,6 +18,7 @@ type Config struct {
 	IAPAudience               string `env:"IAP_AUDIENCE"`
 	SlackAPIToken             string `env:"SLACK_API_TOKEN"`
 	SlackChannelFeatureAlerts string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
+	UseNewReconciler          bool   `env:"USE_NEW_RECONCILER,default=false"`
 }
 
 // newConfig creates a new configuration instance from environment variables.

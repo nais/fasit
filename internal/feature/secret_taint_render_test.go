@@ -31,17 +31,17 @@ func TestRenderHelmValuesWithSecretTaint_NoLeakBetweenRenders(t *testing.T) {
 		},
 	}
 
-	data := &helmRenderData{
-		mv: &ComputedValues{
+	data := &HelmRenderData{
+		MV: &ComputedValues{
 			Tenant: ComputedTenant{Name: "dev-nais"},
 			Env: map[string]any{
 				"name":        "dev",
 				"slack_token": "xoxb-dev-token",
 			},
 		},
-		envKind:       model.EnvironmentKindTenant,
-		configMap:     map[string]any{},
-		secretEnvKeys: map[string]bool{"slack_token": true},
+		EnvKind:       model.EnvironmentKindTenant,
+		ConfigMap:     map[string]any{},
+		SecretEnvKeys: map[string]bool{"slack_token": true},
 	}
 
 	rendered, taint, probeOK, err := renderHelmValuesWithSecretTaint(data, f)

@@ -91,7 +91,7 @@ func ParseTemplateDetails(content model.Values) (*FeatureTemplateDetails, error)
 }
 
 func parseComputedDetails(eviu *FeatureTemplateDetails, cv *model.Computed) error {
-	t, err := template.New("tpl").Funcs(templateFuncs).Parse(cv.Template)
+	t, err := template.New("tpl").Funcs(TemplateFuncs).Parse(cv.Template)
 	if err != nil {
 		return fmt.Errorf("parse: %w", err)
 	}

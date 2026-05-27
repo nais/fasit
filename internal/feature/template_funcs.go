@@ -18,7 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var templateFuncs = func() template.FuncMap {
+var TemplateFuncs = func() template.FuncMap {
 	fm := sprig.GenericFuncMap()
 	fm["mapOf"] = mapOf
 	fm["mapJoin"] = mapJoin
@@ -287,13 +287,13 @@ func quote(v any) string {
 	return strconv.Quote(s)
 }
 
-// deterministicTemplateFuncs returns a copy of templateFuncs with
+// deterministicTemplateFuncs returns a copy of TemplateFuncs with
 // non-deterministic Sprig functions overridden to return fixed values.
 // Used for taint comparison where both renders must produce identical
 // output for non-secret-dependent template expressions.
 var deterministicTemplateFuncs = func() template.FuncMap {
-	fm := make(template.FuncMap, len(templateFuncs))
-	maps.Copy(fm, templateFuncs)
+	fm := make(template.FuncMap, len(TemplateFuncs))
+	maps.Copy(fm, TemplateFuncs)
 
 	fixedTime := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 	fm["now"] = func() time.Time { return fixedTime }

@@ -24,13 +24,13 @@ func TestMergeConfigs_PreservesIDAndCreated(t *testing.T) {
 		{ID: envID, Feature: "f", Key: "only-env", Value: []byte(`"e"`), Created: envCreated, EnvironmentID: environmentID},
 	}
 
-	got := mergeConfigs(globals, envs, nil)
+	got := MergeConfigs(globals, envs, nil)
 
 	if len(got) != 2 {
 		t.Fatalf("len(got) = %d, want 2", len(got))
 	}
 
-	byKey := map[string]mergedConfigRow{}
+	byKey := map[string]MergedConfigRow{}
 	for _, r := range got {
 		byKey[r.Key] = r
 	}
@@ -54,7 +54,7 @@ func TestMergeConfigs_EnvOverridesGlobal(t *testing.T) {
 		{ID: envID, Feature: "f", Key: "k", Value: []byte(`"env"`), EnvironmentID: environmentID},
 	}
 
-	got := mergeConfigs(globals, envs, nil)
+	got := MergeConfigs(globals, envs, nil)
 	if len(got) != 1 {
 		t.Fatalf("len(got) = %d, want 1", len(got))
 	}
@@ -71,7 +71,7 @@ func TestMergeConfigs_EnvOverridesGlobal(t *testing.T) {
 }
 
 // TestMergeConfigs_SortedByKey guards against re-introducing the non-deterministic
-// map-iteration order in mergeConfigs. The order is load-bearing: makeHelmConfigMap's
+// map-iteration order in MergeConfigs. The order is load-bearing: MakeHelmConfigMap's
 // "is not nestable" check only fires when shorter prefixes are processed before their
 // extensions (e.g. "my" before "my.key").
 func TestMergeConfigs_SortedByKey(t *testing.T) {
@@ -83,7 +83,7 @@ func TestMergeConfigs_SortedByKey(t *testing.T) {
 	}
 
 	for i := 0; i < 50; i++ {
-		got := mergeConfigs(globals, nil, nil)
+		got := MergeConfigs(globals, nil, nil)
 		want := []string{"alpha", "my", "my.key", "zeta"}
 		for j, w := range want {
 			if got[j].Key != w {
@@ -103,7 +103,7 @@ func TestMergeConfigs_IncludeKeysFilter(t *testing.T) {
 		{ID: uuid.New(), Feature: "f", Key: "drop-env", EnvironmentID: uuid.New()},
 	}
 
-	got := mergeConfigs(globals, envs, []string{"keep", "keep-env"})
+	got := MergeConfigs(globals, envs, []string{"keep", "keep-env"})
 	if len(got) != 2 {
 		t.Fatalf("len(got) = %d, want 2 (filter dropped %v)", len(got), keysOf(got))
 	}
@@ -114,7 +114,7 @@ func TestMergeConfigs_IncludeKeysFilter(t *testing.T) {
 	}
 }
 
-func keysOf(rows []mergedConfigRow) []string {
+func keysOf(rows []MergedConfigRow) []string {
 	out := make([]string, len(rows))
 	for i, r := range rows {
 		out[i] = r.Key
@@ -128,19 +128,19 @@ func keysOf(rows []mergedConfigRow) []string {
 // reverse silently overwrote, which surfaced as the flaky
 // HelmValues_InvalidKeyNesting integration test.
 func TestMakeHelmConfigMap_NestingConflictOrderIndependent(t *testing.T) {
-	leaf := mergedConfigRow{Key: "my", Value: []byte(`"v"`)}
-	nested := mergedConfigRow{Key: "my.key", Value: []byte(`"v"`)}
+	leaf := MergedConfigRow{Key: "my", Value: []byte(`"v"`)}
+	nested := MergedConfigRow{Key: "my.key", Value: []byte(`"v"`)}
 
 	cases := []struct {
 		name string
-		in   []mergedConfigRow
+		in   []MergedConfigRow
 	}{
-		{"leaf-first", []mergedConfigRow{leaf, nested}},
-		{"nested-first", []mergedConfigRow{nested, leaf}},
+		{"leaf-first", []MergedConfigRow{leaf, nested}},
+		{"nested-first", []MergedConfigRow{nested, leaf}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := makeHelmConfigMap(tc.in)
+			_, err := MakeHelmConfigMap(tc.in)
 			if err == nil || !strings.Contains(err.Error(), "is not nestable") {
 				t.Errorf("got err=%v, want error containing \"is not nestable\"", err)
 			}

@@ -48,7 +48,7 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 		return nil, err
 	}
 
-	merged := mergeConfigs(globalConfigs, envConfigs, nil)
+	merged := MergeConfigs(globalConfigs, envConfigs, nil)
 	retVal := make([]*model.Configuration, 0, len(merged))
 	for _, conf := range merged {
 		source := model.ConfigSourceGlobal
