@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
@@ -35,14 +34,6 @@ var (
 type Db struct {
 	t    *testing.T
 	pool *pgxpool.Pool
-}
-
-func (d *Db) runQuery(ctx context.Context, t *testing.T, q string) pgx.Rows {
-	r, err := d.pool.Query(ctx, q)
-	if err != nil {
-		t.Fatalf("run query: %v", err)
-	}
-	return r
 }
 
 func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, labels environment.Labels) {
