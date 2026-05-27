@@ -411,9 +411,12 @@ func main() {
 	addDeployment("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly)
 	addDeployment("kyverno", kyvernoV, environment.Labels{}, all)
 
+	ctx = auth.SetEmail(ctx, "tronghn@nais/fasit/123456789")
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
 	}
+
+	ctx = auth.SetEmail(ctx, "setup_local_env")
 
 	// Persist featureDefaults as configurations_global rows so that
 	// Required-field validation passes for features that ship chart defaults

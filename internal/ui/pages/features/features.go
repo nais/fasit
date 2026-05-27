@@ -1,6 +1,7 @@
 package features
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -45,6 +46,9 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		deps, _ := deployment.List(r.Context())
+		audits, _ := audit.ListRecent(r.Context(), 200)
+		deploymentActors := deploymentActorsByID(audits)
+
 		var depRows []depRow
 		for _, dep := range deps {
 			statuses, err := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
@@ -55,6 +59,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 					Status:      "UNKNOWN",
 					Created:     dep.Created,
 					DepID:       dep.ID.String(),
+					Actor:       deploymentActors[dep.ID.String()],
 				})
 			} else {
 				for _, s := range statuses {
@@ -64,12 +69,11 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 						Status:      string(s.State),
 						Created:     dep.Created,
 						DepID:       dep.ID.String(),
+						Actor:       deploymentActors[dep.ID.String()],
 					})
 				}
 			}
 		}
-
-		audits, _ := audit.ListRecent(r.Context(), 10)
 
 		sort.Slice(depRows, func(i, j int) bool {
 			return depRows[i].Created.After(depRows[j].Created)
@@ -383,6 +387,24 @@ type depRow struct {
 	Status      string
 	Created     time.Time
 	DepID       string
+	Actor       string
+}
+
+func deploymentActorsByID(audits []*audit.Entry) map[string]string {
+	ret := make(map[string]string)
+	for _, a := range audits {
+		if a.ObjectType != audit.ObjectTypeDeployment || a.Action != audit.ActionCreated || len(a.Metadata) == 0 {
+			continue
+		}
+		var metadata struct {
+			DeploymentID string `json:"deploymentId"`
+		}
+		if err := json.Unmarshal(a.Metadata, &metadata); err != nil || metadata.DeploymentID == "" {
+			continue
+		}
+		ret[metadata.DeploymentID] = a.Actor
+	}
+	return ret
 }
 
 func recentDeployments(rows []depRow) g.Node {
@@ -397,6 +419,7 @@ func recentDeployments(rows []depRow) g.Node {
 		Version     string
 		Statuses    []string
 		Latest      time.Time
+		Actor       string
 	}
 	seen := make(map[aggKey]*aggRow)
 	var ordered []aggKey
@@ -406,6 +429,7 @@ func recentDeployments(rows []depRow) g.Node {
 			agg.Statuses = append(agg.Statuses, r.Status)
 			if r.Created.After(agg.Latest) {
 				agg.Latest = r.Created
+				agg.Actor = r.Actor
 			}
 		} else {
 			seen[k] = &aggRow{
@@ -413,6 +437,7 @@ func recentDeployments(rows []depRow) g.Node {
 				Version:     r.Version,
 				Statuses:    []string{r.Status},
 				Latest:      r.Created,
+				Actor:       r.Actor,
 			}
 			ordered = append(ordered, k)
 		}
@@ -428,6 +453,7 @@ func recentDeployments(rows []depRow) g.Node {
 			h.Td(h.A(h.Href("/features/"+agg.FeatureName), g.Text(agg.FeatureName))),
 			h.Td(h.Class("text-muted"), g.Text(agg.Version)),
 			h.Td(renderAggStatus(agg.Statuses)),
+			deploymentActorCell(agg.Actor),
 			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(agg.Latest)), g.Text(view.RelativeTime(agg.Latest))),
 		))
 	}
@@ -439,12 +465,20 @@ func recentDeployments(rows []depRow) g.Node {
 				h.Th(g.Text("Feature")),
 				h.Th(g.Text("Version")),
 				h.Th(g.Text("Status")),
+				h.Th(g.Text("Actor")),
 				h.Th(h.Class("text-right"), g.Text("When")),
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
 		h.Div(h.Style("margin-top: 0.75rem; font-size: 0.85rem;"), h.A(h.Href("/deployments"), h.Class("link-muted"), g.Text("All deployments →"))),
 	})
+}
+
+func deploymentActorCell(actor string) g.Node {
+	if actor == "" {
+		return h.Td(h.Class("text-muted"), g.Text("—"))
+	}
+	return h.Td(view.ActorNode(actor))
 }
 
 func recentActivity(audits []*audit.Entry) g.Node {
@@ -454,6 +488,9 @@ func recentActivity(audits []*audit.Entry) g.Node {
 			continue
 		}
 		filtered = append(filtered, a)
+		if len(filtered) == 10 {
+			break
+		}
 	}
 	if len(filtered) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No recent activity."))

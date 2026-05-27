@@ -1,6 +1,13 @@
 package features
 
-import "testing"
+import (
+	"bytes"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/nais/fasit/internal/audit"
+)
 
 func TestComputeAggStatus(t *testing.T) {
 	tests := []struct {
@@ -87,6 +94,50 @@ func TestComputeAggStatus(t *testing.T) {
 				t.Errorf("label: got %q, want %q", got.label, tt.wantLabel)
 			}
 		})
+	}
+}
+
+func TestDeploymentActorsByID(t *testing.T) {
+	actors := deploymentActorsByID([]*audit.Entry{
+		{
+			Actor:      "tronghn@nais/fasit/123456789",
+			Action:     audit.ActionCreated,
+			ObjectType: audit.ObjectTypeDeployment,
+			Metadata:   []byte(`{"deploymentId":"dep-1"}`),
+		},
+		{
+			Actor:      "ignored@nais/fasit/1",
+			Action:     audit.ActionUpdated,
+			ObjectType: audit.ObjectTypeDeployment,
+			Metadata:   []byte(`{"deploymentId":"dep-2"}`),
+		},
+	})
+
+	if got := actors["dep-1"]; got != "tronghn@nais/fasit/123456789" {
+		t.Fatalf("got %q, want deployment actor", got)
+	}
+	if _, ok := actors["dep-2"]; ok {
+		t.Fatal("non-created deployment audit should not be used as deployment actor")
+	}
+}
+
+func TestRecentDeploymentsRendersActor(t *testing.T) {
+	var buf bytes.Buffer
+	err := recentDeployments([]depRow{{
+		FeatureName: "kyverno",
+		Version:     "2026-05-27-abc",
+		Status:      "DEPLOYED",
+		Created:     time.Now(),
+		DepID:       "dep-1",
+		Actor:       "tronghn@nais/fasit/123456789",
+	}}).Render(&buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	html := buf.String()
+	if !strings.Contains(html, "@tronghn via ") || !strings.Contains(html, "github.com/nais/fasit/actions/runs/123456789") {
+		t.Fatalf("recent deployments should render workflow actor, got %s", html)
 	}
 }
 
