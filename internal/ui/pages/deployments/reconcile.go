@@ -10,7 +10,7 @@ import (
 
 func ReconcileHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
+		deployment.TriggerReconcile(r.Context())
 		_ = audit.Create(r.Context(), audit.CreateParams{
 			Action:      audit.ActionTriggered,
 			Description: "full reconcile",

@@ -16,20 +16,10 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-type ReconcileTriggerEvent struct{}
-
-type TriggerResult int
-
-const (
-	TriggerResultSkipped TriggerResult = iota
-	TriggerResultSuccess
-	TriggerResultFailed
-)
-
 type reconciler struct {
 	querier          deploymentsql.Querier
 	log              logrus.FieldLogger
-	reconcileTrigger chan chan TriggerResult
+	reconcileTrigger chan struct{}
 	deployer         *deployer
 
 	lock sync.Mutex
@@ -48,7 +38,7 @@ func newReconciler(querier deploymentsql.Querier, deployer *deployer, meter metr
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile loop time histogram: %w", err)
 	}
-	reconcileTrigger := make(chan chan TriggerResult, 1)
+	reconcileTrigger := make(chan struct{}, 1)
 	return &reconciler{
 		querier:           querier,
 		log:               log,
@@ -59,39 +49,19 @@ func newReconciler(querier deploymentsql.Querier, deployer *deployer, meter metr
 	}, nil
 }
 
-func (r *reconciler) trigger(_ ReconcileTriggerEvent) chan TriggerResult {
-	done := make(chan TriggerResult, 1)
-	select {
-	case r.reconcileTrigger <- done:
-	default:
-		r.log.Debug("there is already a reconcile event queued, skipping")
-		done <- TriggerResultSkipped
-	}
-	return done
-}
-
 func (r *reconciler) Run(ctx context.Context, interval time.Duration) {
-	var done chan TriggerResult
 	for {
 		r.log.Info("reconciling")
 		err := r.Reconcile(ctx)
 		if err != nil {
 			r.log.WithError(err).Error("reconcile")
 		}
-		if done != nil {
-			if err != nil {
-				done <- TriggerResultFailed
-			} else {
-				done <- TriggerResultSuccess
-			}
-			done = nil
-		}
 
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(interval):
-		case done = <-r.reconcileTrigger:
+		case <-r.reconcileTrigger:
 			r.log.Info("manual reconcile triggered")
 		}
 	}

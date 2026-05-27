@@ -65,7 +65,7 @@ func CreateHandler() http.HandlerFunc {
 			return
 		}
 
-		deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
+		deployment.TriggerReconcile(r.Context())
 
 		redirect := r.Referer()
 		if redirect == "" {
