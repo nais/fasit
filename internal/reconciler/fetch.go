@@ -240,11 +240,9 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 				if err := json.Unmarshal(v.Value, &val); err != nil {
 					return nil, nil, fmt.Errorf("unmarshal env value %s/%s: %w", ei.Name, v.Key, err)
 				}
+				vals[v.Key] = val
 				if v.Secret {
-					vals[v.Key] = "*****"
 					sk[v.Key] = true
-				} else {
-					vals[v.Key] = val
 				}
 			}
 			secretKeys[ei.ID] = sk

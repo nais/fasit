@@ -40,6 +40,7 @@ const (
 	ActionSkipUnchanged
 	ActionSkipInProgress
 	ActionSkipDisabled
+	ActionSkipUnhealthy
 	ActionFailMissingDeps
 	ActionFailMissingConfig
 	ActionFailRender
@@ -55,6 +56,8 @@ func (a Action) String() string {
 		return "in-progress"
 	case ActionSkipDisabled:
 		return "disabled"
+	case ActionSkipUnhealthy:
+		return "unhealthy"
 	case ActionFailMissingDeps:
 		return "missing-deps"
 	case ActionFailMissingConfig:

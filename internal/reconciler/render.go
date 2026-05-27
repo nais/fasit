@@ -27,14 +27,27 @@ func (r *Reconciler) renderAll(snap *snapshot) []Result {
 
 	for _, env := range snap.environments {
 		reportedAt, ok := snap.healthByEnv[env.ID]
-		if !ok || time.Since(reportedAt) > 3*time.Minute {
-			continue
-		}
+		healthy := ok && time.Since(reportedAt) <= 3*time.Minute
 
 		matched := matchDeployments(snap.deployments, env)
 		winners := mostSpecificPerFeature(matched, env)
 
 		for _, dep := range winners {
+			if !healthy {
+				mu.Lock()
+				results = append(results, Result{
+					EnvironmentID:   env.ID,
+					EnvironmentName: env.Name,
+					TenantName:      env.TenantName,
+					DeploymentID:    dep.ID,
+					Feature:         dep.Feature,
+					Action:          ActionSkipUnhealthy,
+					Message:         "naisd is unhealthy",
+				})
+				mu.Unlock()
+				continue
+			}
+
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
 				mu.Lock()
 				results = append(results, Result{

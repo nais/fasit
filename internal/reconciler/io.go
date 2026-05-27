@@ -132,7 +132,7 @@ func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) err
 			statuses = append(statuses, model.RolloutStatusFailed.String())
 			statusMessages = append(statusMessages, res.Message)
 
-		case ActionSkipDisabled:
+		case ActionSkipDisabled, ActionSkipUnhealthy:
 			// No status update for disabled features.
 		}
 	}

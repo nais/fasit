@@ -34,7 +34,7 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		start := time.Now()
-		results, err := rec.Reconcile(r.Context())
+		result, err := rec.Reconcile(r.Context())
 		elapsed := time.Since(start)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("reconcile failed: %v", err), http.StatusInternalServerError)
@@ -44,7 +44,7 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 		renderPage(w, r, layout.Props{
 			Title:       "Reconciler",
 			CurrentPage: components.PageReconciler,
-			Content:     resultsPage(results, elapsed, rec.LastFetchDur, rec.LastRenderDur),
+			Content:     resultsPage(result.Results, elapsed, result.FetchDur, result.RenderDur),
 		})
 	}
 }
@@ -64,6 +64,7 @@ type actionSummary struct {
 	Unchanged     int
 	InProgress    int
 	Disabled      int
+	Unhealthy     int
 	MissingDeps   int
 	MissingConfig int
 	RenderError   int
@@ -86,6 +87,8 @@ func resultsPage(results []reconciler.Result, elapsed, fetchDur, renderDur time.
 			summary.InProgress++
 		case reconciler.ActionSkipDisabled:
 			summary.Disabled++
+		case reconciler.ActionSkipUnhealthy:
+			summary.Unhealthy++
 		case reconciler.ActionFailMissingDeps:
 			summary.MissingDeps++
 		case reconciler.ActionFailMissingConfig:
@@ -139,6 +142,7 @@ func summarySection(s actionSummary, total int, elapsed, fetchDur, renderDur tim
 				summaryRow("Unchanged", s.Unchanged, "action-skip"),
 				summaryRow("In progress", s.InProgress, "action-skip"),
 				summaryRow("Disabled", s.Disabled, "action-skip"),
+				summaryRow("Unhealthy naisd", s.Unhealthy, "action-skip"),
 				g.If(s.MissingDeps > 0, summaryRow("Missing dependencies", s.MissingDeps, "action-fail")),
 				g.If(s.MissingConfig > 0, summaryRow("Missing config", s.MissingConfig, "action-fail")),
 				g.If(s.RenderError > 0, summaryRow("Render error", s.RenderError, "action-fail")),
