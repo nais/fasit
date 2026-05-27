@@ -214,10 +214,12 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		breadcrumb.EnvironmentFeature(tenant.Name, env.Name, featureName),
 	}
 	if featureContext {
+		envCrumb := breadcrumb.FeatureEnvironment(featureName, tenant.Name, env.Name)
+		envCrumb.Icon = components.TenantAvatar(tenant.Name, components.HasTenantLogo(tenant.Name), "18px")
 		breadcrumbs = []breadcrumb.Crumb{
 			breadcrumb.Features(),
 			breadcrumb.Feature(featureName),
-			breadcrumb.FeatureEnvironment(featureName, tenant.Name, env.Name),
+			envCrumb,
 		}
 	}
 

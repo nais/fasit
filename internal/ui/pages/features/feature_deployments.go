@@ -70,14 +70,26 @@ func loadDeploymentData(ctx context.Context, feature *model.Feature, data *Detai
 }
 
 func deploymentDetailContent(data *DetailPage) g.Node {
-	if len(data.DeploymentEnvs) == 0 {
+	envs := currentDeploymentEnvStatuses(data.DeploymentEnvs)
+	if len(envs) == 0 {
 		return h.P(g.Text("No environments found."))
 	}
 
 	prefs := overviewViewPrefs()
-	cards := buildCards(data.DeploymentEnvs, prefs.Group)
+	cards := buildCards(envs, prefs.Group)
 
 	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs)
+}
+
+func currentDeploymentEnvStatuses(envs []DeploymentEnvStatus) []DeploymentEnvStatus {
+	ret := make([]DeploymentEnvStatus, 0, len(envs))
+	for _, env := range envs {
+		if env.IsOverridden {
+			continue
+		}
+		ret = append(ret, env)
+	}
+	return ret
 }
 
 func deploymentSpecsContent(data *DetailPage) g.Node {

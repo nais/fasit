@@ -6,6 +6,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCurrentDeploymentEnvStatusesSkipsOverriddenRows(t *testing.T) {
+	envs := []DeploymentEnvStatus{
+		{
+			Name:              "ci",
+			TenantName:        "ci-nais",
+			TenantSlug:        "ci-nais",
+			DeploymentVersion: "1.0.0",
+			StatusText:        "OVERRIDDEN",
+			IsOverridden:      true,
+		},
+		{
+			Name:              "ci",
+			TenantName:        "ci-nais",
+			TenantSlug:        "ci-nais",
+			DeploymentVersion: "2.0.0",
+			StatusText:        "DEPLOYED",
+		},
+		{
+			Name:              "dev",
+			TenantName:        "dev-nais",
+			TenantSlug:        "dev-nais",
+			DeploymentVersion: "1.0.0",
+			StatusText:        "FAILED",
+		},
+	}
+
+	got := currentDeploymentEnvStatuses(envs)
+
+	assert.Len(t, got, 2)
+	assert.Equal(t, "DEPLOYED", got[0].StatusText)
+	assert.Equal(t, "FAILED", got[1].StatusText)
+}
+
 func TestStatusTooltip(t *testing.T) {
 	t.Run("environment reconcile disabled with running version", func(t *testing.T) {
 		env := DeploymentEnvStatus{

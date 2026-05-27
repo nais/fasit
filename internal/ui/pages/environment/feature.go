@@ -387,7 +387,6 @@ func featureEnvironmentHeader(page *FeaturePage) g.Node {
 	return h.Div(h.Class("env-feature-header"),
 		h.Div(h.Class("env-feature-header-main"),
 			h.Div(h.Class("env-feature-identity"),
-				components.TenantAvatar(page.Tenant.Name, components.HasTenantLogo(page.Tenant.Name), "32px"),
 				h.Div(
 					h.H2(g.Text(page.Environment.Name)),
 					h.Div(h.Class("env-feature-meta"), g.Group(statusMeta)),
@@ -831,11 +830,11 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 func renderStatus(status string) g.Node {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED":
-		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" DEPLOYED")})
+		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" Deployed")})
 	case "FAILED":
-		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" FAILED")})
+		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" Failed")})
 	case "PENDING":
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" PENDING")})
+		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" Pending")})
 	default:
 		return g.Text(status)
 	}
