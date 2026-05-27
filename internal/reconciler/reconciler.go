@@ -15,7 +15,6 @@ type Reconciler struct {
 	log     logrus.FieldLogger
 	trigger chan struct{}
 
-	reconcileTime     metric.Int64Histogram
 	reconcileLoopTime metric.Int64Histogram
 
 	// Phase durations from the last Reconcile call.
@@ -24,10 +23,6 @@ type Reconciler struct {
 }
 
 func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogger) (*Reconciler, error) {
-	reconcileTime, err := meter.Int64Histogram("reconciler_environment_time", metric.WithDescription("Time spent reconciling per environment"), metric.WithUnit("ms"))
-	if err != nil {
-		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
-	}
 	reconcileLoopTime, err := meter.Int64Histogram("reconciler_loop_duration", metric.WithDescription("Total time for one full reconcile loop"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile loop time histogram: %w", err)
@@ -37,7 +32,6 @@ func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogg
 		querier:           querier,
 		log:               log,
 		trigger:           make(chan struct{}, 1),
-		reconcileTime:     reconcileTime,
 		reconcileLoopTime: reconcileLoopTime,
 	}, nil
 }
