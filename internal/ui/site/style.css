@@ -2368,8 +2368,11 @@ a:hover .feature-nav-badge {
 #env-overview[data-view="table"] #overview-grid { display: none; }
 
 /* Reconciler page */
-.reconciler-summary { margin: 1rem 0; }
-.reconciler-timing { color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem; }
+.reconciler-summary { margin: 1rem 0; display: flex; gap: 2rem; flex-wrap: wrap; }
+.timing-table { min-width: 14rem; }
+.timing-table td:nth-child(2), .timing-table th:nth-child(2),
+.timing-table td:nth-child(3), .timing-table th:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
+.timing-total td { font-weight: 600; border-top: 1px solid var(--border); }
 .summary-table { margin-bottom: 1rem; }
 .summary-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .action-deploy { color: var(--green); }

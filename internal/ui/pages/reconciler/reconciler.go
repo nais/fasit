@@ -130,11 +130,23 @@ func resultsPage(results []reconciler.Result, elapsed, fetchDur, renderDur time.
 	)
 }
 
+func fmtDur(d time.Duration) string {
+	if d < time.Millisecond {
+		return d.Round(time.Microsecond).String()
+	}
+	return d.Round(time.Millisecond).String()
+}
+
+func pct(part, total time.Duration) string {
+	if total == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%.0f%%", float64(part)/float64(total)*100)
+}
+
 func summarySection(s actionSummary, total int, elapsed, fetchDur, renderDur time.Duration) g.Node {
 	return h.Div(h.Class("reconciler-summary"),
-		h.Div(h.Class("reconciler-timing"),
-			g.Textf("Completed in %s (fetch: %s, render: %s)", elapsed.Round(time.Millisecond), fetchDur.Round(time.Millisecond), renderDur.Round(time.Millisecond)),
-		),
+		timingTable(elapsed, fetchDur, renderDur),
 		h.Table(h.Class("summary-table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Action")), h.Th(g.Text("Count")),
@@ -158,6 +170,25 @@ func summaryRow(label string, count int, class string) g.Node {
 		g.If(class != "", h.Class(class)),
 		h.Td(g.Text(label)),
 		h.Td(g.Textf("%d", count)),
+	)
+}
+
+func timingTable(total, fetch, render time.Duration) g.Node {
+	return h.Table(h.Class("timing-table"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Phase")),
+			h.Th(g.Text("Duration")),
+			h.Th(g.Text("%")),
+		)),
+		h.TBody(
+			h.Tr(h.Td(g.Text("Fetch")), h.Td(g.Text(fmtDur(fetch))), h.Td(g.Text(pct(fetch, total)))),
+			h.Tr(h.Td(g.Text("Render")), h.Td(g.Text(fmtDur(render))), h.Td(g.Text(pct(render, total)))),
+			h.Tr(h.Class("timing-total"),
+				h.Td(g.Text("Total")),
+				h.Td(g.Text(fmtDur(total))),
+				h.Td(),
+			),
+		),
 	)
 }
 
