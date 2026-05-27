@@ -46,3 +46,16 @@ FROM
 ORDER BY
 	feature_name;
 
+-- name: FeatureIndexRows :many
+SELECT DISTINCT ON (d.feature_name)
+	fd.name,
+	fd.description,
+	fd.source
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.feature_name,
+		d.created DESC;
+

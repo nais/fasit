@@ -498,10 +498,6 @@ nav .nav-btn:hover {
 .feature-index-filter:focus {
   border-color: var(--accent);
 }
-.feature-index-status,
-.feature-index-last-deploy {
-  white-space: nowrap;
-}
 .feature-overview-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);

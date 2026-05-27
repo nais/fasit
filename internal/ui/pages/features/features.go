@@ -85,28 +85,19 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 func IndexHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		names, err := featurepkg.FeatureNames(r.Context())
+		indexRows, err := featurepkg.FeatureIndexRows(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
 
 		query := strings.TrimSpace(r.URL.Query().Get("q"))
-		rows := make([]featureIndexRow, 0, len(names))
-		for _, name := range names {
-			feature, err := featurepkg.FeatureByName(r.Context(), name)
-			if err != nil {
-				http.Error(w, "Failed to load feature metadata", http.StatusInternalServerError)
-				return
-			}
-			envs := featureDeploymentEnvStatuses(r.Context(), feature)
+		rows := make([]featureIndexRow, 0, len(indexRows))
+		for _, indexRow := range indexRows {
 			row := featureIndexRow{
-				Name:        feature.Name,
-				Description: feature.Description,
-				Source:      feature.Source,
-				Chart:       feature.Chart,
-				Status:      featureIndexStatus(envs),
-				LastDeploy:  featureIndexLastDeploy(envs),
+				Name:        indexRow.Name,
+				Description: indexRow.Description,
+				Source:      indexRow.Source,
 			}
 			if query == "" || featureIndexMatches(row, query) {
 				rows = append(rows, row)
@@ -217,19 +208,6 @@ type featureIndexRow struct {
 	Name        string
 	Description string
 	Source      string
-	Chart       string
-	Status      featureIndexStatusSummary
-	LastDeploy  featureIndexLastDeploySummary
-}
-
-type featureIndexStatusSummary struct {
-	Text  string
-	Class string
-}
-
-type featureIndexLastDeploySummary struct {
-	Time   time.Time
-	Status string
 }
 
 func featureIndexPage(features []featureIndexRow, query string) g.Node {
@@ -255,9 +233,7 @@ func featureIndexMatches(feature featureIndexRow, query string) bool {
 	}
 	text := strings.ToLower(strings.Join([]string{
 		feature.Name,
-		feature.Status.Text,
 		feature.Description,
-		feature.Chart,
 		feature.Source,
 	}, " "))
 	for _, term := range terms {
@@ -273,95 +249,17 @@ func featureIndexTable(features []featureIndexRow) g.Node {
 	for _, feature := range features {
 		rows = append(rows, h.Tr(
 			h.Td(h.A(h.Href("/features/"+feature.Name), g.Text(feature.Name))),
-			h.Td(h.Span(h.Class("feature-index-status "+feature.Status.Class), g.Text(feature.Status.Text))),
-			featureIndexLastDeployCell(feature.LastDeploy),
 			h.Td(h.Class("text-muted"), g.Text(feature.Description)),
-			h.Td(h.Class("text-muted"), g.Text(feature.Chart)),
 			h.Td(g.If(feature.Source != "", h.A(h.Href(feature.Source), h.Target("_blank"), h.Rel("noopener noreferrer"), g.Text("GitHub ↗")))),
 		))
 	}
 	return h.Table(h.ID("feature-index-table"), h.Class("table table-compact sortable"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Feature")),
-			h.Th(g.Text("Status")),
-			h.Th(g.Text("Last deploy")),
 			h.Th(g.Text("Description")),
-			h.Th(g.Text("Chart")),
 			h.Th(g.Text("Source")),
 		)),
 		h.TBody(g.Group(rows)),
-	)
-}
-
-func featureIndexStatus(envs []DeploymentEnvStatus) featureIndexStatusSummary {
-	if len(envs) == 0 {
-		return featureIndexStatusSummary{Text: "no environments", Class: "text-muted"}
-	}
-
-	counts := map[string]int{}
-	for _, env := range envs {
-		counts[featureIndexStatusKey(env)]++
-	}
-
-	parts := []string{}
-	add := func(key, label string) {
-		if counts[key] > 0 {
-			parts = append(parts, fmt.Sprintf("%d %s", counts[key], label))
-		}
-	}
-	add("ok", "ok")
-	add("failed", "failed")
-	add("pending", "pending")
-	add("disabled", "disabled")
-	add("unknown", "unknown")
-
-	class := "text-muted"
-	if counts["failed"] > 0 {
-		class = "status-error"
-	} else if counts["pending"] > 0 {
-		class = "status-pending"
-	} else if counts["ok"] == len(envs) {
-		class = "status-success"
-	}
-
-	return featureIndexStatusSummary{Text: strings.Join(parts, ", "), Class: class}
-}
-
-func featureIndexLastDeploy(envs []DeploymentEnvStatus) featureIndexLastDeploySummary {
-	var latest featureIndexLastDeploySummary
-	for _, env := range envs {
-		status := strings.ToUpper(env.StatusText)
-		if status != "DEPLOYED" && status != "FAILED" {
-			continue
-		}
-		if env.LastModified.IsZero() {
-			continue
-		}
-		if latest.Time.IsZero() || env.LastModified.After(latest.Time) {
-			latest = featureIndexLastDeploySummary{Time: env.LastModified, Status: status}
-		}
-	}
-	return latest
-}
-
-func featureIndexLastDeployCell(last featureIndexLastDeploySummary) g.Node {
-	return h.Td(featureIndexLastDeployInline(last))
-}
-
-func featureIndexLastDeployInline(last featureIndexLastDeploySummary) g.Node {
-	if last.Time.IsZero() {
-		return h.Span(h.Class("text-muted"), g.Text("never"))
-	}
-	class := "text-muted"
-	if last.Status == "FAILED" {
-		class = "status-error"
-	}
-	return h.Span(
-		h.Title(fmt.Sprintf("%s · %s", view.FormatTime(last.Time), strings.ToLower(last.Status))),
-		h.Class("feature-index-last-deploy"),
-		g.Text(view.RelativeTime(last.Time)),
-		g.Text(" · "),
-		h.Span(h.Class(class), g.Text(strings.ToLower(last.Status))),
 	)
 }
 

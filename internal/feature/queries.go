@@ -465,8 +465,31 @@ func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	return featureFromSQL(f.FeatureDatum)
 }
 
+type FeatureIndexRow struct {
+	Name        string
+	Description string
+	Source      string
+}
+
 func FeatureNames(ctx context.Context) ([]string, error) {
 	return querier(ctx).FeatureNames(ctx)
+}
+
+func FeatureIndexRows(ctx context.Context) ([]FeatureIndexRow, error) {
+	rows, err := querier(ctx).FeatureIndexRows(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]FeatureIndexRow, len(rows))
+	for i, row := range rows {
+		ret[i] = FeatureIndexRow{
+			Name:        row.Name,
+			Description: row.Description,
+			Source:      row.Source,
+		}
+	}
+	return ret, nil
 }
 
 func HelmValueDiff(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {

@@ -27,6 +27,7 @@ type Querier interface {
 	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
 	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
+	FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error)
 	FeatureNames(ctx context.Context) ([]string, error)
 	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (DeployInstruction, error)
 	GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (DeployInstruction, error)

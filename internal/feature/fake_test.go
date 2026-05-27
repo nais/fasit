@@ -109,6 +109,10 @@ func (f *fakeQuerier) FeatureDataCreate(context.Context, featuresql.FeatureDataC
 	panic("not implemented")
 }
 
+func (f *fakeQuerier) FeatureIndexRows(context.Context) ([]featuresql.FeatureIndexRowsRow, error) {
+	panic("not implemented")
+}
+
 func (f *fakeQuerier) FeatureNames(context.Context) ([]string, error) {
 	panic("not implemented")
 }

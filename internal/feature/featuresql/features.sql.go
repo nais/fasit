@@ -66,6 +66,46 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 	return err
 }
 
+const featureIndexRows = `-- name: FeatureIndexRows :many
+SELECT DISTINCT ON (d.feature_name)
+	fd.name,
+	fd.description,
+	fd.source
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.feature_name,
+		d.created DESC
+`
+
+type FeatureIndexRowsRow struct {
+	Name        string
+	Description string
+	Source      string
+}
+
+func (q *Queries) FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error) {
+	rows, err := q.db.Query(ctx, featureIndexRows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeatureIndexRowsRow{}
+	for rows.Next() {
+		var i FeatureIndexRowsRow
+		if err := rows.Scan(&i.Name, &i.Description, &i.Source); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const featureNames = `-- name: FeatureNames :many
 SELECT DISTINCT
 	feature_name
