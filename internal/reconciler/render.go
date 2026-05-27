@@ -18,11 +18,11 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func (r *Reconciler) renderAll(snap *snapshot) []renderResult {
+func (r *Reconciler) renderAll(snap *snapshot) []Result {
 	var (
 		mu      sync.Mutex
 		wg      sync.WaitGroup
-		results []renderResult
+		results []Result
 	)
 
 	for _, env := range snap.environments {
@@ -54,8 +54,8 @@ func (r *Reconciler) renderAll(snap *snapshot) []renderResult {
 	return results
 }
 
-func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDeployment) renderResult {
-	base := renderResult{
+func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDeployment) Result {
+	base := Result{
 		EnvironmentID:   env.ID,
 		EnvironmentName: env.Name,
 		TenantName:      env.TenantName,
@@ -65,7 +65,7 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 
 	// Check dependencies.
 	if ok, missing := checkDependencies(dep.Feature, env.ID, snap.deployedFeats); !ok {
-		base.Action = actionFailMissingDeps
+		base.Action = ActionFailMissingDeps
 		base.Message = "missing dependencies: " + strings.Join(missing, ", ")
 		return base
 	}
@@ -78,14 +78,14 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 
 	configMap, err := featurepkg.MakeHelmConfigMap(merged)
 	if err != nil {
-		base.Action = actionFailRender
+		base.Action = ActionFailRender
 		base.Message = fmt.Sprintf("config map error: %s", err)
 		return base
 	}
 
 	mv := snap.envValues[env.ID]
 	if mv == nil {
-		base.Action = actionFailRender
+		base.Action = ActionFailRender
 		base.Message = "no environment values"
 		return base
 	}
@@ -104,18 +104,18 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 	if err != nil {
 		var fer *errs.ErrMissingRequiredFields
 		if isErrMissingFields(err, &fer) {
-			base.Action = actionFailMissingConfig
+			base.Action = ActionFailMissingConfig
 			base.Message = fmt.Sprintf("missing required chart config: %s", strings.Join(fer.Fields, ", "))
 			return base
 		}
-		base.Action = actionFailRender
+		base.Action = ActionFailRender
 		base.Message = fmt.Sprintf("render error: %s", err)
 		return base
 	}
 
 	hash, err := generateHash(values, dep.Feature)
 	if err != nil {
-		base.Action = actionFailRender
+		base.Action = ActionFailRender
 		base.Message = fmt.Sprintf("hash error: %s", err)
 		return base
 	}
@@ -126,14 +126,14 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 	// Check against latest instruction.
 	if instr, ok := snap.latestInstr[env.ID][dep.Feature.Name]; ok {
 		if instr.Status == model.RolloutStatusCreated.String() || instr.Status == model.RolloutStatusPending.String() {
-			base.Action = actionSkipInProgress
+			base.Action = ActionSkipInProgress
 			base.Status = instr.Status
 			base.Message = "deployment is already in progress"
 			return base
 		}
 		if instr.Hash == hash {
 			if instr.Status != model.RolloutStatusFailed.String() {
-				base.Action = actionSkipUnchanged
+				base.Action = ActionSkipUnchanged
 				base.Status = instr.Status
 				base.Message = "no changes in feature"
 				return base
@@ -141,7 +141,7 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 		}
 	}
 
-	base.Action = actionDeploy
+	base.Action = ActionDeploy
 	base.Message = "deployment instruction sent to naisd"
 	return base
 }

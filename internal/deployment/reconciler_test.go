@@ -160,12 +160,21 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 
 	// Wire new reconciler.
 	newPub := func(topicID string, log logrus.FieldLogger) reconciler.Publisher { return pub }
-	rec, err = reconciler.New(reconcilersql.New(pool), newPub, meter, logger)
+	recQuerier := reconcilersql.New(pool)
+	writer, err := reconciler.NewDBResultWriter(recQuerier, newPub, meter, logger)
+	if err != nil {
+		t.Fatalf("failed to create result writer: %v", err)
+	}
+	rec, err = reconciler.New(recQuerier, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to create reconciler: %v", err)
 	}
 	newReconcile = func(ctx context.Context) error {
-		return rec.Reconcile(ctx)
+		results, err := rec.Reconcile(ctx)
+		if err != nil {
+			return err
+		}
+		return writer.WriteResults(ctx, results)
 	}
 
 	db = &reconcileDB{Db{t: t, pool: pool}}
@@ -207,9 +216,11 @@ func forEachReconciler(
 				call++
 				start := time.Now()
 				err := raw(ctx)
-				t.Logf("reconcile #%d took %s", call, time.Since(start))
+				elapsed := time.Since(start)
+				t.Logf("reconcile #%d took %s", call, elapsed)
 				if isNew {
-					t.Logf("  phases: fetch=%s render=%s io=%s", rec.LastFetchDur, rec.LastRenderDur, rec.LastIODur)
+					ioDur := elapsed - rec.LastFetchDur - rec.LastRenderDur
+					t.Logf("  phases: fetch=%s render=%s io=%s", rec.LastFetchDur, rec.LastRenderDur, ioDur)
 				}
 				return err
 			}
