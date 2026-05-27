@@ -10,7 +10,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/naisdstatus"
-	uidatabase "github.com/nais/fasit/internal/ui/database"
+	uidatabase "github.com/nais/fasit/internal/ui/uidata"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )

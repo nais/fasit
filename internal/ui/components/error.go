@@ -7,8 +7,10 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type DataLoader[T any] func(ctx context.Context) ([]T, error)
-type Renderer[T any] func(env T) g.Node
+type (
+	DataLoader[T any] func(ctx context.Context) ([]T, error)
+	Renderer[T any]   func(env T) g.Node
+)
 
 func Error(err error) g.Node {
 	return h.Div(h.Class("error"), h.P(g.Text(err.Error())))

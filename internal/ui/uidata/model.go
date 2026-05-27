@@ -1,4 +1,4 @@
-package database
+package uidata
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/types"
-	"github.com/nais/fasit/internal/ui/database/sqlgen"
+	"github.com/nais/fasit/internal/ui/uidata/sqlgen"
 )
 
 type Environment struct {

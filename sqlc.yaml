@@ -41,12 +41,12 @@ sql:
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
   - name: "UI SQL"
     !!merge <<: *default_domain
-    queries: "internal/ui/database/queries"
+    queries: "internal/ui/uidata/queries"
     gen:
       go:
         !!merge <<: *default_go
         package: "sqlgen"
-        out: "internal/ui/database/sqlgen"
+        out: "internal/ui/uidata/sqlgen"
   - name: "Environment Management SQL"
     !!merge <<: *default_domain
     queries: "internal/environmentmanagement/queries"

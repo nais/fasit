@@ -1,11 +1,11 @@
-package database
+package uidata
 
 import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/nais/fasit/internal/ui/database/sqlgen"
+	"github.com/nais/fasit/internal/ui/uidata/sqlgen"
 )
 
 type ctxKey int
