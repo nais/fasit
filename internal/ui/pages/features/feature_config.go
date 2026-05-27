@@ -146,7 +146,7 @@ func globalComputedTable(featureName string, items []components.ConfigItem) g.No
 	}
 	return h.Div(
 		h.H2(g.Text("Computed")),
-		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "feature-global-computed"),
+		h.Table(h.Class("table sortable config-table computed-template-table"), g.Attr("data-sort-key", "feature-global-computed"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(g.Text("Template")),

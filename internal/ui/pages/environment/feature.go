@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -19,24 +20,49 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
 
 func FeatureTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
+	return featureTabHandler(renderPage, activeTab, false)
+}
+
+func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
+	return featureTabHandler(renderPage, activeTab, true)
+}
+
+func featureTabHandler(renderPage RenderPage, activeTab string, featureContext bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab)
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab, featureContext)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		title := data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name
+		currentPage := components.PageEnvironments
+		if featureContext {
+			title = data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name
+			currentPage = components.PageFeatures
+		}
 		renderPage(w, r, layout.Props{
-			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage: components.PageEnvironments,
+			Title:       title,
+			CurrentPage: currentPage,
 			Content:     featurePageContent(data),
 		})
+	}
+}
+
+func AuditRedirectHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		feature := chi.URLParam(r, "feature")
+		tenant := chi.URLParam(r, "tenant")
+		env := chi.URLParam(r, "env")
+		query := url.QueryEscape(feature + " " + tenant + "/" + env)
+		http.Redirect(w, r, "/auditlog?q="+query, http.StatusSeeOther)
 	}
 }
 
@@ -264,8 +290,6 @@ func featurePageContent(page *FeaturePage) g.Node {
 		tabContent = helmTab(page)
 	case "deployments":
 		tabContent = deploymentsTab(page)
-	case "audit":
-		tabContent = auditTab(page)
 	case "playground":
 		tabContent = playgroundTab(page)
 	default:
@@ -273,74 +297,121 @@ func featurePageContent(page *FeaturePage) g.Node {
 	}
 
 	return h.Div(h.Class("container"),
-		components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures),
+		featurePageSidebar(page),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(page.Breadcrumbs),
+			components.Card(featureEnvironmentHeader(page)),
 			components.Card(
-				h.Div(h.Class("card-header-row"),
-					h.Div(
-						h.H2(g.Text(page.Feature.Name)),
-						h.A(h.Href("/features/"+page.Feature.Name), g.Text("View feature →")),
-					),
-					redeployButton(page),
-				),
-				featureMetadataHeader(page),
-			),
-			components.Card(
-				components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name)),
+				components.TabsNav(page.ActiveTab, envFeatureTabs(page)),
 				tabContent,
 			),
 		),
 	)
 }
 
-func featureMetadataHeader(page *FeaturePage) g.Node {
-	feat := page.Feature
-	rows := []g.Node{}
+func featurePageSidebar(page *FeaturePage) g.Node {
+	if !page.FeatureContext {
+		return components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures)
+	}
+	return h.Aside(h.Class("sidebar feature-workspace-sidebar"),
+		h.Div(h.Class("feature-workspace-header"),
+			h.H4(g.Text(page.Feature.Name)),
+		),
+		h.Div(h.Class("nav"),
+			h.Ul(
+				workspaceNavItem("/features/"+page.Feature.Name, "Overview", false),
+				workspaceNavItem("/features/"+page.Feature.Name+"/deploy-specs", "Deploy specs", false),
+				workspaceNavItem("/features/"+page.Feature.Name+"/config", "Config", false),
+				workspaceNavItem("/features/"+page.Feature.Name+"/config-explorer", "Config explorer", false),
+			),
+			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
+			h.Ul(g.Group(g.Map(page.WorkspaceEnvs, func(env FeatureWorkspaceEnvironment) g.Node {
+				return workspaceEnvironmentItem(page.Feature.Name, env, env.TenantSlug == page.TenantSlug && env.EnvironmentName == page.Environment.Name)
+			}))),
+		),
+	)
+}
 
+func workspaceNavItem(href, label string, active bool) g.Node {
+	attrs := []g.Node{h.Href(href)}
+	if active {
+		attrs = append(attrs, h.Class("active"))
+	}
+	return h.Li(h.A(append(attrs, g.Text(label))...))
+}
+
+func workspaceEnvironmentItem(featureName string, env FeatureWorkspaceEnvironment, active bool) g.Node {
+	className := "workspace-env-link"
+	if active {
+		className += " active"
+	}
+	attrs := []g.Node{h.Href("/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.EnvironmentName), h.Class(className)}
+	return h.Li(h.A(append(attrs,
+		h.Span(h.Class("workspace-env-dot "+workspaceEnvironmentStatusClass(env.Status)), h.Title(env.Status)),
+		h.Span(g.Text(env.TenantName+" / "+env.EnvironmentName)),
+	)...))
+}
+
+func workspaceEnvironmentStatusClass(status string) string {
+	switch deployment.NormalizeStatus(status) {
+	case "DEPLOYED":
+		return "status-success"
+	case "FAILED":
+		return "status-error"
+	case "PENDING", "CREATED":
+		return "status-pending"
+	case "DISABLED":
+		return "status-disabled"
+	default:
+		return "text-muted"
+	}
+}
+
+func featureEnvironmentHeader(page *FeaturePage) g.Node {
 	currentVersion := "—"
 	if page.FeatureLog != nil && page.FeatureLog.CurrentVersion != "" {
 		currentVersion = page.FeatureLog.CurrentVersion
 	}
-	rows = append(rows, metaRow("Current version", g.Text(currentVersion)))
 
+	statusNode := h.Span(h.Class("text-muted"), g.Text("No status"))
 	if page.Status != "" {
-		statusNode := renderStatus(page.Status)
-		if page.StatusMessage != "" {
-			statusNode = g.Group([]g.Node{
-				statusNode,
-				h.Span(h.Class("status-message"), g.Textf(" (%s)", page.StatusMessage)),
-			})
-		}
-		rows = append(rows, metaRow("Status", statusNode))
+		statusNode = renderStatus(page.Status)
 	}
 
-	if feat.Chart != "" {
-		rows = append(rows, metaRow("Chart", g.Text(feat.Chart)))
+	statusMeta := []g.Node{h.Span(statusNode)}
+	if page.FeatureLog != nil && page.FeatureLog.LastModifiedRelative != "" {
+		statusMeta = append(statusMeta, h.Span(h.Class("text-muted"), h.Title(page.FeatureLog.LastModified), g.Text(page.FeatureLog.LastModifiedRelative)))
 	}
-	if feat.Source != "" {
-		rows = append(rows, metaRow("Source", h.A(h.Href(feat.Source), h.Target("_blank"), g.Text(feat.Source))))
-	}
-	if feat.Description != "" {
-		rows = append(rows, metaRow("Description", g.Text(feat.Description)))
-	}
+	statusMeta = append(statusMeta, h.Span(h.Class("text-muted"), g.Text("Version "+currentVersion)))
 
-	return h.Table(h.Class("table meta-table"), h.TBody(rows...))
+	return h.Div(h.Class("env-feature-header"),
+		h.Div(h.Class("env-feature-header-main"),
+			h.Div(h.Class("env-feature-identity"),
+				components.TenantAvatar(page.Tenant.Name, components.HasTenantLogo(page.Tenant.Name), "32px"),
+				h.Div(
+					h.H2(g.Text(page.Environment.Name)),
+					h.Div(h.Class("env-feature-meta"), g.Group(statusMeta)),
+					h.Div(h.Class("env-feature-actions-row"),
+						reconcileControl(page),
+						redeployButton(page),
+					),
+				),
+			),
+			h.Aside(h.Class("env-feature-header-side"),
+				recentEnvironmentActivity(page),
+			),
+		),
+	)
 }
 
-func metaRow(label string, value g.Node) g.Node {
-	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
-}
-
-func envFeatureTabs(tenant, env, feature string) []components.Tab {
-	base := featureBasePathValues(tenant, env, feature)
+func envFeatureTabs(page *FeaturePage) []components.Tab {
+	base := featureBasePathForPage(page)
 	return []components.Tab{
 		{ID: "overview", Href: base, Label: "Config"},
 		{ID: "logs", Href: base + "/logs", Label: "Logs"},
 		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
 		{ID: "deployments", Href: base + "/deployments", Label: "Deployments"},
 		{ID: "playground", Href: base + "/playground", Label: "Playground"},
-		{ID: "audit", Href: base + "/audit", Label: "Audit"},
 	}
 }
 
@@ -349,7 +420,7 @@ func redeployButton(page *FeaturePage) g.Node {
 		return nil
 	}
 	redeployPopoverID := "trigger-redeploy"
-	redeployAction := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/redeploy"
+	redeployAction := featureBasePathForPage(page) + "/redeploy"
 	return h.Div(
 		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
 		h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
@@ -362,12 +433,12 @@ func redeployButton(page *FeaturePage) g.Node {
 	)
 }
 
-func overviewTab(page *FeaturePage) g.Node {
+func reconcileControl(page *FeaturePage) g.Node {
 	popoverID := "toggle-reconcile"
-	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/toggle-reconcile"
-	statusClass, statusText, buttonText, newEnabled := "status-error", "✗ Reconcile disabled", "Enable reconcile", "true"
+	action := featureBasePathForPage(page) + "/toggle-reconcile"
+	statusClass, statusText, buttonText, newEnabled := "status-error", "Reconcile disabled", "Enable reconcile", "true"
 	if page.Feature.Enabled {
-		statusClass, statusText, buttonText, newEnabled = "status-success", "✓ Reconcile enabled", "Disable reconcile", "false"
+		statusClass, statusText, buttonText, newEnabled = "status-success", "Reconcile enabled", "Disable reconcile", "false"
 	}
 
 	var dialogBody g.Node
@@ -392,6 +463,17 @@ func overviewTab(page *FeaturePage) g.Node {
 		)
 	}
 
+	return h.Div(h.Class("reconcile-control"),
+		h.Span(h.Class(statusClass), g.Text(statusText)),
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
+		h.Div(g.Attr("popover", ""), h.ID(popoverID),
+			h.H3(g.Text("Confirm reconcile toggle")),
+			dialogBody,
+		),
+	)
+}
+
+func overviewTab(page *FeaturePage) g.Node {
 	configurable := make([]FeatureConfigItem, 0, len(page.Feature.ConfigItems))
 	computed := make([]FeatureConfigItem, 0, len(page.Feature.ConfigItems))
 	for _, item := range page.Feature.ConfigItems {
@@ -402,17 +484,37 @@ func overviewTab(page *FeaturePage) g.Node {
 		}
 	}
 
-	return h.Div(h.Class("tab-content-wrapper"),
-		h.P(
-			h.Span(h.Class(statusClass), g.Text(statusText)), g.Text(" "),
-			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
-			h.Div(g.Attr("popover", ""), h.ID(popoverID),
-				h.H3(g.Text("Confirm reconcile toggle")),
-				dialogBody,
-			),
-		),
+	return h.Div(h.Class("tab-content-wrapper env-feature-overview"),
 		configurableTable(page, configurable),
 		computedTable(page, computed),
+	)
+}
+
+func recentEnvironmentActivity(page *FeaturePage) g.Node {
+	if len(page.AuditEntries) == 0 {
+		return nil
+	}
+	items := make([]g.Node, 0, len(page.AuditEntries))
+	for _, entry := range page.AuditEntries {
+		description := auditlog.Description(entry)
+		items = append(items, h.Li(
+			h.Div(h.Class("env-activity-meta"),
+				h.Span(
+					g.Text(string(entry.Action)),
+					g.If(entry.Actor != "", g.Group([]g.Node{g.Text(" by "), h.Span(h.Class("env-activity-actor"), view.ActorNode(entry.Actor))})),
+				),
+				h.Span(h.Title(view.FormatTime(entry.CreatedAt)), g.Text(view.RelativeTime(entry.CreatedAt))),
+			),
+			h.Div(h.Class("env-activity-resource"), auditlog.ResourceLink(entry)),
+			g.If(description != "", h.Div(h.Class("env-activity-description"), g.Text(description))),
+		))
+	}
+	return h.Section(h.Class("env-activity"),
+		h.Div(h.Class("env-activity-header"),
+			h.H3(g.Text("Recent activity")),
+			h.A(h.Href("/auditlog?q="+url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name)), g.Text("View all")),
+		),
+		h.Ul(h.Class("env-activity-list"), g.Group(items)),
 	)
 }
 
@@ -494,7 +596,7 @@ func logsTab(page *FeaturePage) g.Node {
 	}
 	content := []g.Node{}
 	if len(page.FeatureLog.CurrentLog) > 0 {
-		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last update: %s · Last deployed: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified, page.FeatureLog.LastDeployed)))
+		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last checked: %s · Last successful deploy: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified, page.FeatureLog.LastDeployed)))
 		if page.FeatureLog.HelmDiff != nil && page.FeatureLog.HelmDiff.Diff != "" && page.FeatureLog.HelmDiff.Difference != model.HelmValueDifferenceFullMatch {
 			content = append(content, h.Details(h.Summary(g.Textf("Helm value changes (%s)", strings.ToLower(strings.ReplaceAll(page.FeatureLog.HelmDiff.Difference.String(), "_", " ")))), h.Pre(h.Class("code-block"), g.Raw(page.FeatureLog.HelmDiff.Diff))))
 		}
@@ -549,7 +651,7 @@ func playgroundTab(page *FeaturePage) g.Node {
 		code = defaultPlaygroundCode
 	}
 
-	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/playground"
+	action := featureBasePathForPage(page) + "/playground"
 
 	return h.Div(h.Class("tab-content-wrapper"),
 		h.Form(
@@ -692,54 +794,8 @@ func labelPills(labels map[string]string) g.Node {
 	return g.Group(pills)
 }
 
-func auditTab(page *FeaturePage) g.Node {
-	if len(page.AuditEntries) == 0 {
-		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Audit Log")), h.P(g.Text("No audit entries yet.")))
-	}
-	rows := make([]g.Node, 0, len(page.AuditEntries))
-	for _, e := range page.AuditEntries {
-		cells := []g.Node{
-			h.Td(g.Text(view.FormatTime(e.CreatedAt))),
-			h.Td(g.Text(string(e.Action))),
-			h.Td(g.Text(e.ObjectType.Display() + " " + e.ObjectID)),
-			h.Td(g.Text(e.Description)),
-			h.Td(view.ActorNode(e.Actor)),
-		}
-		if len(e.Metadata) > 0 {
-			var pretty bytes.Buffer
-			if err := json.Indent(&pretty, e.Metadata, "", "  "); err != nil {
-				pretty.Reset()
-				pretty.Write(e.Metadata)
-			}
-			cells = append(cells, h.Td(
-				h.Details(
-					h.Summary(g.Text("details")),
-					h.Pre(h.Class("code-block"), g.Text(pretty.String())),
-				),
-			))
-		} else {
-			cells = append(cells, h.Td(g.Text("")))
-		}
-		rows = append(rows, h.Tr(cells...))
-	}
-	return h.Div(h.Class("tab-content-wrapper"),
-		h.H2(g.Text("Audit Log")),
-		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-audit"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Time")),
-				h.Th(g.Text("Action")),
-				h.Th(g.Text("Resource")),
-				h.Th(g.Text("Details")),
-				h.Th(g.Text("Actor")),
-				h.Th(g.Text("Metadata")),
-			)),
-			h.TBody(rows...),
-		),
-	)
-}
-
 func configActionsCell(page *FeaturePage, item FeatureConfigItem) g.Node {
-	basePath := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name)
+	basePath := featureBasePathForPage(page)
 	if item.Source == string(model.ConfigSourceEnv) {
 		return g.Group([]g.Node{
 			components.ConfigEditPopover(
@@ -763,7 +819,7 @@ func configActionsCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 }
 
 func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
-	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/delete/" + item.ID
+	action := featureBasePathForPage(page) + "/config/delete/" + item.ID
 	return components.ConfigDeletePopover(
 		"delete-"+item.ID,
 		action,
@@ -794,9 +850,16 @@ func prettyJSON(s string) string {
 }
 
 func featureBasePath(r *http.Request) string {
-	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"))
+	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), strings.HasPrefix(r.URL.Path, "/features/"))
 }
 
-func featureBasePathValues(tenant, env, feature string) string {
+func featureBasePathForPage(page *FeaturePage) string {
+	return featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.FeatureContext)
+}
+
+func featureBasePathValues(tenant, env, feature string, featureContext bool) string {
+	if featureContext {
+		return "/features/" + feature + "/envs/" + tenant + "/" + env
+	}
 	return "/tenants/" + tenant + "/envs/" + env + "/" + feature
 }

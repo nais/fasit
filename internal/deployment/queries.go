@@ -438,6 +438,9 @@ func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status mod
 }
 
 func formatLabels(labels map[string]string) string {
+	if len(labels) == 0 {
+		return "all environments"
+	}
 	keys := make([]string, 0, len(labels))
 	for k := range labels {
 		keys = append(keys, k)
@@ -445,7 +448,7 @@ func formatLabels(labels map[string]string) string {
 	sort.Strings(keys)
 	parts := make([]string, 0, len(keys))
 	for _, k := range keys {
-		parts = append(parts, k+":"+labels[k])
+		parts = append(parts, k+"="+labels[k])
 	}
-	return strings.Join(parts, " ")
+	return strings.Join(parts, ", ")
 }

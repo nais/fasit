@@ -3,6 +3,7 @@ package auditlog
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -30,7 +31,11 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			terms := strings.Fields(query)
 			filtered := entries[:0]
 			for _, e := range entries {
-				text := strings.ToLower(string(e.Action) + " " + string(e.ObjectType) + " " + e.ObjectID + " " + e.EnvironmentName + " " + e.TenantName + " " + e.Actor + " " + e.Description)
+				envLabel := ""
+				if e.TenantName != "" && e.EnvironmentName != "" {
+					envLabel = e.TenantName + "/" + e.EnvironmentName
+				}
+				text := strings.ToLower(string(e.Action) + " " + string(e.ObjectType) + " " + e.ObjectID + " " + envLabel + " " + e.EnvironmentName + " " + e.TenantName + " " + e.Actor + " " + e.Description)
 				if matchesAll(text, terms) {
 					filtered = append(filtered, e)
 				}
@@ -92,7 +97,8 @@ func activityTable(entries []*audit.Entry) g.Node {
 		rows = append(rows, h.Tr(
 			h.Td(g.Text(string(e.Action))),
 			h.Td(ResourceLink(e)),
-			h.Td(h.Class("text-muted"), g.Text(e.Description)),
+			h.Td(EnvLink(e)),
+			h.Td(h.Class("text-muted"), g.Text(Description(e))),
 			h.Td(view.ActorNode(e.Actor)),
 			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
 		))
@@ -102,12 +108,60 @@ func activityTable(entries []*audit.Entry) g.Node {
 		h.THead(h.Tr(
 			h.Th(g.Text("Action")),
 			h.Th(g.Text("Resource")),
+			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Details")),
 			h.Th(g.Text("Actor")),
 			h.Th(g.Text("When")),
 		)),
 		h.TBody(g.Group(rows)),
 	)
+}
+
+func Description(e *audit.Entry) string {
+	if e.ObjectType == audit.ObjectTypeDeployment && e.Action == audit.ActionCreated {
+		description := strings.TrimSpace(e.Description)
+		version := strings.TrimSpace(strings.TrimPrefix(strings.Split(description, "→")[0], "version"))
+		if version == "" {
+			return description
+		}
+		return "version " + version + " → " + auditTargetDescription(e)
+	}
+	if e.Description != "" {
+		return e.Description
+	}
+	return e.Summary()
+}
+
+func auditTargetDescription(e *audit.Entry) string {
+	var metadata struct {
+		Target map[string]string `json:"target"`
+	}
+	if len(e.Metadata) > 0 && json.Unmarshal(e.Metadata, &metadata) == nil && len(metadata.Target) > 0 {
+		return formatLabels(metadata.Target)
+	}
+	parts := strings.Split(e.Description, "→")
+	if len(parts) > 1 {
+		if target := strings.TrimSpace(parts[1]); target != "" {
+			return target
+		}
+	}
+	return "all environments"
+}
+
+func formatLabels(labels map[string]string) string {
+	if len(labels) == 0 {
+		return "all environments"
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+"="+labels[k])
+	}
+	return strings.Join(parts, ", ")
 }
 
 func ResourceLink(e *audit.Entry) g.Node {
@@ -137,13 +191,6 @@ func ResourceLink(e *audit.Entry) g.Node {
 		} else {
 			nodes = append(nodes, h.A(h.Href(href), g.Text(label)))
 		}
-	}
-
-	// Append "in tenant/env" with link when environment context exists
-	if e.TenantName != "" && e.EnvironmentName != "" {
-		envLabel := e.TenantName + "/" + e.EnvironmentName
-		envHref := "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
-		nodes = append(nodes, g.Text(" in "), h.A(h.Href(envHref), g.Text(envLabel)))
 	}
 
 	return g.Group(nodes)

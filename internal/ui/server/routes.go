@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/naisd"
+	"github.com/nais/fasit/internal/ui/pages/search"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
 	"github.com/sirupsen/logrus"
 )
@@ -29,6 +30,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/favicon.ico", s.Favicon)
 
 	r.Get("/", features.ListHandler(s.renderPage))
+	r.Get("/search/suggestions", search.SuggestionsHandler())
+	r.Get("/search", search.Handler(s.renderPage))
 	r.Get("/environments", tenants.Handler(s.renderPage))
 	r.Get("/tenants/{tenant}/logo", tenants.ServeLogoHandler())
 
@@ -38,7 +41,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/logs", environment.FeatureTabHandler(s.renderPage, "logs"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/helm", environment.FeatureTabHandler(s.renderPage, "helm"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/deployments", environment.FeatureTabHandler(s.renderPage, "deployments"))
-	r.Get("/tenants/{tenant}/envs/{env}/{feature}/audit", environment.FeatureTabHandler(s.renderPage, "audit"))
+	r.Get("/tenants/{tenant}/envs/{env}/{feature}/audit", environment.AuditRedirectHandler())
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.PlaygroundTabHandler(s.renderPage))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.PlaygroundSubmitHandler(s.renderPage))
 
@@ -59,10 +62,25 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
 	r.Post("/reconcile", deployments.ReconcileHandler())
 
-	r.Get("/features", features.ListHandler(s.renderPage))
+	r.Get("/features", features.IndexHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
+	r.Get("/features/{feature}/deploy-specs", features.DeploySpecsHandler(s.renderPage))
 	r.Get("/features/{feature}/config", features.ConfigTabHandler(s.renderPage))
 	r.Get("/features/{feature}/config-explorer", features.ConfigExplorerHandler(s.renderPage))
+	r.Get("/features/{feature}/envs/{tenant}/{env}", environment.FeatureContextTabHandler(s.renderPage, "overview"))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/logs", environment.FeatureContextTabHandler(s.renderPage, "logs"))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/helm", environment.FeatureContextTabHandler(s.renderPage, "helm"))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/deployments", environment.FeatureContextTabHandler(s.renderPage, "deployments"))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/audit", environment.AuditRedirectHandler())
+	r.Get("/features/{feature}/envs/{tenant}/{env}/playground", environment.FeatureContextPlaygroundTabHandler(s.renderPage))
+	r.Post("/features/{feature}/envs/{tenant}/{env}/playground", environment.FeatureContextPlaygroundSubmitHandler(s.renderPage))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/config/edit/{id}", environment.FeatureContextTabHandler(s.renderPage, "overview"))
+	r.Post("/features/{feature}/envs/{tenant}/{env}/config/edit/{id}", environment.UpdateConfigHandler())
+	r.Post("/features/{feature}/envs/{tenant}/{env}/config/delete/{id}", environment.DeleteConfigHandler())
+	r.Get("/features/{feature}/envs/{tenant}/{env}/config/override", environment.FeatureContextTabHandler(s.renderPage, "overview"))
+	r.Post("/features/{feature}/envs/{tenant}/{env}/config/override", environment.ConfigOverrideSubmitHandler())
+	r.Post("/features/{feature}/envs/{tenant}/{env}/toggle-reconcile", environment.ToggleFeatureStateHandler())
+	r.Post("/features/{feature}/envs/{tenant}/{env}/redeploy", environment.RedeployHandler())
 	r.Post("/features/{feature}/config/{id}", features.UpdateGlobalConfigHandler())
 	r.Post("/features/{feature}/config/{id}/delete", features.DeleteGlobalConfigHandler())
 	r.Post("/features/{feature}/config/set", features.SetGlobalConfigHandler())

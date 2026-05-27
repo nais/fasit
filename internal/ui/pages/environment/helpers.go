@@ -29,6 +29,8 @@ type FeaturePage struct {
 	Environment      *Environment
 	Feature          *FeatureDetail
 	AllFeatures      []view.FeatureNav
+	FeatureContext   bool
+	WorkspaceEnvs    []FeatureWorkspaceEnvironment
 	HelmValues       string
 	HelmValuesError  string
 	Deployments      []EnvDeploymentItem
@@ -47,6 +49,13 @@ type FeatureDetail struct {
 	ConfigItems []FeatureConfigItem
 }
 
+type FeatureWorkspaceEnvironment struct {
+	TenantName      string
+	TenantSlug      string
+	EnvironmentName string
+	Status          string
+}
+
 type EnvDeploymentItem struct {
 	ID           string
 	Version      string
@@ -56,12 +65,13 @@ type EnvDeploymentItem struct {
 }
 
 type FeatureLog struct {
-	CurrentVersion string
-	CurrentStatus  string
-	LastModified   string
-	LastDeployed   string
-	CurrentLog     []LogLine
-	HelmDiff       *model.HelmValueDiff
+	CurrentVersion       string
+	CurrentStatus        string
+	LastModified         string
+	LastModifiedRelative string
+	LastDeployed         string
+	CurrentLog           []LogLine
+	HelmDiff             *model.HelmValueDiff
 }
 
 type LogLine struct {
@@ -169,7 +179,7 @@ func gcpProjectIDFromValues(values []*model.EnvironmentValue) string {
 	return ""
 }
 
-func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
+func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string, featureContext bool) (*FeaturePage, error) {
 	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
@@ -198,18 +208,31 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	allTenants, _ := envpkg.ListTenants(ctx)
 	tenantEnvs, _ := envpkg.List(ctx, tenant.ID)
 
+	breadcrumbs := []breadcrumb.Crumb{
+		tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
+		breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
+		breadcrumb.EnvironmentFeature(tenant.Name, env.Name, featureName),
+	}
+	if featureContext {
+		breadcrumbs = []breadcrumb.Crumb{
+			breadcrumb.Features(),
+			breadcrumb.Feature(featureName),
+			breadcrumb.FeatureEnvironment(featureName, tenant.Name, env.Name),
+		}
+	}
+
 	page := &FeaturePage{
-		Breadcrumbs: []breadcrumb.Crumb{
-			tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
-			breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-			breadcrumb.EnvironmentFeature(tenant.Name, env.Name, featureName),
-		},
-		Tenant:      tenant,
-		TenantSlug:  tenantSlug,
-		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:     &FeatureDetail{Feature: feat, Enabled: !disabled},
-		AllFeatures: allFeatures,
-		ActiveTab:   activeTab,
+		Breadcrumbs:    breadcrumbs,
+		Tenant:         tenant,
+		TenantSlug:     tenantSlug,
+		Environment:    &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Feature:        &FeatureDetail{Feature: feat, Enabled: !disabled},
+		AllFeatures:    allFeatures,
+		FeatureContext: featureContext,
+		ActiveTab:      activeTab,
+	}
+	if featureContext {
+		page.WorkspaceEnvs = loadFeatureWorkspaceEnvironments(ctx, featureName)
 	}
 
 	if !env.Reconcile {
@@ -238,15 +261,75 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	if activeTab == "deployments" {
 		page.Deployments = loadEnvironmentDeployments(ctx, featureName, env.ID)
 	}
+	limit := int32(3)
 	if activeTab == "audit" {
-		entries, err := audit.ListForFeatureInEnvironment(ctx, featureName, env.ID, 50)
-		if err != nil {
-			return nil, fmt.Errorf("load audit entries: %w", err)
-		}
-		page.AuditEntries = entries
+		limit = 50
 	}
+	entries, err := audit.ListForFeatureInEnvironment(ctx, featureName, env.ID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("load audit entries: %w", err)
+	}
+	page.AuditEntries = entries
 
 	return page, nil
+}
+
+func loadFeatureWorkspaceEnvironments(ctx context.Context, featureName string) []FeatureWorkspaceEnvironment {
+	feature, err := featurepkg.FeatureByName(ctx, featureName)
+	if err != nil {
+		return nil
+	}
+	tenants, err := envpkg.ListTenants(ctx)
+	if err != nil {
+		return nil
+	}
+
+	envs := []FeatureWorkspaceEnvironment{}
+	for _, tenant := range tenants {
+		tenantEnvs, err := envpkg.List(ctx, tenant.ID)
+		if err != nil {
+			continue
+		}
+		for _, env := range tenantEnvs {
+			if !featureTargetsKind(feature.EnvironmentKinds, env.Kind) {
+				continue
+			}
+			status := "UNKNOWN"
+			if !env.Reconcile {
+				status = "DISABLED"
+			} else if _, disabled, err := featurepkg.FeatureDisabledAt(ctx, env.ID, featureName); err == nil && disabled {
+				status = "DISABLED"
+			} else if s, _, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && s != "" {
+				status = s
+			}
+			envs = append(envs, FeatureWorkspaceEnvironment{
+				TenantName:      tenant.Name,
+				TenantSlug:      tenant.Name,
+				EnvironmentName: env.Name,
+				Status:          status,
+			})
+		}
+	}
+
+	sort.Slice(envs, func(i, j int) bool {
+		if envs[i].TenantName == envs[j].TenantName {
+			return envs[i].EnvironmentName < envs[j].EnvironmentName
+		}
+		return envs[i].TenantName < envs[j].TenantName
+	})
+	return envs
+}
+
+func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.EnvironmentKind) bool {
+	if len(kinds) == 0 {
+		return true
+	}
+	for _, kind := range kinds {
+		if kind == envKind {
+			return true
+		}
+	}
+	return false
 }
 
 func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid.UUID) ([]FeatureConfigItem, error) {
@@ -514,10 +597,11 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *
 		lastDeployed = view.FormatTime(dep.LastModified)
 	}
 	ret := &FeatureLog{
-		CurrentVersion: di.FeatureVersion,
-		CurrentStatus:  strings.ToUpper(di.Status.String()),
-		LastModified:   view.FormatTime(di.LastModified),
-		LastDeployed:   lastDeployed,
+		CurrentVersion:       di.FeatureVersion,
+		CurrentStatus:        strings.ToUpper(di.Status.String()),
+		LastModified:         view.FormatTime(di.LastModified),
+		LastModifiedRelative: view.RelativeTime(di.LastModified),
+		LastDeployed:         lastDeployed,
 	}
 	for _, line := range lines {
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})

@@ -67,7 +67,7 @@ func ComputedValueCell(item ConfigItem) g.Node {
 
 // TemplateCell renders a <td> with a computed value template (no rendered output).
 func TemplateCell(item ConfigItem) g.Node {
-	return h.Td(h.Code(h.Class("text-muted"), g.Text(item.Template)))
+	return h.Td(h.Class("template-cell"), h.Code(h.Class("template-code text-muted"), g.Text(item.Template)))
 }
 
 // ConfigActionsCell renders a <td> with the config-actions-col class.

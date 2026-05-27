@@ -78,29 +78,120 @@ document.addEventListener("input", function (e) {
   });
 });
 
-// Sidebar filter shortcut (Cmd/Ctrl+K) and Escape handling
+// Feature search shortcut (Cmd/Ctrl+K), landing datalist navigation, and Escape handling.
 (function () {
   var isMac = navigator.platform && navigator.platform.toUpperCase().includes("MAC");
-  document.querySelectorAll(".sidebar-filter").forEach(function (input) {
-    input.placeholder = isMac ? "Filter\u2026 (\u2318K)" : "Filter\u2026 (Ctrl+K)";
+  document.querySelectorAll(".feature-search-input").forEach(function (input) {
+    input.placeholder = isMac ? "Search features\u2026 (\u2318K)" : "Search features\u2026 (Ctrl+K)";
   });
+  document.querySelectorAll(".sidebar-filter").forEach(function (input) {
+    input.placeholder = "Filter\u2026";
+  });
+
+  function suggestionsFor(input) {
+    var form = input.closest("[data-feature-search]");
+    if (!form) return null;
+    return form.querySelector("[data-feature-search-suggestions]");
+  }
+
+  function renderSuggestions(input, matches) {
+    var suggestions = suggestionsFor(input);
+    if (!suggestions) return;
+    suggestions.innerHTML = "";
+    if (!matches || !matches.length) {
+      suggestions.classList.remove("visible");
+      return;
+    }
+    matches.forEach(function (match) {
+      var link = document.createElement("a");
+      link.href = match.href;
+      link.textContent = match.title;
+      suggestions.appendChild(link);
+    });
+    suggestions.classList.add("visible");
+  }
+
+  var searchTimers = new WeakMap();
+  document.addEventListener("input", function (e) {
+    var input = e.target.closest && e.target.closest(".feature-search-input");
+    if (!input) return;
+    var q = input.value.trim();
+    window.clearTimeout(searchTimers.get(input));
+    if (q.length < 2) {
+      renderSuggestions(input, []);
+      return;
+    }
+    searchTimers.set(input, window.setTimeout(function () {
+      fetch("/search/suggestions?q=" + encodeURIComponent(q))
+        .then(function (response) { return response.ok ? response.json() : []; })
+        .then(function (matches) { renderSuggestions(input, matches); })
+        .catch(function () { renderSuggestions(input, []); });
+    }, 120));
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest("[data-feature-search]")) return;
+    document.querySelectorAll("[data-feature-search-suggestions]").forEach(function (suggestions) {
+      suggestions.classList.remove("visible");
+    });
+  });
+
   document.addEventListener("keydown", function (e) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-      var input = document.querySelector(".sidebar-filter");
+      var input = document.querySelector(".landing-search-input") || document.querySelector(".feature-search-input") || document.querySelector(".sidebar-filter");
       if (!input) return;
       e.preventDefault();
       input.focus();
       input.select();
     }
   });
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest && e.target.closest("[data-feature-search]");
+    if (!form) return;
+    var first = form.querySelector("[data-feature-search-suggestions].visible a");
+    if (!first) return;
+    e.preventDefault();
+    window.location.href = first.href;
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    var input = e.target.closest && e.target.closest(".feature-search-input");
+    if (!input) return;
+    var suggestions = suggestionsFor(input);
+    if (!suggestions || !suggestions.classList.contains("visible")) return;
+    var links = suggestions.querySelectorAll("a");
+    if (!links.length) return;
+    e.preventDefault();
+    links[e.key === "ArrowDown" ? 0 : links.length - 1].focus();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    var link = e.target.closest && e.target.closest("[data-feature-search-suggestions] a");
+    if (!link) return;
+    var suggestions = link.closest("[data-feature-search-suggestions]");
+    var links = Array.from(suggestions.querySelectorAll("a"));
+    var idx = links.indexOf(link);
+    if (idx === -1) return;
+    e.preventDefault();
+    var next = e.key === "ArrowDown" ? idx + 1 : idx - 1;
+    if (next < 0) {
+      var input = suggestions.closest("[data-feature-search]").querySelector(".feature-search-input");
+      if (input) input.focus();
+      return;
+    }
+    links[Math.min(next, links.length - 1)].focus();
+  });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    var input = e.target.closest && e.target.closest(".sidebar-filter");
+    var input = e.target.closest && e.target.closest(".feature-search-input, .sidebar-filter");
     if (!input) return;
     if (input.value !== "") {
       input.value = "";
       input.dispatchEvent(new Event("input", { bubbles: true }));
     }
+    renderSuggestions(input, []);
     input.blur();
   });
 
@@ -229,89 +320,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-// Feature view preferences: persist to localStorage + cookie, toolbar navigation.
-(function () {
-  var STORAGE_KEY = "feature-view-prefs";
-  var COOKIE_NAME = "feature_view_prefs";
-  var DEFAULTS = {
-    group: "tenant",
-    show_overridden: "false",
-    col_version: "false",
-    col_last_deployed: "false",
-    col_last_updated: "false"
-  };
-
-  function loadPrefs() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (_) {}
-    return {};
-  }
-
-  function savePrefs(prefs) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch (_) {}
-    syncCookie(prefs);
-  }
-
-  function syncCookie(prefs) {
-    var params = new URLSearchParams();
-    Object.keys(DEFAULTS).forEach(function (k) {
-      params.set(k, prefs[k] || DEFAULTS[k]);
-    });
-    document.cookie = COOKIE_NAME + "=" + encodeURIComponent(params.toString()) + ";path=/;max-age=31536000;SameSite=Lax";
-  }
-
-  function mergedPrefs() {
-    var prefs = loadPrefs();
-    var merged = {};
-    Object.keys(DEFAULTS).forEach(function (k) { merged[k] = prefs[k] || DEFAULTS[k]; });
-    return merged;
-  }
-
-  function buildUrl(path, prefs) {
-    var params = new URLSearchParams();
-    Object.keys(DEFAULTS).forEach(function (k) {
-      params.set(k, prefs[k] || DEFAULTS[k]);
-    });
-    return path + "?" + params.toString();
-  }
-
-  // Sync cookie on every page load so server always has latest prefs.
-  syncCookie(mergedPrefs());
-
-  // Group-by links
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-group-value]");
-    if (!btn) return;
-    var toolbar = document.getElementById("view-toolbar");
-    if (!toolbar || !toolbar.contains(btn)) return;
-
-    var prefs = mergedPrefs();
-    prefs.group = btn.getAttribute("data-group-value");
-    if (prefs.group !== "deployment") {
-      prefs.show_overridden = "false";
-    }
-    savePrefs(prefs);
-    location.assign(buildUrl(location.pathname, prefs));
-  });
-
-  // Checkbox prefs (show_overridden, column toggles)
-  document.addEventListener("change", function (e) {
-    var toolbar = document.getElementById("view-toolbar");
-    if (!toolbar) return;
-    var el = e.target.closest("[data-pref]");
-    if (!el || !toolbar.contains(el)) return;
-    if (el.type !== "checkbox") return;
-
-    var prefs = mergedPrefs();
-    var key = el.getAttribute("data-pref");
-    prefs[key] = el.checked ? "true" : "false";
-    savePrefs(prefs);
-    location.assign(buildUrl(location.pathname, prefs));
-  });
-})();
-
 // Kebab menu toggle
 document.addEventListener("click", function (e) {
   var btn = e.target.closest("[data-kebab-toggle]");
@@ -331,25 +339,6 @@ document.addEventListener("click", function (e) {
   }
   // Close kebabs on outside click
   document.querySelectorAll(".kebab-menu.open").forEach(function (m) { m.classList.remove("open"); });
-});
-
-// Column toggle menu
-document.addEventListener("click", function (e) {
-  var btn = e.target.closest("[data-col-toggle]");
-  if (btn) {
-    var id = btn.getAttribute("data-col-toggle");
-    var menu = document.getElementById(id);
-    if (menu) {
-      var wasOpen = menu.classList.contains("open");
-      document.querySelectorAll(".col-toggle-menu.open").forEach(function (m) { m.classList.remove("open"); });
-      if (!wasOpen) menu.classList.add("open");
-    }
-    e.stopPropagation();
-    return;
-  }
-  // Don't close when clicking inside the menu (checkboxes)
-  if (e.target.closest(".col-toggle-menu")) return;
-  document.querySelectorAll(".col-toggle-menu.open").forEach(function (m) { m.classList.remove("open"); });
 });
 
 // Expand/collapse all <details> matching [data-expand-all="<class>"]

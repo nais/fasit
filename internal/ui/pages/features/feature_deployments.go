@@ -2,8 +2,6 @@ package features
 
 import (
 	"context"
-	"net/http"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -13,7 +11,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -40,53 +37,24 @@ type DeploymentEnvStatus struct {
 
 type ViewPrefs struct {
 	Group          string // "tenant", "deployment", "version"
-	ShowOverridden bool
 	ShowVersion    bool
 	ShowLastDeploy bool
-	ShowLastUpdate bool
 }
 
-var validGroups = map[string]bool{
-	"tenant": true, "deployment": true, "version": true,
-}
-
-func parseViewPrefs(r *http.Request) ViewPrefs {
-	p := ViewPrefs{
+func overviewViewPrefs() ViewPrefs {
+	return ViewPrefs{
 		Group:          "tenant",
-		ShowOverridden: false,
+		ShowVersion:    true,
+		ShowLastDeploy: true,
+	}
+}
+
+func deploymentSpecsViewPrefs() ViewPrefs {
+	return ViewPrefs{
+		Group:          "deployment",
 		ShowVersion:    false,
-		ShowLastDeploy: false,
-		ShowLastUpdate: false,
+		ShowLastDeploy: true,
 	}
-
-	// Use query params if present, otherwise fall back to cookie.
-	src := r.URL.Query()
-	if len(src) == 0 {
-		if c, err := r.Cookie("feature_view_prefs"); err == nil {
-			if decoded, err := url.QueryUnescape(c.Value); err == nil {
-				if parsed, err := url.ParseQuery(decoded); err == nil {
-					src = parsed
-				}
-			}
-		}
-	}
-
-	if g := src.Get("group"); validGroups[g] {
-		p.Group = g
-	}
-	if src.Get("show_overridden") == "true" {
-		p.ShowOverridden = true
-	}
-	if src.Has("col_version") {
-		p.ShowVersion = src.Get("col_version") == "true"
-	}
-	if src.Has("col_last_deployed") {
-		p.ShowLastDeploy = src.Get("col_last_deployed") == "true"
-	}
-	if src.Has("col_last_updated") {
-		p.ShowLastUpdate = src.Get("col_last_updated") == "true"
-	}
-	return p
 }
 
 type card struct {
@@ -106,93 +74,20 @@ func deploymentDetailContent(data *DetailPage) g.Node {
 		return h.P(g.Text("No environments found."))
 	}
 
-	prefs := data.Prefs
-	envs := data.DeploymentEnvs
+	prefs := overviewViewPrefs()
+	cards := buildCards(data.DeploymentEnvs, prefs.Group)
 
-	// Filter overridden rows: only shown in deployment grouping when toggled on
-	if prefs.Group != "deployment" || !prefs.ShowOverridden {
-		filtered := make([]DeploymentEnvStatus, 0, len(envs))
-		for _, env := range envs {
-			if !env.IsOverridden {
-				filtered = append(filtered, env)
-			}
-		}
-		envs = filtered
-	}
-
-	cards := buildCards(envs, prefs.Group)
-
-	return h.Div(
-		toolbar(prefs),
-		cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs),
-	)
+	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs)
 }
 
-func toolbar(prefs ViewPrefs) g.Node {
-	groupOptions := []struct{ Value, Label string }{
-		{"tenant", "Tenant"},
-		{"deployment", "Deployment"},
-		{"version", "Version"},
+func deploymentSpecsContent(data *DetailPage) g.Node {
+	if len(data.DeploymentEnvs) == 0 {
+		return h.P(g.Text("No environments found."))
 	}
 
-	groupLinks := h.Div(h.Class("toolbar-group-links"),
-		g.Map(groupOptions, func(opt struct{ Value, Label string }) g.Node {
-			cls := "toolbar-group-link"
-			if opt.Value == prefs.Group {
-				cls += " active"
-			}
-			return h.Button(
-				h.Type("button"),
-				h.Class(cls),
-				g.Attr("data-group-value", opt.Value),
-				g.Text(opt.Label),
-			)
-		}),
-	)
-
-	overriddenToggle := g.If(prefs.Group == "deployment",
-		h.Label(h.Class("toolbar-toggle"),
-			h.Input(
-				h.Type("checkbox"),
-				g.Attr("data-pref", "show_overridden"),
-				g.If(prefs.ShowOverridden, g.Attr("checked", "")),
-			),
-			g.Text(" Show overridden"),
-		),
-	)
-
-	colMenu := h.Div(h.Class("col-toggle-wrap"),
-		h.Button(h.Type("button"), h.Class("col-toggle-btn"),
-			g.Attr("data-col-toggle", "col-toggle-menu"),
-			g.Attr("aria-label", "Toggle columns"),
-			g.Attr("title", "Columns"),
-			// Three-column icon (SVG)
-			g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="3" height="12" rx="0.5"/><rect x="6.5" y="2" width="3" height="12" rx="0.5"/><rect x="12" y="2" width="3" height="12" rx="0.5"/></svg>`),
-		),
-		h.Div(h.Class("col-toggle-menu"), h.ID("col-toggle-menu"),
-			colToggleItem("Version", "col_version", prefs.ShowVersion),
-			colToggleItem("Last updated", "col_last_updated", prefs.ShowLastUpdate),
-			colToggleItem("Last deployed", "col_last_deployed", prefs.ShowLastDeploy),
-		),
-	)
-
-	return h.Div(h.Class("view-toolbar"), h.ID("view-toolbar"),
-		h.Span(h.Class("toolbar-label"), g.Text("Group by")),
-		groupLinks,
-		overriddenToggle,
-		colMenu,
-	)
-}
-
-func colToggleItem(label, prefKey string, checked bool) g.Node {
-	return h.Label(h.Class("col-toggle-item"),
-		h.Input(
-			h.Type("checkbox"),
-			g.Attr("data-pref", prefKey),
-			g.If(checked, g.Attr("checked", "")),
-		),
-		g.Text(" "+label),
-	)
+	prefs := deploymentSpecsViewPrefs()
+	cards := buildCards(data.DeploymentEnvs, prefs.Group)
+	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs)
 }
 
 func buildCards(envs []DeploymentEnvStatus, groupBy string) []card {
@@ -299,26 +194,27 @@ func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs) g.Node {
 }
 
 func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
-	headerChildren := []g.Node{}
+	heading := []g.Node{}
 
 	if c.LinkHref != "" {
-		headerChildren = append(headerChildren,
+		heading = append(heading,
 			h.A(h.Href(c.LinkHref), h.Class("card-group-title-link"), g.Text(c.Title)),
 		)
 	} else {
-		headerChildren = append(headerChildren,
+		heading = append(heading,
 			h.Span(h.Class("card-group-title"), g.Text(c.Title)),
 		)
 	}
 
-	if len(c.Labels) > 0 {
-		headerChildren = append(headerChildren, labelPills(c.Labels))
+	if prefs.Group == "deployment" || len(c.Labels) > 0 {
+		heading = append(heading, h.Span(h.Class("feature-card-labels"), labelPills(c.Labels)))
 	}
 
+	actions := []g.Node{}
 	// Card-level kebab for deployment grouping (set version)
 	if prefs.Group == "deployment" && c.DeploymentID != "" {
 		popoverID := "set-version-" + c.DeploymentID
-		headerChildren = append(headerChildren,
+		actions = append(actions,
 			h.Div(h.Class("card-kebab-wrap"),
 				kebabButton("card-kebab-"+c.DeploymentID),
 				h.Div(h.Class("kebab-menu"), h.ID("card-kebab-"+c.DeploymentID),
@@ -332,7 +228,10 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 		)
 	}
 
-	header := h.Div(h.Class("feature-card-header"), g.Group(headerChildren))
+	header := h.Div(h.Class("feature-card-header"),
+		h.Div(h.Class("feature-card-heading"), g.Group(heading)),
+		g.If(len(actions) > 0, h.Div(h.Class("feature-card-actions"), g.Group(actions))),
+	)
 
 	// Build table columns
 	showTenant := prefs.Group != "tenant"
@@ -347,11 +246,8 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	if showVersion {
 		thNodes = append(thNodes, h.Th(g.Text("Version")))
 	}
-	if prefs.ShowLastUpdate {
-		thNodes = append(thNodes, h.Th(g.Text("Last updated")))
-	}
 	if prefs.ShowLastDeploy {
-		thNodes = append(thNodes, h.Th(g.Text("Last deployed")))
+		thNodes = append(thNodes, h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Last successful deploy")))
 	}
 	thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
 
@@ -371,8 +267,9 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 }
 
 func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion bool) g.Node {
-	envLink := h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))
-	logsHref := "/tenants/" + env.TenantSlug + "/envs/" + env.Name + "/" + featureName + "/logs"
+	baseHref := "/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.Name
+	envLink := h.A(h.Href(baseHref), g.Text(env.Name))
+	logsHref := baseHref + "/logs"
 
 	rowAttrs := []g.Node{}
 	if env.IsOverridden {
@@ -406,9 +303,6 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 		cells = append(cells, h.Td(g.Text(env.DeploymentVersion), driftIcon))
 	}
 
-	if prefs.ShowLastUpdate {
-		cells = append(cells, h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))))
-	}
 	if prefs.ShowLastDeploy {
 		cells = append(cells, lastDeployedCell(env.LastDeployed, ""))
 	}

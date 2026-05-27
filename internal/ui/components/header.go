@@ -8,6 +8,7 @@ import (
 type Page string
 
 const (
+	PageHome         Page = "home"
 	PageEnvironments Page = "environments"
 	PageFeatures     Page = "features"
 	PageDeployments  Page = "deployments"
@@ -15,7 +16,7 @@ const (
 	PageNaisd        Page = "naisd"
 )
 
-func SiteHeader(currentPage Page, userEmail string) g.Node {
+func SiteHeader(currentPage Page, userEmail string, hideSearch bool) g.Node {
 	navItem := func(href, label string, page Page) g.Node {
 		className := "item"
 		if currentPage == page {
@@ -35,6 +36,10 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 			navItem("/features", "Features", PageFeatures),
 			navItem("/environments", "Environments", PageEnvironments),
 		),
+		g.If(!hideSearch, h.Form(h.Method("get"), h.Action("/search"), h.Class("nav-search"), g.Attr("data-feature-search", ""),
+			h.Input(h.Type("search"), h.Name("q"), h.Class("feature-search-input nav-search-input"), h.Placeholder("Search…"), h.AutoComplete("off"), g.Attr("aria-label", "Search features")),
+			h.Div(h.Class("feature-search-suggestions"), g.Attr("data-feature-search-suggestions", "")),
+		)),
 		h.Div(h.Class("nav-kebab-wrap"),
 			h.Button(h.Class("kebab-btn nav-hotdog"), g.Attr("data-kebab-toggle", "nav-kebab"), g.Attr("title", "More"),
 				g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="7" width="12" height="2" rx="1"/><rect x="5" y="3" width="6" height="2" rx="1"/><rect x="5" y="11" width="6" height="2" rx="1"/></svg>`),

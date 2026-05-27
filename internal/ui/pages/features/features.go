@@ -3,6 +3,7 @@ package features
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"sort"
 	"strings"
@@ -29,7 +30,7 @@ type DetailPage struct {
 	Features       []view.FeatureNav
 	CurrentFeature *model.Feature
 	DeploymentEnvs []DeploymentEnvStatus
-	Prefs          ViewPrefs
+	RecentActivity []*audit.Entry
 	ActiveTab      string
 	ConfigItems    []components.ConfigItem
 	ExplorerData   *configExplorerData
@@ -74,7 +75,44 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return depRows[i].Created.After(depRows[j].Created)
 		})
 
-		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features), depRows, audits)})
+		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(toFeatureNavs(features), depRows, audits), HideHeaderSearch: true})
+	}
+}
+
+func IndexHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		names, err := featurepkg.FeatureNames(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to load features", http.StatusInternalServerError)
+			return
+		}
+
+		query := strings.TrimSpace(r.URL.Query().Get("q"))
+		rows := make([]featureIndexRow, 0, len(names))
+		for _, name := range names {
+			feature, err := featurepkg.FeatureByName(r.Context(), name)
+			if err != nil {
+				http.Error(w, "Failed to load feature metadata", http.StatusInternalServerError)
+				return
+			}
+			envs := featureDeploymentEnvStatuses(r.Context(), feature)
+			row := featureIndexRow{
+				Name:        feature.Name,
+				Description: feature.Description,
+				Source:      feature.Source,
+				Chart:       feature.Chart,
+				Status:      featureIndexStatus(envs),
+				LastDeploy:  featureIndexLastDeploy(envs),
+			}
+			if query == "" || featureIndexMatches(row, query) {
+				rows = append(rows, row)
+			}
+		}
+		sort.Slice(rows, func(i, j int) bool {
+			return rows[i].Name < rows[j].Name
+		})
+
+		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: featureIndexPage(rows, query)})
 	}
 }
 
@@ -85,9 +123,22 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
 		}
-		data.Prefs = parseViewPrefs(r)
 		data.ActiveTab = "overview"
+		data.RecentActivity, _ = audit.ListForFeature(r.Context(), data.CurrentFeature.Name, 10)
+		setFeatureBreadcrumbSubtitle(data)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
+	}
+}
+
+func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := loadFeatureData(r)
+		if err != nil {
+			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
+			return
+		}
+		data.ActiveTab = "deploy-specs"
+		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Deploy specs", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 
@@ -129,8 +180,8 @@ func ConfigExplorerHandler(renderPage RenderPage) http.HandlerFunc {
 
 func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) g.Node {
 	return h.Div(h.Class("container"),
-		components.FeaturesSidebar(features, ""),
-		h.Main(h.Class("main-content"),
+		h.Main(h.Class("main-content landing-page"),
+			landingSearch(features),
 			components.CardCompact(
 				recentDeployments(deps),
 			),
@@ -139,6 +190,191 @@ func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) 
 			),
 		),
 	)
+}
+
+func landingSearch(features []view.FeatureNav) g.Node {
+	return h.Section(h.Class("landing-search"),
+		h.Form(h.Method("get"), h.Action("/search"), h.Class("feature-search-form landing-search-form"), g.Attr("data-feature-search", ""),
+			h.Input(
+				h.Type("search"),
+				h.Name("q"),
+				h.Class("feature-search-input landing-search-input"),
+				h.Placeholder("Search features… (Ctrl+K)"),
+				h.AutoComplete("off"),
+				h.AutoFocus(),
+				g.Attr("aria-label", "Search features"),
+			),
+			h.Div(h.Class("feature-search-suggestions"), g.Attr("data-feature-search-suggestions", "")),
+		),
+	)
+}
+
+type featureIndexRow struct {
+	Name        string
+	Description string
+	Source      string
+	Chart       string
+	Status      featureIndexStatusSummary
+	LastDeploy  featureIndexLastDeploySummary
+}
+
+type featureIndexStatusSummary struct {
+	Text  string
+	Class string
+}
+
+type featureIndexLastDeploySummary struct {
+	Time   time.Time
+	Status string
+}
+
+func featureIndexPage(features []featureIndexRow, query string) g.Node {
+	return h.Div(h.Class("container"),
+		h.Main(h.Class("main-content landing-page"),
+			components.CardCompact(
+				h.Div(h.Class("feature-index-header"),
+					h.H1(g.Text("Features")),
+				),
+				h.Div(h.Class("feature-index-toolbar"),
+					h.Input(h.Type("search"), h.Name("q"), h.Value(query), h.Class("feature-index-filter"), h.Placeholder("Filter features…"), g.Attr("data-url-filter", "q"), g.Attr("aria-label", "Filter features")),
+				),
+				featureIndexTable(features),
+			),
+		),
+	)
+}
+
+func featureIndexMatches(feature featureIndexRow, query string) bool {
+	terms := strings.Fields(strings.ToLower(query))
+	if len(terms) == 0 {
+		return true
+	}
+	text := strings.ToLower(strings.Join([]string{
+		feature.Name,
+		feature.Status.Text,
+		feature.Description,
+		feature.Chart,
+		feature.Source,
+	}, " "))
+	for _, term := range terms {
+		if !strings.Contains(text, term) {
+			return false
+		}
+	}
+	return true
+}
+
+func featureIndexTable(features []featureIndexRow) g.Node {
+	rows := make([]g.Node, 0, len(features))
+	for _, feature := range features {
+		rows = append(rows, h.Tr(
+			h.Td(h.A(h.Href("/features/"+feature.Name), g.Text(feature.Name))),
+			h.Td(h.Span(h.Class("feature-index-status "+feature.Status.Class), g.Text(feature.Status.Text))),
+			featureIndexLastDeployCell(feature.LastDeploy),
+			h.Td(h.Class("text-muted"), g.Text(feature.Description)),
+			h.Td(h.Class("text-muted"), g.Text(feature.Chart)),
+			h.Td(g.If(feature.Source != "", h.A(h.Href(feature.Source), h.Target("_blank"), h.Rel("noopener noreferrer"), g.Text("GitHub ↗")))),
+		))
+	}
+	return h.Table(h.ID("feature-index-table"), h.Class("table table-compact sortable"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Feature")),
+			h.Th(g.Text("Status")),
+			h.Th(g.Text("Last deploy")),
+			h.Th(g.Text("Description")),
+			h.Th(g.Text("Chart")),
+			h.Th(g.Text("Source")),
+		)),
+		h.TBody(g.Group(rows)),
+	)
+}
+
+func featureIndexStatus(envs []DeploymentEnvStatus) featureIndexStatusSummary {
+	if len(envs) == 0 {
+		return featureIndexStatusSummary{Text: "no environments", Class: "text-muted"}
+	}
+
+	counts := map[string]int{}
+	for _, env := range envs {
+		counts[featureIndexStatusKey(env)]++
+	}
+
+	parts := []string{}
+	add := func(key, label string) {
+		if counts[key] > 0 {
+			parts = append(parts, fmt.Sprintf("%d %s", counts[key], label))
+		}
+	}
+	add("ok", "ok")
+	add("failed", "failed")
+	add("pending", "pending")
+	add("disabled", "disabled")
+	add("unknown", "unknown")
+
+	class := "text-muted"
+	if counts["failed"] > 0 {
+		class = "status-error"
+	} else if counts["pending"] > 0 {
+		class = "status-pending"
+	} else if counts["ok"] == len(envs) {
+		class = "status-success"
+	}
+
+	return featureIndexStatusSummary{Text: strings.Join(parts, ", "), Class: class}
+}
+
+func featureIndexLastDeploy(envs []DeploymentEnvStatus) featureIndexLastDeploySummary {
+	var latest featureIndexLastDeploySummary
+	for _, env := range envs {
+		status := strings.ToUpper(env.StatusText)
+		if status != "DEPLOYED" && status != "FAILED" {
+			continue
+		}
+		if env.LastModified.IsZero() {
+			continue
+		}
+		if latest.Time.IsZero() || env.LastModified.After(latest.Time) {
+			latest = featureIndexLastDeploySummary{Time: env.LastModified, Status: status}
+		}
+	}
+	return latest
+}
+
+func featureIndexLastDeployCell(last featureIndexLastDeploySummary) g.Node {
+	return h.Td(featureIndexLastDeployInline(last))
+}
+
+func featureIndexLastDeployInline(last featureIndexLastDeploySummary) g.Node {
+	if last.Time.IsZero() {
+		return h.Span(h.Class("text-muted"), g.Text("never"))
+	}
+	class := "text-muted"
+	if last.Status == "FAILED" {
+		class = "status-error"
+	}
+	return h.Span(
+		h.Title(fmt.Sprintf("%s · %s", view.FormatTime(last.Time), strings.ToLower(last.Status))),
+		h.Class("feature-index-last-deploy"),
+		g.Text(view.RelativeTime(last.Time)),
+		g.Text(" · "),
+		h.Span(h.Class(class), g.Text(strings.ToLower(last.Status))),
+	)
+}
+
+func featureIndexStatusKey(env DeploymentEnvStatus) string {
+	if !env.Enabled || env.EnvReconcileDisabled || strings.EqualFold(env.StatusText, "DISABLED") {
+		return "disabled"
+	}
+	switch strings.ToUpper(env.StatusText) {
+	case "DEPLOYED":
+		return "ok"
+	case "FAILED":
+		return "failed"
+	case "PENDING", "CREATED":
+		return "pending"
+	default:
+		return "unknown"
+	}
 }
 
 type depRow struct {
@@ -212,12 +448,19 @@ func recentDeployments(rows []depRow) g.Node {
 }
 
 func recentActivity(audits []*audit.Entry) g.Node {
-	if len(audits) == 0 {
+	filtered := make([]*audit.Entry, 0, len(audits))
+	for _, a := range audits {
+		if a.ObjectType == audit.ObjectTypeDeployment && a.Action == audit.ActionCreated {
+			continue
+		}
+		filtered = append(filtered, a)
+	}
+	if len(filtered) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No recent activity."))
 	}
 
-	tableRows := make([]g.Node, 0, len(audits))
-	for _, a := range audits {
+	tableRows := make([]g.Node, 0, len(filtered))
+	for _, a := range filtered {
 		resource := resourceLinkNode(a)
 		tableRows = append(tableRows, h.Tr(
 			h.Td(g.Text(string(a.Action))),
@@ -299,34 +542,133 @@ func renderAggStatus(statuses []string) g.Node {
 	return g.Group([]g.Node{h.Span(h.Class(s.class), g.Text(icon)), g.Text(" " + s.label)})
 }
 
-func featureTabs(featureName string) []components.Tab {
-	return []components.Tab{
-		{ID: "overview", Href: "/features/" + featureName, Label: "Overview"},
-		{ID: "config", Href: "/features/" + featureName + "/config", Label: "Config"},
-		{ID: "config-explorer", Href: "/features/" + featureName + "/config-explorer", Label: "Config Explorer"},
-	}
-}
-
 func detailPage(data *DetailPage) g.Node {
 	var content g.Node
 	switch data.ActiveTab {
+	case "deploy-specs":
+		content = deploymentSpecsContent(data)
 	case "config":
 		content = globalConfigContent(data)
 	case "config-explorer":
 		content = configExplorerContent(data.CurrentFeature.Name, data.ExplorerData)
 	default:
-		content = deploymentDetailContent(data)
+		content = featureOverviewContent(data)
 	}
 	return h.Div(h.Class("container"),
-		components.FeaturesSidebar(data.Features, data.CurrentFeature.Name),
+		featureWorkspaceSidebar(data),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(data.Breadcrumbs),
-			components.Card(
-				components.TabsNav(data.ActiveTab, featureTabs(data.CurrentFeature.Name)),
-				content,
-			),
+			components.Card(content),
 		),
 	)
+}
+
+func featureWorkspaceSidebar(data *DetailPage) g.Node {
+	featureName := data.CurrentFeature.Name
+	return h.Aside(h.Class("sidebar feature-workspace-sidebar"),
+		h.Div(h.Class("feature-workspace-header"),
+			h.H4(g.Text(featureName)),
+		),
+		h.Div(h.Class("nav"),
+			h.Ul(
+				workspaceNavItem("/features/"+featureName, "Overview", data.ActiveTab == "overview"),
+				workspaceNavItem("/features/"+featureName+"/deploy-specs", "Deploy specs", data.ActiveTab == "deploy-specs"),
+				workspaceNavItem("/features/"+featureName+"/config", "Config", data.ActiveTab == "config"),
+				workspaceNavItem("/features/"+featureName+"/config-explorer", "Config explorer", data.ActiveTab == "config-explorer"),
+			),
+			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
+			h.Ul(g.Group(g.Map(featureWorkspaceEnvironments(data.DeploymentEnvs), func(env DeploymentEnvStatus) g.Node {
+				return workspaceEnvironmentItem(featureName, env)
+			}))),
+		),
+	)
+}
+
+func workspaceNavItem(href, label string, active bool) g.Node {
+	attrs := []g.Node{h.Href(href)}
+	if active {
+		attrs = append(attrs, h.Class("active"))
+	}
+	return h.Li(h.A(append(attrs, g.Text(label))...))
+}
+
+func workspaceEnvironmentItem(featureName string, env DeploymentEnvStatus) g.Node {
+	return h.Li(h.A(h.Href("/features/"+featureName+"/envs/"+env.TenantSlug+"/"+env.Name),
+		h.Class("workspace-env-link"),
+		h.Span(h.Class("workspace-env-dot "+workspaceEnvironmentStatusClass(env)), h.Title(env.StatusText)),
+		h.Span(g.Text(env.TenantName+" / "+env.Name)),
+	))
+}
+
+func featureWorkspaceEnvironments(envs []DeploymentEnvStatus) []DeploymentEnvStatus {
+	ret := make([]DeploymentEnvStatus, 0, len(envs))
+	seen := map[string]struct{}{}
+	for _, env := range envs {
+		key := env.TenantSlug + "/" + env.Name
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		ret = append(ret, env)
+	}
+	sort.Slice(ret, func(i, j int) bool {
+		if ret[i].TenantName == ret[j].TenantName {
+			return ret[i].Name < ret[j].Name
+		}
+		return ret[i].TenantName < ret[j].TenantName
+	})
+	return ret
+}
+
+func workspaceEnvironmentStatusClass(env DeploymentEnvStatus) string {
+	switch featureIndexStatusKey(env) {
+	case "ok":
+		return "status-success"
+	case "failed":
+		return "status-error"
+	case "pending":
+		return "status-pending"
+	case "disabled":
+		return "status-disabled"
+	default:
+		return "text-muted"
+	}
+}
+
+func featureOverviewContent(data *DetailPage) g.Node {
+	if len(data.RecentActivity) == 0 {
+		return h.Div(h.Class("feature-overview"), deploymentDetailContent(data))
+	}
+	return h.Div(h.Class("feature-overview feature-overview-split"),
+		h.Div(h.Class("feature-overview-deployments"), deploymentDetailContent(data)),
+		h.Aside(h.Class("feature-overview-activity"), featureRecentActivityCompact(data.CurrentFeature.Name, data.RecentActivity)),
+	)
+}
+
+func featureRecentActivityCompact(featureName string, audits []*audit.Entry) g.Node {
+	items := make([]g.Node, 0, len(audits))
+	for _, a := range audits {
+		description := auditlog.Description(a)
+		items = append(items, h.Li(
+			h.Div(h.Class("feature-activity-meta"),
+				h.Span(
+					g.Text(string(a.Action)),
+					g.If(a.Actor != "", g.Group([]g.Node{g.Text(" by "), h.Span(h.Class("feature-activity-actor"), view.ActorNode(a.Actor))})),
+				),
+				h.Span(h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
+			),
+			h.Div(h.Class("feature-activity-resource"), resourceLinkNode(a)),
+			g.If(description != "", h.Div(h.Class("feature-activity-description"), g.Text(description))),
+		))
+	}
+
+	return g.Group([]g.Node{
+		h.Div(h.Class("feature-activity-header"),
+			h.H3(g.Text("Recent activity")),
+			h.A(h.Href("/auditlog?q="+url.QueryEscape(featureName)), h.Class("link-muted"), g.Text("All →")),
+		),
+		h.Ul(h.Class("feature-activity-list"), g.Group(items)),
+	})
 }
 
 func loadFeatureData(r *http.Request) (*DetailPage, error) {
@@ -340,7 +682,6 @@ func loadFeatureData(r *http.Request) (*DetailPage, error) {
 		return nil, err
 	}
 	featureCrumb := breadcrumb.Feature(featureName)
-	featureCrumb.Subtitle = feature.Description
 	featureCrumb.SourceURL = feature.Source
 	data := &DetailPage{
 		Breadcrumbs:    []breadcrumb.Crumb{breadcrumb.Features(), featureCrumb},
@@ -349,6 +690,13 @@ func loadFeatureData(r *http.Request) (*DetailPage, error) {
 	}
 	loadDeploymentData(r.Context(), feature, data)
 	return data, nil
+}
+
+func setFeatureBreadcrumbSubtitle(data *DetailPage) {
+	if len(data.Breadcrumbs) == 0 || data.CurrentFeature.Description == "" {
+		return
+	}
+	data.Breadcrumbs[len(data.Breadcrumbs)-1].Subtitle = data.CurrentFeature.Description
 }
 
 func toFeatureNavs(names []string) []view.FeatureNav {

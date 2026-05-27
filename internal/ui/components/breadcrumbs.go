@@ -28,7 +28,7 @@ func Breadcrumbs(crumbs []breadcrumb.Crumb) g.Node {
 				label = append(label, g.Text(crumb.Label))
 			}
 			if crumb.Subtitle != "" {
-				label = append(label, h.Span(h.Class("breadcrumb-subtitle"), g.Text(" ("+crumb.Subtitle+")")))
+				label = append(label, h.Span(h.Class("breadcrumb-subtitle"), g.Text("("+crumb.Subtitle+")")))
 			}
 			children = append(children, h.Span(h.Class("active"), g.Group(label)))
 		case crumb.URL != "":

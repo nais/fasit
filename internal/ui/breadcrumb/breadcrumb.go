@@ -41,6 +41,10 @@ func EnvironmentFeature(tenantName, envName, featureName string) Crumb {
 	return Crumb{Label: featureName, URL: "/tenants/" + tenantName + "/envs/" + envName + "/" + featureName}
 }
 
+func FeatureEnvironment(featureName, tenantName, envName string) Crumb {
+	return Crumb{Label: tenantName + " / " + envName, URL: "/features/" + featureName + "/envs/" + tenantName + "/" + envName}
+}
+
 func Deployments() Crumb {
 	return Crumb{Label: "Deployments", URL: "/deployments"}
 }

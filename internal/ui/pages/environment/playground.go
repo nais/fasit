@@ -22,8 +22,16 @@ values:
 `
 
 func PlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
+	return playgroundTabHandler(renderPage, false)
+}
+
+func FeatureContextPlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
+	return playgroundTabHandler(renderPage, true)
+}
+
+func playgroundTabHandler(renderPage RenderPage, featureContext bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), "playground")
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), "playground", featureContext)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -36,22 +44,26 @@ func PlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
 			data.PlaygroundCode = defaultPlaygroundCode
 		}
 
-		renderPage(w, r, layout.Props{
-			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage: components.PageEnvironments,
-			Content:     featurePageContent(data),
-		})
+		renderPlaygroundPage(w, r, renderPage, data, featureContext)
 	}
 }
 
 func PlaygroundSubmitHandler(renderPage RenderPage) http.HandlerFunc {
+	return playgroundSubmitHandler(renderPage, false)
+}
+
+func FeatureContextPlaygroundSubmitHandler(renderPage RenderPage) http.HandlerFunc {
+	return playgroundSubmitHandler(renderPage, true)
+}
+
+func playgroundSubmitHandler(renderPage RenderPage, featureContext bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
 
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), "playground")
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), "playground", featureContext)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -61,10 +73,20 @@ func PlaygroundSubmitHandler(renderPage RenderPage) http.HandlerFunc {
 		data.PlaygroundCode = code
 		data.PlaygroundResult, _ = runPlayground(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), code, r.FormValue("includeUnset") == "on")
 
-		renderPage(w, r, layout.Props{
-			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage: components.PageEnvironments,
-			Content:     featurePageContent(data),
-		})
+		renderPlaygroundPage(w, r, renderPage, data, featureContext)
 	}
+}
+
+func renderPlaygroundPage(w http.ResponseWriter, r *http.Request, renderPage RenderPage, data *FeaturePage, featureContext bool) {
+	title := data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name
+	currentPage := components.PageEnvironments
+	if featureContext {
+		title = data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name
+		currentPage = components.PageFeatures
+	}
+	renderPage(w, r, layout.Props{
+		Title:       title,
+		CurrentPage: currentPage,
+		Content:     featurePageContent(data),
+	})
 }

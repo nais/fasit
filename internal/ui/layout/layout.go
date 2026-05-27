@@ -8,11 +8,12 @@ import (
 )
 
 type Props struct {
-	Title        string
-	CurrentPage  components.Page
-	Content      g.Node
-	UserEmail    string
-	AssetVersion string
+	Title            string
+	CurrentPage      components.Page
+	Content          g.Node
+	UserEmail        string
+	AssetVersion     string
+	HideHeaderSearch bool
 }
 
 func Page(props Props) g.Node {
@@ -39,7 +40,7 @@ func Page(props Props) g.Node {
 			h.Script(h.Src("/site.js"+v), h.Defer()),
 		},
 		Body: []g.Node{
-			components.SiteHeader(props.CurrentPage, props.UserEmail),
+			components.SiteHeader(props.CurrentPage, props.UserEmail, props.HideHeaderSearch),
 			props.Content,
 		},
 	})
