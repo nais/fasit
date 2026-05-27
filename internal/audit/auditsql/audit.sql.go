@@ -56,6 +56,32 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 	return err
 }
 
+const latestDisableReason = `-- name: LatestDisableReason :one
+SELECT
+	description
+FROM
+	audits
+WHERE
+	feature = $1
+	AND environment_id = $2
+	AND action = 'disabled'
+ORDER BY
+	created_at DESC
+LIMIT 1
+`
+
+type LatestDisableReasonParams struct {
+	Feature string
+	EnvID   *uuid.UUID
+}
+
+func (q *Queries) LatestDisableReason(ctx context.Context, arg LatestDisableReasonParams) (string, error) {
+	row := q.db.QueryRow(ctx, latestDisableReason, arg.Feature, arg.EnvID)
+	var description string
+	err := row.Scan(&description)
+	return description, err
+}
+
 const listForEnvironment = `-- name: ListForEnvironment :many
 SELECT
 	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id, a.feature,

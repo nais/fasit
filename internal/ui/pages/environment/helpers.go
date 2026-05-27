@@ -45,8 +45,9 @@ type FeaturePage struct {
 
 type FeatureDetail struct {
 	*model.Feature
-	Enabled     bool
-	ConfigItems []FeatureConfigItem
+	Enabled       bool
+	DisableReason string
+	ConfigItems   []FeatureConfigItem
 }
 
 type FeatureWorkspaceEnvironment struct {
@@ -205,6 +206,11 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		return nil, err
 	}
 
+	var disableReason string
+	if disabled {
+		disableReason = audit.LatestDisableReason(ctx, featureName, env.ID)
+	}
+
 	allTenants, _ := envpkg.ListTenants(ctx)
 	tenantEnvs, _ := envpkg.List(ctx, tenant.ID)
 
@@ -228,7 +234,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		Tenant:         tenant,
 		TenantSlug:     tenantSlug,
 		Environment:    &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:        &FeatureDetail{Feature: feat, Enabled: !disabled},
+		Feature:        &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
 		AllFeatures:    allFeatures,
 		FeatureContext: featureContext,
 		ActiveTab:      activeTab,

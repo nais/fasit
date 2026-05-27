@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -21,6 +22,7 @@ type DeploymentEnvStatus struct {
 	TenantName           string
 	TenantSlug           string
 	Enabled              bool
+	DisableReason        string
 	EnvReconcileDisabled bool
 	LastModified         time.Time
 	LastDeployed         time.Time
@@ -427,6 +429,11 @@ func statusTooltip(env DeploymentEnvStatus) string {
 	}
 	if !env.Enabled {
 		tip := "Feature reconcile disabled"
+		if env.DisableReason != "" {
+			tip += ": " + env.DisableReason
+		} else {
+			tip += ": disabled before we started requiring reason"
+		}
 		if env.ReleaseVersion != "" {
 			tip += " — Running: " + env.ReleaseVersion
 		}
@@ -585,6 +592,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 			}
 			if disabled {
 				es.LastModified = disabledAt
+				es.DisableReason = audit.LatestDisableReason(ctx, feature.Name, env.env.ID)
 			}
 
 			if di, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {

@@ -119,3 +119,14 @@ func actorOrUnknown(ctx context.Context, description, objectType string) string 
 	}
 	return actor
 }
+
+func LatestDisableReason(ctx context.Context, feature string, envID uuid.UUID) string {
+	desc, err := querier(ctx).LatestDisableReason(ctx, auditsql.LatestDisableReasonParams{
+		Feature: feature,
+		EnvID:   &envID,
+	})
+	if err != nil {
+		return ""
+	}
+	return desc
+}

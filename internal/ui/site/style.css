@@ -648,6 +648,13 @@ nav .nav-btn:hover {
   align-items: center;
   gap: 0.35rem;
   font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.reconcile-reason {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 .env-activity {
   margin-bottom: 0;

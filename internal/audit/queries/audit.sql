@@ -77,3 +77,16 @@ ORDER BY
 	a.created_at DESC
 LIMIT @page_size;
 
+-- name: LatestDisableReason :one
+SELECT
+	description
+FROM
+	audits
+WHERE
+	feature = @feature
+	AND environment_id = @env_id
+	AND action = 'disabled'
+ORDER BY
+	created_at DESC
+LIMIT 1;
+

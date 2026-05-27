@@ -41,3 +41,7 @@ func (f *Querier) ListForEnvironment(_ context.Context, _ auditsql.ListForEnviro
 func (f *Querier) ListRecent(_ context.Context, _ int32) ([]auditsql.ListRecentRow, error) {
 	return nil, nil
 }
+
+func (f *Querier) LatestDisableReason(_ context.Context, _ auditsql.LatestDisableReasonParams) (string, error) {
+	return "", nil
+}

@@ -436,6 +436,14 @@ func reconcileControl(page *FeaturePage) g.Node {
 	popoverID := "toggle-reconcile"
 	action := featureBasePathForPage(page) + "/toggle-reconcile"
 	statusClass, statusText, buttonText, newEnabled := "status-error", "Reconcile disabled", "Enable reconcile", "true"
+	var reasonText string
+	if !page.Feature.Enabled {
+		if page.Feature.DisableReason != "" {
+			reasonText = "reason: " + page.Feature.DisableReason
+		} else {
+			reasonText = "reason: disabled before we started requiring reason"
+		}
+	}
 	if page.Feature.Enabled {
 		statusClass, statusText, buttonText, newEnabled = "status-success", "Reconcile enabled", "Disable reconcile", "false"
 	}
@@ -465,6 +473,7 @@ func reconcileControl(page *FeaturePage) g.Node {
 	return h.Div(h.Class("reconcile-control"),
 		h.Span(h.Class(statusClass), g.Text(statusText)),
 		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
+		g.If(reasonText != "", h.Div(h.Class("reconcile-reason"), g.Text(reasonText))),
 		h.Div(g.Attr("popover", ""), h.ID(popoverID),
 			h.H3(g.Text("Confirm reconcile toggle")),
 			dialogBody,

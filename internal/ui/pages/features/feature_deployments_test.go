@@ -89,11 +89,12 @@ func TestStatusTooltip(t *testing.T) {
 	t.Run("feature reconcile disabled with running version", func(t *testing.T) {
 		env := DeploymentEnvStatus{
 			Enabled:           false,
+			DisableReason:     "testing in progress",
 			ReleaseVersion:    "1.0.0",
 			DeploymentVersion: "2.0.0",
 			StatusText:        "DISABLED",
 		}
-		assert.Equal(t, "Feature reconcile disabled — Running: 1.0.0", statusTooltip(env))
+		assert.Equal(t, "Feature reconcile disabled: testing in progress — Running: 1.0.0", statusTooltip(env))
 	})
 
 	t.Run("feature reconcile disabled without running version", func(t *testing.T) {
@@ -102,7 +103,7 @@ func TestStatusTooltip(t *testing.T) {
 			DeploymentVersion: "2.0.0",
 			StatusText:        "DISABLED",
 		}
-		assert.Equal(t, "Feature reconcile disabled", statusTooltip(env))
+		assert.Equal(t, "Feature reconcile disabled: disabled before we started requiring reason", statusTooltip(env))
 	})
 
 	t.Run("environment disabled takes priority over feature disabled", func(t *testing.T) {
