@@ -4,9 +4,12 @@ package sqlgen
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
+	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)
 }
 

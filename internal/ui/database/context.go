@@ -13,8 +13,7 @@ type ctxKey int
 const querierKey ctxKey = iota
 
 func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	ctx = context.WithValue(ctx, querierKey, sqlgen.New(pool))
-	return ctx
+	return context.WithValue(ctx, querierKey, sqlgen.New(pool))
 }
 
 func querier(ctx context.Context) sqlgen.Querier {

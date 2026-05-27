@@ -5,7 +5,20 @@ package sqlgen
 import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/database/types"
 )
+
+type Environment struct {
+	ID           uuid.UUID
+	TenantID     uuid.UUID
+	Name         string
+	Kind         types.EnvironmentKind
+	Description  *string
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
+	Reconcile    bool
+	Labels       types.EnvironmentLabels
+}
 
 type Tenant struct {
 	ID           uuid.UUID
