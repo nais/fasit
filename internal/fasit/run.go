@@ -19,6 +19,8 @@ import (
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
+	"github.com/nais/fasit/internal/reconciler"
+	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sethvargo/go-envconfig"
@@ -99,6 +101,20 @@ func Run(ctx context.Context) error {
 	go deployment.TimeoutDeployInstructions(ctx, log)
 
 	go deployment.RunReconciler(ctx, 10*time.Minute)
+
+	if cfg.UseNewReconciler {
+		reconcilerPublisher := func(topicID string, log logrus.FieldLogger) reconciler.Publisher {
+			p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
+			p.SetMeter(meter)
+			return p
+		}
+		rec, err := reconciler.New(reconcilersql.New(pool), reconcilerPublisher, meter, log.WithField("component", "reconciler"))
+		if err != nil {
+			return fmt.Errorf("creating reconciler: %w", err)
+		}
+		go rec.Run(ctx, 10*time.Minute)
+		log.Info("new reconciler enabled")
+	}
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 

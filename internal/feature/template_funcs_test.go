@@ -566,7 +566,7 @@ func Test_usage(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tpl := template.New("usage")
-			tpl.Funcs(templateFuncs)
+			tpl.Funcs(TemplateFuncs)
 			tpl, err := tpl.Parse(tt.template)
 			if err != nil {
 				t.Fatalf("failed to parse template: %v", err)

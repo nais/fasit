@@ -31,7 +31,7 @@ func TestHelmConfigMap(t *testing.T) {
 		return b
 	}
 	tests := map[string]struct {
-		input    []mergedConfigRow
+		input    []MergedConfigRow
 		expected map[string]any
 	}{
 		"empty": {
@@ -39,7 +39,7 @@ func TestHelmConfigMap(t *testing.T) {
 			expected: make(map[string]any),
 		},
 		"single_level": {
-			input: []mergedConfigRow{
+			input: []MergedConfigRow{
 				{
 					Key:   "test1",
 					Value: jsonify("value1"),
@@ -55,7 +55,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"multi_level": {
-			input: []mergedConfigRow{
+			input: []MergedConfigRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -73,7 +73,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"escaped dots": {
-			input: []mergedConfigRow{
+			input: []MergedConfigRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -94,7 +94,7 @@ func TestHelmConfigMap(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			retval, err := makeHelmConfigMap(tc.input)
+			retval, err := MakeHelmConfigMap(tc.input)
 			if err != nil {
 				t.Fatal(err)
 			}

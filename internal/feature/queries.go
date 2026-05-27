@@ -71,20 +71,20 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 		return nil, err
 	}
 
-	vals := mergeConfigs(globalConfigs, envConfigs, includeKeys)
+	vals := MergeConfigs(globalConfigs, envConfigs, includeKeys)
 
-	mp, err := makeHelmConfigMap(vals)
+	mp, err := MakeHelmConfigMap(vals)
 	if err != nil {
 		return nil, err
 	}
 
-	data := &helmRenderData{
-		mv:         mv,
-		envKind:    envKind,
-		configVals: vals,
-		configMap:  mp,
+	data := &HelmRenderData{
+		MV:         mv,
+		EnvKind:    envKind,
+		ConfigVals: vals,
+		ConfigMap:  mp,
 	}
-	return renderHelmValues(data, f, templateFuncs, true)
+	return RenderHelmValues(data, f, TemplateFuncs, true)
 }
 
 // probeSecretSentinel is the high-entropy placeholder injected into both
@@ -93,18 +93,18 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 // least one secret input.
 const probeSecretSentinel = "__FASIT_PROBE_a9f4e1c8d7b2__" // #nosec G101 -- placeholder, not a credential
 
-// helmRenderData holds everything needed to render helm values without
+// HelmRenderData holds everything needed to render helm values without
 // additional database access. Fetched once, rendered multiple times for
 // taint detection.
-type helmRenderData struct {
-	mv            *ComputedValues
-	envKind       model.EnvironmentKind
-	configVals    []mergedConfigRow
-	configMap     map[string]any
-	secretEnvKeys map[string]bool
+type HelmRenderData struct {
+	MV            *ComputedValues
+	EnvKind       model.EnvironmentKind
+	ConfigVals    []MergedConfigRow
+	ConfigMap     map[string]any
+	SecretEnvKeys map[string]bool
 }
 
-func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID) (*helmRenderData, error) {
+func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID) (*HelmRenderData, error) {
 	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err
@@ -130,9 +130,9 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 		return nil, err
 	}
 
-	vals := mergeConfigs(globalConfigs, envConfigs, includeKeys)
+	vals := MergeConfigs(globalConfigs, envConfigs, includeKeys)
 
-	mp, err := makeHelmConfigMap(vals)
+	mp, err := MakeHelmConfigMap(vals)
 	if err != nil {
 		return nil, err
 	}
@@ -152,22 +152,22 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 		secretEnvKeys[row.Key] = true
 	}
 
-	return &helmRenderData{
-		mv:            mv,
-		envKind:       envKind,
-		configVals:    vals,
-		configMap:     mp,
-		secretEnvKeys: secretEnvKeys,
+	return &HelmRenderData{
+		MV:            mv,
+		EnvKind:       envKind,
+		ConfigVals:    vals,
+		ConfigMap:     mp,
+		SecretEnvKeys: secretEnvKeys,
 	}, nil
 }
 
 // renderHelmValues renders the helm config map from pre-fetched data.
 // When validate is true, missing required fields cause an error.
-func renderHelmValues(data *helmRenderData, f *model.Feature, funcs template.FuncMap, validate bool) (map[string]any, error) {
-	mp := data.configMap
-	mv := data.mv
+func RenderHelmValues(data *HelmRenderData, f *model.Feature, funcs template.FuncMap, validate bool) (map[string]any, error) {
+	mp := data.ConfigMap
+	mv := data.MV
 
-	if err := GenerateWith(f.Values, data.envKind, mv, mp, funcs); err != nil {
+	if err := GenerateWith(f.Values, data.EnvKind, mv, mp, funcs); err != nil {
 		return nil, err
 	}
 
@@ -177,12 +177,12 @@ func renderHelmValues(data *helmRenderData, f *model.Feature, funcs template.Fun
 		},
 		"env": map[string]string{
 			"name": mv.Env["name"].(string),
-			"kind": data.envKind.String(),
+			"kind": data.EnvKind.String(),
 		},
 	}
 
 	if validate {
-		missing := validateFields(f, data.envKind, data.configVals, mp)
+		missing := ValidateFields(f, data.EnvKind, data.ConfigVals, mp)
 		if len(missing) > 0 {
 			return nil, &errs.ErrMissingRequiredFields{Fields: missing}
 		}
@@ -287,37 +287,37 @@ func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid
 	return renderHelmValuesWithSecretTaint(data, f)
 }
 
-func renderHelmValuesWithSecretTaint(data *helmRenderData, f *model.Feature) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
+func renderHelmValuesWithSecretTaint(data *HelmRenderData, f *model.Feature) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
 	// Snapshot the pre-render configMap so control/probe start from the same
 	// state as the real render. addToMap is write-once: if the real render's
 	// computed values leaked into control/probe, they'd skip re-rendering and
 	// the taint diff would always be empty.
-	originalConfigMap := cloneConfigMap(data.configMap)
+	originalConfigMap := cloneConfigMap(data.ConfigMap)
 
-	real, err := renderHelmValues(data, f, templateFuncs, false)
+	real, err := RenderHelmValues(data, f, TemplateFuncs, false)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
 	controlData := *data
-	controlData.configMap = cloneConfigMap(originalConfigMap)
-	control, cerr := renderHelmValues(&controlData, f, deterministicTemplateFuncs, false)
+	controlData.ConfigMap = cloneConfigMap(originalConfigMap)
+	control, cerr := RenderHelmValues(&controlData, f, deterministicTemplateFuncs, false)
 
 	// Probe render (deterministic funcs, secrets masked with sentinel, no validation).
-	probeMV := cloneComputedValues(data.mv)
-	maskEnvSecrets(probeMV, data.secretEnvKeys)
+	probeMV := cloneComputedValues(data.MV)
+	maskEnvSecrets(probeMV, data.SecretEnvKeys)
 	probeCfg := cloneConfigMap(originalConfigMap)
 	for _, key := range f.SecretKeys() {
 		setNestedSentinel(probeCfg, key)
 	}
-	probeData := &helmRenderData{
-		mv:         probeMV,
-		envKind:    data.envKind,
-		configVals: data.configVals,
-		configMap:  probeCfg,
+	probeData := &HelmRenderData{
+		MV:         probeMV,
+		EnvKind:    data.EnvKind,
+		ConfigVals: data.ConfigVals,
+		ConfigMap:  probeCfg,
 	}
 
-	probe, perr := renderHelmValues(probeData, f, deterministicTemplateFuncs, false)
+	probe, perr := RenderHelmValues(probeData, f, deterministicTemplateFuncs, false)
 
 	if cerr != nil || perr != nil {
 		return real, nil, false, nil

@@ -15,7 +15,10 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-type mergedConfigRow struct {
+// MergedConfigRow is a config key-value pair produced by overlaying
+// environment-specific config on top of global config. Exported so that
+// the reconciler package can build these from its own bulk-fetched data.
+type MergedConfigRow struct {
 	ID            uuid.UUID
 	Key           string
 	Value         []byte
@@ -24,20 +27,20 @@ type mergedConfigRow struct {
 	EnvironmentID *uuid.UUID
 }
 
-func mergeConfigs(global []featuresql.ConfigurationsGlobal, env []featuresql.ConfigurationsEnvironment, includeKeys []string) []mergedConfigRow {
+func MergeConfigs(global []featuresql.ConfigurationsGlobal, env []featuresql.ConfigurationsEnvironment, includeKeys []string) []MergedConfigRow {
 	keySet := make(map[string]struct{}, len(includeKeys))
 	for _, k := range includeKeys {
 		keySet[k] = struct{}{}
 	}
 
-	m := make(map[string]mergedConfigRow, len(global)+len(env))
+	m := make(map[string]MergedConfigRow, len(global)+len(env))
 	for _, g := range global {
 		if len(keySet) > 0 {
 			if _, ok := keySet[g.Key]; !ok {
 				continue
 			}
 		}
-		m[g.Key] = mergedConfigRow{ID: g.ID, Key: g.Key, Value: g.Value, Secret: g.Secret, Created: g.Created}
+		m[g.Key] = MergedConfigRow{ID: g.ID, Key: g.Key, Value: g.Value, Secret: g.Secret, Created: g.Created}
 	}
 	for _, e := range env {
 		if len(keySet) > 0 {
@@ -46,21 +49,21 @@ func mergeConfigs(global []featuresql.ConfigurationsGlobal, env []featuresql.Con
 			}
 		}
 		eid := e.EnvironmentID
-		m[e.Key] = mergedConfigRow{ID: e.ID, Key: e.Key, Value: e.Value, Secret: e.Secret, Created: e.Created, EnvironmentID: &eid}
+		m[e.Key] = MergedConfigRow{ID: e.ID, Key: e.Key, Value: e.Value, Secret: e.Secret, Created: e.Created, EnvironmentID: &eid}
 	}
 
-	result := make([]mergedConfigRow, 0, len(m))
+	result := make([]MergedConfigRow, 0, len(m))
 	for _, v := range m {
 		result = append(result, v)
 	}
 	// Sort by key for deterministic iteration order downstream.
-	slices.SortFunc(result, func(a, b mergedConfigRow) int {
+	slices.SortFunc(result, func(a, b MergedConfigRow) int {
 		return cmp.Compare(a.Key, b.Key)
 	})
 	return result
 }
 
-func makeHelmConfigMap(vals []mergedConfigRow) (map[string]any, error) {
+func MakeHelmConfigMap(vals []MergedConfigRow) (map[string]any, error) {
 	// Pre-scan: a leaf key cannot also be a strict dotted prefix of another key.
 	leaves := make(map[string]bool, len(vals))
 	for _, v := range vals {
@@ -103,7 +106,7 @@ func makeHelmConfigMap(vals []mergedConfigRow) (map[string]any, error) {
 	return val, nil
 }
 
-func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []mergedConfigRow, mp map[string]any) []string {
+func ValidateFields(f *model.Feature, envKind model.EnvironmentKind, values []MergedConfigRow, mp map[string]any) []string {
 	requiredFields := f.RequiredFields(envKind)
 
 	fields := map[string]bool{}

@@ -87,3 +87,11 @@ sql:
         !!merge <<: *default_go
         package: "auditsql"
         out: "internal/audit/auditsql"
+  - name: "Reconciler SQL"
+    !!merge <<: *default_domain
+    queries: "internal/reconciler/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "reconcilersql"
+        out: "internal/reconciler/reconcilersql"
