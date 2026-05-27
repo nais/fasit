@@ -126,6 +126,7 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	newReconcile reconcileFunc,
 	seeder *deploymenttest.Seeder,
 	rec *reconciler.Reconciler,
+	lastResult **reconciler.ReconcileResult,
 ) {
 	t.Helper()
 	logger, _ := test.NewNullLogger()
@@ -167,12 +168,15 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	if err != nil {
 		t.Fatalf("failed to create reconciler: %v", err)
 	}
+	var lr *reconciler.ReconcileResult
+	lastResult = &lr
 	newReconcile = func(ctx context.Context) error {
-		results, err := rec.Reconcile(ctx)
+		result, err := rec.Reconcile(ctx)
 		if err != nil {
 			return err
 		}
-		return writer.WriteResults(ctx, results)
+		lr = result
+		return writer.WriteResults(ctx, result.Results)
 	}
 
 	db = &reconcileDB{Db{t: t, pool: pool}}
@@ -204,7 +208,7 @@ func forEachReconciler(
 		{"new", func(_, new reconcileFunc) reconcileFunc { return new }},
 	} {
 		t.Run(impl.name, func(t *testing.T) {
-			ctx, db, pub, oldR, newR, seeder, rec := setupReconcileTest(ctx, t, container, dsn)
+			ctx, db, pub, oldR, newR, seeder, _, lastResultPtr := setupReconcileTest(ctx, t, container, dsn)
 			deployment.ChartDownloader = seeder.ChartDownloader()
 
 			isNew := impl.name == "new"
@@ -216,9 +220,10 @@ func forEachReconciler(
 				err := raw(ctx)
 				elapsed := time.Since(start)
 				t.Logf("reconcile #%d took %s", call, elapsed)
-				if isNew {
-					ioDur := elapsed - rec.LastFetchDur - rec.LastRenderDur
-					t.Logf("  phases: fetch=%s render=%s io=%s", rec.LastFetchDur, rec.LastRenderDur, ioDur)
+				if isNew && *lastResultPtr != nil {
+					lr := *lastResultPtr
+					ioDur := elapsed - lr.FetchDur - lr.RenderDur
+					t.Logf("  phases: fetch=%s render=%s io=%s", lr.FetchDur, lr.RenderDur, ioDur)
 				}
 				return err
 			}

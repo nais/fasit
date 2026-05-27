@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #MISE description="Run reconciler integration tests and compare old vs new timing"
-set -euo pipefail
+set -uo pipefail
 
-raw=$(go test -tags integration_test,reconciler_bench -v -count=1 -timeout 600s -run "TestReconcile" ./internal/deployment/ 2>&1)
+raw=$(go test -tags integration_test,reconciler_bench -v -count=1 -timeout 600s -run "TestReconcile" ./internal/deployment/ 2>&1) || true
 
 echo "$raw" | grep -E "=== RUN|--- PASS|--- FAIL|took|phases|seeded|deployed" | sed 's/^    //'
 
@@ -76,3 +76,8 @@ while IFS=$'\t' read -r key old_val; do
         printf "%-55s %s\n" "" "  └─ $phases"
     fi
 done < "$old_file"
+
+# Exit with failure if any test failed.
+if echo "$raw" | grep -q "^--- FAIL"; then
+	exit 1
+fi

@@ -16,10 +16,13 @@ type Reconciler struct {
 	trigger chan struct{}
 
 	reconcileLoopTime metric.Int64Histogram
+}
 
-	// Phase durations from the last Reconcile call.
-	LastFetchDur  time.Duration
-	LastRenderDur time.Duration
+// ReconcileResult holds the results and phase durations of a reconcile run.
+type ReconcileResult struct {
+	Results   []Result
+	FetchDur  time.Duration
+	RenderDur time.Duration
 }
 
 func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogger) (*Reconciler, error) {
@@ -40,12 +43,12 @@ func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogg
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration, writer ResultWriter) {
 	for {
 		r.log.Info("reconciling")
-		results, err := r.Reconcile(ctx)
+		result, err := r.Reconcile(ctx)
 		if err != nil {
 			r.log.WithError(err).Error("reconcile")
 		} else {
 			ioStart := time.Now()
-			if err := writer.WriteResults(ctx, results); err != nil {
+			if err := writer.WriteResults(ctx, result.Results); err != nil {
 				r.log.WithError(err).Error("write results")
 			}
 			r.log.WithField("io", time.Since(ioStart)).Info("results written")
@@ -72,7 +75,7 @@ func (r *Reconciler) TriggerReconcile() {
 // Reconcile fetches the current state and renders deploy decisions for all
 // environments. It performs no writes — callers decide what to do with the
 // returned results (write to DB, display in UI, etc.).
-func (r *Reconciler) Reconcile(ctx context.Context) ([]Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context) (*ReconcileResult, error) {
 	loopStart := time.Now()
 
 	fetchStart := time.Now()
@@ -80,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) ([]Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetch snapshot: %w", err)
 	}
-	r.LastFetchDur = time.Since(fetchStart)
+	fetchDur := time.Since(fetchStart)
 
 	r.log.WithField("num_envs", len(snap.environments)).
 		WithField("num_deployments", len(snap.deployments)).
@@ -88,7 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) ([]Result, error) {
 
 	renderStart := time.Now()
 	results := r.renderAll(snap)
-	r.LastRenderDur = time.Since(renderStart)
+	renderDur := time.Since(renderStart)
 
 	deployCount := 0
 	for _, res := range results {
@@ -101,11 +104,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) ([]Result, error) {
 		Info("render complete")
 
 	totalDur := time.Since(loopStart)
-	r.log.WithField("fetch", r.LastFetchDur).
-		WithField("render", r.LastRenderDur).
+	r.log.WithField("fetch", fetchDur).
+		WithField("render", renderDur).
 		WithField("total", totalDur).
 		Info("reconcile complete")
 
 	r.reconcileLoopTime.Record(ctx, totalDur.Milliseconds())
-	return results, nil
+	return &ReconcileResult{
+		Results:   results,
+		FetchDur:  fetchDur,
+		RenderDur: renderDur,
+	}, nil
 }
