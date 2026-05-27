@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/naisd"
+	reconcilerpage "github.com/nais/fasit/internal/ui/pages/reconciler"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
 	"github.com/sirupsen/logrus"
 )
@@ -86,6 +87,9 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/labels", labels.Handler(s.renderPage))
 	r.Get("/naisd", naisd.Handler(s.renderPage))
+
+	r.Get("/reconciler", reconcilerpage.Handler(s.renderPage))
+	r.Post("/reconciler/run", reconcilerpage.RunHandler(s.renderPage))
 
 	return r
 }

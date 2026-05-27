@@ -103,16 +103,11 @@ func Run(ctx context.Context) error {
 	go deployment.RunReconciler(ctx, 10*time.Minute)
 
 	if cfg.UseNewReconciler {
-		reconcilerPublisher := func(topicID string, log logrus.FieldLogger) reconciler.Publisher {
-			p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
-			p.SetMeter(meter)
-			return p
-		}
-		rec, err := reconciler.New(reconcilersql.New(pool), reconcilerPublisher, meter, log.WithField("component", "reconciler"))
+		rec, err := reconciler.New(reconcilersql.New(pool), meter, log.WithField("component", "reconciler"))
 		if err != nil {
 			return fmt.Errorf("creating reconciler: %w", err)
 		}
-		go rec.Run(ctx, 10*time.Minute)
+		ctx = reconciler.WithContext(ctx, rec)
 		log.Info("new reconciler enabled")
 	}
 

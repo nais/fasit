@@ -4,16 +4,55 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
-func (r *Reconciler) writeResults(ctx context.Context, results []renderResult) error {
+// Publisher sends deploy instructions to naisd agents.
+type Publisher interface {
+	Publish(ctx context.Context, msg message.DeployInstruction) error
+	Stop()
+}
+
+// NewPublisher creates a Publisher for a given topic.
+type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
+
+// DBResultWriter writes reconcile results to the database and publishes
+// deploy instructions to naisd via Pub/Sub. This is the default writer
+// used in production.
+type DBResultWriter struct {
+	querier      reconcilersql.Querier
+	newPublisher NewPublisher
+	log          logrus.FieldLogger
+
+	publishersMu sync.Mutex
+	publishers   map[string]Publisher
+
+	deployMessages metric.Int64Counter
+}
+
+func NewDBResultWriter(querier reconcilersql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*DBResultWriter, error) {
+	deployMessages, err := meter.Int64Counter("reconciler_deploy_messages", metric.WithDescription("Deploy messages sent by reconciler"))
+	if err != nil {
+		return nil, fmt.Errorf("create deploy messages counter: %w", err)
+	}
+	return &DBResultWriter{
+		querier:        querier,
+		newPublisher:   publisher,
+		log:            log,
+		publishers:     make(map[string]Publisher),
+		deployMessages: deployMessages,
+	}, nil
+}
+
+func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) error {
 	var (
 		instrIDs       []uuid.UUID
 		instrEnvIDs    []uuid.UUID
@@ -39,7 +78,7 @@ func (r *Reconciler) writeResults(ctx context.Context, results []renderResult) e
 
 	for _, res := range results {
 		switch res.Action {
-		case actionDeploy:
+		case ActionDeploy:
 			id := uuid.New()
 			vals, err := json.Marshal(res.Values)
 			if err != nil {
@@ -75,31 +114,31 @@ func (r *Reconciler) writeResults(ctx context.Context, results []renderResult) e
 				featureName: res.Feature.Name,
 			})
 
-		case actionSkipInProgress:
+		case ActionSkipInProgress:
 			statusDepIDs = append(statusDepIDs, res.DeploymentID)
 			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
 			statuses = append(statuses, res.Status)
 			statusMessages = append(statusMessages, res.Message)
 
-		case actionSkipUnchanged:
+		case ActionSkipUnchanged:
 			statusDepIDs = append(statusDepIDs, res.DeploymentID)
 			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
 			statuses = append(statuses, res.Status)
 			statusMessages = append(statusMessages, res.Message)
 
-		case actionFailMissingDeps, actionFailMissingConfig, actionFailRender:
+		case ActionFailMissingDeps, ActionFailMissingConfig, ActionFailRender:
 			statusDepIDs = append(statusDepIDs, res.DeploymentID)
 			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
 			statuses = append(statuses, model.RolloutStatusFailed.String())
 			statusMessages = append(statusMessages, res.Message)
 
-		case actionSkipDisabled:
+		case ActionSkipDisabled:
 			// No status update for disabled features.
 		}
 	}
 
 	if len(instrIDs) > 0 {
-		if err := r.querier.BulkCreateDeployInstructions(ctx, reconcilersql.BulkCreateDeployInstructionsParams{
+		if err := w.querier.BulkCreateDeployInstructions(ctx, reconcilersql.BulkCreateDeployInstructionsParams{
 			Ids:             instrIDs,
 			EnvironmentIds:  instrEnvIDs,
 			FeatureNames:    instrFeatures,
@@ -113,7 +152,7 @@ func (r *Reconciler) writeResults(ctx context.Context, results []renderResult) e
 	}
 
 	if len(statusDepIDs) > 0 {
-		if err := r.querier.BulkUpsertDeploymentStatuses(ctx, reconcilersql.BulkUpsertDeploymentStatusesParams{
+		if err := w.querier.BulkUpsertDeploymentStatuses(ctx, reconcilersql.BulkUpsertDeploymentStatusesParams{
 			DeploymentIds:  statusDepIDs,
 			EnvironmentIds: statusEnvIDs,
 			Statuses:       statuses,
@@ -124,12 +163,12 @@ func (r *Reconciler) writeResults(ctx context.Context, results []renderResult) e
 	}
 
 	for _, item := range toPublish {
-		pub := r.publisher(item.topicID)
+		pub := w.publisher(item.topicID)
 		if err := pub.Publish(ctx, item.instruction); err != nil {
-			r.log.WithError(err).WithField("feature", item.featureName).WithField("env", item.envName).Error("publish deploy instruction")
+			w.log.WithError(err).WithField("feature", item.featureName).WithField("env", item.envName).Error("publish deploy instruction")
 			continue
 		}
-		r.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(
+		w.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(
 			attribute.String("tenant", item.tenantName),
 			attribute.String("environment", item.envName),
 			attribute.String("feature", item.featureName),
@@ -137,6 +176,17 @@ func (r *Reconciler) writeResults(ctx context.Context, results []renderResult) e
 	}
 
 	return nil
+}
+
+func (w *DBResultWriter) publisher(topicID string) Publisher {
+	w.publishersMu.Lock()
+	defer w.publishersMu.Unlock()
+	if p, ok := w.publishers[topicID]; ok {
+		return p
+	}
+	p := w.newPublisher(topicID, w.log)
+	w.publishers[topicID] = p
+	return p
 }
 
 func naisdTopicID(tenantName, envName string) string {

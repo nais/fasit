@@ -1991,3 +1991,17 @@ a:hover .status-badge {
 #env-overview[data-view="grid"] .feature-card-body thead { display: none; }
 #env-overview[data-view="table"] #overview-table { display: block; }
 #env-overview[data-view="table"] #overview-grid { display: none; }
+
+/* Reconciler page */
+.reconciler-summary { margin: 1rem 0; }
+.reconciler-timing { color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem; }
+.summary-table { margin-bottom: 1rem; }
+.summary-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.action-deploy { color: var(--green); }
+.action-fail { color: var(--red); }
+.action-skip { color: var(--text-secondary); }
+.reconciler-details { margin-top: 1.5rem; }
+.reconciler-env { margin-bottom: 0.5rem; }
+.reconciler-env summary { cursor: pointer; font-weight: 500; padding: 0.3rem 0; }
+.env-results-table { width: 100%; font-size: 0.85rem; margin-top: 0.25rem; }
+.env-results-table td, .env-results-table th { padding: 0.2rem 0.5rem; }
