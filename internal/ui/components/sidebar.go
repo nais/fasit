@@ -8,24 +8,6 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.Node {
-	return h.Aside(h.Class("sidebar"),
-		sidebarFilter("Features"),
-		h.Div(h.Class("nav"),
-			h.Ul(g.Group(g.Map(features, func(feature view.FeatureNav) g.Node {
-				attrs := []g.Node{h.Href("/features/" + feature.Name)}
-				if currentFeatureName != "" && feature.Name == currentFeatureName {
-					attrs = append(attrs, h.Class("active"))
-				}
-
-				return h.Li(
-					h.A(append(attrs, g.Text(feature.Name), featureStatusBadge(feature))...),
-				)
-			}))),
-		),
-	)
-}
-
 func sidebarFilter(title string) g.Node {
 	var heading g.Node
 	if title != "" {
@@ -41,10 +23,6 @@ func sidebarFilter(title string) g.Node {
 			g.Attr("autocomplete", "off"),
 		),
 	)
-}
-
-func featureStatusBadge(feature view.FeatureNav) g.Node {
-	return StatusCountsBadge(feature.FailedCount, feature.PendingCount)
 }
 
 func StatusCountsBadge(failed, pending int) g.Node {
