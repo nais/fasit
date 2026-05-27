@@ -2,7 +2,7 @@
 #MISE description="Run reconciler integration tests and compare old vs new timing"
 set -euo pipefail
 
-raw=$(go test -tags integration_test -v -count=1 -timeout 600s -run "TestReconcile" ./internal/deployment/ 2>&1)
+raw=$(go test -tags integration_test,reconciler_bench -v -count=1 -timeout 600s -run "TestReconcile" ./internal/deployment/ 2>&1)
 
 echo "$raw" | grep -E "=== RUN|--- PASS|--- FAIL|took|phases|seeded|deployed" | sed 's/^    //'
 
