@@ -1910,6 +1910,9 @@ a:hover .feature-nav-badge {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
+.feature-overview-table {
+  width: 100%;
+}
 .feature-card-header {
   display: flex;
   align-items: center;
@@ -1977,6 +1980,11 @@ a:hover .feature-nav-badge {
 .feature-card-body .table td,
 .feature-card-body .table th {
   white-space: nowrap;
+}
+.tenant-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 /* Kebab (three-dot) menu */

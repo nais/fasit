@@ -1,8 +1,11 @@
 package features
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,6 +40,27 @@ func TestCurrentDeploymentEnvStatusesSkipsOverriddenRows(t *testing.T) {
 	assert.Len(t, got, 2)
 	assert.Equal(t, "DEPLOYED", got[0].StatusText)
 	assert.Equal(t, "FAILED", got[1].StatusText)
+}
+
+func TestDeploymentDetailContentRendersSingleOverviewTable(t *testing.T) {
+	var buf bytes.Buffer
+	node := deploymentDetailContent(&DetailPage{
+		CurrentFeature: &model.Feature{Name: "naiserator"},
+		DeploymentEnvs: []DeploymentEnvStatus{
+			{Name: "dev", TenantName: "atil", TenantSlug: "atil", StatusText: "DEPLOYED", DeploymentVersion: "1.0.0"},
+			{Name: "prod", TenantName: "atil", TenantSlug: "atil", StatusText: "DEPLOYED", DeploymentVersion: "1.0.0"},
+			{Name: "ci", TenantName: "ci-nais", TenantSlug: "ci-nais", StatusText: "DEPLOYED", DeploymentVersion: "1.0.0"},
+		},
+	})
+	assert.NoError(t, node.Render(&buf))
+
+	html := buf.String()
+	assert.Equal(t, 1, strings.Count(html, "<table"))
+	assert.Equal(t, 1, strings.Count(html, "<thead"))
+	assert.Contains(t, html, "Tenant")
+	assert.Contains(t, html, "atil")
+	assert.Contains(t, html, "ci-nais")
+	assert.NotContains(t, html, "feature-card-header")
 }
 
 func TestStatusTooltip(t *testing.T) {

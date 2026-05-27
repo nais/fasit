@@ -11,6 +11,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/components"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -75,10 +76,30 @@ func deploymentDetailContent(data *DetailPage) g.Node {
 		return h.P(g.Text("No environments found."))
 	}
 
-	prefs := overviewViewPrefs()
-	cards := buildCards(envs, prefs.Group)
+	return overviewEnvironmentTable(envs, data.CurrentFeature.Name)
+}
 
-	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs)
+func overviewEnvironmentTable(envs []DeploymentEnvStatus, featureName string) g.Node {
+	sortEnvs(envs)
+	prefs := overviewViewPrefs()
+	thNodes := []g.Node{
+		h.Th(g.Text("Tenant")),
+		h.Th(g.Text("Environment")),
+		h.Th(g.Text("Status")),
+		h.Th(g.Text("Version")),
+		h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Last successful deploy")),
+		h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")),
+	}
+	rows := g.Map(envs, func(env DeploymentEnvStatus) g.Node {
+		return envCardRow(env, featureName, prefs, true, true, true)
+	})
+	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-overview"),
+		h.THead(h.Tr(g.Group(thNodes))),
+		h.TBody(g.Group(rows)),
+	)
+	return h.Div(h.Class("feature-card feature-overview-table"),
+		h.Div(h.Class("feature-card-body"), table),
+	)
 }
 
 func currentDeploymentEnvStatuses(envs []DeploymentEnvStatus) []DeploymentEnvStatus {
@@ -264,7 +285,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
 
 	rows := g.Map(c.Environments, func(env DeploymentEnvStatus) g.Node {
-		return envCardRow(env, featureName, prefs, showTenant, showVersion)
+		return envCardRow(env, featureName, prefs, showTenant, showVersion, false)
 	})
 
 	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-card"),
@@ -278,7 +299,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	)
 }
 
-func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion bool) g.Node {
+func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion, showTenantAvatar bool) g.Node {
 	baseHref := "/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.Name
 	envLink := h.A(h.Href(baseHref), g.Text(env.Name))
 	logsHref := baseHref + "/logs"
@@ -290,7 +311,7 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 
 	cells := []g.Node{}
 	if showTenant {
-		cells = append(cells, h.Td(g.Text(env.TenantName)))
+		cells = append(cells, tenantCell(env, showTenantAvatar))
 	}
 
 	hasDrift := env.ReleaseVersion != "" && env.ReleaseVersion != env.DeploymentVersion
@@ -331,6 +352,16 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 	))
 
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
+}
+
+func tenantCell(env DeploymentEnvStatus, showAvatar bool) g.Node {
+	if !showAvatar {
+		return h.Td(g.Text(env.TenantName))
+	}
+	return h.Td(h.Span(h.Class("tenant-cell"),
+		components.TenantAvatar(env.TenantName, components.HasTenantLogo(env.TenantName), "20px"),
+		h.Span(g.Text(env.TenantName)),
+	))
 }
 
 func kebabButton(targetID string) g.Node {
