@@ -94,6 +94,20 @@ document.addEventListener("input", function (e) {
     return form.querySelector("[data-feature-search-suggestions]");
   }
 
+  function appendHighlightedMatch(node, text, query) {
+    var index = text.toLowerCase().indexOf(query.toLowerCase());
+    if (index === -1) {
+      node.appendChild(document.createTextNode(text));
+      return;
+    }
+
+    node.appendChild(document.createTextNode(text.slice(0, index)));
+    var mark = document.createElement("mark");
+    mark.textContent = text.slice(index, index + query.length);
+    node.appendChild(mark);
+    node.appendChild(document.createTextNode(text.slice(index + query.length)));
+  }
+
   function renderSuggestions(input, matches) {
     var suggestions = suggestionsFor(input);
     if (!suggestions) return;
@@ -102,10 +116,11 @@ document.addEventListener("input", function (e) {
       suggestions.classList.remove("visible");
       return;
     }
+    var query = input.value.trim();
     matches.forEach(function (match) {
       var link = document.createElement("a");
       link.href = match.href;
-      link.textContent = match.title;
+      appendHighlightedMatch(link, match.title, query);
       suggestions.appendChild(link);
     });
     suggestions.classList.add("visible");

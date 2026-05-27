@@ -453,6 +453,12 @@ nav .nav-btn:hover {
   color: var(--text-secondary);
   border-radius: 0.25rem;
 }
+.feature-search-suggestions mark {
+  padding: 0;
+  color: var(--text-heading);
+  background: transparent;
+  font-weight: 600;
+}
 .feature-search-suggestions a:hover,
 .feature-search-suggestions a:focus {
   color: var(--text-heading);
