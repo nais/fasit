@@ -76,10 +76,25 @@ func deploymentDetailContent(data *DetailPage) g.Node {
 		return h.P(g.Text("No environments found."))
 	}
 
-	return overviewEnvironmentTable(envs, data.CurrentFeature.Name)
+	featureName := data.CurrentFeature.Name
+	chart := data.CurrentFeature.Chart
+
+	return h.Div(h.ID("env-overview"), g.Attr("data-view", "grid"),
+		overviewTable(envs, featureName),
+		overviewCardGrid(envs, featureName, chart),
+	)
 }
 
-func overviewEnvironmentTable(envs []DeploymentEnvStatus, featureName string) g.Node {
+func overviewToolbar() g.Node {
+	return h.Button(h.Type("button"), h.Class("view-toggle-btn"), h.ID("view-toggle"),
+		g.Attr("data-view-toggle", "env-overview"),
+		g.Attr("aria-label", "Toggle view"),
+		g.Attr("title", "Toggle table/grid view"),
+		g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="3" height="12" rx="0.5"/><rect x="6.5" y="2" width="3" height="12" rx="0.5"/><rect x="12" y="2" width="3" height="12" rx="0.5"/></svg>`),
+	)
+}
+
+func overviewTable(envs []DeploymentEnvStatus, featureName string) g.Node {
 	sortEnvs(envs)
 	prefs := overviewViewPrefs()
 	thNodes := []g.Node{
@@ -97,8 +112,18 @@ func overviewEnvironmentTable(envs []DeploymentEnvStatus, featureName string) g.
 		h.THead(h.Tr(g.Group(thNodes))),
 		h.TBody(g.Group(rows)),
 	)
-	return h.Div(h.Class("feature-card feature-overview-table"),
-		h.Div(h.Class("feature-card-body"), table),
+	return h.Div(h.Class("feature-overview-table"), h.ID("overview-table"),
+		h.Div(h.Class("feature-card"),
+			h.Div(h.Class("feature-card-body"), table),
+		),
+	)
+}
+
+func overviewCardGrid(envs []DeploymentEnvStatus, featureName, chart string) g.Node {
+	prefs := ViewPrefs{Group: "tenant", ShowVersion: false, ShowLastDeploy: false}
+	cards := groupByTenantCards(envs)
+	return h.Div(h.Class("feature-overview-grid"), h.ID("overview-grid"),
+		cardGrid(cards, featureName, chart, prefs),
 	)
 }
 
@@ -228,6 +253,12 @@ func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs) g.Node {
 
 func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	heading := []g.Node{}
+
+	if prefs.Group == "tenant" {
+		heading = append(heading,
+			components.TenantAvatar(c.Title, components.HasTenantLogo(c.Title), "20px"),
+		)
+	}
 
 	if c.LinkHref != "" {
 		heading = append(heading,

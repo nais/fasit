@@ -2,7 +2,6 @@ package features
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/nais/fasit/internal/graph/model"
@@ -42,7 +41,7 @@ func TestCurrentDeploymentEnvStatusesSkipsOverriddenRows(t *testing.T) {
 	assert.Equal(t, "FAILED", got[1].StatusText)
 }
 
-func TestDeploymentDetailContentRendersSingleOverviewTable(t *testing.T) {
+func TestDeploymentDetailContentRendersTableAndGrid(t *testing.T) {
 	var buf bytes.Buffer
 	node := deploymentDetailContent(&DetailPage{
 		CurrentFeature: &model.Feature{Name: "naiserator"},
@@ -55,12 +54,14 @@ func TestDeploymentDetailContentRendersSingleOverviewTable(t *testing.T) {
 	assert.NoError(t, node.Render(&buf))
 
 	html := buf.String()
-	assert.Equal(t, 1, strings.Count(html, "<table"))
-	assert.Equal(t, 1, strings.Count(html, "<thead"))
+	// Full-width table for "all columns" mode
+	assert.Contains(t, html, "overview-table")
 	assert.Contains(t, html, "Tenant")
 	assert.Contains(t, html, "atil")
 	assert.Contains(t, html, "ci-nais")
-	assert.NotContains(t, html, "feature-card-header")
+	// Card grid for compact mode (one card per tenant)
+	assert.Contains(t, html, "overview-grid")
+	assert.Contains(t, html, "feature-card-header")
 }
 
 func TestStatusTooltip(t *testing.T) {

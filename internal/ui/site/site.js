@@ -538,3 +538,39 @@ function dismissNavHint() {
   if (hint) hint.classList.add("visible");
   if (btn) btn.classList.add("highlighted");
 })();
+
+// Overview view toggle (grid ↔ table)
+(function () {
+  var STORAGE_KEY = "feature_overview_view";
+
+  function syncIcon() {
+    var btn = document.getElementById("view-toggle");
+    if (!btn) return;
+    var container = document.getElementById(btn.getAttribute("data-view-toggle"));
+    if (!container) return;
+    var view = container.getAttribute("data-view") || "grid";
+    btn.classList.toggle("view-grid", view === "grid");
+  }
+
+  function apply() {
+    var container = document.getElementById("env-overview");
+    if (!container) return;
+    var view = localStorage.getItem(STORAGE_KEY) || "grid";
+    container.setAttribute("data-view", view);
+    syncIcon();
+  }
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-view-toggle]");
+    if (!btn) return;
+    var container = document.getElementById(btn.getAttribute("data-view-toggle"));
+    if (!container) return;
+    var current = container.getAttribute("data-view") || "grid";
+    var next = current === "grid" ? "table" : "grid";
+    localStorage.setItem(STORAGE_KEY, next);
+    container.setAttribute("data-view", next);
+    syncIcon();
+  });
+
+  apply();
+})();

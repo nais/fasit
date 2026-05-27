@@ -479,6 +479,7 @@ func renderAggStatus(statuses []string) g.Node {
 
 func detailPage(data *DetailPage) g.Node {
 	var content g.Node
+	var breadcrumbActions []g.Node
 	switch data.ActiveTab {
 	case "deploy-specs":
 		content = deploymentSpecsContent(data)
@@ -488,11 +489,12 @@ func detailPage(data *DetailPage) g.Node {
 		content = configExplorerContent(data.CurrentFeature.Name, data.ExplorerData)
 	default:
 		content = featureOverviewContent(data)
+		breadcrumbActions = append(breadcrumbActions, overviewToolbar())
 	}
 	return h.Div(h.Class("container"),
 		featureWorkspaceSidebar(data),
 		h.Main(h.Class("main-content"),
-			components.Breadcrumbs(data.Breadcrumbs),
+			components.Breadcrumbs(data.Breadcrumbs, breadcrumbActions...),
 			components.Card(content),
 		),
 	)
@@ -654,18 +656,17 @@ func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.Environment
 	return slices.Contains(kinds, envKind)
 }
 
-func lastDeployedCell(t time.Time, extraTitle string) g.Node {
+func lastDeployedCell(t time.Time, class string) g.Node {
+	attrs := []g.Node{}
+	if class != "" {
+		attrs = append(attrs, h.Class(class))
+	}
 	if t.IsZero() {
-		if extraTitle != "" {
-			return h.Td(h.Title(extraTitle), h.Span(h.Class("text-muted"), g.Text("never")))
-		}
-		return h.Td(h.Span(h.Class("text-muted"), g.Text("never")))
+		attrs = append(attrs, h.Span(h.Class("text-muted"), g.Text("never")))
+		return h.Td(attrs...)
 	}
-	title := view.FormatTime(t)
-	if extraTitle != "" {
-		title = extraTitle
-	}
-	return h.Td(h.Title(title), g.Text(view.RelativeTime(t)))
+	attrs = append(attrs, h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
+	return h.Td(attrs...)
 }
 
 func renderStatus(status string) g.Node {
