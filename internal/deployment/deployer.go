@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,10 +37,13 @@ type Publisher interface {
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
 type deployer struct {
-	publisher      NewPublisher
+	newPublisher   NewPublisher
 	querier        deploymentsql.Querier
 	log            logrus.FieldLogger
 	deployMessages metric.Int64Counter
+
+	publishersMu sync.Mutex
+	publishers   map[string]Publisher
 }
 
 func newDeployer(querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
@@ -49,11 +53,23 @@ func newDeployer(querier deploymentsql.Querier, publisher NewPublisher, meter me
 	}
 
 	return &deployer{
-		publisher:      publisher,
+		newPublisher:   publisher,
 		querier:        querier,
 		log:            log,
 		deployMessages: deployMessages,
+		publishers:     make(map[string]Publisher),
 	}, nil
+}
+
+func (d *deployer) publisher(topicID string) Publisher {
+	d.publishersMu.Lock()
+	defer d.publishersMu.Unlock()
+	if p, ok := d.publishers[topicID]; ok {
+		return p
+	}
+	p := d.newPublisher(topicID, d.log)
+	d.publishers[topicID] = p
+	return p
 }
 
 func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID) error {

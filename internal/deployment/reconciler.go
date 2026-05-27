@@ -153,8 +153,7 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributeSet(attrs))
 	}()
 
-	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name), r.deployer.log)
-	defer publisher.Stop()
+	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name))
 
 	deployments, err := r.listDeploymentsToReconcile(ctx, environment.ID)
 	if err != nil {
