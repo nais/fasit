@@ -1,14 +1,19 @@
 package environment
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -31,6 +36,30 @@ type MetadataItem struct {
 	ReferencedBy []string
 }
 
+type environmentFeatureRow struct {
+	Name           string
+	Status         string
+	Version        string
+	LastSuccessful time.Time
+}
+
+type environmentHealth struct {
+	ReportedAt time.Time
+	HasReport  bool
+}
+
+const (
+	environmentHealthyThreshold = 60 * time.Second
+	environmentStaleThreshold   = 5 * time.Minute
+)
+
+const (
+	environmentTabOverview = "overview"
+	environmentTabValues   = "values"
+	environmentTabFeatures = "features"
+	environmentTabHelm     = "helm"
+)
+
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantSlug := chi.URLParam(r, "tenant")
@@ -48,7 +77,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		allFeatures, err := featureNavs(r.Context(), env)
+		featureRows, err := loadEnvironmentFeatureRows(r.Context(), env)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -56,6 +85,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 
 		allTenants, _ := envpkg.ListTenants(r.Context())
 		tenantEnvs, _ := envpkg.List(r.Context(), tenant.ID)
+		activeTab := environmentTab(r.URL.Query().Get("tab"))
 		labels, _ := envpkg.GetLabels(r.Context(), env.ID)
 
 		environment := &Environment{
@@ -64,14 +94,25 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		}
 		envValues, _ := envpkg.ListEnvironmentValuesForEnvironment(r.Context(), env.ID, true)
 		valueRefs, _ := deployment.ValueRefsForEnvironment(r.Context(), env.ID)
+		releases, err := deployment.ListReleaseStatuses(r.Context(), env.ID)
+		if err != nil {
+			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		health, err := loadEnvironmentHealth(r.Context(), env.ID)
+		if err != nil {
+			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		renderPage(w, r, layout.Props{
 			Title:       tenant.Name + " / " + env.Name,
 			CurrentPage: components.PageEnvironments,
 			Content: page([]breadcrumb.Crumb{
+				breadcrumb.Environments(),
 				tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
 				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-			}, tenant, environment, allFeatures, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues)),
+			}, activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues), featureRows, releases, health),
 		})
 	}
 }
@@ -111,74 +152,285 @@ func sortedKeys(m map[string]string) []string {
 	return keys
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Environment, allFeatures []view.FeatureNav, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string) g.Node {
+func loadEnvironmentFeatureRows(ctx context.Context, env *model.Environment) ([]environmentFeatureRow, error) {
+	features, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]environmentFeatureRow, 0, len(features))
+	for _, feature := range features {
+		row := environmentFeatureRow{Name: feature.Name, Status: "UNKNOWN"}
+		if !env.Reconcile || feature.FeatureDisabled {
+			row.Status = "DISABLED"
+		} else if status, _, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
+			row.Status = deployment.NormalizeStatus(status)
+		}
+		if latest, err := featurepkg.GetLatestDeployInstruction(ctx, env.ID, feature.Name); err == nil && latest != nil {
+			row.Version = latest.FeatureVersion
+		}
+		if deployed, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.ID, feature.Name); err == nil && deployed != nil {
+			row.LastSuccessful = deployed.LastModified
+		}
+		rows = append(rows, row)
+	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].Name < rows[j].Name })
+	return rows, nil
+}
+
+func environmentTab(tab string) string {
+	switch tab {
+	case environmentTabValues, environmentTabFeatures, environmentTabHelm:
+		return tab
+	default:
+		return environmentTabOverview
+	}
+}
+
+func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (environmentHealth, error) {
+	health, err := naisdstatus.Get(ctx, environmentID)
+	if err != nil {
+		return environmentHealth{}, err
+	}
+	if health == nil || health.ReportedAt.Year() < 2000 {
+		return environmentHealth{}, nil
+	}
+	return environmentHealth{ReportedAt: health.ReportedAt, HasReport: true}, nil
+}
+
+func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
 	return h.Div(h.Class("container"),
-		components.EnvironmentSidebar(tenant.Name, environment.Name, "", allFeatures),
+		environmentSidebar(tenant.Name, environment.Name, activeTab),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(breadcrumbs),
+			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, features, releases, health),
+		),
+	)
+}
 
-			// Environment header: name, kind, labels, actions
-			h.Div(h.Class("env-header"),
-				h.Div(h.Class("env-header-top"),
-					h.H1(h.Class("env-title"), g.Text(environment.Name)),
-				),
-				h.Div(h.Class("env-meta-row"),
-					g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
-						return h.Span(h.Class("env-meta-item"),
-							h.Span(h.Class("env-meta-label"), g.Text(item.Key)),
-							h.Span(h.Class("env-meta-value"), metadataValue(item)),
-						)
-					})),
-					g.If(gcpProjectID != "", h.Span(h.Class("env-meta-item"),
-						h.Span(h.Class("env-meta-label"), g.Text("GCP Project")),
-						h.Span(h.Class("env-meta-value"),
-							g.Text(gcpProjectID),
-							g.Text(" "),
-							h.A(
-								h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
-								g.Attr("target", "_blank"),
-								g.Attr("rel", "noopener noreferrer"),
-								g.Attr("title", "Open GCP project "+gcpProjectID),
-								components.ExternalLinkIcon(),
-							),
-						),
-					)),
-				),
-				g.If(len(labels) > 0, h.Div(h.Class("label-pills env-labels"),
-					g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
-						return h.Span(h.Class("label-filter-tag"), g.Textf("%s: %s", k, labels[k]))
-					})),
-				)),
+func environmentSidebar(tenantName, environmentName, activeTab string) g.Node {
+	base := "/tenants/" + tenantName + "/envs/" + environmentName
+	return h.Aside(h.Class("sidebar feature-workspace-sidebar"),
+		h.Div(h.Class("feature-workspace-header"),
+			h.H4(g.Text(environmentName)),
+		),
+		h.Div(h.Class("nav"),
+			h.Ul(
+				environmentNavItem(base, "Overview", activeTab == environmentTabOverview),
+				environmentNavItem(base+"?tab=values", "Values", activeTab == environmentTabValues),
+				environmentNavItem(base+"?tab=features", "Features", activeTab == environmentTabFeatures),
+				environmentNavItem(base+"?tab=helm", "Helm releases", activeTab == environmentTabHelm),
 			),
+		),
+	)
+}
 
-			// Environment values
-			g.If(len(envValues) > 0, h.Div(h.Class("card"),
-				h.Div(h.Class("card-body"),
-					h.H2(h.Style("margin-top:0"), g.Text("Environment Values")),
-					h.Table(h.Class("table"),
-						h.TBody(g.Group(g.Map(envValues, func(val *model.EnvironmentValue) g.Node {
-							var valNode g.Node
-							if val.Secret {
-								valNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
-							} else {
-								valNode = g.Text(components.RawValueForDisplay(val.Value))
-							}
-							if refs := valueRefs[val.Key]; len(refs) > 0 {
-								tooltip := strings.Join(refs, ", ")
-								valNode = g.Group([]g.Node{
-									valNode,
-									g.Text(" "),
-									h.Span(h.Class("badge"), h.Title(tooltip), g.Textf("%d ref%s", len(refs), plural(len(refs)))),
-								})
-							}
-							return h.Tr(
-								h.Td(h.Class("th-like width-md"), g.Text(val.Key)),
-								h.Td(valNode),
-							)
-						}))),
+func environmentNavItem(href, label string, active bool) g.Node {
+	attrs := []g.Node{h.Href(href)}
+	if active {
+		attrs = append(attrs, h.Class("active"))
+	}
+	return h.Li(h.A(append(attrs, g.Text(label))...))
+}
+
+func environmentTabContent(activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
+	switch activeTab {
+	case environmentTabValues:
+		return environmentValuesCard(envValues, valueRefs)
+	case environmentTabFeatures:
+		return environmentFeaturesCard(tenant.Name, environment.Name, features)
+	case environmentTabHelm:
+		return helmReleasesCard(releases)
+	default:
+		return environmentOverviewCard(environment, labels, gcpProjectID, health)
+	}
+}
+
+func naisdHealthOverviewItem(health environmentHealth) g.Node {
+	class, label := naisdHealthBucket(health, time.Now())
+	return h.Div(h.Class("environment-health-item "+class),
+		h.Div(h.Class("environment-health-icon"), g.Text(naisdHealthIcon(label))),
+		h.Div(
+			h.Div(h.Class("environment-health-title"), g.Text(naisdHealthTitle(label))),
+			g.If(health.HasReport, h.Div(h.Class("environment-health-meta"),
+				h.Span(h.Title(view.FormatTime(health.ReportedAt)), g.Text("Reported "+view.RelativeTime(health.ReportedAt))),
+			)),
+			g.If(!health.HasReport, h.Div(h.Class("environment-health-meta"), g.Text("No health report has been received for this environment."))),
+		),
+	)
+}
+
+func naisdHealthTitle(label string) string {
+	if label == "no report" {
+		return "No Naisd report"
+	}
+	return "Naisd is " + label
+}
+
+func naisdHealthIcon(label string) string {
+	switch label {
+	case "healthy":
+		return "✓"
+	case "stale":
+		return "!"
+	case "dead":
+		return "×"
+	default:
+		return "?"
+	}
+}
+
+func naisdHealthBucket(health environmentHealth, now time.Time) (string, string) {
+	if !health.HasReport {
+		return "status-error", "no report"
+	}
+	age := now.Sub(health.ReportedAt)
+	switch {
+	case age < environmentHealthyThreshold:
+		return "status-success", "healthy"
+	case age < environmentStaleThreshold:
+		return "status-pending", "stale"
+	default:
+		return "status-error", "dead"
+	}
+}
+
+func environmentOverviewCard(environment *Environment, labels map[string]string, gcpProjectID string, health environmentHealth) g.Node {
+	return h.Div(h.Class("card"),
+		h.Div(h.Class("card-body"),
+			h.Div(h.Class("environment-overview-list"),
+				naisdHealthOverviewItem(health),
+				g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
+					return h.Div(h.Class("environment-overview-item"),
+						h.Div(h.Class("environment-overview-key"), g.Text(item.Key)),
+						h.Div(h.Class("environment-overview-value"), metadataValue(item)),
+					)
+				})),
+				g.If(gcpProjectID != "", h.Div(h.Class("environment-overview-item"),
+					h.Div(h.Class("environment-overview-key"), g.Text("GCP Project")),
+					h.Div(h.Class("environment-overview-value"),
+						g.Text(gcpProjectID),
+						g.Text(" "),
+						h.A(
+							h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+							g.Attr("target", "_blank"),
+							g.Attr("rel", "noopener noreferrer"),
+							g.Attr("title", "Open GCP project "+gcpProjectID),
+							components.ExternalLinkIcon(),
+						),
 					),
-				),
+				)),
+				g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
+					return h.Div(h.Class("environment-overview-item"),
+						h.Div(h.Class("environment-overview-key"), g.Text(k)),
+						h.Div(h.Class("environment-overview-value"), g.Text(labels[k])),
+					)
+				})),
+			),
+		),
+	)
+}
+
+func environmentValuesCard(envValues []*model.EnvironmentValue, valueRefs map[string][]string) g.Node {
+	if len(envValues) == 0 {
+		return g.Group(nil)
+	}
+	return h.Div(h.Class("card"),
+		h.Div(h.Class("card-body"),
+			h.H2(h.Style("margin-top:0"), g.Text("Environment values")),
+			h.Table(h.Class("table"),
+				h.TBody(g.Group(g.Map(envValues, func(val *model.EnvironmentValue) g.Node {
+					var valNode g.Node
+					if val.Secret {
+						valNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
+					} else {
+						valNode = g.Text(components.RawValueForDisplay(val.Value))
+					}
+					if refs := valueRefs[val.Key]; len(refs) > 0 {
+						tooltip := strings.Join(refs, ", ")
+						valNode = g.Group([]g.Node{
+							valNode,
+							g.Text(" "),
+							h.Span(h.Class("badge"), h.Title(tooltip), g.Textf("%d ref%s", len(refs), plural(len(refs)))),
+						})
+					}
+					return h.Tr(
+						h.Td(h.Class("th-like width-md"), g.Text(val.Key)),
+						h.Td(valNode),
+					)
+				}))),
+			),
+		),
+	)
+}
+
+func environmentFeaturesCard(tenantName, environmentName string, features []environmentFeatureRow) g.Node {
+	return h.Div(h.Class("card"),
+		h.Div(h.Class("card-body"),
+			h.H2(h.Style("margin-top:0"), g.Text("Features in this environment")),
+			g.If(len(features) == 0, h.P(h.Class("text-muted"), g.Text("No features target this environment."))),
+			g.If(len(features) > 0, h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "environment-features"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Feature")),
+					h.Th(g.Text("Status")),
+					h.Th(g.Text("Version")),
+					h.Th(h.Title("When the latest successful deploy instruction completed"), g.Text("Last successful deploy")),
+				)),
+				h.TBody(g.Group(g.Map(features, func(feature environmentFeatureRow) g.Node {
+					return h.Tr(
+						h.Td(h.A(h.Href("/features/"+feature.Name+"/envs/"+tenantName+"/"+environmentName), g.Text(feature.Name))),
+						h.Td(renderStatus(feature.Status)),
+						h.Td(textOrMuted(feature.Version, "unknown")),
+						h.Td(timeOrNever(feature.LastSuccessful)),
+					)
+				}))),
 			)),
 		),
 	)
+}
+
+func helmReleasesCard(releases []*model.Release) g.Node {
+	sort.Slice(releases, func(i, j int) bool { return releases[i].Name < releases[j].Name })
+	return h.Div(h.Class("card"),
+		h.Div(h.Class("card-body"),
+			h.H2(h.Style("margin-top:0"), g.Text("Helm releases")),
+			h.P(h.Class("text-muted"), g.Text("Actual state reported by naisd from the environment.")),
+			g.If(len(releases) == 0, h.P(h.Class("text-muted"), g.Text("No releases reported."))),
+			g.If(len(releases) > 0, h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "environment-releases"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Feature")),
+					h.Th(g.Text("Status")),
+					h.Th(g.Text("Version")),
+					h.Th(g.Text("Last deployed")),
+					h.Th(g.Text("Last modified")),
+					h.Th(g.Text("Created")),
+					h.Th(g.Text("Revision")),
+				)),
+				h.TBody(g.Group(g.Map(releases, func(release *model.Release) g.Node {
+					return h.Tr(
+						h.Td(g.Text(release.Name)),
+						h.Td(g.Text(release.Status)),
+						h.Td(textOrMuted(release.Version, "unknown")),
+						h.Td(timeOrNever(release.LastDeployed)),
+						h.Td(timeOrNever(release.LastModified)),
+						h.Td(timeOrNever(release.Created)),
+						h.Td(g.Textf("%d", release.Revision)),
+					)
+				}))),
+			)),
+		),
+	)
+}
+
+func textOrMuted(value, fallback string) g.Node {
+	if value == "" {
+		return h.Span(h.Class("text-muted"), g.Text(fallback))
+	}
+	return g.Text(value)
+}
+
+func timeOrNever(t time.Time) g.Node {
+	if t.IsZero() {
+		return h.Span(h.Class("text-muted"), g.Text("never"))
+	}
+	return h.Span(h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }

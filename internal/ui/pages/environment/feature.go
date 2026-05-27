@@ -26,10 +26,6 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-func FeatureTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
-	return featureTabHandler(renderPage, activeTab, false)
-}
-
 func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
 	return featureTabHandler(renderPage, activeTab, true)
 }
@@ -53,6 +49,16 @@ func featureTabHandler(renderPage RenderPage, activeTab string, featureContext b
 			CurrentPage: currentPage,
 			Content:     featurePageContent(data),
 		})
+	}
+}
+
+func LegacyFeatureRedirectHandler(suffix string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		feature := chi.URLParam(r, "feature")
+		tenant := chi.URLParam(r, "tenant")
+		env := chi.URLParam(r, "env")
+		redirectSuffix := strings.ReplaceAll(suffix, "{id}", chi.URLParam(r, "id"))
+		http.Redirect(w, r, "/features/"+feature+"/envs/"+tenant+"/"+env+redirectSuffix, http.StatusSeeOther)
 	}
 }
 
@@ -842,8 +848,12 @@ func renderStatus(status string) g.Node {
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" Deployed")})
 	case "FAILED":
 		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" Failed")})
-	case "PENDING":
+	case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK":
 		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" Pending")})
+	case "DISABLED":
+		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("○")), g.Text(" Disabled")})
+	case "UNKNOWN":
+		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("?")), g.Text(" Unknown")})
 	default:
 		return g.Text(status)
 	}

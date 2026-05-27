@@ -3,10 +3,13 @@ package environment
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,6 +17,18 @@ import (
 )
 
 // normalizedAttrs are attribute keys whose values vary per-row and should be replaced with "_".
+func TestLegacyFeatureRedirectHandler(t *testing.T) {
+	r := chi.NewRouter()
+	r.Get("/tenants/{tenant}/envs/{env}/{feature}/logs", LegacyFeatureRedirectHandler("/logs"))
+
+	req := httptest.NewRequest(http.MethodGet, "/tenants/dev-nais/envs/dev/kyverno/logs", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusSeeOther, w.Code)
+	require.Equal(t, "/features/kyverno/envs/dev-nais/dev/logs", w.Header().Get("Location"))
+}
+
 var normalizedAttrs = map[string]bool{
 	"id":                  true,
 	"for":                 true,
