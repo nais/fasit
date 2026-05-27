@@ -62,8 +62,8 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger, 
 		return nil, nil, fmt.Errorf("failed to parse pgx config: %w", err)
 	}
 
-	if runtime.NumCPU() < 5 {
-		config.MaxConns = 5
+	if runtime.NumCPU() < 20 {
+		config.MaxConns = 20
 	}
 
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
