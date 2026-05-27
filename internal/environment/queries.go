@@ -166,18 +166,6 @@ func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 	return tenantFromSQL(tenant), nil
 }
 
-func ListTenants(ctx context.Context) ([]*model.Tenant, error) {
-	tenants, err := querier(ctx).ListTenants(ctx)
-	if err != nil {
-		return nil, err
-	}
-	tenantSlice := []*model.Tenant{}
-	for _, tenant := range tenants {
-		tenantSlice = append(tenantSlice, tenantFromSQL(tenant))
-	}
-	return tenantSlice, nil
-}
-
 func GetTenantByName(ctx context.Context, name string) (*model.Tenant, error) {
 	tenant, err := querier(ctx).GetTenantByName(ctx, name)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/ui/database"
 )
 
 type previewRequest struct {
@@ -25,7 +26,7 @@ func PreviewTargetsHandler() http.HandlerFunc {
 			return
 		}
 
-		tenants, err := environment.ListTenants(r.Context())
+		tenants, err := database.ListTenants(r.Context())
 		if err != nil {
 			http.Error(w, "failed to load tenants", http.StatusInternalServerError)
 			return

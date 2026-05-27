@@ -16,6 +16,7 @@ import (
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/database"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
@@ -83,7 +84,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		allTenants, err := envpkg.ListTenants(r.Context())
+		allTenants, err := database.ListTenants(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load tenants: "+err.Error(), http.StatusInternalServerError)
 			return

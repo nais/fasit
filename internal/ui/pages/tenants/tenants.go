@@ -6,6 +6,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/database"
 	"github.com/nais/fasit/internal/ui/layout"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -20,13 +21,13 @@ type envCard struct {
 }
 
 type tenantCard struct {
-	Tenant       *model.Tenant
+	Tenant       *database.Tenant
 	Environments []envCard
 }
 
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tenants, err := environment.ListTenants(r.Context())
+		tenants, err := database.ListTenants(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load tenants", http.StatusInternalServerError)
 			return

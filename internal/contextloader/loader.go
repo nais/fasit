@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/naisdstatus"
+	uidatabase "github.com/nais/fasit/internal/ui/database"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -33,6 +34,7 @@ func NewLoaderFunc(
 		ctx = environment.Register(ctx, pool)
 		ctx = feature.Register(ctx, pool)
 		ctx = naisdstatus.Register(ctx, pool)
+		ctx = uidatabase.Register(ctx, pool)
 		ctx = deployment.Register(ctx, deploymentManager)
 		return ctx
 	}, nil
