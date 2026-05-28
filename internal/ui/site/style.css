@@ -564,6 +564,10 @@ nav .nav-btn:hover {
   align-items: center;
   gap: 0.35rem;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+.feature-source-link svg {
+  flex: 0 0 auto;
 }
 .feature-source-link:hover {
   color: var(--text-heading);
