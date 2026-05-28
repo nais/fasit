@@ -10,14 +10,14 @@ type Querier interface {
 	BulkCreateDeployInstructions(ctx context.Context, arg BulkCreateDeployInstructionsParams) error
 	BulkUpsertDeploymentStatuses(ctx context.Context, arg BulkUpsertDeploymentStatusesParams) error
 	ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error)
-	ListAllEnvironmentValues(ctx context.Context) ([]EnvironmentValue, error)
+	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
+	ListAllTenantEnvironments(ctx context.Context) ([]ListAllTenantEnvironmentsRow, error)
 	ListDeployedFeatures(ctx context.Context) ([]ListDeployedFeaturesRow, error)
 	ListDisabledFeatures(ctx context.Context) ([]ListDisabledFeaturesRow, error)
 	ListHealthStatuses(ctx context.Context) ([]HealthStatus, error)
 	ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error)
 	ListLatestDeployments(ctx context.Context) ([]ListLatestDeploymentsRow, error)
-	ListReconcilableEnvironments(ctx context.Context) ([]ListReconcilableEnvironmentsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

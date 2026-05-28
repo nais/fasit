@@ -147,8 +147,7 @@ const listAllEnvironmentValues = `-- name: ListAllEnvironmentValues :many
 SELECT
 	ev.environment_id,
 	ev.key,
-	ev.value,
-	ev.secret
+	ev.value
 FROM
 	environment_values ev
 ORDER BY
@@ -156,21 +155,22 @@ ORDER BY
 	ev.key
 `
 
-func (q *Queries) ListAllEnvironmentValues(ctx context.Context) ([]EnvironmentValue, error) {
+type ListAllEnvironmentValuesRow struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Value         []byte
+}
+
+func (q *Queries) ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error) {
 	rows, err := q.db.Query(ctx, listAllEnvironmentValues)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []EnvironmentValue{}
+	items := []ListAllEnvironmentValuesRow{}
 	for rows.Next() {
-		var i EnvironmentValue
-		if err := rows.Scan(
-			&i.EnvironmentID,
-			&i.Key,
-			&i.Value,
-			&i.Secret,
-		); err != nil {
+		var i ListAllEnvironmentValuesRow
+		if err := rows.Scan(&i.EnvironmentID, &i.Key, &i.Value); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -221,6 +221,61 @@ func (q *Queries) ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConf
 			&i.Value,
 			&i.Secret,
 			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllTenantEnvironments = `-- name: ListAllTenantEnvironments :many
+SELECT
+	e.id,
+	e.name,
+	e.kind,
+	e.labels,
+	e.reconcile,
+	t.id AS tenant_id,
+	t.name AS tenant_name
+FROM
+	environments e
+	JOIN tenants t ON t.id = e.tenant_id
+ORDER BY
+	t.name,
+	e.name
+`
+
+type ListAllTenantEnvironmentsRow struct {
+	ID         uuid.UUID
+	Name       string
+	Kind       types.EnvironmentKind
+	Labels     types.EnvironmentLabels
+	Reconcile  bool
+	TenantID   uuid.UUID
+	TenantName string
+}
+
+func (q *Queries) ListAllTenantEnvironments(ctx context.Context) ([]ListAllTenantEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, listAllTenantEnvironments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllTenantEnvironmentsRow{}
+	for rows.Next() {
+		var i ListAllTenantEnvironmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Kind,
+			&i.Labels,
+			&i.Reconcile,
+			&i.TenantID,
+			&i.TenantName,
 		); err != nil {
 			return nil, err
 		}
@@ -461,60 +516,6 @@ func (q *Queries) ListLatestDeployments(ctx context.Context) ([]ListLatestDeploy
 			&i.DefaultValues,
 			&i.Timeout,
 			&i.TplDetails,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listReconcilableEnvironments = `-- name: ListReconcilableEnvironments :many
-SELECT
-	e.id,
-	e.name,
-	e.kind,
-	e.labels,
-	t.id AS tenant_id,
-	t.name AS tenant_name
-FROM
-	environments e
-	JOIN tenants t ON t.id = e.tenant_id
-WHERE
-	e.reconcile = TRUE
-ORDER BY
-	t.name,
-	e.name
-`
-
-type ListReconcilableEnvironmentsRow struct {
-	ID         uuid.UUID
-	Name       string
-	Kind       types.EnvironmentKind
-	Labels     types.EnvironmentLabels
-	TenantID   uuid.UUID
-	TenantName string
-}
-
-func (q *Queries) ListReconcilableEnvironments(ctx context.Context) ([]ListReconcilableEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, listReconcilableEnvironments)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListReconcilableEnvironmentsRow{}
-	for rows.Next() {
-		var i ListReconcilableEnvironmentsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Kind,
-			&i.Labels,
-			&i.TenantID,
-			&i.TenantName,
 		); err != nil {
 			return nil, err
 		}

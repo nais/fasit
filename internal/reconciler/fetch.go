@@ -24,29 +24,30 @@ type snapshot struct {
 	envTenantNames map[uuid.UUID]string
 	latestInstr    map[uuid.UUID]map[string]latestInstruction
 	deployedFeats  map[uuid.UUID]map[string]bool
-	secretEnvKeys  map[uuid.UUID]map[string]bool
 }
 
 func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
-	envRows, err := r.querier.ListReconcilableEnvironments(ctx)
+	allEnvRows, err := r.querier.ListAllTenantEnvironments(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list environments: %w", err)
 	}
 
-	envs := make([]environment, len(envRows))
-	envKinds := make(map[uuid.UUID]model.EnvironmentKind, len(envRows))
-	envTenantNames := make(map[uuid.UUID]string, len(envRows))
-	for i, row := range envRows {
-		envs[i] = environment{
-			ID:         row.ID,
-			Name:       row.Name,
-			Kind:       model.EnvironmentKind(row.Kind),
-			Labels:     map[string]string(row.Labels),
-			TenantID:   row.TenantID,
-			TenantName: row.TenantName,
-		}
+	var envs []environment
+	envKinds := make(map[uuid.UUID]model.EnvironmentKind, len(allEnvRows))
+	envTenantNames := make(map[uuid.UUID]string, len(allEnvRows))
+	for _, row := range allEnvRows {
 		envKinds[row.ID] = model.EnvironmentKind(row.Kind)
 		envTenantNames[row.ID] = row.TenantName
+		if row.Reconcile {
+			envs = append(envs, environment{
+				ID:         row.ID,
+				Name:       row.Name,
+				Kind:       model.EnvironmentKind(row.Kind),
+				Labels:     map[string]string(row.Labels),
+				TenantID:   row.TenantID,
+				TenantName: row.TenantName,
+			})
+		}
 	}
 
 	healthRows, err := r.querier.ListHealthStatuses(ctx)
@@ -93,7 +94,7 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 		return nil, err
 	}
 
-	envValues, secretEnvKeys, err := r.buildEnvValues(ctx, envRows)
+	envValues, err := r.buildEnvValues(ctx, allEnvRows)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,6 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 		envTenantNames: envTenantNames,
 		latestInstr:    latestInstr,
 		deployedFeats:  deployedFeats,
-		secretEnvKeys:  secretEnvKeys,
 	}, nil
 }
 
@@ -182,23 +182,21 @@ func (r *Reconciler) buildEnvConfigMap(ctx context.Context) (map[uuid.UUID]map[s
 	return m, nil
 }
 
-func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql.ListReconcilableEnvironmentsRow) (map[uuid.UUID]*featurepkg.ComputedValues, map[uuid.UUID]map[string]bool, error) {
+func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql.ListAllTenantEnvironmentsRow) (map[uuid.UUID]*featurepkg.ComputedValues, error) {
 	valueRows, err := r.querier.ListAllEnvironmentValues(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("list env values: %w", err)
+		return nil, fmt.Errorf("list env values: %w", err)
 	}
 
 	type envVal struct {
-		Key    string
-		Value  []byte
-		Secret bool
+		Key   string
+		Value []byte
 	}
 	byEnv := make(map[uuid.UUID][]envVal)
 	for _, v := range valueRows {
 		byEnv[v.EnvironmentID] = append(byEnv[v.EnvironmentID], envVal{
-			Key:    v.Key,
-			Value:  v.Value,
-			Secret: v.Secret,
+			Key:   v.Key,
+			Value: v.Value,
 		})
 	}
 
@@ -220,7 +218,6 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 	}
 
 	result := make(map[uuid.UUID]*featurepkg.ComputedValues)
-	secretKeys := make(map[uuid.UUID]map[string]bool)
 
 	for tenantID, envInfos := range tenantEnvs {
 		// Build the per-env value maps for this tenant.
@@ -234,18 +231,13 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 				"name": ei.Name,
 				"kind": string(ei.Kind),
 			}
-			sk := make(map[string]bool)
 			for _, v := range byEnv[ei.ID] {
 				var val any
 				if err := json.Unmarshal(v.Value, &val); err != nil {
-					return nil, nil, fmt.Errorf("unmarshal env value %s/%s: %w", ei.Name, v.Key, err)
+					return nil, fmt.Errorf("unmarshal env value %s/%s: %w", ei.Name, v.Key, err)
 				}
 				vals[v.Key] = val
-				if v.Secret {
-					sk[v.Key] = true
-				}
 			}
-			secretKeys[ei.ID] = sk
 			parsed = append(parsed, parsedEnv{info: ei, vals: vals})
 		}
 
@@ -258,20 +250,20 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 				},
 			}
 
-			// Env is the target environment's own values (with secrets shown for rendering).
+			// Env is the target environment's own values.
 			envVals := make(map[string]any)
 			envVals["name"] = target.info.Name
 			envVals["kind"] = string(target.info.Kind)
 			for _, v := range byEnv[target.info.ID] {
 				var val any
 				if err := json.Unmarshal(v.Value, &val); err != nil {
-					return nil, nil, fmt.Errorf("unmarshal env value: %w", err)
+					return nil, fmt.Errorf("unmarshal env value: %w", err)
 				}
 				envVals[v.Key] = val
 			}
 			mv.Env = envVals
 
-			// Envs and Management are the other environments in the tenant (secrets masked).
+			// Envs and Management include all environments in the tenant.
 			for _, other := range parsed {
 				if other.info.Kind == model.EnvironmentKindManagement {
 					mv.Management = other.vals
@@ -284,5 +276,5 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 		}
 	}
 
-	return result, secretKeys, nil
+	return result, nil
 }
