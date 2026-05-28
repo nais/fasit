@@ -551,3 +551,110 @@ function dismissNavHint() {
 
   apply();
 })();
+
+// Reconciler SSE streaming.
+(function () {
+  var btn = document.getElementById("reconcile-btn");
+  if (!btn) return;
+
+  var badgeClass = {
+    "deploy": "status-badge status-success",
+    "unchanged": "status-badge",
+    "in-progress": "status-badge status-pending",
+    "disabled": "status-badge status-disabled",
+    "unhealthy": "status-badge status-disabled",
+    "missing-deps": "status-badge status-error",
+    "missing-config": "status-badge status-error",
+    "render-error": "status-badge status-error"
+  };
+
+  btn.addEventListener("click", function () {
+    var tbody = document.getElementById("reconcile-tbody");
+    var card = document.getElementById("reconcile-table-card");
+    var status = document.getElementById("reconcile-status");
+    var summaryEl = document.getElementById("reconcile-summary");
+    if (!tbody || !card || !status) return;
+
+    btn.disabled = true;
+    btn.textContent = "Reconciling\u2026";
+    tbody.innerHTML = "";
+    summaryEl.innerHTML = "";
+    card.style.display = "";
+    status.textContent = "Streaming decisions\u2026";
+
+    var count = 0;
+    var es = new EventSource("/reconciler/stream");
+
+    es.addEventListener("decision", function (e) {
+      count++;
+      var d = JSON.parse(e.data);
+      var tr = document.createElement("tr");
+      var cls = badgeClass[d.action] || "status-badge";
+
+      tr.innerHTML =
+        '<td><span class="' + cls + '">' + esc(d.action) + "</span></td>" +
+        "<td>" + esc(d.tenant) + "</td>" +
+        "<td>" + esc(d.environment) + "</td>" +
+        "<td>" + esc(d.feature) + "</td>" +
+        "<td>" + esc(d.version) + "</td>" +
+        "<td>" + esc(d.message) + "</td>";
+
+      tbody.insertBefore(tr, tbody.firstChild);
+      status.textContent = count + " decisions\u2026";
+    });
+
+    es.addEventListener("summary", function (e) {
+      es.close();
+      var s = JSON.parse(e.data);
+      status.textContent = s.total + " decisions in " + fmtNs(s.fetchDur + s.computeDur);
+      summaryEl.innerHTML =
+        '<div class="reconciler-summary">' +
+        '<div class="card"><div class="card-body">' +
+        "<strong>Fetch:</strong> " + fmtNs(s.fetchDur) +
+        " &middot; <strong>Compute:</strong> " + fmtNs(s.computeDur) +
+        " &middot; <strong>Total:</strong> " + fmtNs(s.fetchDur + s.computeDur) +
+        "</div></div></div>";
+      btn.disabled = false;
+      btn.textContent = "Run reconcile";
+
+      // Make table sortable.
+      var table = document.getElementById("reconcile-table");
+      if (table) {
+        table.classList.add("sortable");
+        table.setAttribute("data-sort-key", "reconciler-decisions");
+        if (window.initSortable) window.initSortable(table);
+      }
+    });
+
+    es.addEventListener("error", function (e) {
+      es.close();
+      if (e.data) {
+        var err = JSON.parse(e.data);
+        status.textContent = "Error: " + (err.error || "unknown");
+      } else {
+        status.textContent = "Connection lost";
+      }
+      btn.disabled = false;
+      btn.textContent = "Run reconcile";
+    });
+
+    es.onerror = function () {
+      es.close();
+      status.textContent = "Connection lost";
+      btn.disabled = false;
+      btn.textContent = "Run reconcile";
+    };
+  });
+
+  function esc(s) {
+    var d = document.createElement("div");
+    d.appendChild(document.createTextNode(s));
+    return d.innerHTML;
+  }
+
+  function fmtNs(ns) {
+    if (ns < 1000000) return (ns / 1000).toFixed(0) + "\u00b5s";
+    if (ns < 1000000000) return (ns / 1000000).toFixed(0) + "ms";
+    return (ns / 1000000000).toFixed(2) + "s";
+  }
+})();

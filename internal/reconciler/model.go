@@ -3,6 +3,7 @@ package reconciler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -67,6 +68,9 @@ type DeployDecision struct {
 	Message         string
 	Status          string
 }
+
+// ErrReconcileInProgress is returned when a streaming reconcile is already running.
+var ErrReconcileInProgress = errors.New("reconcile already in progress")
 
 // Dispatcher receives the full set of deploy decisions and performs
 // side-effects (DB writes, message publishing, UI updates, etc.).

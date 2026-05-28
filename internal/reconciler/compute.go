@@ -21,9 +21,18 @@ import (
 func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 	var (
 		mu      sync.Mutex
-		wg      sync.WaitGroup
 		results []DeployDecision
 	)
+	r.computeActionsStream(snap, func(d DeployDecision) {
+		mu.Lock()
+		results = append(results, d)
+		mu.Unlock()
+	})
+	return results
+}
+
+func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecision)) {
+	var wg sync.WaitGroup
 
 	// Semaphore for worker pool; nil means unlimited.
 	var sem chan struct{}
@@ -40,8 +49,7 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 
 		for _, dep := range winners {
 			if !healthy {
-				mu.Lock()
-				results = append(results, DeployDecision{
+				emit(DeployDecision{
 					EnvironmentID:   env.ID,
 					EnvironmentName: env.Name,
 					TenantName:      env.TenantName,
@@ -50,13 +58,11 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 					Action:          ActionSkipUnhealthy,
 					Message:         "naisd is unhealthy",
 				})
-				mu.Unlock()
 				continue
 			}
 
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
-				mu.Lock()
-				results = append(results, DeployDecision{
+				emit(DeployDecision{
 					EnvironmentID:   env.ID,
 					EnvironmentName: env.Name,
 					TenantName:      env.TenantName,
@@ -65,7 +71,6 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 					Action:          ActionSkipDisabled,
 					Message:         "feature reconcile disabled",
 				})
-				mu.Unlock()
 				continue
 			}
 
@@ -78,16 +83,12 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 				if sem != nil {
 					defer func() { <-sem }()
 				}
-				res := r.computeAction(snap, env, dep)
-				mu.Lock()
-				results = append(results, res)
-				mu.Unlock()
+				emit(r.computeAction(snap, env, dep))
 			}(env, dep)
 		}
 	}
 
 	wg.Wait()
-	return results
 }
 
 func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileDeployment) DeployDecision {

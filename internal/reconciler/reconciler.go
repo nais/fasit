@@ -3,6 +3,7 @@ package reconciler
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,6 +19,9 @@ type Reconciler struct {
 
 	// Workers limits parallel compute goroutines. 0 means unlimited.
 	Workers int
+
+	// streamMu guards against concurrent streaming reconciles.
+	streamMu sync.Mutex
 
 	reconcileLoopTime metric.Int64Histogram
 }
@@ -118,5 +122,43 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 		Decisions:  decisions,
 		FetchDur:   fetchDur,
 		ComputeDur: computeDur,
+	}, nil
+}
+
+// StreamSummary is sent after all decisions have been streamed.
+type StreamSummary struct {
+	FetchDur   time.Duration `json:"fetchDur"`
+	ComputeDur time.Duration `json:"computeDur"`
+	Total      int           `json:"total"`
+}
+
+// StreamDecisions fetches the current state and streams each deploy decision
+// to the emit callback as it's computed. Returns a summary after all decisions
+// are emitted. Returns ErrReconcileInProgress if another stream is running.
+func (r *Reconciler) StreamDecisions(ctx context.Context, emit func(DeployDecision)) (*StreamSummary, error) {
+	if !r.streamMu.TryLock() {
+		return nil, ErrReconcileInProgress
+	}
+	defer r.streamMu.Unlock()
+
+	fetchStart := time.Now()
+	snap, err := r.fetchSnapshot(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("fetch snapshot: %w", err)
+	}
+	fetchDur := time.Since(fetchStart)
+
+	computeStart := time.Now()
+	total := 0
+	r.computeActionsStream(snap, func(d DeployDecision) {
+		total++
+		emit(d)
+	})
+	computeDur := time.Since(computeStart)
+
+	return &StreamSummary{
+		FetchDur:   fetchDur,
+		ComputeDur: computeDur,
+		Total:      total,
 	}, nil
 }

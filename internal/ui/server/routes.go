@@ -89,7 +89,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/naisd", naisd.Handler(s.renderPage))
 
 	r.Get("/reconciler", reconcilerpage.Handler(s.renderPage))
-	r.Post("/reconciler/run", reconcilerpage.RunHandler(s.renderPage))
+	r.Get("/reconciler/stream", reconcilerpage.StreamHandler())
 
 	return r
 }
