@@ -49,7 +49,7 @@ func listPage(entries []*audit.Entry, query string) g.Node {
 			components.Breadcrumbs([]breadcrumb.Crumb{{Label: "Activity Log", URL: "/auditlog"}}),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
 				h.Div(h.Class("deployments-header"),
-					h.Div(h.Class("deployments-toolbar"),
+					h.Form(h.Method("get"), h.Action("/auditlog"), h.Class("deployments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),
@@ -57,7 +57,6 @@ func listPage(entries []*audit.Entry, query string) g.Node {
 							h.Placeholder("Filter by action, resource, environment, actor…"),
 							g.Attr("aria-label", "Filter activity log"),
 							g.Attr("autocomplete", "off"),
-							g.Attr("data-url-filter", "q"),
 							g.If(query != "", h.Value(query)),
 						),
 					),

@@ -47,7 +47,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		deps, _ := deployment.List(r.Context())
+		deps, _ := deployment.ListRecent(r.Context())
 		audits, _ := audit.ListRecent(r.Context(), 200)
 		deploymentActors := deploymentActorsByID(audits)
 
@@ -370,7 +370,7 @@ func recentDeployments(rows []depRow) g.Node {
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
-		h.Div(h.Style("margin-top: 0.75rem; font-size: 0.85rem;"), h.A(h.Href("/deployments"), h.Class("link-muted"), g.Text("All deployments →"))),
+		h.Div(h.Class("section-link-row"), h.A(h.Href("/deployments"), h.Class("link-muted"), g.Text("All deployments →"))),
 	})
 }
 
@@ -420,7 +420,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
-		h.Div(h.Style("margin-top: 0.75rem; font-size: 0.85rem;"), h.A(h.Href("/auditlog"), h.Class("link-muted"), g.Text("All activity →"))),
+		h.Div(h.Class("section-link-row"), h.A(h.Href("/auditlog"), h.Class("link-muted"), g.Text("All activity →"))),
 	})
 }
 
@@ -503,55 +503,7 @@ func detailPage(data *DetailPage) g.Node {
 }
 
 func featureWorkspaceSidebar(data *DetailPage) g.Node {
-	featureName := data.CurrentFeature.Name
-	return h.Aside(h.Class("sidebar feature-workspace-sidebar"),
-		h.Div(h.Class("feature-workspace-header"),
-			h.H4(g.Text(featureName)),
-		),
-		h.Div(h.Class("nav"),
-			h.Ul(
-				workspaceNavItem("/features/"+featureName, "Overview", data.ActiveTab == "overview"),
-				workspaceNavItem("/features/"+featureName+"/deploy-specs", "Deploy specs", data.ActiveTab == "deploy-specs"),
-				workspaceNavItem("/features/"+featureName+"/config", "Config", data.ActiveTab == "config"),
-				workspaceNavItem("/features/"+featureName+"/config-explorer", "Config explorer", data.ActiveTab == "config-explorer"),
-			),
-			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
-			h.Ul(g.Group(g.Map(data.WorkspaceEnvs, func(env featureworkspace.Environment) g.Node {
-				return workspaceEnvironmentItem(featureName, env)
-			}))),
-		),
-	)
-}
-
-func workspaceNavItem(href, label string, active bool) g.Node {
-	attrs := []g.Node{h.Href(href)}
-	if active {
-		attrs = append(attrs, h.Class("active"))
-	}
-	return h.Li(h.A(append(attrs, g.Text(label))...))
-}
-
-func workspaceEnvironmentItem(featureName string, env featureworkspace.Environment) g.Node {
-	return h.Li(h.A(h.Href("/features/"+featureName+"/envs/"+env.TenantSlug+"/"+env.EnvironmentName),
-		h.Class("workspace-env-link"),
-		h.Span(h.Class("workspace-env-dot "+workspaceEnvironmentStatusClass(env.Status)), h.Title(env.Status)),
-		h.Span(g.Text(env.TenantName+" / "+env.EnvironmentName)),
-	))
-}
-
-func workspaceEnvironmentStatusClass(status string) string {
-	switch deployment.NormalizeStatus(status) {
-	case "DEPLOYED":
-		return "status-success"
-	case "FAILED":
-		return "status-error"
-	case "PENDING", "CREATED":
-		return "status-pending"
-	case "DISABLED":
-		return "status-disabled"
-	default:
-		return "text-muted"
-	}
+	return components.FeatureWorkspaceSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.WorkspaceEnvs)
 }
 
 func featureOverviewContent(data *DetailPage) g.Node {
@@ -650,29 +602,6 @@ func lastDeployedCell(t time.Time, class string) g.Node {
 	}
 	attrs = append(attrs, h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 	return h.Td(attrs...)
-}
-
-func renderStatus(status string) g.Node {
-	switch strings.ToUpper(status) {
-	case "DEPLOYED":
-		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" Deployed")})
-	case "FAILED":
-		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" Failed")})
-	case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK":
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" Pending")})
-	case "DISABLED":
-		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("○")), g.Text(" Disabled")})
-	case "CREATED":
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" Created")})
-	case "UNKNOWN":
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("?")), g.Text(" Unknown")})
-	case "ENABLED":
-		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" Enabled")})
-	case "OVERRIDDEN":
-		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("⊘")), g.Text(" Overridden")})
-	default:
-		return g.Text(status)
-	}
 }
 
 func resourceLinkNode(e *audit.Entry) g.Node {

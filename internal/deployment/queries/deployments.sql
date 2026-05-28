@@ -205,3 +205,15 @@ ORDER BY
 	d.target,
 	d.created DESC;
 
+-- name: ListRecentDeployments :many
+SELECT
+	sqlc.embed(d),
+	sqlc.embed(fd)
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created DESC
+	LIMIT 50;
+

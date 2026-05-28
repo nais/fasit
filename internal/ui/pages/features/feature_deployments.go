@@ -367,7 +367,7 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 	if tip := statusTooltip(env); tip != "" {
 		statusCell = append(statusCell, h.Title(tip))
 	}
-	statusCell = append(statusCell, renderStatus(env.StatusText))
+	statusCell = append(statusCell, components.Status(env.StatusText))
 	cells = append(cells, h.Td(statusCell...))
 
 	if showVersion {
