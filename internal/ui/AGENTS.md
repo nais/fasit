@@ -27,6 +27,14 @@ ui/
 - **Breadcrumb switcher**: `breadcrumb.Crumb` has `Alternatives []Crumb` — renders dropdown. Use `TenantWithSwitcher` / `EnvironmentWithSwitcher`.
 - **Destructive actions**: POST forms with confirm JS. No client-side fetch calls.
 - **Time formatting**: Pages use `mustLoadLocation("Europe/Oslo")` — defined per-page, not centralized.
+- **Page-specific JS**: Declare `Scripts: []string{"mypage.js"}` in `layout.Props`. Files live in `site/`. Shared utilities stay in `site.js`; page-specific behavior gets its own file.
+
+## JavaScript Style
+
+- Target ES2020+. Use `const`/`let` (never `var`), arrow functions, template literals, destructuring, `for...of`, optional chaining (`?.`), and nullish coalescing (`??`).
+- Prefer `document.querySelector` / `querySelectorAll` over `getElementById`.
+- Use event delegation on `document` for dynamic elements.
+- Keep page scripts as self-contained IIFEs or top-level `const` blocks.
 
 ## Anti-Patterns
 
