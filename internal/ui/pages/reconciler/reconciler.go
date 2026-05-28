@@ -50,9 +50,9 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 }
 
 func triggerPage() g.Node {
-	return h.Div(h.Class("content"),
+	return h.Main(h.Class("main-content"),
 		h.H1(g.Text("Reconciler")),
-		h.P(g.Text("Run a dry-run reconcile to see what would be deployed.")),
+		h.P(h.Class("text-muted"), g.Text("Run a dry-run reconcile to see what would be deployed.")),
 		h.Form(h.Method("post"), h.Action("/reconciler/run"),
 			h.Button(h.Type("submit"), h.Class("btn"), g.Text("Run reconcile")),
 		),
@@ -70,15 +70,10 @@ type actionSummary struct {
 	RenderError   int
 }
 
-func resultsPage(results []reconciler.DeployDecision, elapsed, fetchDur, computeDur time.Duration) g.Node {
+func resultsPage(decisions []reconciler.DeployDecision, elapsed, fetchDur, computeDur time.Duration) g.Node {
 	var summary actionSummary
-	byEnv := map[string][]reconciler.DeployDecision{}
-
-	for _, r := range results {
-		key := r.TenantName + "/" + r.EnvironmentName
-		byEnv[key] = append(byEnv[key], r)
-
-		switch r.Action {
+	for _, d := range decisions {
+		switch d.Action {
 		case reconciler.ActionDeploy:
 			summary.Deploy++
 		case reconciler.ActionSkipUnchanged:
@@ -98,22 +93,55 @@ func resultsPage(results []reconciler.DeployDecision, elapsed, fetchDur, compute
 		}
 	}
 
-	envKeys := make([]string, 0, len(byEnv))
-	for k := range byEnv {
-		envKeys = append(envKeys, k)
-	}
-	sort.Strings(envKeys)
+	sort.Slice(decisions, func(i, j int) bool {
+		if decisions[i].Action != decisions[j].Action {
+			return actionOrder(decisions[i].Action) < actionOrder(decisions[j].Action)
+		}
+		if decisions[i].TenantName != decisions[j].TenantName {
+			return decisions[i].TenantName < decisions[j].TenantName
+		}
+		if decisions[i].EnvironmentName != decisions[j].EnvironmentName {
+			return decisions[i].EnvironmentName < decisions[j].EnvironmentName
+		}
+		return decisions[i].Feature.Name < decisions[j].Feature.Name
+	})
 
-	return h.Div(h.Class("content"),
-		h.H1(g.Text("Reconciler results")),
-		summarySection(summary, len(results), elapsed, fetchDur, computeDur),
-		h.Form(h.Method("post"), h.Action("/reconciler/run"),
-			h.Button(h.Type("submit"), h.Class("btn"), g.Text("Run again")),
+	return h.Main(h.Class("main-content"),
+		h.Div(h.Class("reconciler-header"),
+			h.H1(g.Text("Reconciler results")),
+			h.Form(h.Method("post"), h.Action("/reconciler/run"),
+				h.Button(h.Type("submit"), h.Class("btn"), g.Text("Run again")),
+			),
 		),
-		g.If(summary.Deploy > 0 || summary.MissingDeps > 0 || summary.MissingConfig > 0 || summary.RenderError > 0,
-			actionableResults(byEnv, envKeys),
+		h.Div(h.Class("reconciler-summary"),
+			components.Card(timingTable(elapsed, fetchDur, computeDur)),
+			components.Card(summaryTable(summary, len(decisions))),
 		),
+		components.Card(decisionsTable(decisions)),
 	)
+}
+
+func actionOrder(a reconciler.Action) int {
+	switch a {
+	case reconciler.ActionFailRender:
+		return 0
+	case reconciler.ActionFailMissingConfig:
+		return 1
+	case reconciler.ActionFailMissingDeps:
+		return 2
+	case reconciler.ActionDeploy:
+		return 3
+	case reconciler.ActionSkipDisabled:
+		return 4
+	case reconciler.ActionSkipUnhealthy:
+		return 5
+	case reconciler.ActionSkipInProgress:
+		return 6
+	case reconciler.ActionSkipUnchanged:
+		return 7
+	default:
+		return 8
+	}
 }
 
 func fmtDur(d time.Duration) string {
@@ -130,38 +158,8 @@ func pct(part, total time.Duration) string {
 	return fmt.Sprintf("%.0f%%", float64(part)/float64(total)*100)
 }
 
-func summarySection(s actionSummary, total int, elapsed, fetchDur, computeDur time.Duration) g.Node {
-	return h.Div(h.Class("reconciler-summary"),
-		timingTable(elapsed, fetchDur, computeDur),
-		h.Table(h.Class("summary-table"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Action")), h.Th(g.Text("Count")),
-			)),
-			h.TBody(
-				summaryRow("Would deploy", s.Deploy, "action-deploy"),
-				summaryRow("Unchanged", s.Unchanged, "action-skip"),
-				summaryRow("In progress", s.InProgress, "action-skip"),
-				summaryRow("Disabled", s.Disabled, "action-skip"),
-				summaryRow("Unhealthy naisd", s.Unhealthy, "action-skip"),
-				g.If(s.MissingDeps > 0, summaryRow("Missing dependencies", s.MissingDeps, "action-fail")),
-				g.If(s.MissingConfig > 0, summaryRow("Missing config", s.MissingConfig, "action-fail")),
-				g.If(s.RenderError > 0, summaryRow("Render error", s.RenderError, "action-fail")),
-				summaryRow("Total", total, ""),
-			),
-		),
-	)
-}
-
-func summaryRow(label string, count int, class string) g.Node {
-	return h.Tr(
-		g.If(class != "", h.Class(class)),
-		h.Td(g.Text(label)),
-		h.Td(g.Textf("%d", count)),
-	)
-}
-
 func timingTable(total, fetch, compute time.Duration) g.Node {
-	return h.Table(h.Class("timing-table"),
+	return h.Table(h.Class("table table-compact"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Phase")),
 			h.Th(g.Text("Duration")),
@@ -179,61 +177,78 @@ func timingTable(total, fetch, compute time.Duration) g.Node {
 	)
 }
 
-func actionableResults(byEnv map[string][]reconciler.DeployDecision, envKeys []string) g.Node {
-	var sections []g.Node
-	for _, key := range envKeys {
-		results := byEnv[key]
-		var actionable []reconciler.DeployDecision
-		for _, r := range results {
-			if r.Action == reconciler.ActionDeploy || r.Action.IsFailure() {
-				actionable = append(actionable, r)
-			}
-		}
-		if len(actionable) == 0 {
-			continue
-		}
-		sort.Slice(actionable, func(i, j int) bool {
-			if actionable[i].Action != actionable[j].Action {
-				return actionable[i].Action < actionable[j].Action
-			}
-			return actionable[i].Feature.Name < actionable[j].Feature.Name
-		})
-		sections = append(sections, envSection(key, actionable, len(results)))
-	}
-	return h.Div(h.Class("reconciler-details"), g.Group(sections))
-}
-
-func envSection(envKey string, results []reconciler.DeployDecision, total int) g.Node {
-	return h.Details(
-		h.Class("reconciler-env"),
-		h.Summary(g.Textf("%s — %d actionable / %d total", envKey, len(results), total)),
-		h.Table(h.Class("env-results-table"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Feature")),
-				h.Th(g.Text("Version")),
-				h.Th(g.Text("Action")),
-				h.Th(g.Text("Message")),
-			)),
-			h.TBody(g.Map(results, func(r reconciler.DeployDecision) g.Node {
-				return resultRow(r)
-			})...),
+func summaryTable(s actionSummary, total int) g.Node {
+	return h.Table(h.Class("table table-compact"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Action")), h.Th(g.Text("Count")),
+		)),
+		h.TBody(
+			summaryRow("Would deploy", s.Deploy, "status-success"),
+			summaryRow("Unchanged", s.Unchanged, ""),
+			summaryRow("In progress", s.InProgress, "status-pending"),
+			summaryRow("Disabled", s.Disabled, "status-disabled"),
+			summaryRow("Unhealthy naisd", s.Unhealthy, "status-disabled"),
+			g.If(s.MissingDeps > 0, summaryRow("Missing dependencies", s.MissingDeps, "status-error")),
+			g.If(s.MissingConfig > 0, summaryRow("Missing config", s.MissingConfig, "status-error")),
+			g.If(s.RenderError > 0, summaryRow("Render error", s.RenderError, "status-error")),
+			h.Tr(h.Class("timing-total"),
+				h.Td(g.Text("Total")),
+				h.Td(g.Textf("%d", total)),
+			),
 		),
 	)
 }
 
-func resultRow(r reconciler.DeployDecision) g.Node {
-	class := "action-skip"
-	switch {
-	case r.Action == reconciler.ActionDeploy:
-		class = "action-deploy"
-	case r.Action.IsFailure():
-		class = "action-fail"
-	}
+func summaryRow(label string, count int, class string) g.Node {
+	return h.Tr(
+		h.Td(g.If(class != "", h.Class(class)), g.Text(label)),
+		h.Td(g.Textf("%d", count)),
+	)
+}
 
-	return h.Tr(h.Class(class),
-		h.Td(g.Text(r.Feature.Name)),
-		h.Td(g.Text(r.Feature.Version)),
-		h.Td(g.Text(r.Action.String())),
-		h.Td(g.Text(r.Message)),
+func decisionsTable(decisions []reconciler.DeployDecision) g.Node {
+	if len(decisions) == 0 {
+		return h.P(h.Class("text-muted"), g.Text("No decisions."))
+	}
+	return h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "reconciler-decisions"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Action")),
+			h.Th(g.Text("Tenant")),
+			h.Th(g.Text("Environment")),
+			h.Th(g.Text("Feature")),
+			h.Th(g.Text("Version")),
+			h.Th(g.Text("Message"), g.Attr("data-no-sort", "")),
+		)),
+		h.TBody(g.Map(decisions, func(d reconciler.DeployDecision) g.Node {
+			return decisionRow(d)
+		})...),
+	)
+}
+
+func actionBadge(a reconciler.Action) g.Node {
+	class := "status-badge "
+	switch {
+	case a == reconciler.ActionDeploy:
+		class += "status-success"
+	case a.IsFailure():
+		class += "status-error"
+	case a == reconciler.ActionSkipDisabled || a == reconciler.ActionSkipUnhealthy:
+		class += "status-disabled"
+	case a == reconciler.ActionSkipInProgress:
+		class += "status-pending"
+	default:
+		class += ""
+	}
+	return h.Span(h.Class(class), g.Text(a.String()))
+}
+
+func decisionRow(d reconciler.DeployDecision) g.Node {
+	return h.Tr(
+		h.Td(g.Attr("data-sort-value", fmt.Sprintf("%d", actionOrder(d.Action))), actionBadge(d.Action)),
+		h.Td(g.Text(d.TenantName)),
+		h.Td(g.Text(d.EnvironmentName)),
+		h.Td(g.Text(d.Feature.Name)),
+		h.Td(g.Text(d.Feature.Version)),
+		h.Td(g.Text(d.Message)),
 	)
 }
