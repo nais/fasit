@@ -36,7 +36,7 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool) g.Node {
 			navItem("/features", "Features", PageFeatures),
 			navItem("/environments", "Environments", PageEnvironments),
 		),
-		g.If(!hideSearch, h.Form(h.Method("get"), h.Action("/search"), h.Class("nav-search"), g.Attr("data-feature-search", ""),
+		g.If(!hideSearch, h.Form(h.Method("get"), h.Action("/features"), h.Class("nav-search"), g.Attr("data-feature-search", ""),
 			h.Input(h.Type("search"), h.Name("q"), h.Class("feature-search-input nav-search-input"), h.Placeholder("Search…"), h.AutoComplete("off"), g.Attr("aria-label", "Search features")),
 			h.Div(h.Class("feature-search-suggestions"), g.Attr("data-feature-search-suggestions", "")),
 		)),

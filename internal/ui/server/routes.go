@@ -10,7 +10,6 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/naisd"
-	"github.com/nais/fasit/internal/ui/pages/search"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
 	"github.com/sirupsen/logrus"
 )
@@ -30,8 +29,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/favicon.ico", s.Favicon)
 
 	r.Get("/", features.ListHandler(s.renderPage))
-	r.Get("/search/suggestions", search.SuggestionsHandler())
-	r.Get("/search", search.Handler(s.renderPage))
+	r.Get("/features.json", features.NamesHandler())
 	r.Get("/environments", tenants.Handler(s.renderPage))
 	r.Get("/tenants/{tenant}/logo", tenants.ServeLogoHandler())
 

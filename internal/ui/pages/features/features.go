@@ -39,6 +39,18 @@ type DetailPage struct {
 	ExplorerData   *configExplorerData
 }
 
+func NamesHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		features, err := featurepkg.FeatureNames(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to load features", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(features)
+	}
+}
+
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		features, err := featurepkg.FeatureNames(r.Context())
@@ -191,7 +203,7 @@ func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) 
 
 func landingSearch(features []view.FeatureNav) g.Node {
 	return h.Section(h.Class("landing-search"),
-		h.Form(h.Method("get"), h.Action("/search"), h.Class("feature-search-form landing-search-form"), g.Attr("data-feature-search", ""),
+		h.Form(h.Method("get"), h.Action("/features"), h.Class("feature-search-form landing-search-form"), g.Attr("data-feature-search", ""),
 			h.Input(
 				h.Type("search"),
 				h.Name("q"),

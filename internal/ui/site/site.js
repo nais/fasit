@@ -78,9 +78,12 @@ document.addEventListener("input", function (e) {
   });
 });
 
-// Feature search shortcut (Cmd/Ctrl+K), landing datalist navigation, and Escape handling.
+// Feature search shortcut (Cmd/Ctrl+K), local suggestions, and Escape handling.
 (function () {
   var isMac = navigator.platform && navigator.platform.toUpperCase().includes("MAC");
+  var featureNamesPromise = null;
+  var featureNames = [];
+
   document.querySelectorAll(".feature-search-input").forEach(function (input) {
     input.placeholder = isMac ? "Search features\u2026 (\u2318K)" : "Search features\u2026 (Ctrl+K)";
   });
@@ -92,6 +95,46 @@ document.addEventListener("input", function (e) {
     var form = input.closest("[data-feature-search]");
     if (!form) return null;
     return form.querySelector("[data-feature-search-suggestions]");
+  }
+
+  function loadFeatureNames() {
+    if (featureNamesPromise) return featureNamesPromise;
+    featureNamesPromise = fetch("/features.json")
+      .then(function (response) { return response.ok ? response.json() : []; })
+      .then(function (names) {
+        featureNames = Array.isArray(names) ? names : [];
+        return featureNames;
+      })
+      .catch(function () {
+        featureNames = [];
+        return featureNames;
+      });
+    return featureNamesPromise;
+  }
+
+  function featureHref(name) {
+    return "/features/" + encodeURIComponent(name);
+  }
+
+  function matchFeatures(query) {
+    var q = query.toLowerCase();
+    var exact = [];
+    var prefix = [];
+    var substring = [];
+    featureNames.forEach(function (name) {
+      var lower = name.toLowerCase();
+      if (lower === q) {
+        exact.push(name);
+      } else if (lower.startsWith(q)) {
+        prefix.push(name);
+      } else if (lower.includes(q)) {
+        substring.push(name);
+      }
+    });
+    var names = exact.length ? exact : prefix.sort().concat(substring.sort());
+    return names.slice(0, 8).map(function (name) {
+      return { title: name, href: featureHref(name) };
+    });
   }
 
   function appendHighlightedMatch(node, text, query) {
@@ -126,22 +169,26 @@ document.addEventListener("input", function (e) {
     suggestions.classList.add("visible");
   }
 
-  var searchTimers = new WeakMap();
-  document.addEventListener("input", function (e) {
-    var input = e.target.closest && e.target.closest(".feature-search-input");
-    if (!input) return;
+  function updateSuggestions(input) {
     var q = input.value.trim();
-    window.clearTimeout(searchTimers.get(input));
-    if (q.length < 2) {
+    if (q.length < 1) {
       renderSuggestions(input, []);
       return;
     }
-    searchTimers.set(input, window.setTimeout(function () {
-      fetch("/search/suggestions?q=" + encodeURIComponent(q))
-        .then(function (response) { return response.ok ? response.json() : []; })
-        .then(function (matches) { renderSuggestions(input, matches); })
-        .catch(function () { renderSuggestions(input, []); });
-    }, 120));
+    loadFeatureNames().then(function () {
+      renderSuggestions(input, matchFeatures(q));
+    });
+  }
+
+  document.addEventListener("focusin", function (e) {
+    var input = e.target.closest && e.target.closest(".feature-search-input");
+    if (input) loadFeatureNames();
+  });
+
+  document.addEventListener("input", function (e) {
+    var input = e.target.closest && e.target.closest(".feature-search-input");
+    if (!input) return;
+    updateSuggestions(input);
   });
 
   document.addEventListener("click", function (e) {
@@ -158,15 +205,24 @@ document.addEventListener("input", function (e) {
       e.preventDefault();
       input.focus();
       input.select();
+      loadFeatureNames();
     }
   });
   document.addEventListener("submit", function (e) {
     var form = e.target.closest && e.target.closest("[data-feature-search]");
     if (!form) return;
-    var first = form.querySelector("[data-feature-search-suggestions].visible a");
-    if (!first) return;
     e.preventDefault();
-    window.location.href = first.href;
+    var first = form.querySelector("[data-feature-search-suggestions].visible a");
+    if (first) {
+      window.location.href = first.href;
+      return;
+    }
+    var input = form.querySelector(".feature-search-input");
+    if (!input || input.value.trim().length < 1) return;
+    loadFeatureNames().then(function () {
+      var matches = matchFeatures(input.value.trim());
+      if (matches.length) window.location.href = matches[0].href;
+    });
   });
 
   document.addEventListener("keydown", function (e) {
