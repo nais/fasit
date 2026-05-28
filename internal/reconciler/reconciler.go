@@ -126,13 +126,13 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 type StreamSummary struct {
 	FetchDur   time.Duration `json:"fetchDur"`
 	ComputeDur time.Duration `json:"computeDur"`
-	Total      int           `json:"total"`
 }
 
-// StreamDecisions fetches the current state and streams each deploy decision
-// to the emit callback as it's computed. Returns a summary after all decisions
-// are emitted. Returns ErrReconcileInProgress if another stream is running.
-func (r *Reconciler) StreamDecisions(ctx context.Context, emit func(DeployDecision)) (*StreamSummary, error) {
+// StreamDecisions fetches the current state and streams deploy decisions to
+// out, closing it when done. The caller must consume out (e.g. range over it).
+// Returns a summary after all decisions are sent.
+// Returns ErrReconcileInProgress if another stream is running.
+func (r *Reconciler) StreamDecisions(ctx context.Context, out chan<- DeployDecision) (*StreamSummary, error) {
 	if !r.streamMu.TryLock() {
 		return nil, ErrReconcileInProgress
 	}
@@ -141,21 +141,17 @@ func (r *Reconciler) StreamDecisions(ctx context.Context, emit func(DeployDecisi
 	fetchStart := time.Now()
 	snap, err := r.fetchSnapshot(ctx)
 	if err != nil {
+		close(out)
 		return nil, fmt.Errorf("fetch snapshot: %w", err)
 	}
 	fetchDur := time.Since(fetchStart)
 
 	computeStart := time.Now()
-	total := 0
-	r.computeActionsStream(snap, func(d DeployDecision) {
-		total++
-		emit(d)
-	})
+	r.computeActionsStream(snap, out) // closes out when done
 	computeDur := time.Since(computeStart)
 
 	return &StreamSummary{
 		FetchDur:   fetchDur,
 		ComputeDur: computeDur,
-		Total:      total,
 	}, nil
 }

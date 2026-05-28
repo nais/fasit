@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,14 +21,39 @@ import (
 )
 
 func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
+	out := make(chan DeployDecision, 2048)
+	go r.computeActionsStream(snap, out)
 	var results []DeployDecision
-	r.computeActionsStream(snap, func(d DeployDecision) {
+	for d := range out {
 		results = append(results, d)
-	})
+	}
 	return results
 }
 
-func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecision)) {
+// workItem is sent through the work channel to a worker goroutine.
+type workItem struct {
+	env environment
+	dep *reconcileDeployment
+}
+
+// computeActionsStream dispatches deploy decisions to out and closes it when
+// done. Skips (unhealthy/disabled) go directly to out; compute work is
+// processed by a pool of GOMAXPROCS workers. Caller must consume out.
+func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecision) {
+	numWorkers := runtime.GOMAXPROCS(0)
+	work := make(chan workItem, numWorkers)
+
+	// Workers: read work items, compute, send to out.
+	var wg sync.WaitGroup
+	for range numWorkers {
+		wg.Go(func() {
+			for w := range work {
+				out <- r.computeAction(snap, w.env, w.dep)
+			}
+		})
+	}
+
+	// Dispatch: send skips directly to out, compute work to workers.
 	for _, env := range snap.environments {
 		reportedAt, ok := snap.healthByEnv[env.ID]
 		healthy := ok && time.Since(reportedAt) <= 3*time.Minute
@@ -35,7 +63,7 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecisi
 
 		for _, dep := range winners {
 			if !healthy {
-				emit(DeployDecision{
+				out <- DeployDecision{
 					EnvironmentID:   env.ID,
 					EnvironmentName: env.Name,
 					TenantName:      env.TenantName,
@@ -43,12 +71,12 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecisi
 					Feature:         dep.Feature,
 					Action:          ActionSkipUnhealthy,
 					Message:         "naisd is unhealthy",
-				})
+				}
 				continue
 			}
 
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
-				emit(DeployDecision{
+				out <- DeployDecision{
 					EnvironmentID:   env.ID,
 					EnvironmentName: env.Name,
 					TenantName:      env.TenantName,
@@ -56,13 +84,17 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecisi
 					Feature:         dep.Feature,
 					Action:          ActionSkipDisabled,
 					Message:         "feature reconcile disabled",
-				})
+				}
 				continue
 			}
 
-			emit(r.computeAction(snap, env, dep))
+			work <- workItem{env: env, dep: dep}
 		}
 	}
+
+	close(work) // workers drain remaining items then exit
+	wg.Wait()   // all results sent to out
+	close(out)  // signal consumer we're done
 }
 
 func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileDeployment) DeployDecision {
@@ -248,8 +280,6 @@ func envConfigForFeature(envConfig map[uuid.UUID]map[string][]featurepkg.MergedC
 // includeKeys. This mirrors featurepkg.MergeConfigs but works with
 // pre-built MergedConfigRow slices instead of sqlc types.
 func mergeConfigRows(global, env []featurepkg.MergedConfigRow, includeKeys []string) []featurepkg.MergedConfigRow {
-	// Use the exported MergeConfigs by converting to sqlc types.
-	// Since we already have MergedConfigRow, we do the merge inline.
 	keySet := make(map[string]struct{}, len(includeKeys))
 	for _, k := range includeKeys {
 		keySet[k] = struct{}{}
@@ -294,9 +324,7 @@ func copyStringAnyMap(m map[string]any) map[string]any {
 		return nil
 	}
 	c := make(map[string]any, len(m))
-	for k, v := range m {
-		c[k] = v
-	}
+	maps.Copy(c, m)
 	return c
 }
 

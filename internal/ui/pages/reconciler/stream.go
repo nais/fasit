@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/nais/fasit/internal/reconciler"
 )
@@ -36,19 +37,33 @@ func StreamHandler() http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.Header().Set("X-Accel-Buffering", "no")
 
-		summary, err := rec.StreamDecisions(r.Context(), func(d reconciler.DeployDecision) {
-			evt := sseDecision{
-				Action:      d.Action.String(),
-				Tenant:      d.TenantName,
-				Environment: d.EnvironmentName,
-				Feature:     d.Feature.Name,
-				Version:     d.Feature.Version,
-				Message:     d.Message,
+		ch := make(chan reconciler.DeployDecision, 2048)
+
+		// Forward decisions from channel to SSE as they arrive.
+		total := 0
+		var forwarder sync.WaitGroup
+		forwarder.Add(1)
+		go func() {
+			defer forwarder.Done()
+			for d := range ch {
+				total++
+				evt := sseDecision{
+					Action:      d.Action.String(),
+					Tenant:      d.TenantName,
+					Environment: d.EnvironmentName,
+					Feature:     d.Feature.Name,
+					Version:     d.Feature.Version,
+					Message:     d.Message,
+				}
+				b, _ := json.Marshal(evt)
+				_, _ = w.Write(sseEvent("decision", b))
+				flusher.Flush()
 			}
-			b, _ := json.Marshal(evt)
-			_, _ = w.Write(sseEvent("decision", b))
-			flusher.Flush()
-		})
+		}()
+
+		summary, err := rec.StreamDecisions(r.Context(), ch)
+		forwarder.Wait() // ensure all decisions are written before continuing
+
 		if err != nil {
 			if errors.Is(err, reconciler.ErrReconcileInProgress) {
 				_, _ = w.Write(sseEvent("error", []byte(`{"error":"reconcile already in progress"}`)))
@@ -61,7 +76,15 @@ func StreamHandler() http.HandlerFunc {
 			return
 		}
 
-		b, _ := json.Marshal(summary)
+		b, _ := json.Marshal(struct {
+			FetchDur   int64 `json:"fetchDur"`
+			ComputeDur int64 `json:"computeDur"`
+			Total      int   `json:"total"`
+		}{
+			FetchDur:   summary.FetchDur.Nanoseconds(),
+			ComputeDur: summary.ComputeDur.Nanoseconds(),
+			Total:      total,
+		})
 		_, _ = w.Write(sseEvent("summary", b)) // #nosec G705 -- JSON-encoded internal data, not user input
 		flusher.Flush()
 	}
