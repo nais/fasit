@@ -113,9 +113,16 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 		base.Message = "no environment values"
 		return base
 	}
-	// Clone mv so parallel goroutines don't race on shared fields
-	// (GenerateWith sets mv.Configs during template rendering).
+	// Clone mv so parallel goroutines don't race on shared fields.
+	// GenerateWith sets mv.Configs, and sprig template functions like
+	// set/unset can mutate Env/Management/Envs maps during rendering.
 	mvCopy := *mv
+	mvCopy.Env = copyStringAnyMap(mv.Env)
+	mvCopy.Management = copyStringAnyMap(mv.Management)
+	mvCopy.Envs = make([]map[string]any, len(mv.Envs))
+	for i, e := range mv.Envs {
+		mvCopy.Envs[i] = copyStringAnyMap(e)
+	}
 
 	data := &featurepkg.HelmRenderData{
 		MV:         &mvCopy,
@@ -294,6 +301,17 @@ func mergeConfigRows(global, env []featurepkg.MergedConfigRow, includeKeys []str
 		return 0
 	})
 	return result
+}
+
+func copyStringAnyMap(m map[string]any) map[string]any {
+	if m == nil {
+		return nil
+	}
+	c := make(map[string]any, len(m))
+	for k, v := range m {
+		c[k] = v
+	}
+	return c
 }
 
 func isErrMissingFields(err error, target **errs.ErrMissingRequiredFields) bool {
