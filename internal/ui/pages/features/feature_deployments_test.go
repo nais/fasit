@@ -2,6 +2,7 @@ package features
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/nais/fasit/internal/graph/model"
@@ -39,6 +40,24 @@ func TestCurrentDeploymentEnvStatusesSkipsOverriddenRows(t *testing.T) {
 	assert.Len(t, got, 2)
 	assert.Equal(t, "DEPLOYED", got[0].StatusText)
 	assert.Equal(t, "FAILED", got[1].StatusText)
+}
+
+func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
+	var buf bytes.Buffer
+	node := deploymentDetailContent(&DetailPage{
+		CurrentFeature: &model.Feature{Name: "naiserator"},
+		DeploymentEnvs: []DeploymentEnvStatus{
+			{Name: "dev", TenantName: "nav", TenantSlug: "nav", StatusText: "DEPLOYED", DeploymentVersion: "1.0.0"},
+		},
+	})
+	assert.NoError(t, node.Render(&buf))
+
+	html := buf.String()
+	assert.Contains(t, html, `id="row-kebab-nav-dev"`)
+	assert.Contains(t, html, `View logs`)
+	assert.Contains(t, html, `/features/naiserator/envs/nav/dev/logs`)
+	assert.Equal(t, 1, strings.Count(html, `id="row-kebab-nav-dev"`))
+	assert.Equal(t, 1, strings.Count(html, `View logs`))
 }
 
 func TestDeploymentDetailContentRendersTableAndGrid(t *testing.T) {
