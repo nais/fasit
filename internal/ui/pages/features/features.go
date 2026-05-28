@@ -123,7 +123,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		data.ActiveTab = "overview"
 		data.RecentActivity, _ = audit.ListForFeature(r.Context(), data.CurrentFeature.Name, 10)
 		setFeatureBreadcrumbSubtitle(data)
-		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
+		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data), Scripts: []string{"features.js"}})
 	}
 }
 

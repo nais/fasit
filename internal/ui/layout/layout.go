@@ -17,6 +17,7 @@ type Props struct {
 	AssetVersion     string
 	HideHeaderSearch bool
 	FeatureNames     []string
+	Scripts          []string
 }
 
 func featureNamesScript(names []string) g.Node {
@@ -50,6 +51,9 @@ func Page(props Props) g.Node {
 			featureNamesScript(props.FeatureNames),
 			h.Link(h.Rel("stylesheet"), h.Href("/site.css"+v)),
 			h.Script(h.Src("/site.js"+v), h.Defer()),
+			g.Group(g.Map(props.Scripts, func(s string) g.Node {
+				return h.Script(h.Src("/"+s+v), h.Defer())
+			})),
 		},
 		Body: []g.Node{
 			components.SiteHeader(props.CurrentPage, props.UserEmail, props.HideHeaderSearch),

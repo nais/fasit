@@ -17,6 +17,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			Title:       "Reconciler",
 			CurrentPage: components.PageReconciler,
 			Content:     triggerPage(),
+			Scripts:     []string{"reconciler.js"},
 		})
 	}
 }

@@ -65,6 +65,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			Title:       "Deployments",
 			CurrentPage: components.PageDeployments,
 			Content:     listPage(rows, query),
+			Scripts:     []string{"deployments.js"},
 		})
 	}
 }
