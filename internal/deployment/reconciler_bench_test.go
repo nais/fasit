@@ -7,13 +7,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/contextloader"
+	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/reconciler"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -264,4 +270,123 @@ func TestReconcileRealisticScale(t *testing.T) {
 		assert.Equal(t, expectedChanged, newInstructions)
 		assert.Len(t, pub.msg, expectedChanged, "only the changed feature should produce new messages")
 	})
+}
+
+// TestReconcileWorkerPoolScaling measures compute phase duration with different
+// worker pool sizes to identify whether rendering or map deep-copy dominates.
+func TestReconcileWorkerPoolScaling(t *testing.T) {
+	ctx := context.Background()
+	_, dsn, err := startPostgresql(ctx, t)
+	if err != nil {
+		t.Fatalf("start postgres: %v", err)
+	}
+
+	const (
+		numFeatures = 100
+		numTenants  = 10
+	)
+	envKinds := []string{"dev", "staging", "prod"}
+
+	// Only use new reconciler for this test.
+	logger, _ := test.NewNullLogger()
+	pool, _, err := database.NewConnPool(ctx, dsn, logger)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer pool.Close()
+
+	// Wire context for seeding.
+	oldPub := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return &sqlPublisher{pool: pool}
+	}
+	loadContext, err := contextloader.NewLoaderFunc(pool, oldPub, meter, logger)
+	if err != nil {
+		t.Fatalf("loader: %v", err)
+	}
+	ctx = loadContext(ctx)
+
+	seeder := deploymenttest.NewSeeder()
+
+	// Create environments.
+	db := &reconcileDB{Db{t: t, pool: pool}}
+	envsToCreate := map[string]environment.Labels{}
+	for ti := range numTenants {
+		tenant := fmt.Sprintf("tenant-%02d", ti)
+		for _, kind := range envKinds {
+			key := fmt.Sprintf("%s:%s", tenant, kind)
+			envsToCreate[key] = environment.Labels{"kind": "tenant"}
+		}
+	}
+	db.createTenantsAndEnvironments(ctx, envsToCreate)
+
+	// Seed features.
+	for fi := range numFeatures {
+		name := fmt.Sprintf("feature-%03d", fi)
+		values := model.Values{
+			"setting_a":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting A"},
+			"setting_b":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting B"},
+			"computed_name": {Computed: &model.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
+			"computed_cfg":  {Computed: &model.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
+		}
+		defaults := map[string]any{
+			"setting_a": fmt.Sprintf("default-a-%d", fi),
+			"setting_b": fmt.Sprintf("default-b-%d", fi),
+		}
+		seeder.AddDeploymentWithValues(name, fmt.Sprintf("1.%d.0", fi), environment.Labels{"kind": "tenant"}, nil, values, defaults, fmt.Sprintf("Feature %d", fi))
+	}
+	deployment.ChartDownloader = seeder.ChartDownloader()
+	if _, err := seeder.Seed(ctx); err != nil {
+		t.Fatalf("seeding: %v", err)
+	}
+
+	// Create global configs.
+	for fi := range numFeatures {
+		name := fmt.Sprintf("feature-%03d", fi)
+		for _, key := range []string{"setting_a", "setting_b"} {
+			b, _ := json.Marshal(fmt.Sprintf("global-%s-%d", key, fi))
+			if _, err := feature.ConfigGlobalCreate(ctx, model.NewConfiguration{
+				Feature: name, Key: key, Value: b,
+			}); err != nil {
+				t.Fatalf("create config: %v", err)
+			}
+		}
+	}
+
+	// Test different worker pool sizes.
+	workerCounts := []int{0, 1, 2, 4, 8, 16, 32, 64, 128}
+
+	for _, workers := range workerCounts {
+		label := "unlimited"
+		if workers > 0 {
+			label = fmt.Sprintf("%d", workers)
+		}
+		t.Run("workers="+label, func(t *testing.T) {
+			rec, err := reconciler.New(pool, meter, logger)
+			if err != nil {
+				t.Fatalf("create reconciler: %v", err)
+			}
+			rec.Workers = workers
+
+			result, err := rec.ComputeDesiredState(ctx)
+			if err != nil {
+				t.Fatalf("reconcile: %v", err)
+			}
+
+			deployCount := 0
+			for _, d := range result.Decisions {
+				if d.Action == reconciler.ActionDeploy {
+					deployCount++
+				}
+			}
+
+			t.Logf("workers=%-10s  fetch=%-10s  compute=%-10s  total=%-10s  decisions=%d  deploys=%d",
+				label,
+				result.FetchDur.Round(time.Millisecond),
+				result.ComputeDur.Round(time.Millisecond),
+				(result.FetchDur + result.ComputeDur).Round(time.Millisecond),
+				len(result.Decisions),
+				deployCount,
+			)
+		})
+	}
 }

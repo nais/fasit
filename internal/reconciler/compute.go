@@ -25,6 +25,12 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 		results []DeployDecision
 	)
 
+	// Semaphore for worker pool; nil means unlimited.
+	var sem chan struct{}
+	if r.Workers > 0 {
+		sem = make(chan struct{}, r.Workers)
+	}
+
 	for _, env := range snap.environments {
 		reportedAt, ok := snap.healthByEnv[env.ID]
 		healthy := ok && time.Since(reportedAt) <= 3*time.Minute
@@ -64,8 +70,14 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 			}
 
 			wg.Add(1)
+			if sem != nil {
+				sem <- struct{}{}
+			}
 			go func(env environment, dep *reconcileDeployment) {
 				defer wg.Done()
+				if sem != nil {
+					defer func() { <-sem }()
+				}
 				res := r.computeAction(snap, env, dep)
 				mu.Lock()
 				results = append(results, res)
