@@ -50,9 +50,10 @@ func NewQueryMetricsTracer(meter metric.Meter) (*QueryMetricsTracer, error) {
 		return nil, err
 	}
 
-	queryDuration, err := meter.Float64Histogram("db_query_duration_seconds",
+	queryDuration, err := meter.Float64Histogram("db_query_duration_ms",
 		metric.WithDescription("Database query duration"),
-		metric.WithUnit("s"),
+		metric.WithUnit("ms"),
+		metric.WithExplicitBucketBoundaries(1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
 	)
 	if err != nil {
 		return nil, err
@@ -83,7 +84,7 @@ func (t *QueryMetricsTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, dat
 	)
 
 	t.queryCount.Add(ctx, 1, attrs)
-	t.queryDuration.Record(ctx, time.Since(v.start).Seconds(), attrs)
+	t.queryDuration.Record(ctx, float64(time.Since(v.start).Milliseconds()), attrs)
 }
 
 func RegisterPoolMetrics(meter metric.Meter, pool *pgxpool.Pool) error {

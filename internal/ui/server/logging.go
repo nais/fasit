@@ -23,9 +23,10 @@ func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
 		return nil, err
 	}
 
-	requestDuration, err := meter.Float64Histogram("http_request_duration_seconds",
+	requestDuration, err := meter.Float64Histogram("http_request_duration_ms",
 		metric.WithDescription("HTTP request duration"),
-		metric.WithUnit("s"),
+		metric.WithUnit("ms"),
+		metric.WithExplicitBucketBoundaries(1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
 	)
 	if err != nil {
 		return nil, err
@@ -56,7 +57,7 @@ func (m *metricsMiddleware) Handler(next http.Handler) http.Handler {
 		)
 
 		m.requestsTotal.Add(r.Context(), 1, attrs)
-		m.requestDuration.Record(r.Context(), time.Since(start).Seconds(),
+		m.requestDuration.Record(r.Context(), float64(time.Since(start).Milliseconds()),
 			metric.WithAttributes(
 				attribute.String("method", r.Method),
 				attribute.String("path", pattern),
