@@ -131,7 +131,7 @@ document.addEventListener("input", function (e) {
         substring.push(name);
       }
     });
-    var names = exact.length ? exact : prefix.sort().concat(substring.sort());
+    var names = exact.sort().concat(prefix.sort(), substring.sort());
     return names.slice(0, 8).map(function (name) {
       return { title: name, href: featureHref(name) };
     });
