@@ -128,7 +128,7 @@ ORDER BY
 	feature_name,
 	environment_id;
 
--- name: BulkCreateDeployInstructions :exec
+-- name: CreateDeployInstruction :batchexec
 INSERT INTO deploy_instructions(
 	id,
 	environment_id,
@@ -137,27 +137,28 @@ INSERT INTO deploy_instructions(
 	hash,
 	"values",
 	deployment_id)
-SELECT
-	unnest(@ids::UUID[]),
-	unnest(@environment_ids::UUID[]),
-	unnest(@feature_names::TEXT[]),
-	unnest(@feature_versions::TEXT[]),
-	unnest(@hashes::TEXT[]),
-	unnest(@vals::JSONB[]),
-	unnest(@deployment_ids::UUID[]);
+VALUES (
+	@id,
+	@environment_id,
+	@feature_name,
+	@feature_version,
+	@hash,
+	@vals,
+	@deployment_id);
 
--- name: BulkUpsertDeploymentStatuses :exec
+-- name: UpsertDeploymentStatus :batchexec
 INSERT INTO deployment_statuses(
 	deployment_id,
 	environment_id,
 	status,
 	message)
-SELECT
-	unnest(@deployment_ids::UUID[]),
-	unnest(@environment_ids::UUID[]),
-	unnest(@statuses::TEXT[]),
-	unnest(@messages::TEXT[])
-ON CONFLICT (deployment_id,
+VALUES (
+	@deployment_id,
+	@environment_id,
+	@status,
+	@message)
+ON CONFLICT (
+	deployment_id,
 	environment_id)
 	DO UPDATE SET
 		status = EXCLUDED.status,

@@ -53,19 +53,8 @@ func NewDBDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Me
 }
 
 func (w *DBDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision) error {
-	var (
-		instrIDs       []uuid.UUID
-		instrEnvIDs    []uuid.UUID
-		instrFeatures  []string
-		instrVersions  []string
-		instrHashes    []string
-		instrValues    [][]byte
-		instrDepIDs    []uuid.UUID
-		statusDepIDs   []uuid.UUID
-		statusEnvIDs   []uuid.UUID
-		statuses       []string
-		statusMessages []string
-	)
+	var instructions []reconcilersql.CreateDeployInstructionParams
+	var statuses []reconcilersql.UpsertDeploymentStatusParams
 
 	type publishItem struct {
 		topicID     string
@@ -85,18 +74,22 @@ func (w *DBDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision)
 				return fmt.Errorf("marshal values for %s: %w", res.Feature.Name, err)
 			}
 
-			instrIDs = append(instrIDs, id)
-			instrEnvIDs = append(instrEnvIDs, res.EnvironmentID)
-			instrFeatures = append(instrFeatures, res.Feature.Name)
-			instrVersions = append(instrVersions, res.Feature.Version)
-			instrHashes = append(instrHashes, res.Hash)
-			instrValues = append(instrValues, vals)
-			instrDepIDs = append(instrDepIDs, res.DeploymentID)
+			instructions = append(instructions, reconcilersql.CreateDeployInstructionParams{
+				ID:             id,
+				EnvironmentID:  res.EnvironmentID,
+				FeatureName:    res.Feature.Name,
+				FeatureVersion: res.Feature.Version,
+				Hash:           res.Hash,
+				Vals:           vals,
+				DeploymentID:   &res.DeploymentID,
+			})
 
-			statusDepIDs = append(statusDepIDs, res.DeploymentID)
-			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
-			statuses = append(statuses, model.RolloutStatusCreated.String())
-			statusMessages = append(statusMessages, res.Message)
+			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
+				DeploymentID:  res.DeploymentID,
+				EnvironmentID: res.EnvironmentID,
+				Status:        model.RolloutStatusCreated.String(),
+				Message:       res.Message,
+			})
 
 			toPublish = append(toPublish, publishItem{
 				topicID: naisdTopicID(res.TenantName, res.EnvironmentName),
@@ -114,57 +107,58 @@ func (w *DBDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision)
 				featureName: res.Feature.Name,
 			})
 
-		case ActionSkipInProgress:
-			statusDepIDs = append(statusDepIDs, res.DeploymentID)
-			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
-			statuses = append(statuses, res.Status)
-			statusMessages = append(statusMessages, res.Message)
-
-		case ActionSkipUnchanged:
-			statusDepIDs = append(statusDepIDs, res.DeploymentID)
-			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
-			statuses = append(statuses, res.Status)
-			statusMessages = append(statusMessages, res.Message)
+		case ActionSkipInProgress, ActionSkipUnchanged:
+			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
+				DeploymentID:  res.DeploymentID,
+				EnvironmentID: res.EnvironmentID,
+				Status:        res.Status,
+				Message:       res.Message,
+			})
 
 		case ActionFailMissingDeps, ActionFailMissingConfig, ActionFailRender:
-			statusDepIDs = append(statusDepIDs, res.DeploymentID)
-			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
-			statuses = append(statuses, model.RolloutStatusFailed.String())
-			statusMessages = append(statusMessages, res.Message)
+			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
+				DeploymentID:  res.DeploymentID,
+				EnvironmentID: res.EnvironmentID,
+				Status:        model.RolloutStatusFailed.String(),
+				Message:       res.Message,
+			})
 
 		case ActionSkipUnhealthy:
-			statusDepIDs = append(statusDepIDs, res.DeploymentID)
-			statusEnvIDs = append(statusEnvIDs, res.EnvironmentID)
-			statuses = append(statuses, model.RolloutStatusPending.String())
-			statusMessages = append(statusMessages, res.Message)
+			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
+				DeploymentID:  res.DeploymentID,
+				EnvironmentID: res.EnvironmentID,
+				Status:        model.RolloutStatusPending.String(),
+				Message:       res.Message,
+			})
 
 		case ActionSkipDisabled:
 			// No status update for disabled features.
 		}
 	}
 
-	if len(instrIDs) > 0 {
-		if err := w.querier.BulkCreateDeployInstructions(ctx, reconcilersql.BulkCreateDeployInstructionsParams{
-			Ids:             instrIDs,
-			EnvironmentIds:  instrEnvIDs,
-			FeatureNames:    instrFeatures,
-			FeatureVersions: instrVersions,
-			Hashes:          instrHashes,
-			Vals:            instrValues,
-			DeploymentIds:   instrDepIDs,
-		}); err != nil {
-			return fmt.Errorf("bulk create instructions: %w", err)
+	if len(instructions) > 0 {
+		br := w.querier.CreateDeployInstruction(ctx, instructions)
+		var batchErr error
+		br.Exec(func(i int, err error) {
+			if err != nil {
+				batchErr = fmt.Errorf("create instruction %d (%s): %w", i, instructions[i].FeatureName, err)
+			}
+		})
+		if batchErr != nil {
+			return batchErr
 		}
 	}
 
-	if len(statusDepIDs) > 0 {
-		if err := w.querier.BulkUpsertDeploymentStatuses(ctx, reconcilersql.BulkUpsertDeploymentStatusesParams{
-			DeploymentIds:  statusDepIDs,
-			EnvironmentIds: statusEnvIDs,
-			Statuses:       statuses,
-			Messages:       statusMessages,
-		}); err != nil {
-			return fmt.Errorf("bulk upsert statuses: %w", err)
+	if len(statuses) > 0 {
+		br := w.querier.UpsertDeploymentStatus(ctx, statuses)
+		var batchErr error
+		br.Exec(func(i int, err error) {
+			if err != nil {
+				batchErr = fmt.Errorf("upsert status %d: %w", i, err)
+			}
+		})
+		if batchErr != nil {
+			return batchErr
 		}
 	}
 
