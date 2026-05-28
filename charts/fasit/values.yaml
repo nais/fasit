@@ -32,8 +32,7 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext:
-  {}
+podSecurityContext: {}
   # fsGroup: 2000
 
 securityContext:
@@ -46,8 +45,8 @@ securityContext:
 
 resources:
   requests:
-    cpu: "8"
-    memory: 2Gi
+    cpu: "2"
+    memory: 128Mi
 
 envProjectId: "nais-io"
 
