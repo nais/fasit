@@ -88,6 +88,16 @@ func (q *Queries) BulkUpsertDeploymentStatuses(ctx context.Context, arg BulkUpse
 	return err
 }
 
+const deleteDeployInstruction = `-- name: DeleteDeployInstruction :exec
+DELETE FROM deploy_instructions
+WHERE id = $1
+`
+
+func (q *Queries) DeleteDeployInstruction(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteDeployInstruction, id)
+	return err
+}
+
 const listAllEnvConfigs = `-- name: ListAllEnvConfigs :many
 SELECT
 	id,

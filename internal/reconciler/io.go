@@ -172,6 +172,11 @@ func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) err
 		pub := w.publisher(item.topicID)
 		if err := pub.Publish(ctx, item.instruction); err != nil {
 			w.log.WithError(err).WithField("feature", item.featureName).WithField("env", item.envName).Error("publish deploy instruction")
+			// Delete the instruction so the next reconcile cycle can retry
+			// instead of seeing it as in-progress forever.
+			if delErr := w.querier.DeleteDeployInstruction(ctx, item.instruction.ID); delErr != nil {
+				w.log.WithError(delErr).WithField("id", item.instruction.ID).Error("delete failed instruction")
+			}
 			continue
 		}
 		w.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(

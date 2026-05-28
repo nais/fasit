@@ -163,3 +163,7 @@ ON CONFLICT (deployment_id,
 		status = EXCLUDED.status,
 		message = EXCLUDED.message;
 
+-- name: DeleteDeployInstruction :exec
+DELETE FROM deploy_instructions
+WHERE id = @id;
+
