@@ -71,7 +71,7 @@ func StreamHandler() http.HandlerFunc {
 		}
 
 		b, _ := json.Marshal(summary)
-		_, _ = w.Write(sseEvent("summary", b))
+		_, _ = w.Write(sseEvent("summary", b)) // #nosec G705 -- JSON-encoded internal data, not user input
 		flusher.Flush()
 	}
 }
