@@ -562,6 +562,63 @@ func (q *Queries) ListDeploymentsForFeatureInEnvironment(ctx context.Context, ar
 	return items, nil
 }
 
+const listRecentDeployments = `-- name: ListRecentDeployments :many
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created DESC
+	LIMIT 50
+`
+
+type ListRecentDeploymentsRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) ListRecentDeployments(ctx context.Context) ([]ListRecentDeploymentsRow, error) {
+	rows, err := q.db.Query(ctx, listRecentDeployments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRecentDeploymentsRow{}
+	for rows.Next() {
+		var i ListRecentDeploymentsRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setDeploymentStatus = `-- name: SetDeploymentStatus :exec
 INSERT INTO deployment_statuses(
 	deployment_id,

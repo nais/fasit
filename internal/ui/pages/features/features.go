@@ -47,7 +47,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		deps, _ := deployment.List(r.Context())
+		deps, _ := deployment.ListRecent(r.Context())
 		audits, _ := audit.ListRecent(r.Context(), 200)
 		deploymentActors := deploymentActorsByID(audits)
 
