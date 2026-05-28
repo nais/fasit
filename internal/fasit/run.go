@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -32,11 +33,14 @@ import (
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
-
-	// Automatically set GOMAXPROCS to number of available CPUs. Might improve
-	// performance in a containerized environment.
-	_ "go.uber.org/automaxprocs"
 )
+
+func init() {
+	const minProcs = 4
+	if runtime.GOMAXPROCS(0) < minProcs {
+		runtime.GOMAXPROCS(minProcs)
+	}
+}
 
 func Run(ctx context.Context) error {
 	if err := loadEnvFile(); err != nil {

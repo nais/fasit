@@ -43,7 +43,6 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.65.0
 	go.opentelemetry.io/otel/metric v1.43.0
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
-	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.55.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/api v0.275.0
