@@ -18,11 +18,11 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func (r *Reconciler) renderAll(snap *snapshot) []Result {
+func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 	var (
 		mu      sync.Mutex
 		wg      sync.WaitGroup
-		results []Result
+		results []DeployDecision
 	)
 
 	for _, env := range snap.environments {
@@ -30,12 +30,12 @@ func (r *Reconciler) renderAll(snap *snapshot) []Result {
 		healthy := ok && time.Since(reportedAt) <= 3*time.Minute
 
 		matched := matchDeployments(snap.deployments, env)
-		winners := mostSpecificPerFeature(matched, env)
+		winners := mostSpecificPerFeature(matched)
 
 		for _, dep := range winners {
 			if !healthy {
 				mu.Lock()
-				results = append(results, Result{
+				results = append(results, DeployDecision{
 					EnvironmentID:   env.ID,
 					EnvironmentName: env.Name,
 					TenantName:      env.TenantName,
@@ -50,7 +50,7 @@ func (r *Reconciler) renderAll(snap *snapshot) []Result {
 
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
 				mu.Lock()
-				results = append(results, Result{
+				results = append(results, DeployDecision{
 					EnvironmentID:   env.ID,
 					EnvironmentName: env.Name,
 					TenantName:      env.TenantName,
@@ -66,7 +66,7 @@ func (r *Reconciler) renderAll(snap *snapshot) []Result {
 			wg.Add(1)
 			go func(env environment, dep *reconcileDeployment) {
 				defer wg.Done()
-				res := r.renderOne(snap, env, dep)
+				res := r.computeAction(snap, env, dep)
 				mu.Lock()
 				results = append(results, res)
 				mu.Unlock()
@@ -78,8 +78,8 @@ func (r *Reconciler) renderAll(snap *snapshot) []Result {
 	return results
 }
 
-func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDeployment) Result {
-	base := Result{
+func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileDeployment) DeployDecision {
+	base := DeployDecision{
 		EnvironmentID:   env.ID,
 		EnvironmentName: env.Name,
 		TenantName:      env.TenantName,
@@ -149,7 +149,7 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 
 	// Check against latest instruction.
 	if instr, ok := snap.latestInstr[env.ID][dep.Feature.Name]; ok {
-		if instr.Status == model.RolloutStatusSent.String() || instr.Status == model.RolloutStatusPending.String() {
+		if instr.Status == model.RolloutStatusPending.String() {
 			base.Action = ActionSkipInProgress
 			base.Status = instr.Status
 			base.Message = "deployment is already in progress"
@@ -180,7 +180,7 @@ func matchDeployments(all []*reconcileDeployment, env environment) []*reconcileD
 	return matched
 }
 
-func mostSpecificPerFeature(deps []*reconcileDeployment, env environment) []*reconcileDeployment {
+func mostSpecificPerFeature(deps []*reconcileDeployment) []*reconcileDeployment {
 	winners := map[string]*reconcileDeployment{}
 	for _, dep := range deps {
 		existing, ok := winners[dep.Feature.Name]

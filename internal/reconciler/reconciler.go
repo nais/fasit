@@ -18,11 +18,11 @@ type Reconciler struct {
 	reconcileLoopTime metric.Int64Histogram
 }
 
-// ReconcileResult holds the results and phase durations of a reconcile run.
-type ReconcileResult struct {
-	Results   []Result
-	FetchDur  time.Duration
-	RenderDur time.Duration
+// DesiredState holds the results and phase durations of a reconcile run.
+type DesiredState struct {
+	Decisions  []DeployDecision
+	FetchDur   time.Duration
+	ComputeDur time.Duration
 }
 
 func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogger) (*Reconciler, error) {
@@ -40,18 +40,18 @@ func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogg
 }
 
 // Run starts the reconcile loop, writing results via the given writer.
-func (r *Reconciler) Run(ctx context.Context, interval time.Duration, writer ResultWriter) {
+func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher Dispatcher) {
 	for {
 		r.log.Info("reconciling")
-		result, err := r.Reconcile(ctx)
+		result, err := r.ComputeDesiredState(ctx)
 		if err != nil {
 			r.log.WithError(err).Error("reconcile")
 		} else {
 			ioStart := time.Now()
-			if err := writer.WriteResults(ctx, result.Results); err != nil {
-				r.log.WithError(err).Error("write results")
+			if err := dispatcher.Dispatch(ctx, result.Decisions); err != nil {
+				r.log.WithError(err).Error("dispatch")
 			}
-			r.log.WithField("io", time.Since(ioStart)).Info("results written")
+			r.log.WithField("io", time.Since(ioStart)).Info("decisions dispatched")
 		}
 
 		select {
@@ -72,10 +72,10 @@ func (r *Reconciler) TriggerReconcile() {
 	}
 }
 
-// Reconcile fetches the current state and renders deploy decisions for all
+// ComputeDesiredState fetches the current state and computes deploy decisions for all
 // environments. It performs no writes — callers decide what to do with the
 // returned results (write to DB, display in UI, etc.).
-func (r *Reconciler) Reconcile(ctx context.Context) (*ReconcileResult, error) {
+func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, error) {
 	loopStart := time.Now()
 
 	fetchStart := time.Now()
@@ -89,30 +89,30 @@ func (r *Reconciler) Reconcile(ctx context.Context) (*ReconcileResult, error) {
 		WithField("num_deployments", len(snap.deployments)).
 		Info("reconciling tenant environments")
 
-	renderStart := time.Now()
-	results := r.renderAll(snap)
-	renderDur := time.Since(renderStart)
+	computeStart := time.Now()
+	decisions := r.computeActions(snap)
+	computeDur := time.Since(computeStart)
 
 	deployCount := 0
-	for _, res := range results {
-		if res.Action == ActionDeploy {
+	for _, d := range decisions {
+		if d.Action == ActionDeploy {
 			deployCount++
 		}
 	}
-	r.log.WithField("total_results", len(results)).
+	r.log.WithField("total_decisions", len(decisions)).
 		WithField("deploy_count", deployCount).
-		Info("render complete")
+		Info("compute complete")
 
 	totalDur := time.Since(loopStart)
 	r.log.WithField("fetch", fetchDur).
-		WithField("render", renderDur).
+		WithField("compute", computeDur).
 		WithField("total", totalDur).
 		Info("reconcile complete")
 
 	r.reconcileLoopTime.Record(ctx, totalDur.Milliseconds())
-	return &ReconcileResult{
-		Results:   results,
-		FetchDur:  fetchDur,
-		RenderDur: renderDur,
+	return &DesiredState{
+		Decisions:  decisions,
+		FetchDur:   fetchDur,
+		ComputeDur: computeDur,
 	}, nil
 }

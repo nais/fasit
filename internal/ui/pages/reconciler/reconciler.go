@@ -34,7 +34,7 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		start := time.Now()
-		result, err := rec.Reconcile(r.Context())
+		result, err := rec.ComputeDesiredState(r.Context())
 		elapsed := time.Since(start)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("reconcile failed: %v", err), http.StatusInternalServerError)
@@ -44,7 +44,7 @@ func RunHandler(renderPage RenderPage) http.HandlerFunc {
 		renderPage(w, r, layout.Props{
 			Title:       "Reconciler",
 			CurrentPage: components.PageReconciler,
-			Content:     resultsPage(result.Results, elapsed, result.FetchDur, result.RenderDur),
+			Content:     resultsPage(result.Decisions, elapsed, result.FetchDur, result.ComputeDur),
 		})
 	}
 }
@@ -70,9 +70,9 @@ type actionSummary struct {
 	RenderError   int
 }
 
-func resultsPage(results []reconciler.Result, elapsed, fetchDur, renderDur time.Duration) g.Node {
+func resultsPage(results []reconciler.DeployDecision, elapsed, fetchDur, computeDur time.Duration) g.Node {
 	var summary actionSummary
-	byEnv := map[string][]reconciler.Result{}
+	byEnv := map[string][]reconciler.DeployDecision{}
 
 	for _, r := range results {
 		key := r.TenantName + "/" + r.EnvironmentName
@@ -106,7 +106,7 @@ func resultsPage(results []reconciler.Result, elapsed, fetchDur, renderDur time.
 
 	return h.Div(h.Class("content"),
 		h.H1(g.Text("Reconciler results")),
-		summarySection(summary, len(results), elapsed, fetchDur, renderDur),
+		summarySection(summary, len(results), elapsed, fetchDur, computeDur),
 		h.Form(h.Method("post"), h.Action("/reconciler/run"),
 			h.Button(h.Type("submit"), h.Class("btn"), g.Text("Run again")),
 		),
@@ -130,9 +130,9 @@ func pct(part, total time.Duration) string {
 	return fmt.Sprintf("%.0f%%", float64(part)/float64(total)*100)
 }
 
-func summarySection(s actionSummary, total int, elapsed, fetchDur, renderDur time.Duration) g.Node {
+func summarySection(s actionSummary, total int, elapsed, fetchDur, computeDur time.Duration) g.Node {
 	return h.Div(h.Class("reconciler-summary"),
-		timingTable(elapsed, fetchDur, renderDur),
+		timingTable(elapsed, fetchDur, computeDur),
 		h.Table(h.Class("summary-table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Action")), h.Th(g.Text("Count")),
@@ -160,7 +160,7 @@ func summaryRow(label string, count int, class string) g.Node {
 	)
 }
 
-func timingTable(total, fetch, render time.Duration) g.Node {
+func timingTable(total, fetch, compute time.Duration) g.Node {
 	return h.Table(h.Class("timing-table"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Phase")),
@@ -169,7 +169,7 @@ func timingTable(total, fetch, render time.Duration) g.Node {
 		)),
 		h.TBody(
 			h.Tr(h.Td(g.Text("Fetch")), h.Td(g.Text(fmtDur(fetch))), h.Td(g.Text(pct(fetch, total)))),
-			h.Tr(h.Td(g.Text("Render")), h.Td(g.Text(fmtDur(render))), h.Td(g.Text(pct(render, total)))),
+			h.Tr(h.Td(g.Text("Compute")), h.Td(g.Text(fmtDur(compute))), h.Td(g.Text(pct(compute, total)))),
 			h.Tr(h.Class("timing-total"),
 				h.Td(g.Text("Total")),
 				h.Td(g.Text(fmtDur(total))),
@@ -179,11 +179,11 @@ func timingTable(total, fetch, render time.Duration) g.Node {
 	)
 }
 
-func actionableResults(byEnv map[string][]reconciler.Result, envKeys []string) g.Node {
+func actionableResults(byEnv map[string][]reconciler.DeployDecision, envKeys []string) g.Node {
 	var sections []g.Node
 	for _, key := range envKeys {
 		results := byEnv[key]
-		var actionable []reconciler.Result
+		var actionable []reconciler.DeployDecision
 		for _, r := range results {
 			if r.Action == reconciler.ActionDeploy || r.Action.IsFailure() {
 				actionable = append(actionable, r)
@@ -203,7 +203,7 @@ func actionableResults(byEnv map[string][]reconciler.Result, envKeys []string) g
 	return h.Div(h.Class("reconciler-details"), g.Group(sections))
 }
 
-func envSection(envKey string, results []reconciler.Result, total int) g.Node {
+func envSection(envKey string, results []reconciler.DeployDecision, total int) g.Node {
 	return h.Details(
 		h.Class("reconciler-env"),
 		h.Summary(g.Textf("%s — %d actionable / %d total", envKey, len(results), total)),
@@ -214,14 +214,14 @@ func envSection(envKey string, results []reconciler.Result, total int) g.Node {
 				h.Th(g.Text("Action")),
 				h.Th(g.Text("Message")),
 			)),
-			h.TBody(g.Map(results, func(r reconciler.Result) g.Node {
+			h.TBody(g.Map(results, func(r reconciler.DeployDecision) g.Node {
 				return resultRow(r)
 			})...),
 		),
 	)
 }
 
-func resultRow(r reconciler.Result) g.Node {
+func resultRow(r reconciler.DeployDecision) g.Node {
 	class := "action-skip"
 	switch {
 	case r.Action == reconciler.ActionDeploy:

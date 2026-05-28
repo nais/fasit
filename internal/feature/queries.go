@@ -161,7 +161,7 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 	}, nil
 }
 
-// renderHelmValues renders the helm config map from pre-fetched data.
+// RenderHelmValues renders the helm config map from pre-fetched data.
 // When validate is true, missing required fields cause an error.
 func RenderHelmValues(data *HelmRenderData, f *model.Feature, funcs template.FuncMap, validate bool) (map[string]any, error) {
 	mp := data.ConfigMap
