@@ -13,8 +13,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
-	"github.com/nais/fasit/internal/ui/database"
-	"github.com/nais/fasit/internal/ui/view"
+	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -522,7 +521,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 	}
 	deployments = latestDeploymentPerTarget(deployments)
 
-	tenants, err := database.ListTenants(ctx)
+	tenants, err := uidata.ListTenants(ctx)
 	if err != nil {
 		return []DeploymentEnvStatus{}
 	}
