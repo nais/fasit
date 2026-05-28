@@ -42,6 +42,7 @@ type ViewPrefs struct {
 	Group          string // "tenant", "deployment", "version"
 	ShowVersion    bool
 	ShowLastDeploy bool
+	ShowRowActions bool
 }
 
 func overviewViewPrefs() ViewPrefs {
@@ -49,6 +50,7 @@ func overviewViewPrefs() ViewPrefs {
 		Group:          "tenant",
 		ShowVersion:    true,
 		ShowLastDeploy: true,
+		ShowRowActions: true,
 	}
 }
 
@@ -57,6 +59,7 @@ func deploymentSpecsViewPrefs() ViewPrefs {
 		Group:          "deployment",
 		ShowVersion:    false,
 		ShowLastDeploy: true,
+		ShowRowActions: true,
 	}
 }
 
@@ -108,7 +111,7 @@ func overviewTable(envs []DeploymentEnvStatus, featureName string) g.Node {
 		h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")),
 	}
 	rows := g.Map(envs, func(env DeploymentEnvStatus) g.Node {
-		return envCardRow(env, featureName, prefs, true, true, true)
+		return envCardRow(env, featureName, prefs, true, true, true, true)
 	})
 	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-overview"),
 		h.THead(h.Tr(g.Group(thNodes))),
@@ -122,7 +125,7 @@ func overviewTable(envs []DeploymentEnvStatus, featureName string) g.Node {
 }
 
 func overviewCardGrid(envs []DeploymentEnvStatus, featureName, chart string) g.Node {
-	prefs := ViewPrefs{Group: "tenant", ShowVersion: false, ShowLastDeploy: false}
+	prefs := ViewPrefs{Group: "tenant", ShowVersion: false, ShowLastDeploy: false, ShowRowActions: false}
 	cards := groupByTenantCards(envs)
 	return h.Div(h.Class("feature-overview-grid"), h.ID("overview-grid"),
 		cardGrid(cards, featureName, chart, prefs),
@@ -315,10 +318,12 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	if prefs.ShowLastDeploy {
 		thNodes = append(thNodes, h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Last successful deploy")))
 	}
-	thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
+	if prefs.ShowRowActions {
+		thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
+	}
 
 	rows := g.Map(c.Environments, func(env DeploymentEnvStatus) g.Node {
-		return envCardRow(env, featureName, prefs, showTenant, showVersion, false)
+		return envCardRow(env, featureName, prefs, showTenant, showVersion, false, prefs.ShowRowActions)
 	})
 
 	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-card"),
@@ -332,7 +337,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	)
 }
 
-func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion, showTenantAvatar bool) g.Node {
+func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion, showTenantAvatar, showActions bool) g.Node {
 	baseHref := "/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.Name
 	envLink := h.A(h.Href(baseHref), g.Text(env.Name))
 	logsHref := baseHref + "/logs"
@@ -373,16 +378,17 @@ func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, sh
 		cells = append(cells, lastDeployedCell(env.LastDeployed, ""))
 	}
 
-	// Kebab menu for row actions
-	kebabID := "row-kebab-" + env.TenantSlug + "-" + env.Name
-	cells = append(cells, h.Td(h.Class("action"),
-		h.Div(h.Class("kebab-wrap"),
-			kebabButton(kebabID),
-			h.Div(h.Class("kebab-menu"), h.ID(kebabID),
-				h.A(h.Href(logsHref), h.Class("kebab-item"), g.Text("View logs")),
+	if showActions {
+		kebabID := "row-kebab-" + env.TenantSlug + "-" + env.Name
+		cells = append(cells, h.Td(h.Class("action"),
+			h.Div(h.Class("kebab-wrap"),
+				kebabButton(kebabID),
+				h.Div(h.Class("kebab-menu"), h.ID(kebabID),
+					h.A(h.Href(logsHref), h.Class("kebab-item"), g.Text("View logs")),
+				),
 			),
-		),
-	))
+		))
+	}
 
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
 }
