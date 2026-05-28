@@ -7,8 +7,7 @@ import (
 )
 
 type Querier interface {
-	BulkCreateDeployInstructions(ctx context.Context, arg BulkCreateDeployInstructionsParams) error
-	BulkUpsertDeploymentStatuses(ctx context.Context, arg BulkUpsertDeploymentStatusesParams) error
+	CreateDeployInstruction(ctx context.Context, arg []CreateDeployInstructionParams) *CreateDeployInstructionBatchResults
 	ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error)
 	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
@@ -19,6 +18,7 @@ type Querier interface {
 	ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error)
 	ListLatestDeployments(ctx context.Context) ([]ListLatestDeploymentsRow, error)
 	SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error
+	UpsertDeploymentStatus(ctx context.Context, arg []UpsertDeploymentStatusParams) *UpsertDeploymentStatusBatchResults
 }
 
 var _ Querier = (*Queries)(nil)
