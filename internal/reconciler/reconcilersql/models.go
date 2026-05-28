@@ -7,13 +7,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type EnvironmentValue struct {
-	EnvironmentID uuid.UUID
-	Key           string
-	Value         []byte
-	Secret        bool
-}
-
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
 	ReportedAt    pgtype.Timestamptz

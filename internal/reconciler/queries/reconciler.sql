@@ -1,16 +1,15 @@
--- name: ListReconcilableEnvironments :many
+-- name: ListAllTenantEnvironments :many
 SELECT
 	e.id,
 	e.name,
 	e.kind,
 	e.labels,
+	e.reconcile,
 	t.id AS tenant_id,
 	t.name AS tenant_name
 FROM
 	environments e
 	JOIN tenants t ON t.id = e.tenant_id
-WHERE
-	e.reconcile = TRUE
 ORDER BY
 	t.name,
 	e.name;
@@ -95,8 +94,7 @@ ORDER BY
 SELECT
 	ev.environment_id,
 	ev.key,
-	ev.value,
-	ev.secret
+	ev.value
 FROM
 	environment_values ev
 ORDER BY
