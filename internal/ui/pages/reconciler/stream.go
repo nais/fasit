@@ -49,7 +49,6 @@ func StreamHandler() http.HandlerFunc {
 			_, _ = w.Write(sseEvent("decision", b))
 			flusher.Flush()
 		})
-
 		if err != nil {
 			if errors.Is(err, reconciler.ErrReconcileInProgress) {
 				_, _ = w.Write(sseEvent("error", []byte(`{"error":"reconcile already in progress"}`)))
