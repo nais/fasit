@@ -13,6 +13,7 @@ type Querier interface {
 	ListForFeature(ctx context.Context, arg ListForFeatureParams) ([]ListForFeatureRow, error)
 	ListForFeatureInEnvironment(ctx context.Context, arg ListForFeatureInEnvironmentParams) ([]ListForFeatureInEnvironmentRow, error)
 	ListRecent(ctx context.Context, pageSize int32) ([]ListRecentRow, error)
+	SearchRecent(ctx context.Context, arg SearchRecentParams) ([]SearchRecentRow, error)
 }
 
 var _ Querier = (*Queries)(nil)
