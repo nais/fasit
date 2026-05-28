@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/nais/fasit/internal/feature/featureutil"
@@ -120,16 +121,23 @@ func renderTemplate(values *ComputedValues, tpl string, funcs template.FuncMap) 
 	return v, nil
 }
 
+// templateCache caches parsed templates keyed by (template string, func map pointer).
+// The same feature version always produces the same template strings, so this
+// avoids re-parsing+compiling on every render call.
+var templateCache sync.Map // map[string]*template.Template
+
 func renderString(values *ComputedValues, tpl string, funcs template.FuncMap) (string, error) {
-	t := template.New("tpl")
-	t.Funcs(funcs)
-	t, err := t.Parse(tpl)
-	if err != nil {
-		return "", err
+	t, ok := templateCache.Load(tpl)
+	if !ok {
+		parsed, err := template.New("tpl").Funcs(funcs).Parse(tpl)
+		if err != nil {
+			return "", err
+		}
+		t, _ = templateCache.LoadOrStore(tpl, parsed)
 	}
 
 	buf := &bytes.Buffer{}
-	if err := t.Execute(buf, values); err != nil {
+	if err := t.(*template.Template).Execute(buf, values); err != nil {
 		return "", err
 	}
 
