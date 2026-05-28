@@ -10,6 +10,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
+	"golang.org/x/sync/errgroup"
 )
 
 type snapshot struct {
@@ -27,6 +28,7 @@ type snapshot struct {
 }
 
 func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
+	// Environments must be fetched first because buildEnvValues needs the rows.
 	allEnvRows, err := r.querier.ListAllTenantEnvironments(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list environments: %w", err)
@@ -50,95 +52,127 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 		}
 	}
 
-	healthRows, err := r.querier.ListHealthStatuses(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list health: %w", err)
-	}
-	healthByEnv := make(map[uuid.UUID]time.Time, len(healthRows))
-	for _, h := range healthRows {
-		healthByEnv[h.EnvironmentID] = h.ReportedAt.Time
-	}
-
-	depRows, err := r.querier.ListLatestDeployments(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list deployments: %w", err)
-	}
-	deployments := make([]*reconcileDeployment, 0, len(depRows))
-	for _, row := range depRows {
-		dep, err := deploymentFromRow(row)
-		if err != nil {
-			return nil, err
-		}
-		deployments = append(deployments, dep)
-	}
-
-	disabledRows, err := r.querier.ListDisabledFeatures(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list disabled: %w", err)
-	}
-	disabledByEnv := make(map[uuid.UUID]map[string]bool)
-	for _, d := range disabledRows {
-		if disabledByEnv[d.EnvironmentID] == nil {
-			disabledByEnv[d.EnvironmentID] = make(map[string]bool)
-		}
-		disabledByEnv[d.EnvironmentID][d.Feature] = true
-	}
-
-	globalConfig, err := r.buildGlobalConfigMap(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	envConfig, err := r.buildEnvConfigMap(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	envValues, err := r.buildEnvValues(ctx, allEnvRows)
-	if err != nil {
-		return nil, err
-	}
-
-	instrRows, err := r.querier.ListLatestDeployInstructions(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list instructions: %w", err)
-	}
-	latestInstr := make(map[uuid.UUID]map[string]latestInstruction)
-	for _, row := range instrRows {
-		if latestInstr[row.EnvironmentID] == nil {
-			latestInstr[row.EnvironmentID] = make(map[string]latestInstruction)
-		}
-		latestInstr[row.EnvironmentID][row.FeatureName] = latestInstruction{
-			Hash:   row.Hash,
-			Status: row.Status,
-		}
-	}
-
-	deployedRows, err := r.querier.ListDeployedFeatures(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list deployed: %w", err)
-	}
-	deployedFeats := make(map[uuid.UUID]map[string]bool)
-	for _, row := range deployedRows {
-		if deployedFeats[row.EnvironmentID] == nil {
-			deployedFeats[row.EnvironmentID] = make(map[string]bool)
-		}
-		deployedFeats[row.EnvironmentID][row.FeatureName] = true
-	}
-
-	return &snapshot{
+	snap := &snapshot{
 		environments:   envs,
-		deployments:    deployments,
-		healthByEnv:    healthByEnv,
-		disabledByEnv:  disabledByEnv,
-		globalConfig:   globalConfig,
-		envConfig:      envConfig,
-		envValues:      envValues,
 		envKinds:       envKinds,
 		envTenantNames: envTenantNames,
-		latestInstr:    latestInstr,
-		deployedFeats:  deployedFeats,
-	}, nil
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		rows, err := r.querier.ListHealthStatuses(gctx)
+		if err != nil {
+			return fmt.Errorf("list health: %w", err)
+		}
+		m := make(map[uuid.UUID]time.Time, len(rows))
+		for _, h := range rows {
+			m[h.EnvironmentID] = h.ReportedAt.Time
+		}
+		snap.healthByEnv = m
+		return nil
+	})
+
+	g.Go(func() error {
+		rows, err := r.querier.ListLatestDeployments(gctx)
+		if err != nil {
+			return fmt.Errorf("list deployments: %w", err)
+		}
+		deps := make([]*reconcileDeployment, 0, len(rows))
+		for _, row := range rows {
+			dep, err := deploymentFromRow(row)
+			if err != nil {
+				return err
+			}
+			deps = append(deps, dep)
+		}
+		snap.deployments = deps
+		return nil
+	})
+
+	g.Go(func() error {
+		rows, err := r.querier.ListDisabledFeatures(gctx)
+		if err != nil {
+			return fmt.Errorf("list disabled: %w", err)
+		}
+		m := make(map[uuid.UUID]map[string]bool)
+		for _, d := range rows {
+			if m[d.EnvironmentID] == nil {
+				m[d.EnvironmentID] = make(map[string]bool)
+			}
+			m[d.EnvironmentID][d.Feature] = true
+		}
+		snap.disabledByEnv = m
+		return nil
+	})
+
+	g.Go(func() error {
+		m, err := r.buildGlobalConfigMap(gctx)
+		if err != nil {
+			return err
+		}
+		snap.globalConfig = m
+		return nil
+	})
+
+	g.Go(func() error {
+		m, err := r.buildEnvConfigMap(gctx)
+		if err != nil {
+			return err
+		}
+		snap.envConfig = m
+		return nil
+	})
+
+	g.Go(func() error {
+		m, err := r.buildEnvValues(gctx, allEnvRows)
+		if err != nil {
+			return err
+		}
+		snap.envValues = m
+		return nil
+	})
+
+	g.Go(func() error {
+		rows, err := r.querier.ListLatestDeployInstructions(gctx)
+		if err != nil {
+			return fmt.Errorf("list instructions: %w", err)
+		}
+		m := make(map[uuid.UUID]map[string]latestInstruction)
+		for _, row := range rows {
+			if m[row.EnvironmentID] == nil {
+				m[row.EnvironmentID] = make(map[string]latestInstruction)
+			}
+			m[row.EnvironmentID][row.FeatureName] = latestInstruction{
+				Hash:   row.Hash,
+				Status: row.Status,
+			}
+		}
+		snap.latestInstr = m
+		return nil
+	})
+
+	g.Go(func() error {
+		rows, err := r.querier.ListDeployedFeatures(gctx)
+		if err != nil {
+			return fmt.Errorf("list deployed: %w", err)
+		}
+		m := make(map[uuid.UUID]map[string]bool)
+		for _, row := range rows {
+			if m[row.EnvironmentID] == nil {
+				m[row.EnvironmentID] = make(map[string]bool)
+			}
+			m[row.EnvironmentID][row.FeatureName] = true
+		}
+		snap.deployedFeats = m
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return snap, nil
 }
 
 func (r *Reconciler) buildGlobalConfigMap(ctx context.Context) (map[string][]featurepkg.MergedConfigRow, error) {
