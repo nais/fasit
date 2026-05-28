@@ -16,6 +16,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/featureworkspace"
 	"github.com/nais/fasit/internal/ui/view"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -30,7 +31,7 @@ type FeaturePage struct {
 	Feature          *FeatureDetail
 	AllFeatures      []view.FeatureNav
 	FeatureContext   bool
-	WorkspaceEnvs    []FeatureWorkspaceEnvironment
+	WorkspaceEnvs    []featureworkspace.Environment
 	HelmValues       string
 	HelmValuesError  string
 	Deployments      []EnvDeploymentItem
@@ -48,13 +49,6 @@ type FeatureDetail struct {
 	Enabled       bool
 	DisableReason string
 	ConfigItems   []FeatureConfigItem
-}
-
-type FeatureWorkspaceEnvironment struct {
-	TenantName      string
-	TenantSlug      string
-	EnvironmentName string
-	Status          string
 }
 
 type EnvDeploymentItem struct {
@@ -240,7 +234,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		ActiveTab:      activeTab,
 	}
 	if featureContext {
-		page.WorkspaceEnvs = loadFeatureWorkspaceEnvironments(ctx, featureName)
+		page.WorkspaceEnvs = featureworkspace.LoadEnvironments(ctx, feat)
 	}
 
 	if !env.Reconcile {
@@ -280,64 +274,6 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	page.AuditEntries = entries
 
 	return page, nil
-}
-
-func loadFeatureWorkspaceEnvironments(ctx context.Context, featureName string) []FeatureWorkspaceEnvironment {
-	feature, err := featurepkg.FeatureByName(ctx, featureName)
-	if err != nil {
-		return nil
-	}
-	tenants, err := envpkg.ListTenants(ctx)
-	if err != nil {
-		return nil
-	}
-
-	envs := []FeatureWorkspaceEnvironment{}
-	for _, tenant := range tenants {
-		tenantEnvs, err := envpkg.List(ctx, tenant.ID)
-		if err != nil {
-			continue
-		}
-		for _, env := range tenantEnvs {
-			if !featureTargetsKind(feature.EnvironmentKinds, env.Kind) {
-				continue
-			}
-			status := "UNKNOWN"
-			if !env.Reconcile {
-				status = "DISABLED"
-			} else if _, disabled, err := featurepkg.FeatureDisabledAt(ctx, env.ID, featureName); err == nil && disabled {
-				status = "DISABLED"
-			} else if s, _, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && s != "" {
-				status = s
-			}
-			envs = append(envs, FeatureWorkspaceEnvironment{
-				TenantName:      tenant.Name,
-				TenantSlug:      tenant.Name,
-				EnvironmentName: env.Name,
-				Status:          status,
-			})
-		}
-	}
-
-	sort.Slice(envs, func(i, j int) bool {
-		if envs[i].TenantName == envs[j].TenantName {
-			return envs[i].EnvironmentName < envs[j].EnvironmentName
-		}
-		return envs[i].TenantName < envs[j].TenantName
-	})
-	return envs
-}
-
-func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.EnvironmentKind) bool {
-	if len(kinds) == 0 {
-		return true
-	}
-	for _, kind := range kinds {
-		if kind == envKind {
-			return true
-		}
-	}
-	return false
 }
 
 func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid.UUID) ([]FeatureConfigItem, error) {

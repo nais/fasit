@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/featureworkspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
@@ -96,6 +97,34 @@ func findElements(n *html.Node, tag string) []*html.Node {
 		result = append(result, findElements(c, tag)...)
 	}
 	return result
+}
+
+func TestFeatureContextSidebarUsesWorkspaceEnvironmentList(t *testing.T) {
+	page := &FeaturePage{
+		FeatureContext: true,
+		Feature:        &FeatureDetail{Feature: &model.Feature{Name: "azureator-nav"}},
+		TenantSlug:     "nav",
+		Environment:    &Environment{Environment: &model.Environment{Name: "dev-fss"}},
+		WorkspaceEnvs: []featureworkspace.Environment{
+			{TenantName: "ci-nais", TenantSlug: "ci-nais", EnvironmentName: "ci-fss", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev-fss", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "prod", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "prod-fss", Status: "DEPLOYED"},
+		},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, featurePageSidebar(page).Render(&buf))
+
+	html := buf.String()
+	for _, label := range []string{"ci-nais / ci-fss", "nav / dev", "nav / dev-fss", "nav / prod", "nav / prod-fss"} {
+		require.Contains(t, html, label)
+	}
+	for _, label := range []string{"atil / dev", "dev-nais / dev", "ssb / prod", "test-nais / sandbox"} {
+		require.NotContains(t, html, label)
+	}
+	assert.Equal(t, 1, strings.Count(html, `class="workspace-env-link active"`))
 }
 
 func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {

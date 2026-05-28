@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/featureworkspace"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
@@ -31,6 +32,7 @@ type DetailPage struct {
 	Features       []view.FeatureNav
 	CurrentFeature *model.Feature
 	DeploymentEnvs []DeploymentEnvStatus
+	WorkspaceEnvs  []featureworkspace.Environment
 	RecentActivity []*audit.Entry
 	ActiveTab      string
 	ConfigItems    []components.ConfigItem
@@ -250,33 +252,33 @@ func featureIndexTable(features []featureIndexRow) g.Node {
 		rows = append(rows, h.Tr(
 			h.Td(h.A(h.Href("/features/"+feature.Name), g.Text(feature.Name))),
 			h.Td(h.Class("text-muted"), g.Text(feature.Description)),
-			h.Td(g.If(feature.Source != "", h.A(h.Href(feature.Source), h.Target("_blank"), h.Rel("noopener noreferrer"), g.Text("GitHub ↗")))),
+			h.Td(sourceIconLink(feature.Source)),
 		))
 	}
 	return h.Table(h.ID("feature-index-table"), h.Class("table table-compact sortable"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Feature")),
-			h.Th(g.Text("Description")),
-			h.Th(g.Text("Source")),
+			h.Th(g.Attr("data-no-sort", ""), g.Text("Description")),
+			h.Th(g.Attr("data-no-sort", ""), g.Text("Source")),
 		)),
 		h.TBody(g.Group(rows)),
 	)
 }
 
-func featureIndexStatusKey(env DeploymentEnvStatus) string {
-	if !env.Enabled || env.EnvReconcileDisabled || strings.EqualFold(env.StatusText, "DISABLED") {
-		return "disabled"
+func sourceIconLink(source string) g.Node {
+	if source == "" {
+		return g.Text("")
 	}
-	switch strings.ToUpper(env.StatusText) {
-	case "DEPLOYED":
-		return "ok"
-	case "FAILED":
-		return "failed"
-	case "PENDING", "CREATED":
-		return "pending"
-	default:
-		return "unknown"
-	}
+	return h.A(
+		h.Class("feature-source-link"),
+		h.Href(source),
+		h.Target("_blank"),
+		h.Rel("noopener noreferrer"),
+		g.Attr("title", "Open source"),
+		g.Attr("aria-label", "Open source"),
+		g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`),
+		g.Text("GitHub ↗"),
+	)
 }
 
 type depRow struct {
@@ -514,7 +516,7 @@ func featureWorkspaceSidebar(data *DetailPage) g.Node {
 				workspaceNavItem("/features/"+featureName+"/config-explorer", "Config explorer", data.ActiveTab == "config-explorer"),
 			),
 			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
-			h.Ul(g.Group(g.Map(featureWorkspaceEnvironments(currentDeploymentEnvStatuses(data.DeploymentEnvs)), func(env DeploymentEnvStatus) g.Node {
+			h.Ul(g.Group(g.Map(data.WorkspaceEnvs, func(env featureworkspace.Environment) g.Node {
 				return workspaceEnvironmentItem(featureName, env)
 			}))),
 		),
@@ -529,43 +531,23 @@ func workspaceNavItem(href, label string, active bool) g.Node {
 	return h.Li(h.A(append(attrs, g.Text(label))...))
 }
 
-func workspaceEnvironmentItem(featureName string, env DeploymentEnvStatus) g.Node {
-	return h.Li(h.A(h.Href("/features/"+featureName+"/envs/"+env.TenantSlug+"/"+env.Name),
+func workspaceEnvironmentItem(featureName string, env featureworkspace.Environment) g.Node {
+	return h.Li(h.A(h.Href("/features/"+featureName+"/envs/"+env.TenantSlug+"/"+env.EnvironmentName),
 		h.Class("workspace-env-link"),
-		h.Span(h.Class("workspace-env-dot "+workspaceEnvironmentStatusClass(env)), h.Title(env.StatusText)),
-		h.Span(g.Text(env.TenantName+" / "+env.Name)),
+		h.Span(h.Class("workspace-env-dot "+workspaceEnvironmentStatusClass(env.Status)), h.Title(env.Status)),
+		h.Span(g.Text(env.TenantName+" / "+env.EnvironmentName)),
 	))
 }
 
-func featureWorkspaceEnvironments(envs []DeploymentEnvStatus) []DeploymentEnvStatus {
-	ret := make([]DeploymentEnvStatus, 0, len(envs))
-	seen := map[string]struct{}{}
-	for _, env := range envs {
-		key := env.TenantSlug + "/" + env.Name
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		ret = append(ret, env)
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		if ret[i].TenantName == ret[j].TenantName {
-			return ret[i].Name < ret[j].Name
-		}
-		return ret[i].TenantName < ret[j].TenantName
-	})
-	return ret
-}
-
-func workspaceEnvironmentStatusClass(env DeploymentEnvStatus) string {
-	switch featureIndexStatusKey(env) {
-	case "ok":
+func workspaceEnvironmentStatusClass(status string) string {
+	switch deployment.NormalizeStatus(status) {
+	case "DEPLOYED":
 		return "status-success"
-	case "failed":
+	case "FAILED":
 		return "status-error"
-	case "pending":
+	case "PENDING", "CREATED":
 		return "status-pending"
-	case "disabled":
+	case "DISABLED":
 		return "status-disabled"
 	default:
 		return "text-muted"
@@ -626,6 +608,7 @@ func loadFeatureData(r *http.Request) (*DetailPage, error) {
 		CurrentFeature: feature,
 	}
 	loadDeploymentData(r.Context(), feature, data)
+	data.WorkspaceEnvs = featureworkspace.LoadEnvironments(r.Context(), feature)
 	return data, nil
 }
 

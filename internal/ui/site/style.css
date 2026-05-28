@@ -321,16 +321,17 @@ nav .nav-btn:hover {
 }
 .sidebar .nav ul {
   list-style: none;
-  padding: 0.75rem 0 0;
+  padding: 0.65rem 0 0;
   margin: 0;
 }
 .sidebar .nav a {
   display: block;
-  padding: 0.4rem 1rem;
+  padding: 0.34rem 1rem;
   text-decoration: none;
   color: var(--text-secondary);
   border-left: 2px solid transparent;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
   transition:
     color 0.15s,
     background 0.15s;
@@ -359,10 +360,10 @@ nav .nav-btn:hover {
   overflow-wrap: anywhere;
 }
 .sidebar-section-label {
-  padding: 0.9rem 1rem 0.25rem;
+  padding: 0.8rem 1rem 0.2rem;
   color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -370,6 +371,12 @@ nav .nav-btn:hover {
   display: flex !important;
   align-items: center;
   gap: 0.45rem;
+  font-size: 0.9rem !important;
+  color: var(--text-muted) !important;
+}
+.workspace-env-link:hover,
+.workspace-env-link.active {
+  color: var(--text-heading) !important;
 }
 .workspace-env-dot {
   width: 0.45rem;
@@ -551,6 +558,15 @@ nav .nav-btn:hover {
 }
 .feature-index-header h1 {
   margin: 0;
+}
+.feature-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+}
+.feature-source-link:hover {
+  color: var(--text-heading);
 }
 .feature-index-toolbar {
   margin-bottom: 0.85rem;

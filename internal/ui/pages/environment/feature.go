@@ -19,6 +19,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/featureworkspace"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
@@ -331,7 +332,7 @@ func featurePageSidebar(page *FeaturePage) g.Node {
 				workspaceNavItem("/features/"+page.Feature.Name+"/config-explorer", "Config explorer", false),
 			),
 			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
-			h.Ul(g.Group(g.Map(page.WorkspaceEnvs, func(env FeatureWorkspaceEnvironment) g.Node {
+			h.Ul(g.Group(g.Map(page.WorkspaceEnvs, func(env featureworkspace.Environment) g.Node {
 				return workspaceEnvironmentItem(page.Feature.Name, env, env.TenantSlug == page.TenantSlug && env.EnvironmentName == page.Environment.Name)
 			}))),
 		),
@@ -346,7 +347,7 @@ func workspaceNavItem(href, label string, active bool) g.Node {
 	return h.Li(h.A(append(attrs, g.Text(label))...))
 }
 
-func workspaceEnvironmentItem(featureName string, env FeatureWorkspaceEnvironment, active bool) g.Node {
+func workspaceEnvironmentItem(featureName string, env featureworkspace.Environment, active bool) g.Node {
 	className := "workspace-env-link"
 	if active {
 		className += " active"
