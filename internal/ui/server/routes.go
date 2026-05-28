@@ -29,7 +29,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/favicon.ico", s.Favicon)
 
 	r.Get("/", features.ListHandler(s.renderPage))
-	r.Get("/features.json", features.NamesHandler())
 	r.Get("/environments", tenants.Handler(s.renderPage))
 	r.Get("/tenants/{tenant}/logo", tenants.ServeLogoHandler())
 

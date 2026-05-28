@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/nais/fasit/internal/auth"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -53,7 +54,13 @@ func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, props layout
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	props.UserEmail = auth.GetEmail(r.Context())
 	props.AssetVersion = s.assetVersion
-	err := layout.Page(props).Render(w)
+	names, err := featurepkg.FeatureNames(r.Context())
+	if err != nil {
+		logrus.WithError(err).Error("loading feature names for search")
+	} else {
+		props.FeatureNames = names
+	}
+	err = layout.Page(props).Render(w)
 	if err != nil {
 		logrus.WithError(err).Error("error rendering page")
 	}

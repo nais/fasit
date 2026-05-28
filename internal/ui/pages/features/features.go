@@ -39,18 +39,6 @@ type DetailPage struct {
 	ExplorerData   *configExplorerData
 }
 
-func NamesHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		features, err := featurepkg.FeatureNames(r.Context())
-		if err != nil {
-			http.Error(w, "Failed to load features", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(features)
-	}
-}
-
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		features, err := featurepkg.FeatureNames(r.Context())
