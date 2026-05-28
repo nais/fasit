@@ -40,7 +40,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/deployments", environment.LegacyFeatureRedirectHandler("/deployments"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/audit", environment.AuditRedirectHandler())
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.LegacyFeatureRedirectHandler("/playground"))
-	r.Post("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.PlaygroundSubmitHandler(s.renderPage))
+	r.Post("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.LegacyFeatureRedirectHandler("/playground"))
 
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/config/edit/{id}", environment.LegacyFeatureRedirectHandler("/config/edit/{id}"))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/edit/{id}", environment.UpdateConfigHandler())

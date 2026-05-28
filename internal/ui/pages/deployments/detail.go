@@ -220,7 +220,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 					return h.Tr(
 						h.Td(g.Text(r.TenantName)),
 						h.Td(h.A(h.Href("/tenants/"+r.TenantName+"/envs/"+r.EnvironmentName+"/"+d.Feature.Name), g.Text(r.EnvironmentName))),
-						h.Td(renderStatus(r.State)),
+						h.Td(components.Status(r.State)),
 						h.Td(g.Text(r.Message)),
 						h.Td(timeWithTitle(r.LastModified)),
 						h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+r.EnvironmentID), g.Text("View logs"))),

@@ -29,8 +29,6 @@ type FeaturePage struct {
 	TenantSlug       string
 	Environment      *Environment
 	Feature          *FeatureDetail
-	AllFeatures      []view.FeatureNav
-	FeatureContext   bool
 	WorkspaceEnvs    []featureworkspace.Environment
 	HelmValues       string
 	HelmValuesError  string
@@ -101,23 +99,6 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, error) {
-	features, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	navs := make([]view.FeatureNav, 0, len(features))
-	for _, f := range features {
-		navs = append(navs, view.FeatureNav{
-			Name:    f.Name,
-			Enabled: !f.FeatureDisabled,
-		})
-	}
-
-	return navs, nil
-}
-
 func getEnvironmentMetadata(ctx context.Context, env *model.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
 	addMetadata(&metadata, "ID", env.ID.String())
@@ -174,18 +155,23 @@ func gcpProjectIDFromValues(values []*model.EnvironmentValue) string {
 	return ""
 }
 
-func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string, featureContext bool) (*FeaturePage, error) {
+func featureBreadcrumbs(tenant *model.Tenant, env *model.Environment, featureName string) []breadcrumb.Crumb {
+	envCrumb := breadcrumb.FeatureEnvironment(featureName, tenant.Name, env.Name)
+	envCrumb.Icon = components.TenantAvatar(tenant.Name, components.HasTenantLogo(tenant.Name), "18px")
+	return []breadcrumb.Crumb{
+		breadcrumb.Features(),
+		breadcrumb.Feature(featureName),
+		envCrumb,
+	}
+}
+
+func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
 	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
 	}
 
 	env, err := envpkg.GetByName(ctx, tenant.ID, envName)
-	if err != nil {
-		return nil, err
-	}
-
-	allFeatures, err := featureNavs(ctx, env)
 	if err != nil {
 		return nil, err
 	}
@@ -205,36 +191,16 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		disableReason = audit.LatestDisableReason(ctx, featureName, env.ID)
 	}
 
-	allTenants, _ := envpkg.ListTenants(ctx)
-	tenantEnvs, _ := envpkg.List(ctx, tenant.ID)
-
-	breadcrumbs := []breadcrumb.Crumb{
-		tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
-		breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-		breadcrumb.EnvironmentFeature(tenant.Name, env.Name, featureName),
-	}
-	if featureContext {
-		envCrumb := breadcrumb.FeatureEnvironment(featureName, tenant.Name, env.Name)
-		envCrumb.Icon = components.TenantAvatar(tenant.Name, components.HasTenantLogo(tenant.Name), "18px")
-		breadcrumbs = []breadcrumb.Crumb{
-			breadcrumb.Features(),
-			breadcrumb.Feature(featureName),
-			envCrumb,
-		}
-	}
+	breadcrumbs := featureBreadcrumbs(tenant, env, featureName)
 
 	page := &FeaturePage{
-		Breadcrumbs:    breadcrumbs,
-		Tenant:         tenant,
-		TenantSlug:     tenantSlug,
-		Environment:    &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:        &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
-		AllFeatures:    allFeatures,
-		FeatureContext: featureContext,
-		ActiveTab:      activeTab,
-	}
-	if featureContext {
-		page.WorkspaceEnvs = featureworkspace.LoadEnvironments(ctx, feat)
+		Breadcrumbs:   breadcrumbs,
+		Tenant:        tenant,
+		TenantSlug:    tenantSlug,
+		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
+		WorkspaceEnvs: featureworkspace.LoadEnvironments(ctx, feat),
+		ActiveTab:     activeTab,
 	}
 
 	if !env.Reconcile {

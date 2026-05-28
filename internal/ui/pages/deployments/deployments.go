@@ -187,7 +187,7 @@ func deploymentsTable(rows []Summary) g.Node {
 	return h.Table(
 		h.Class("table sortable"),
 		h.ID("deployments-table"),
-		g.Attr("data-sort-key", "deployments-list"),
+		g.Attr("data-sort-key", "deployments"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Feature")),
 			h.Th(g.Text("Target"), g.Attr("data-no-sort", "")),

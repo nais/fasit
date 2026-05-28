@@ -19,7 +19,6 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
-	"github.com/nais/fasit/internal/ui/featureworkspace"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
@@ -28,26 +27,16 @@ import (
 )
 
 func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
-	return featureTabHandler(renderPage, activeTab, true)
-}
-
-func featureTabHandler(renderPage RenderPage, activeTab string, featureContext bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab, featureContext)
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		title := data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name
-		currentPage := components.PageEnvironments
-		if featureContext {
-			title = data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name
-			currentPage = components.PageFeatures
-		}
 		renderPage(w, r, layout.Props{
-			Title:       title,
-			CurrentPage: currentPage,
+			Title:       data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name,
+			CurrentPage: components.PageFeatures,
 			Content:     featurePageContent(data),
 		})
 	}
@@ -317,61 +306,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 }
 
 func featurePageSidebar(page *FeaturePage) g.Node {
-	if !page.FeatureContext {
-		return components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures)
-	}
-	return h.Aside(h.Class("sidebar feature-workspace-sidebar"),
-		h.Div(h.Class("feature-workspace-header"),
-			h.H4(g.Text(page.Feature.Name)),
-		),
-		h.Div(h.Class("nav"),
-			h.Ul(
-				workspaceNavItem("/features/"+page.Feature.Name, "Overview", false),
-				workspaceNavItem("/features/"+page.Feature.Name+"/deploy-specs", "Deploy specs", false),
-				workspaceNavItem("/features/"+page.Feature.Name+"/config", "Config", false),
-				workspaceNavItem("/features/"+page.Feature.Name+"/config-explorer", "Config explorer", false),
-			),
-			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
-			h.Ul(g.Group(g.Map(page.WorkspaceEnvs, func(env featureworkspace.Environment) g.Node {
-				return workspaceEnvironmentItem(page.Feature.Name, env, env.TenantSlug == page.TenantSlug && env.EnvironmentName == page.Environment.Name)
-			}))),
-		),
-	)
-}
-
-func workspaceNavItem(href, label string, active bool) g.Node {
-	attrs := []g.Node{h.Href(href)}
-	if active {
-		attrs = append(attrs, h.Class("active"))
-	}
-	return h.Li(h.A(append(attrs, g.Text(label))...))
-}
-
-func workspaceEnvironmentItem(featureName string, env featureworkspace.Environment, active bool) g.Node {
-	className := "workspace-env-link"
-	if active {
-		className += " active"
-	}
-	attrs := []g.Node{h.Href("/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.EnvironmentName), h.Class(className)}
-	return h.Li(h.A(append(attrs,
-		h.Span(h.Class("workspace-env-dot "+workspaceEnvironmentStatusClass(env.Status)), h.Title(env.Status)),
-		h.Span(g.Text(env.TenantName+" / "+env.EnvironmentName)),
-	)...))
-}
-
-func workspaceEnvironmentStatusClass(status string) string {
-	switch deployment.NormalizeStatus(status) {
-	case "DEPLOYED":
-		return "status-success"
-	case "FAILED":
-		return "status-error"
-	case "PENDING", "CREATED":
-		return "status-pending"
-	case "DISABLED":
-		return "status-disabled"
-	default:
-		return "text-muted"
-	}
+	return components.FeatureWorkspaceSidebar(page.Feature.Name, "", page.TenantSlug, page.Environment.Name, page.WorkspaceEnvs)
 }
 
 func featureEnvironmentHeader(page *FeaturePage) g.Node {
@@ -382,7 +317,7 @@ func featureEnvironmentHeader(page *FeaturePage) g.Node {
 
 	statusNode := h.Span(h.Class("text-muted"), g.Text("No status"))
 	if page.Status != "" {
-		statusNode = renderStatus(page.Status)
+		statusNode = components.Status(page.Status)
 	}
 
 	statusMeta := []g.Node{h.Span(statusNode)}
@@ -784,7 +719,7 @@ func deploymentsTab(page *FeaturePage) g.Node {
 				return h.Tr(
 					h.Td(h.A(h.Href("/deployments/"+dep.ID), g.Text(dep.ID[:8]))),
 					h.Td(g.Text(dep.Version)),
-					h.Td(renderStatus(dep.Status)),
+					h.Td(components.Status(dep.Status)),
 					h.Td(labelPills(dep.TargetLabels)),
 					h.Td(g.Text(dep.Created)),
 				)
@@ -843,23 +778,6 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 	)
 }
 
-func renderStatus(status string) g.Node {
-	switch strings.ToUpper(status) {
-	case "DEPLOYED":
-		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" Deployed")})
-	case "FAILED":
-		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" Failed")})
-	case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK":
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" Pending")})
-	case "DISABLED":
-		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("○")), g.Text(" Disabled")})
-	case "UNKNOWN":
-		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("?")), g.Text(" Unknown")})
-	default:
-		return g.Text(status)
-	}
-}
-
 func prettyJSON(s string) string {
 	var buf bytes.Buffer
 	if err := json.Indent(&buf, []byte(s), "", "  "); err != nil {
@@ -869,16 +787,13 @@ func prettyJSON(s string) string {
 }
 
 func featureBasePath(r *http.Request) string {
-	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), strings.HasPrefix(r.URL.Path, "/features/"))
+	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"))
 }
 
 func featureBasePathForPage(page *FeaturePage) string {
-	return featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.FeatureContext)
+	return featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name)
 }
 
-func featureBasePathValues(tenant, env, feature string, featureContext bool) string {
-	if featureContext {
-		return "/features/" + feature + "/envs/" + tenant + "/" + env
-	}
-	return "/tenants/" + tenant + "/envs/" + env + "/" + feature
+func featureBasePathValues(tenant, env, feature string) string {
+	return "/features/" + feature + "/envs/" + tenant + "/" + env
 }

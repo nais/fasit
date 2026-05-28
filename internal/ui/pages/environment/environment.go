@@ -83,17 +83,37 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		allTenants, _ := envpkg.ListTenants(r.Context())
-		tenantEnvs, _ := envpkg.List(r.Context(), tenant.ID)
+		allTenants, err := envpkg.ListTenants(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to load tenants: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tenantEnvs, err := envpkg.List(r.Context(), tenant.ID)
+		if err != nil {
+			http.Error(w, "Failed to load tenant environments: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 		activeTab := environmentTab(r.URL.Query().Get("tab"))
-		labels, _ := envpkg.GetLabels(r.Context(), env.ID)
+		labels, err := envpkg.GetLabels(r.Context(), env.ID)
+		if err != nil {
+			http.Error(w, "Failed to load environment labels: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		environment := &Environment{
 			Environment: env,
 			Metadata:    getEnvironmentMetadata(r.Context(), env),
 		}
-		envValues, _ := envpkg.ListEnvironmentValuesForEnvironment(r.Context(), env.ID, true)
-		valueRefs, _ := deployment.ValueRefsForEnvironment(r.Context(), env.ID)
+		envValues, err := envpkg.ListEnvironmentValuesForEnvironment(r.Context(), env.ID, true)
+		if err != nil {
+			http.Error(w, "Failed to load environment values: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		valueRefs, err := deployment.ValueRefsForEnvironment(r.Context(), env.ID)
+		if err != nil {
+			http.Error(w, "Failed to load environment value references: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 		releases, err := deployment.ListReleaseStatuses(r.Context(), env.ID)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
@@ -336,7 +356,7 @@ func environmentValuesCard(envValues []*model.EnvironmentValue, valueRefs map[st
 	}
 	return h.Div(h.Class("card"),
 		h.Div(h.Class("card-body"),
-			h.H2(h.Style("margin-top:0"), g.Text("Environment values")),
+			h.H2(h.Class("card-section-heading"), g.Text("Environment values")),
 			h.Table(h.Class("table"),
 				h.TBody(g.Group(g.Map(envValues, func(val *model.EnvironmentValue) g.Node {
 					var valNode g.Node
@@ -366,7 +386,7 @@ func environmentValuesCard(envValues []*model.EnvironmentValue, valueRefs map[st
 func environmentFeaturesCard(tenantName, environmentName string, features []environmentFeatureRow) g.Node {
 	return h.Div(h.Class("card"),
 		h.Div(h.Class("card-body"),
-			h.H2(h.Style("margin-top:0"), g.Text("Features in this environment")),
+			h.H2(h.Class("card-section-heading"), g.Text("Features in this environment")),
 			g.If(len(features) == 0, h.P(h.Class("text-muted"), g.Text("No features target this environment."))),
 			g.If(len(features) > 0, h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "environment-features"),
 				h.THead(h.Tr(
@@ -378,7 +398,7 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 				h.TBody(g.Group(g.Map(features, func(feature environmentFeatureRow) g.Node {
 					return h.Tr(
 						h.Td(h.A(h.Href("/features/"+feature.Name+"/envs/"+tenantName+"/"+environmentName), g.Text(feature.Name))),
-						h.Td(renderStatus(feature.Status)),
+						h.Td(components.Status(feature.Status)),
 						h.Td(textOrMuted(feature.Version, "unknown")),
 						h.Td(timeOrNever(feature.LastSuccessful)),
 					)
@@ -392,7 +412,7 @@ func helmReleasesCard(releases []*model.Release) g.Node {
 	sort.Slice(releases, func(i, j int) bool { return releases[i].Name < releases[j].Name })
 	return h.Div(h.Class("card"),
 		h.Div(h.Class("card-body"),
-			h.H2(h.Style("margin-top:0"), g.Text("Helm releases")),
+			h.H2(h.Class("card-section-heading"), g.Text("Helm releases")),
 			h.P(h.Class("text-muted"), g.Text("Actual state reported by naisd from the environment.")),
 			g.If(len(releases) == 0, h.P(h.Class("text-muted"), g.Text("No releases reported."))),
 			g.If(len(releases) > 0, h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "environment-releases"),

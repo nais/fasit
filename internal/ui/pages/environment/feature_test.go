@@ -101,10 +101,9 @@ func findElements(n *html.Node, tag string) []*html.Node {
 
 func TestFeatureContextSidebarUsesWorkspaceEnvironmentList(t *testing.T) {
 	page := &FeaturePage{
-		FeatureContext: true,
-		Feature:        &FeatureDetail{Feature: &model.Feature{Name: "azureator-nav"}},
-		TenantSlug:     "nav",
-		Environment:    &Environment{Environment: &model.Environment{Name: "dev-fss"}},
+		Feature:     &FeatureDetail{Feature: &model.Feature{Name: "azureator-nav"}},
+		TenantSlug:  "nav",
+		Environment: &Environment{Environment: &model.Environment{Name: "dev-fss"}},
 		WorkspaceEnvs: []featureworkspace.Environment{
 			{TenantName: "ci-nais", TenantSlug: "ci-nais", EnvironmentName: "ci-fss", Status: "DEPLOYED"},
 			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev", Status: "DEPLOYED"},
