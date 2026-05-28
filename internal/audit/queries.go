@@ -95,6 +95,26 @@ func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
 	return ret, nil
 }
 
+func SearchRecent(ctx context.Context, terms []string, limit int32) ([]*Entry, error) {
+	rows, err := querier(ctx).SearchRecent(ctx, auditsql.SearchRecentParams{
+		Terms:    terms,
+		PageSize: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
+			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
+			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+		})
+	}
+	return ret, nil
+}
+
 func ptrOr(s *string) string {
 	if s == nil {
 		return ""

@@ -20,27 +20,17 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		entries, err := audit.ListRecent(r.Context(), 200)
+		query := strings.TrimSpace(r.URL.Query().Get("q"))
+		var entries []*audit.Entry
+		var err error
+		if query == "" {
+			entries, err = audit.ListRecent(r.Context(), 200)
+		} else {
+			entries, err = audit.SearchRecent(r.Context(), strings.Fields(query), 200)
+		}
 		if err != nil {
 			http.Error(w, "Failed to load audit log", http.StatusInternalServerError)
 			return
-		}
-
-		query := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("q")))
-		if query != "" {
-			terms := strings.Fields(query)
-			filtered := entries[:0]
-			for _, e := range entries {
-				envLabel := ""
-				if e.TenantName != "" && e.EnvironmentName != "" {
-					envLabel = e.TenantName + "/" + e.EnvironmentName
-				}
-				text := strings.ToLower(string(e.Action) + " " + string(e.ObjectType) + " " + e.ObjectID + " " + envLabel + " " + e.EnvironmentName + " " + e.TenantName + " " + e.Actor + " " + e.Description)
-				if matchesAll(text, terms) {
-					filtered = append(filtered, e)
-				}
-			}
-			entries = filtered
 		}
 
 		renderPage(w, r, layout.Props{
@@ -49,15 +39,6 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			Content:     listPage(entries, query),
 		})
 	}
-}
-
-func matchesAll(text string, terms []string) bool {
-	for _, term := range terms {
-		if !strings.Contains(text, term) {
-			return false
-		}
-	}
-	return true
 }
 
 func listPage(entries []*audit.Entry, query string) g.Node {

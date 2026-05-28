@@ -5,6 +5,24 @@ on:
       - main
     tags:
       - "naisd-*"
+    paths-ignore:
+      - "**/*.md"
+      - ".github/workflows/build_and_push_backend.yaml"
+      - ".github/workflows/dependabot-auto-merge.yaml"
+      - ".github/workflows/fasit_chart.yaml"
+      - ".github/workflows/push_jsonschema.yaml"
+      - "charts/fasit/**"
+      - "cmd/fasit/**"
+      - "cmd/generate_schema/**"
+      - "cmd/setup_local_env/**"
+      - "internal/api/**"
+      - "internal/contextloader/**"
+      - "internal/environmentmanagement/**"
+      - "internal/fasit/**"
+      - "internal/provider/**"
+      - "internal/server/**"
+      - "internal/ui/**"
+      - "schema/jsonschema/**"
 env:
   CHART_PATH: "charts/naisd"
   GOOGLE_REGISTRY: "europe-north1-docker.pkg.dev"
@@ -46,7 +64,7 @@ jobs:
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # ratchet:jdx/mise-action@v4.0.1
       - run: mise run ${{ matrix.mise-task }}
   build_and_push_naisd:
-    needs: [go-version, checks]
+    needs: [go-version]
     permissions:
       contents: "read"
       id-token: "write"
@@ -118,7 +136,7 @@ jobs:
           helm push "$chart" oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature
   rollout_naisd:
     if: startsWith(github.ref, 'refs/tags/naisd-')
-    needs: [build_push_naisd_chart, build_and_push_naisd]
+    needs: [checks, build_push_naisd_chart, build_and_push_naisd]
     runs-on: fasit-deploy
     permissions:
       id-token: write
