@@ -12,10 +12,14 @@ var _ auditsql.Querier = (*Querier)(nil)
 // Querier is a test fake that records calls. Assign function fields to
 // control return values; unset fields return nil.
 type Querier struct {
-	AuditCreateFunc func(ctx context.Context, arg auditsql.CreateParams) error
+	AuditCreateFunc       func(ctx context.Context, arg auditsql.CreateParams) error
+	AuditSearchRecentFunc func(ctx context.Context, arg auditsql.SearchRecentParams) ([]auditsql.SearchRecentRow, error)
 
 	// Creates records every Create call for assertion.
 	Creates []auditsql.CreateParams
+
+	// SearchRecentCalls records every SearchRecent call for assertion.
+	SearchRecentCalls []auditsql.SearchRecentParams
 }
 
 func (f *Querier) Create(ctx context.Context, arg auditsql.CreateParams) error {
@@ -39,6 +43,14 @@ func (f *Querier) ListForEnvironment(_ context.Context, _ auditsql.ListForEnviro
 }
 
 func (f *Querier) ListRecent(_ context.Context, _ int32) ([]auditsql.ListRecentRow, error) {
+	return nil, nil
+}
+
+func (f *Querier) SearchRecent(ctx context.Context, arg auditsql.SearchRecentParams) ([]auditsql.SearchRecentRow, error) {
+	f.SearchRecentCalls = append(f.SearchRecentCalls, arg)
+	if f.AuditSearchRecentFunc != nil {
+		return f.AuditSearchRecentFunc(ctx, arg)
+	}
 	return nil, nil
 }
 
