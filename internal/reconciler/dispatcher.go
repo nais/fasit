@@ -24,10 +24,9 @@ type Publisher interface {
 // NewPublisher creates a Publisher for a given topic.
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-// DBResultWriter writes reconcile results to the database and publishes
-// deploy instructions to naisd via Pub/Sub. This is the default writer
-// used in production.
-type DBResultWriter struct {
+// DBDispatcher writes deploy decisions to the database and publishes
+// deploy instructions to naisd via Pub/Sub.
+type DBDispatcher struct {
 	querier      reconcilersql.Querier
 	newPublisher NewPublisher
 	log          logrus.FieldLogger
@@ -38,12 +37,12 @@ type DBResultWriter struct {
 	deployMessages metric.Int64Counter
 }
 
-func NewDBResultWriter(querier reconcilersql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*DBResultWriter, error) {
+func NewDBDispatcher(querier reconcilersql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*DBDispatcher, error) {
 	deployMessages, err := meter.Int64Counter("reconciler_deploy_messages", metric.WithDescription("Deploy messages sent by reconciler"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
-	return &DBResultWriter{
+	return &DBDispatcher{
 		querier:        querier,
 		newPublisher:   publisher,
 		log:            log,
@@ -52,7 +51,7 @@ func NewDBResultWriter(querier reconcilersql.Querier, publisher NewPublisher, me
 	}, nil
 }
 
-func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) error {
+func (w *DBDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision) error {
 	var (
 		instrIDs       []uuid.UUID
 		instrEnvIDs    []uuid.UUID
@@ -76,7 +75,7 @@ func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) err
 	}
 	var toPublish []publishItem
 
-	for _, res := range results {
+	for _, res := range decisions {
 		switch res.Action {
 		case ActionDeploy:
 			id := uuid.New()
@@ -176,7 +175,7 @@ func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) err
 		}
 		if err := w.querier.SetDeployInstructionStatus(ctx, reconcilersql.SetDeployInstructionStatusParams{
 			ID:     item.instruction.ID,
-			Status: model.RolloutStatusSent.String(),
+			Status: model.RolloutStatusPending.String(),
 		}); err != nil {
 			w.log.WithError(err).WithField("id", item.instruction.ID).Error("set instruction status to sent")
 		}
@@ -190,7 +189,7 @@ func (w *DBResultWriter) WriteResults(ctx context.Context, results []Result) err
 	return nil
 }
 
-func (w *DBResultWriter) publisher(topicID string) Publisher {
+func (w *DBDispatcher) publisher(topicID string) Publisher {
 	w.publishersMu.Lock()
 	defer w.publishersMu.Unlock()
 	if p, ok := w.publishers[topicID]; ok {

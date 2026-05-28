@@ -33,48 +33,29 @@ type latestInstruction struct {
 }
 
 // Action describes the reconciler's decision for a single deployment×environment pair.
-type Action int
+type Action string
 
 const (
-	ActionDeploy Action = iota
-	ActionSkipUnchanged
-	ActionSkipInProgress
-	ActionSkipDisabled
-	ActionSkipUnhealthy
-	ActionFailMissingDeps
-	ActionFailMissingConfig
-	ActionFailRender
+	ActionDeploy            Action = "deploy"
+	ActionSkipUnchanged     Action = "unchanged"
+	ActionSkipInProgress    Action = "in-progress"
+	ActionSkipDisabled      Action = "disabled"
+	ActionSkipUnhealthy     Action = "unhealthy"
+	ActionFailMissingDeps   Action = "missing-deps"
+	ActionFailMissingConfig Action = "missing-config"
+	ActionFailRender        Action = "render-error"
 )
 
 func (a Action) String() string {
-	switch a {
-	case ActionDeploy:
-		return "deploy"
-	case ActionSkipUnchanged:
-		return "unchanged"
-	case ActionSkipInProgress:
-		return "in-progress"
-	case ActionSkipDisabled:
-		return "disabled"
-	case ActionSkipUnhealthy:
-		return "unhealthy"
-	case ActionFailMissingDeps:
-		return "missing-deps"
-	case ActionFailMissingConfig:
-		return "missing-config"
-	case ActionFailRender:
-		return "render-error"
-	default:
-		return "unknown"
-	}
+	return string(a)
 }
 
 func (a Action) IsFailure() bool {
 	return a == ActionFailMissingDeps || a == ActionFailMissingConfig || a == ActionFailRender
 }
 
-// Result is the output of the render phase for one deployment×environment pair.
-type Result struct {
+// DeployDecision is the output of the compute phase for one deployment×environment pair.
+type DeployDecision struct {
 	EnvironmentID   uuid.UUID
 	EnvironmentName string
 	TenantName      string
@@ -87,10 +68,10 @@ type Result struct {
 	Status          string
 }
 
-// ResultWriter receives the full set of render results and performs
+// Dispatcher receives the full set of deploy decisions and performs
 // side-effects (DB writes, message publishing, UI updates, etc.).
-type ResultWriter interface {
-	WriteResults(ctx context.Context, results []Result) error
+type Dispatcher interface {
+	Dispatch(ctx context.Context, decisions []DeployDecision) error
 }
 
 func deploymentFromRow(row reconcilersql.ListLatestDeploymentsRow) (*reconcileDeployment, error) {
