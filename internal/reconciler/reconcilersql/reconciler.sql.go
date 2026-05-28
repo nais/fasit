@@ -528,9 +528,13 @@ func (q *Queries) ListLatestDeployments(ctx context.Context) ([]ListLatestDeploy
 }
 
 const setDeployInstructionStatus = `-- name: SetDeployInstructionStatus :exec
-UPDATE deploy_instructions
-SET status = $1
-WHERE id = $2 AND status = 'created'
+UPDATE
+	deploy_instructions
+SET
+	status = $1
+WHERE
+	id = $2
+	AND status = 'created'
 `
 
 type SetDeployInstructionStatusParams struct {

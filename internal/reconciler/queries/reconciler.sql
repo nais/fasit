@@ -164,7 +164,11 @@ ON CONFLICT (deployment_id,
 		message = EXCLUDED.message;
 
 -- name: SetDeployInstructionStatus :exec
-UPDATE deploy_instructions
-SET status = @status
-WHERE id = @id AND status = 'created';
+UPDATE
+	deploy_instructions
+SET
+	status = @status
+WHERE
+	id = @id
+	AND status = 'created';
 
