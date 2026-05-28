@@ -11,6 +11,7 @@ type RolloutStatus string
 const (
 	RolloutStatusUnknown     RolloutStatus = ""
 	RolloutStatusCreated     RolloutStatus = "created"
+	RolloutStatusSent        RolloutStatus = "sent"
 	RolloutStatusPending     RolloutStatus = "pending"
 	RolloutStatusDeployed    RolloutStatus = "deployed"
 	RolloutStatusFailed      RolloutStatus = "failed"
@@ -19,7 +20,7 @@ const (
 
 func (r RolloutStatus) IsValid() bool {
 	switch r {
-	case RolloutStatusUnknown, RolloutStatusCreated, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed, RolloutStatusInvalidated:
+	case RolloutStatusUnknown, RolloutStatusCreated, RolloutStatusSent, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed, RolloutStatusInvalidated:
 		return true
 	}
 	return false
