@@ -46,7 +46,7 @@ securityContext:
 
 resources:
   requests:
-    cpu: 500m
+    cpu: "8"
     memory: 2Gi
 
 envProjectId: "nais-io"
