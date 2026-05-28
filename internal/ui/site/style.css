@@ -212,7 +212,8 @@ nav .user {
 }
 .nav-kebab-wrap {
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
 }
 .nav-hotdog-hint {
   display: none;
