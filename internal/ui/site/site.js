@@ -50,11 +50,30 @@ function toggleTheme() {
     return "/features/" + encodeURIComponent(name);
   }
 
+  function fuzzyMatch(query, text) {
+    var qi = 0;
+    var indices = [];
+    for (var i = 0; i < text.length && qi < query.length; i++) {
+      if (text.charCodeAt(i) === query.charCodeAt(qi)) {
+        indices.push(i);
+        qi++;
+      }
+    }
+    if (qi < query.length) return null;
+    // Score: sum of gaps between consecutive matched chars (lower = tighter)
+    var score = 0;
+    for (var j = 1; j < indices.length; j++) {
+      score += indices[j] - indices[j - 1] - 1;
+    }
+    return { indices: indices, score: score };
+  }
+
   function matchFeatures(query) {
     var q = query.toLowerCase();
     var exact = [];
     var prefix = [];
     var substring = [];
+    var fuzzy = [];
     featureNames.forEach(function (name) {
       var lower = name.toLowerCase();
       if (lower === q) {
@@ -63,26 +82,44 @@ function toggleTheme() {
         prefix.push(name);
       } else if (lower.includes(q)) {
         substring.push(name);
+      } else {
+        var m = fuzzyMatch(q, lower);
+        if (m) fuzzy.push({ name: name, score: m.score });
       }
     });
-    var names = exact.sort().concat(prefix.sort(), substring.sort());
+    fuzzy.sort(function (a, b) { return a.score - b.score || a.name.localeCompare(b.name); });
+    var names = exact.sort().concat(prefix.sort(), substring.sort(), fuzzy.map(function (f) { return f.name; }));
     return names.slice(0, 8).map(function (name) {
       return { title: name, href: featureHref(name) };
     });
   }
 
   function appendHighlightedMatch(node, text, query) {
+    // Try contiguous substring first
     var index = text.toLowerCase().indexOf(query.toLowerCase());
-    if (index === -1) {
+    if (index !== -1) {
+      node.appendChild(document.createTextNode(text.slice(0, index)));
+      var mark = document.createElement("mark");
+      mark.textContent = text.slice(index, index + query.length);
+      node.appendChild(mark);
+      node.appendChild(document.createTextNode(text.slice(index + query.length)));
+      return;
+    }
+    // Fall back to fuzzy highlighting
+    var m = fuzzyMatch(query.toLowerCase(), text.toLowerCase());
+    if (!m) {
       node.appendChild(document.createTextNode(text));
       return;
     }
-
-    node.appendChild(document.createTextNode(text.slice(0, index)));
-    var mark = document.createElement("mark");
-    mark.textContent = text.slice(index, index + query.length);
-    node.appendChild(mark);
-    node.appendChild(document.createTextNode(text.slice(index + query.length)));
+    var last = 0;
+    m.indices.forEach(function (idx) {
+      if (idx > last) node.appendChild(document.createTextNode(text.slice(last, idx)));
+      var mark = document.createElement("mark");
+      mark.textContent = text.charAt(idx);
+      node.appendChild(mark);
+      last = idx + 1;
+    });
+    if (last < text.length) node.appendChild(document.createTextNode(text.slice(last)));
   }
 
   function renderSuggestions(input, matches) {
