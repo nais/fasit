@@ -16,6 +16,9 @@ type Reconciler struct {
 	log     logrus.FieldLogger
 	trigger chan struct{}
 
+	// Workers limits parallel compute goroutines. 0 means unlimited.
+	Workers int
+
 	reconcileLoopTime metric.Int64Histogram
 }
 
