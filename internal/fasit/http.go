@@ -15,7 +15,7 @@ import (
 )
 
 func newHTTPServer(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, cfg *Config, meter metric.Meter, log logrus.FieldLogger) (*http.Server, error) {
-	router, err := server.SetupRouter(ctx, loadContext, pool, cfg.IAPAudience, cfg.InsecureSkipProxy, meter, log)
+	router, err := server.SetupRouter(ctx, loadContext, pool, cfg.IAPAudience, cfg.InsecureSkipProxy, meter, log, Version)
 	if err != nil {
 		return nil, fmt.Errorf("setting up router: %w", err)
 	}

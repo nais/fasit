@@ -270,6 +270,13 @@ nav .user {
   background: var(--border);
   margin: 0.25rem 0;
 }
+.kebab-version {
+  display: block;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-faintest);
+  font-family: monospace;
+}
 .container {
   display: flex;
   height: calc(100vh - 3.5rem);

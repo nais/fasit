@@ -17,7 +17,7 @@ const (
 	PageReconciler   Page = "reconciler"
 )
 
-func SiteHeader(currentPage Page, userEmail string, hideSearch bool) g.Node {
+func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion string) g.Node {
 	navItem := func(href, label string, page Page) g.Node {
 		className := "item"
 		if currentPage == page {
@@ -77,6 +77,12 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool) g.Node {
 					g.Attr("title", "Trigger a full reconcile of all features"),
 					g.Attr("popovertarget", "reconcile-confirm"),
 					g.Text("Reconcile all features"),
+				),
+				g.If(appVersion != "",
+					g.Group([]g.Node{
+						h.Div(h.Class("kebab-divider")),
+						h.Span(h.Class("kebab-version"), g.Textf("v%s", appVersion)),
+					}),
 				),
 			),
 		),

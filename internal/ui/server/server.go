@@ -26,13 +26,15 @@ var mime = map[string]string{
 type Server struct {
 	siteFS       fs.FS
 	assetVersion string
+	appVersion   string
 	meter        metric.Meter
 }
 
-func New(siteFS fs.FS, meter metric.Meter) *Server {
+func New(siteFS fs.FS, meter metric.Meter, appVersion string) *Server {
 	return &Server{
 		siteFS:       siteFS,
 		assetVersion: computeAssetVersion(siteFS),
+		appVersion:   appVersion,
 		meter:        meter,
 	}
 }
@@ -54,6 +56,7 @@ func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, props layout
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	props.UserEmail = auth.GetEmail(r.Context())
 	props.AssetVersion = s.assetVersion
+	props.AppVersion = s.appVersion
 	names, err := featurepkg.FeatureNames(r.Context())
 	if err != nil {
 		logrus.WithError(err).Error("loading feature names for search")

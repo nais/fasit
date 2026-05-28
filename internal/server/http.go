@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log logrus.FieldLogger) (http.Handler, error) {
+func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log logrus.FieldLogger, appVersion string) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {
@@ -37,7 +37,7 @@ func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool
 	deploy.AllowAll = insecureSkipProxy
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
-	uiServer := uiserver.New(ui.SiteFS, meter)
+	uiServer := uiserver.New(ui.SiteFS, meter, appVersion)
 	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil
 }

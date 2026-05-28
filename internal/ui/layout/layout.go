@@ -18,6 +18,7 @@ type Props struct {
 	HideHeaderSearch bool
 	FeatureNames     []string
 	Scripts          []string
+	AppVersion       string
 }
 
 func featureNamesScript(names []string) g.Node {
@@ -56,7 +57,7 @@ func Page(props Props) g.Node {
 			})),
 		},
 		Body: []g.Node{
-			components.SiteHeader(props.CurrentPage, props.UserEmail, props.HideHeaderSearch),
+			components.SiteHeader(props.CurrentPage, props.UserEmail, props.HideHeaderSearch, props.AppVersion),
 			props.Content,
 		},
 	})
