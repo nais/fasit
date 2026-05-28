@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -25,14 +26,14 @@ type DesiredState struct {
 	ComputeDur time.Duration
 }
 
-func New(querier reconcilersql.Querier, meter metric.Meter, log logrus.FieldLogger) (*Reconciler, error) {
+func New(pool *pgxpool.Pool, meter metric.Meter, log logrus.FieldLogger) (*Reconciler, error) {
 	reconcileLoopTime, err := meter.Int64Histogram("reconciler_loop_duration", metric.WithDescription("Total time for one full reconcile loop"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile loop time histogram: %w", err)
 	}
 
 	return &Reconciler{
-		querier:           querier,
+		querier:           reconcilersql.New(pool),
 		log:               log,
 		trigger:           make(chan struct{}, 1),
 		reconcileLoopTime: reconcileLoopTime,

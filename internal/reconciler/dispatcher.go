@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
@@ -37,13 +38,13 @@ type DBDispatcher struct {
 	deployMessages metric.Int64Counter
 }
 
-func NewDBDispatcher(querier reconcilersql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*DBDispatcher, error) {
+func NewDBDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*DBDispatcher, error) {
 	deployMessages, err := meter.Int64Counter("reconciler_deploy_messages", metric.WithDescription("Deploy messages sent by reconciler"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
 	return &DBDispatcher{
-		querier:        querier,
+		querier:        reconcilersql.New(pool),
 		newPublisher:   publisher,
 		log:            log,
 		publishers:     make(map[string]Publisher),

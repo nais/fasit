@@ -20,7 +20,6 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sethvargo/go-envconfig"
@@ -102,7 +101,7 @@ func Run(ctx context.Context) error {
 
 	go deployment.RunReconciler(ctx, 10*time.Minute)
 
-	rec, err := reconciler.New(reconcilersql.New(pool), meter, log.WithField("component", "reconciler"))
+	rec, err := reconciler.New(pool, meter, log.WithField("component", "reconciler"))
 	if err != nil {
 		return fmt.Errorf("creating reconciler: %w", err)
 	}

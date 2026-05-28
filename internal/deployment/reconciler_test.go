@@ -20,7 +20,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -159,12 +158,11 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 
 	// Wire new reconciler.
 	newPub := func(topicID string, log logrus.FieldLogger) reconciler.Publisher { return pub }
-	recQuerier := reconcilersql.New(pool)
-	dispatcher, err := reconciler.NewDBDispatcher(recQuerier, newPub, meter, logger)
+	dispatcher, err := reconciler.NewDBDispatcher(pool, newPub, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to create result writer: %v", err)
 	}
-	rec, err = reconciler.New(recQuerier, meter, logger)
+	rec, err = reconciler.New(pool, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to create reconciler: %v", err)
 	}
