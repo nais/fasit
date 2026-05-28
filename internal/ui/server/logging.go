@@ -38,12 +38,25 @@ func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
 	}, nil
 }
 
+var skipMetricsPaths = map[string]bool{
+	"/site.css":       true,
+	"/site.js":        true,
+	"/favicon.ico":    true,
+	"/deployments.js": true,
+	"/features.js":    true,
+	"/reconciler.js":  true,
+}
+
 func (m *metricsMiddleware) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
 		next.ServeHTTP(rw, r)
+
+		if skipMetricsPaths[r.URL.Path] {
+			return
+		}
 
 		pattern := r.URL.Path
 		if rctx := chi.RouteContext(r.Context()); rctx != nil && rctx.RoutePattern() != "" {
