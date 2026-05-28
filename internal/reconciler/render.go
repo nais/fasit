@@ -149,7 +149,7 @@ func (r *Reconciler) renderOne(snap *snapshot, env environment, dep *reconcileDe
 
 	// Check against latest instruction.
 	if instr, ok := snap.latestInstr[env.ID][dep.Feature.Name]; ok {
-		if instr.Status == model.RolloutStatusCreated.String() || instr.Status == model.RolloutStatusPending.String() {
+		if instr.Status == model.RolloutStatusSent.String() || instr.Status == model.RolloutStatusPending.String() {
 			base.Action = ActionSkipInProgress
 			base.Status = instr.Status
 			base.Message = "deployment is already in progress"

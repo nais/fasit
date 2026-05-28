@@ -4,14 +4,11 @@ package reconcilersql
 
 import (
 	"context"
-
-	"github.com/google/uuid"
 )
 
 type Querier interface {
 	BulkCreateDeployInstructions(ctx context.Context, arg BulkCreateDeployInstructionsParams) error
 	BulkUpsertDeploymentStatuses(ctx context.Context, arg BulkUpsertDeploymentStatusesParams) error
-	DeleteDeployInstruction(ctx context.Context, id uuid.UUID) error
 	ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error)
 	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
@@ -21,6 +18,7 @@ type Querier interface {
 	ListHealthStatuses(ctx context.Context) ([]HealthStatus, error)
 	ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error)
 	ListLatestDeployments(ctx context.Context) ([]ListLatestDeploymentsRow, error)
+	SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

@@ -88,16 +88,6 @@ func (q *Queries) BulkUpsertDeploymentStatuses(ctx context.Context, arg BulkUpse
 	return err
 }
 
-const deleteDeployInstruction = `-- name: DeleteDeployInstruction :exec
-DELETE FROM deploy_instructions
-WHERE id = $1
-`
-
-func (q *Queries) DeleteDeployInstruction(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteDeployInstruction, id)
-	return err
-}
-
 const listAllEnvConfigs = `-- name: ListAllEnvConfigs :many
 SELECT
 	id,
@@ -535,4 +525,20 @@ func (q *Queries) ListLatestDeployments(ctx context.Context) ([]ListLatestDeploy
 		return nil, err
 	}
 	return items, nil
+}
+
+const setDeployInstructionStatus = `-- name: SetDeployInstructionStatus :exec
+UPDATE deploy_instructions
+SET status = $1
+WHERE id = $2 AND status = 'created'
+`
+
+type SetDeployInstructionStatusParams struct {
+	Status string
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error {
+	_, err := q.db.Exec(ctx, setDeployInstructionStatus, arg.Status, arg.ID)
+	return err
 }
