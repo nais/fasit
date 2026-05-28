@@ -352,41 +352,29 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 		}
 	}
 
-	// Test different worker pool sizes.
-	workerCounts := []int{0, 1, 2, 4, 8, 16, 32, 64, 128}
-
-	for _, workers := range workerCounts {
-		label := "unlimited"
-		if workers > 0 {
-			label = fmt.Sprintf("%d", workers)
-		}
-		t.Run("workers="+label, func(t *testing.T) {
-			rec, err := reconciler.New(pool, meter, logger)
-			if err != nil {
-				t.Fatalf("create reconciler: %v", err)
-			}
-			rec.Workers = workers
-
-			result, err := rec.ComputeDesiredState(ctx)
-			if err != nil {
-				t.Fatalf("reconcile: %v", err)
-			}
-
-			deployCount := 0
-			for _, d := range result.Decisions {
-				if d.Action == reconciler.ActionDeploy {
-					deployCount++
-				}
-			}
-
-			t.Logf("workers=%-10s  fetch=%-10s  compute=%-10s  total=%-10s  decisions=%d  deploys=%d",
-				label,
-				result.FetchDur.Round(time.Millisecond),
-				result.ComputeDur.Round(time.Millisecond),
-				(result.FetchDur + result.ComputeDur).Round(time.Millisecond),
-				len(result.Decisions),
-				deployCount,
-			)
-		})
+	// Run reconcile.
+	rec, err := reconciler.New(pool, meter, logger)
+	if err != nil {
+		t.Fatalf("create reconciler: %v", err)
 	}
+
+	result, err := rec.ComputeDesiredState(ctx)
+	if err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	deployCount := 0
+	for _, d := range result.Decisions {
+		if d.Action == reconciler.ActionDeploy {
+			deployCount++
+		}
+	}
+
+	t.Logf("fetch=%-10s  compute=%-10s  total=%-10s  decisions=%d  deploys=%d",
+		result.FetchDur.Round(time.Millisecond),
+		result.ComputeDur.Round(time.Millisecond),
+		(result.FetchDur+result.ComputeDur).Round(time.Millisecond),
+		len(result.Decisions),
+		deployCount,
+	)
 }

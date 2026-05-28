@@ -36,18 +36,6 @@ func StreamHandler() http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.Header().Set("X-Accel-Buffering", "no")
 
-		// Buffer decisions into a channel so compute goroutines never block
-		// on HTTP writes. A single writer goroutine drains the channel.
-		ch := make(chan []byte, 256)
-		done := make(chan struct{})
-		go func() {
-			defer close(done)
-			for b := range ch {
-				_, _ = w.Write(b)
-				flusher.Flush()
-			}
-		}()
-
 		summary, err := rec.StreamDecisions(r.Context(), func(d reconciler.DeployDecision) {
 			evt := sseDecision{
 				Action:      d.Action.String(),
@@ -58,10 +46,9 @@ func StreamHandler() http.HandlerFunc {
 				Message:     d.Message,
 			}
 			b, _ := json.Marshal(evt)
-			ch <- sseEvent("decision", b)
+			_, _ = w.Write(sseEvent("decision", b))
+			flusher.Flush()
 		})
-		close(ch)
-		<-done
 
 		if err != nil {
 			if errors.Is(err, reconciler.ErrReconcileInProgress) {

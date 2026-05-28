@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,27 +18,14 @@ import (
 )
 
 func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
-	var (
-		mu      sync.Mutex
-		results []DeployDecision
-	)
+	var results []DeployDecision
 	r.computeActionsStream(snap, func(d DeployDecision) {
-		mu.Lock()
 		results = append(results, d)
-		mu.Unlock()
 	})
 	return results
 }
 
 func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecision)) {
-	var wg sync.WaitGroup
-
-	// Semaphore for worker pool; nil means unlimited.
-	var sem chan struct{}
-	if r.Workers > 0 {
-		sem = make(chan struct{}, r.Workers)
-	}
-
 	for _, env := range snap.environments {
 		reportedAt, ok := snap.healthByEnv[env.ID]
 		healthy := ok && time.Since(reportedAt) <= 3*time.Minute
@@ -74,21 +60,9 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, emit func(DeployDecisi
 				continue
 			}
 
-			wg.Add(1)
-			if sem != nil {
-				sem <- struct{}{}
-			}
-			go func(env environment, dep *reconcileDeployment) {
-				defer wg.Done()
-				if sem != nil {
-					defer func() { <-sem }()
-				}
-				emit(r.computeAction(snap, env, dep))
-			}(env, dep)
+			emit(r.computeAction(snap, env, dep))
 		}
 	}
-
-	wg.Wait()
 }
 
 func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileDeployment) DeployDecision {
@@ -126,9 +100,8 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 		base.Message = "no environment values"
 		return base
 	}
-	// Clone mv so parallel goroutines don't race on shared fields.
-	// GenerateWith sets mv.Configs, and sprig template functions like
-	// set/unset can mutate Env/Management/Envs maps during rendering.
+	// Clone mv because GenerateWith sets mv.Configs and sprig template
+	// functions like set/unset can mutate Env/Management/Envs maps.
 	mvCopy := *mv
 	mvCopy.Env = copyStringAnyMap(mv.Env)
 	mvCopy.Management = copyStringAnyMap(mv.Management)
