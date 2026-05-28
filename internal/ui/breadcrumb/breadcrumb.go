@@ -23,6 +23,10 @@ func Features() Crumb {
 	return Crumb{Label: "Features", URL: "/features"}
 }
 
+func Environments() Crumb {
+	return Crumb{Label: "Environments", URL: "/environments"}
+}
+
 func TenantWithSwitcher(name string, allTenants []view.TenantNav) Crumb {
 	return Crumb{Label: name}
 }

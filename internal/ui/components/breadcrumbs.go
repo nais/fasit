@@ -82,11 +82,16 @@ func breadcrumbWithDropdown(crumb breadcrumb.Crumb, isActive bool) g.Node {
 	}
 	labelNodes = append(labelNodes, g.Text(crumb.Label+" ▾"))
 
-	var label g.Node
+	class := ""
 	if isActive {
-		label = h.Span(h.Class("active"), g.Group(labelNodes))
+		class = "active"
+	}
+
+	var label g.Node
+	if crumb.URL != "" {
+		label = h.A(h.Href(crumb.URL), h.Class(class), g.Group(labelNodes))
 	} else {
-		label = h.A(h.Href(crumb.URL), g.Group(labelNodes))
+		label = h.Span(h.Class(class), g.Group(labelNodes))
 	}
 
 	return h.Span(h.Class("breadcrumb-switcher"),

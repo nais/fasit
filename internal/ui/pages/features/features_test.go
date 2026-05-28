@@ -97,6 +97,32 @@ func TestComputeAggStatus(t *testing.T) {
 	}
 }
 
+func TestFeatureIndexTableSourceIconAndNonSortableColumns(t *testing.T) {
+	var buf bytes.Buffer
+	err := featureIndexTable([]featureIndexRow{{
+		Name:        "kyverno",
+		Description: "policy engine",
+		Source:      "https://github.com/nais/kyverno",
+	}}).Render(&buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	html := buf.String()
+	if !strings.Contains(html, `class="feature-source-link"`) || !strings.Contains(html, `aria-label="Open source"`) {
+		t.Fatalf("feature index should render source as icon link, got %s", html)
+	}
+	if !strings.Contains(html, "GitHub ↗") {
+		t.Fatalf("feature index should render source text with icon, got %s", html)
+	}
+	if !strings.Contains(html, ">Source<") {
+		t.Fatalf("feature index should render a source column header, got %s", html)
+	}
+	if strings.Count(html, `data-no-sort`) != 2 {
+		t.Fatalf("description and source headers should be non-sortable, got %s", html)
+	}
+}
+
 func TestDeploymentActorsByID(t *testing.T) {
 	actors := deploymentActorsByID([]*audit.Entry{
 		{

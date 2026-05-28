@@ -21,10 +21,6 @@ values:
         {{subdomain . "my-app"}}
 `
 
-func PlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
-	return playgroundTabHandler(renderPage, false)
-}
-
 func FeatureContextPlaygroundTabHandler(renderPage RenderPage) http.HandlerFunc {
 	return playgroundTabHandler(renderPage, true)
 }

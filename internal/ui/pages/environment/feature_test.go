@@ -3,17 +3,33 @@ package environment
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/featureworkspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
 )
 
 // normalizedAttrs are attribute keys whose values vary per-row and should be replaced with "_".
+func TestLegacyFeatureRedirectHandler(t *testing.T) {
+	r := chi.NewRouter()
+	r.Get("/tenants/{tenant}/envs/{env}/{feature}/logs", LegacyFeatureRedirectHandler("/logs"))
+
+	req := httptest.NewRequest(http.MethodGet, "/tenants/dev-nais/envs/dev/kyverno/logs", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusSeeOther, w.Code)
+	require.Equal(t, "/features/kyverno/envs/dev-nais/dev/logs", w.Header().Get("Location"))
+}
+
 var normalizedAttrs = map[string]bool{
 	"id":                  true,
 	"for":                 true,
@@ -81,6 +97,34 @@ func findElements(n *html.Node, tag string) []*html.Node {
 		result = append(result, findElements(c, tag)...)
 	}
 	return result
+}
+
+func TestFeatureContextSidebarUsesWorkspaceEnvironmentList(t *testing.T) {
+	page := &FeaturePage{
+		FeatureContext: true,
+		Feature:        &FeatureDetail{Feature: &model.Feature{Name: "azureator-nav"}},
+		TenantSlug:     "nav",
+		Environment:    &Environment{Environment: &model.Environment{Name: "dev-fss"}},
+		WorkspaceEnvs: []featureworkspace.Environment{
+			{TenantName: "ci-nais", TenantSlug: "ci-nais", EnvironmentName: "ci-fss", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev-fss", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "prod", Status: "DEPLOYED"},
+			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "prod-fss", Status: "DEPLOYED"},
+		},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, featurePageSidebar(page).Render(&buf))
+
+	html := buf.String()
+	for _, label := range []string{"ci-nais / ci-fss", "nav / dev", "nav / dev-fss", "nav / prod", "nav / prod-fss"} {
+		require.Contains(t, html, label)
+	}
+	for _, label := range []string{"atil / dev", "dev-nais / dev", "ssb / prod", "test-nais / sandbox"} {
+		require.NotContains(t, html, label)
+	}
+	assert.Equal(t, 1, strings.Count(html, `class="workspace-env-link active"`))
 }
 
 func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
