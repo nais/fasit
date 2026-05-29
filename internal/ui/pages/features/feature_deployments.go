@@ -323,6 +323,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 						h.P(g.Text("This will remove this deployment spec. It will no longer be reconciled.")),
 					),
 					h.Form(h.Method("POST"), h.Action("/deployments/"+c.DeploymentID+"/deactivate"),
+						h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+featureName+"/deploy-specs")),
 						h.Div(h.Class("popover-actions"),
 							h.Button(h.Type("submit"), g.Text("Remove")),
 							h.Button(h.Type("button"), g.Attr("popovertarget", removePopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),

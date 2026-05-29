@@ -1,7 +1,9 @@
 package deployments
 
 import (
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -9,12 +11,18 @@ func TestDeactivateRedirect(t *testing.T) {
 	tests := []struct {
 		name     string
 		referer  string
+		formBody string
 		expected string
 	}{
 		{
 			name:     "no referer redirects to deployments",
-			referer:  "",
 			expected: "/deployments",
+		},
+		{
+			name:     "explicit redirect field takes priority",
+			formBody: "redirect=/features/naiserator/deploy-specs",
+			referer:  "http://localhost:8080/deployments",
+			expected: "/features/naiserator/deploy-specs",
 		},
 		{
 			name:     "referer from feature page redirects back",
@@ -31,11 +39,23 @@ func TestDeactivateRedirect(t *testing.T) {
 			referer:  "http://other.example.com/features/foo",
 			expected: "/deployments",
 		},
+		{
+			name:     "redirect field must start with slash",
+			formBody: "redirect=http://evil.com/steal",
+			expected: "/deployments",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, _ := http.NewRequest("POST", "http://localhost:8080/deployments/123/deactivate", nil)
+			var body io.Reader
+			if tt.formBody != "" {
+				body = strings.NewReader(tt.formBody)
+			}
+			r, _ := http.NewRequest("POST", "http://localhost:8080/deployments/123/deactivate", body)
+			if tt.formBody != "" {
+				r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			}
 			if tt.referer != "" {
 				r.Header.Set("Referer", tt.referer)
 			}
