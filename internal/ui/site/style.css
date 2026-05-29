@@ -102,8 +102,6 @@ html {
 }
 body {
   margin: 0;
-  height: 100%;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -151,6 +149,9 @@ nav {
   gap: 3rem;
   padding: 1rem 2rem;
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 nav .logo {
   font-weight: bold;
@@ -281,15 +282,20 @@ nav .user {
   display: grid;
   grid-template-columns: 1fr minmax(0, 84rem) 1fr;
   grid-template-rows: auto 1fr;
-  height: calc(100vh - 3.5rem);
+  min-height: calc(100vh - 3.5rem);
   gap: 0.5rem 1rem;
   padding: 1rem;
   box-sizing: border-box;
+  position: relative;
+  z-index: 0;
 }
 .container > .sidebar {
   grid-column: 1;
   grid-row: 2;
   justify-self: end;
+  position: sticky;
+  top: 4.5rem;
+  align-self: start;
 }
 .container > .breadcrumbs {
   grid-column: 2;
@@ -310,6 +316,7 @@ nav .user {
   min-width: 16rem;
   border: 1px solid var(--border);
   border-radius: 6px;
+  max-height: calc(100vh - 5.5rem);
   overflow-y: auto;
   padding: 0;
 }
@@ -392,14 +399,14 @@ nav .user {
 .main-content {
   min-height: 0;
   padding: 0;
-  overflow-y: auto;
 }
 .right-sidebar {
   width: 20rem;
   overflow-y: auto;
   align-self: start;
   position: sticky;
-  top: 1rem;
+  top: 4.5rem;
+  max-height: calc(100vh - 5.5rem);
 }
 @media (max-width: 1200px) {
   .right-sidebar {
@@ -1489,9 +1496,9 @@ nav .user {
 .text-sm { font-size: 0.875rem; }
 .labels-sidebar {
   position: sticky;
-  top: 2rem;
+  top: 4.5rem;
   height: fit-content;
-  max-height: calc(100vh - 6rem);
+  max-height: calc(100vh - 5.5rem);
   overflow-y: auto;
 }
 .labels-sidebar-card {
