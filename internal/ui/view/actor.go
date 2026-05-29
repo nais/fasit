@@ -29,3 +29,30 @@ func ActorNode(actor string) g.Node {
 
 	return g.Text(actor)
 }
+
+// ActorName returns just the display name without the workflow link.
+func ActorName(actor string) g.Node {
+	user, rest, ok := strings.Cut(actor, "@")
+	if !ok {
+		return g.Text(actor)
+	}
+	parts := strings.Split(rest, "/")
+	if len(parts) == 3 && parts[2] != "" {
+		return g.Text("@" + user)
+	}
+	return g.Text(actor)
+}
+
+// ActorWorkflowURL returns the GitHub Actions run URL if the actor is a
+// GitHub Actions OIDC actor, or empty string otherwise.
+func ActorWorkflowURL(actor string) string {
+	_, rest, ok := strings.Cut(actor, "@")
+	if !ok {
+		return ""
+	}
+	parts := strings.Split(rest, "/")
+	if len(parts) == 3 && parts[2] != "" {
+		return "https://github.com/" + parts[0] + "/" + parts[1] + "/actions/runs/" + parts[2]
+	}
+	return ""
+}

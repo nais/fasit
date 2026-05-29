@@ -351,14 +351,15 @@ func recentDeployments(rows []depRow) g.Node {
 		ordered = ordered[:10]
 	}
 	tableRows := make([]g.Node, 0, len(ordered))
-	for _, k := range ordered {
+	for i, k := range ordered {
 		agg := seen[k]
 		tableRows = append(tableRows, h.Tr(
 			h.Td(h.A(h.Href("/features/"+agg.FeatureName), g.Text(agg.FeatureName))),
 			h.Td(h.Class("text-muted"), g.Text(agg.Version)),
 			h.Td(renderAggStatus(agg.Statuses)),
-			deploymentActorCell(agg.Actor),
+			h.Td(view.ActorName(agg.Actor)),
 			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(agg.Latest)), g.Text(view.RelativeTime(agg.Latest))),
+			h.Td(h.Class("table-kebab-cell"), deploymentRowKebab(agg.Actor, i)),
 		))
 	}
 
@@ -371,6 +372,7 @@ func recentDeployments(rows []depRow) g.Node {
 				h.Th(g.Text("Status")),
 				h.Th(g.Text("Actor")),
 				h.Th(h.Class("text-right"), g.Text("When")),
+				h.Th(h.Class("table-kebab-cell")),
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
@@ -378,11 +380,24 @@ func recentDeployments(rows []depRow) g.Node {
 	})
 }
 
-func deploymentActorCell(actor string) g.Node {
-	if actor == "" {
-		return h.Td(h.Class("text-muted"), g.Text("—"))
+func deploymentRowKebab(actor string, idx int) g.Node {
+	href := view.ActorWorkflowURL(actor)
+	if href == "" {
+		return g.Text("")
 	}
-	return h.Td(view.ActorNode(actor))
+	kebabID := fmt.Sprintf("dep-kebab-%d", idx)
+	return h.Div(h.Class("kebab-wrap"),
+		h.Button(
+			h.Type("button"),
+			h.Class("kebab-btn"),
+			g.Attr("data-kebab-toggle", kebabID),
+			g.Attr("aria-label", "Actions"),
+			g.Text("\u22ee"),
+		),
+		h.Div(h.Class("kebab-menu"), h.ID(kebabID),
+			h.A(h.Href(href), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener noreferrer"), g.Text("View workflow run")),
+		),
+	)
 }
 
 func recentActivity(audits []*audit.Entry) g.Node {

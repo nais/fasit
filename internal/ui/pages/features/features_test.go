@@ -162,8 +162,11 @@ func TestRecentDeploymentsRendersActor(t *testing.T) {
 	}
 
 	html := buf.String()
-	if !strings.Contains(html, "@tronghn via ") || !strings.Contains(html, "github.com/nais/fasit/actions/runs/123456789") {
-		t.Fatalf("recent deployments should render workflow actor, got %s", html)
+	if !strings.Contains(html, "@tronghn") {
+		t.Fatalf("recent deployments should render actor name, got %s", html)
+	}
+	if !strings.Contains(html, "View workflow run") || !strings.Contains(html, "github.com/nais/fasit/actions/runs/123456789") {
+		t.Fatalf("recent deployments should have workflow link in kebab menu, got %s", html)
 	}
 }
 
