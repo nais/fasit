@@ -384,6 +384,45 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	})
 }
 
+func TestReconcileWhenPreviousIsFailed(t *testing.T) {
+	ctx := context.Background()
+	container, dsn, err := startPostgresql(ctx, t)
+	if err != nil {
+		t.Fatalf("start postgres: %v", err)
+	}
+
+	forEachReconciler(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *deploymenttest.Seeder) {
+		db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
+			"nav:dev": {"aiven": "enabled"},
+		})
+
+		seeder.AddDeployment("feature-failed", "1.0.0", environment.Labels{"aiven": "enabled"})
+		if _, err := seeder.Seed(ctx); err != nil {
+			t.Fatalf("seeding: %v", err)
+		}
+		if err := reconcile(ctx); err != nil {
+			t.Fatalf("reconcile #1: %v", err)
+		}
+
+		// Mark the instruction as failed (simulates naisd reporting failure).
+		_, err := db.pool.Exec(ctx, `
+			UPDATE deploy_instructions SET status = 'failed'
+			WHERE feature_name = 'feature-failed' AND feature_version = '1.0.0'
+		`)
+		if err != nil {
+			t.Fatalf("mark failed: %v", err)
+		}
+
+		// Reconcile again with same version — should not create a new instruction.
+		if err := reconcile(ctx); err != nil {
+			t.Fatalf("reconcile #2: %v", err)
+		}
+
+		count := db.countInstructions(ctx, t, "feature-failed", "1.0.0")
+		assert.Equal(t, 1, count, "should not redeploy when previous failed and hash unchanged")
+	})
+}
+
 func TestReconcileDisabledFeature(t *testing.T) {
 	ctx := context.Background()
 	container, dsn, err := startPostgresql(ctx, t)

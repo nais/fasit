@@ -181,12 +181,10 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 			return base
 		}
 		if instr.Hash == hash {
-			if instr.Status != model.RolloutStatusFailed.String() {
-				base.Action = ActionSkipUnchanged
-				base.Status = instr.Status
-				base.Message = "no changes in feature"
-				return base
-			}
+			base.Action = ActionSkipUnchanged
+			base.Status = instr.Status
+			base.Message = "no changes in feature"
+			return base
 		}
 	}
 
