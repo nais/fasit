@@ -1956,6 +1956,17 @@ a:hover .status-badge {
   border: 1px solid color-mix(in srgb, var(--text-muted, #888) 40%, transparent);
   color: var(--text-secondary);
 }
+.inactive-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--status-error, #e53e3e) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-error, #e53e3e) 40%, transparent);
+  color: var(--status-error, #e53e3e);
+  margin-bottom: 0.75rem;
+}
 
 /* Tenant avatar */
 .tenant-avatar {

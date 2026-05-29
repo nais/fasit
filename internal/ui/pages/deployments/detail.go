@@ -148,9 +148,9 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 	}
 
 	if !d.Active {
-		content = append(content, h.Div(h.Class("banner banner-inactive"),
-			h.P(g.Text("This deployment is inactive. It is no longer being reconciled.")),
-		))
+		content = append([]g.Node{
+			h.Span(h.Class("inactive-badge"), g.Text("Inactive")),
+		}, content...)
 	}
 
 	if supersededBy != nil {
