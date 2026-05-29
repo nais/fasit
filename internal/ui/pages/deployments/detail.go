@@ -135,16 +135,22 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 
 	content := []g.Node{
 		h.Div(h.Class("deploy-detail-topbar"),
-			h.Details(h.Class("env-actions"),
+			g.If(d.Active, h.Details(h.Class("env-actions"),
 				h.Summary(h.Class("env-actions-toggle"), g.Attr("title", "Actions"), g.Text("\u22ee")),
 				h.Div(h.Class("env-actions-menu"),
 					h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version")),
 					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "deactivate-deployment"), g.Text("Deactivate deployment")),
 				),
-			),
+			)),
 		),
-		setVersionPopover(d),
-		deactivateDeploymentPopover(d),
+		g.If(d.Active, setVersionPopover(d)),
+		g.If(d.Active, deactivateDeploymentPopover(d)),
+	}
+
+	if !d.Active {
+		content = append(content, h.Div(h.Class("banner banner-inactive"),
+			h.P(g.Text("This deployment is inactive. It is no longer being reconciled.")),
+		))
 	}
 
 	if supersededBy != nil {

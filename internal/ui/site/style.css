@@ -1951,6 +1951,11 @@ a:hover .status-badge {
   border: 1px solid color-mix(in srgb, var(--status-warning, #f5a623) 40%, transparent);
   color: var(--text-primary);
 }
+.banner-inactive {
+  background: color-mix(in srgb, var(--text-muted, #888) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-muted, #888) 40%, transparent);
+  color: var(--text-secondary);
+}
 
 /* Tenant avatar */
 .tenant-avatar {
