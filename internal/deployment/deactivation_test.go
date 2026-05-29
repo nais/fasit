@@ -213,4 +213,58 @@ func TestDeactivation(t *testing.T) {
 			t.Errorf("FeatureForEnvironment() err = %v, want ErrFeatureNotFound", err)
 		}
 	})
+
+	t.Run("ListAll returns one row per feature+target preferring active", func(t *testing.T) {
+		ctx, seeder := setupCtx(t)
+
+		// Two versions for same target — v1 gets deactivated, v2 stays active
+		seeder.AddDeployment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
+		seeder.AddDeployment("myapp", "2.0.0", environment.Labels{"kind": "tenant"})
+		// Different target — stays active
+		seeder.AddDeployment("myapp", "3.0.0", environment.Labels{"kind": "tenant", "name": "dev"})
+		// Different feature, deactivated (no active replacement)
+		seeder.AddDeployment("otherapp", "1.0.0", environment.Labels{"kind": "tenant"})
+		ids, err := seeder.Seed(ctx)
+		if err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+
+		// Deactivate otherapp so it has no active deployment
+		if err := deployment.Deactivate(ctx, ids[3]); err != nil {
+			t.Fatalf("deactivate: %v", err)
+		}
+
+		deps, err := deployment.ListAll(ctx)
+		if err != nil {
+			t.Fatalf("ListAll: %v", err)
+		}
+
+		// Expect 3 rows: myapp+broad(active v2), myapp+dev(active v3), otherapp+broad(inactive v1)
+		if len(deps) != 3 {
+			t.Fatalf("ListAll() returned %d rows, want 3", len(deps))
+		}
+
+		type key struct{ feature, version string }
+		got := make(map[key]bool)
+		for _, dep := range deps {
+			got[key{dep.Feature.Name, dep.Feature.Version}] = dep.Active
+		}
+
+		// myapp v2 (active, broad target)
+		if active, ok := got[key{"myapp", "2.0.0"}]; !ok || !active {
+			t.Errorf("expected myapp v2.0.0 active, got ok=%v active=%v", ok, active)
+		}
+		// myapp v3 (active, dev target)
+		if active, ok := got[key{"myapp", "3.0.0"}]; !ok || !active {
+			t.Errorf("expected myapp v3.0.0 active, got ok=%v active=%v", ok, active)
+		}
+		// otherapp v1 (inactive, only version)
+		if active, ok := got[key{"otherapp", "1.0.0"}]; !ok || active {
+			t.Errorf("expected otherapp v1.0.0 inactive, got ok=%v active=%v", ok, active)
+		}
+		// myapp v1 should NOT appear (superseded by v2 for same target)
+		if _, ok := got[key{"myapp", "1.0.0"}]; ok {
+			t.Error("ListAll() should not return myapp v1.0.0 (superseded)")
+		}
+	})
 }

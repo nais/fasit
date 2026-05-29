@@ -31,6 +31,15 @@ SELECT
 	sqlc.embed(fd)
 FROM
 	deployments d
+	JOIN ( SELECT DISTINCT ON (feature_name, target)
+			id
+		FROM
+			deployments
+		ORDER BY
+			feature_name,
+			target,
+			active DESC,
+			created DESC) best ON d.id = best.id
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY
