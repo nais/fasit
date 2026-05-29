@@ -44,9 +44,9 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 func listPage(entries []*audit.Entry, query string) g.Node {
 	return h.Div(
 		h.Class("container"),
+		components.Breadcrumbs([]breadcrumb.Crumb{{Label: "Activity Log", URL: "/auditlog"}}),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{{Label: "Activity Log", URL: "/auditlog"}}),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
 				h.Div(h.Class("deployments-header"),
 					h.Form(h.Method("get"), h.Action("/auditlog"), h.Class("deployments-toolbar"),

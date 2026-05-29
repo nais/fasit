@@ -252,13 +252,13 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 
 	return h.Div(
 		h.Class("container"),
+		components.Breadcrumbs([]breadcrumb.Crumb{
+			breadcrumb.Deployments(),
+			{Label: d.Feature.Name, URL: "/features/" + d.Feature.Name},
+			{Content: targetPills(deploymentTargetLabels(d))},
+		}),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{
-				breadcrumb.Deployments(),
-				{Label: d.Feature.Name, URL: "/features/" + d.Feature.Name},
-				{Content: targetPills(deploymentTargetLabels(d))},
-			}),
 			components.Card(content...),
 		),
 	)

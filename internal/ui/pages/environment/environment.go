@@ -220,8 +220,8 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
 	return h.Div(h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab),
+		components.Breadcrumbs(breadcrumbs),
 		h.Main(h.Class("main-content"),
-			components.Breadcrumbs(breadcrumbs),
 			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, features, releases, health),
 		),
 	)

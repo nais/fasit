@@ -118,9 +118,9 @@ func targetKeyFromLabels(labels map[string]string) string {
 func listPage(rows []Summary, query string) g.Node {
 	return h.Div(
 		h.Class("container"),
+		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments()}),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments()}),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
 				h.Div(h.Class("deployments-header"),
 					h.Div(h.Class("deployments-toolbar"),

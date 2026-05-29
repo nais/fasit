@@ -80,13 +80,13 @@ func logsPage(dep *deployment.Deployment, log *model.RolloutLog) g.Node {
 
 	return h.Div(
 		h.Class("container"),
+		components.Breadcrumbs([]breadcrumb.Crumb{
+			breadcrumb.Deployments(),
+			breadcrumb.Deployment(dep.ID.String(), dep.Feature.Name, dep.Feature.Version),
+			{Label: "Logs"},
+		}),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{
-				breadcrumb.Deployments(),
-				breadcrumb.Deployment(dep.ID.String(), dep.Feature.Name, dep.Feature.Version),
-				{Label: "Logs"},
-			}),
 			components.Card(content...),
 		),
 	)

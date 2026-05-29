@@ -122,7 +122,6 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		}
 		data.ActiveTab = "overview"
 		data.RecentActivity, _ = audit.ListForFeature(r.Context(), data.CurrentFeature.Name, 10)
-		setFeatureBreadcrumbSubtitle(data)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data), Scripts: []string{"features.js"}})
 	}
 }
@@ -283,7 +282,6 @@ func featureRowKebab(feature featureIndexRow, idx int) g.Node {
 		),
 	)
 }
-
 
 type depRow struct {
 	FeatureName string
@@ -501,6 +499,7 @@ func renderAggStatus(statuses []string) g.Node {
 func detailPage(data *DetailPage) g.Node {
 	var content g.Node
 	var breadcrumbActions []g.Node
+	var rightSidebar g.Node
 	switch data.ActiveTab {
 	case "deploy-specs":
 		content = deploymentSpecsContent(data)
@@ -509,30 +508,26 @@ func detailPage(data *DetailPage) g.Node {
 	case "config-explorer":
 		content = configExplorerContent(data.CurrentFeature.Name, data.ExplorerData)
 	default:
-		content = featureOverviewContent(data)
+		content = deploymentDetailContent(data)
 		breadcrumbActions = append(breadcrumbActions, overviewToolbar())
+		if len(data.RecentActivity) > 0 {
+			rightSidebar = h.Aside(h.Class("right-sidebar"),
+				components.CardCompact(featureRecentActivityCompact(data.CurrentFeature.Name, data.RecentActivity)),
+			)
+		}
 	}
 	return h.Div(h.Class("container"),
 		featureWorkspaceSidebar(data),
+		components.Breadcrumbs(data.Breadcrumbs, breadcrumbActions...),
 		h.Main(h.Class("main-content"),
-			components.Breadcrumbs(data.Breadcrumbs, breadcrumbActions...),
 			components.Card(content),
 		),
+		g.If(rightSidebar != nil, rightSidebar),
 	)
 }
 
 func featureWorkspaceSidebar(data *DetailPage) g.Node {
 	return components.FeatureWorkspaceSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.WorkspaceEnvs)
-}
-
-func featureOverviewContent(data *DetailPage) g.Node {
-	if len(data.RecentActivity) == 0 {
-		return h.Div(h.Class("feature-overview"), deploymentDetailContent(data))
-	}
-	return h.Div(h.Class("feature-overview feature-overview-split"),
-		h.Div(h.Class("feature-overview-deployments"), deploymentDetailContent(data)),
-		h.Aside(h.Class("feature-overview-activity"), featureRecentActivityCompact(data.CurrentFeature.Name, data.RecentActivity)),
-	)
 }
 
 func featureRecentActivityCompact(featureName string, audits []*audit.Entry) g.Node {
@@ -580,6 +575,7 @@ func loadFeatureData(r *http.Request) (*DetailPage, error) {
 	}
 	loadDeploymentData(r.Context(), feature, data)
 	data.WorkspaceEnvs = featureworkspace.LoadEnvironments(r.Context(), feature)
+	setFeatureBreadcrumbSubtitle(data)
 	return data, nil
 }
 

@@ -294,14 +294,15 @@ func featurePageContent(page *FeaturePage) g.Node {
 
 	return h.Div(h.Class("container"),
 		featurePageSidebar(page),
+		components.Breadcrumbs(page.Breadcrumbs),
 		h.Main(h.Class("main-content"),
-			components.Breadcrumbs(page.Breadcrumbs),
 			components.Card(featureEnvironmentHeader(page)),
 			components.Card(
 				components.TabsNav(page.ActiveTab, envFeatureTabs(page)),
 				tabContent,
 			),
 		),
+		envActivitySidebar(page),
 	)
 }
 
@@ -337,9 +338,6 @@ func featureEnvironmentHeader(page *FeaturePage) g.Node {
 						redeployButton(page),
 					),
 				),
-			),
-			h.Aside(h.Class("env-feature-header-side"),
-				recentEnvironmentActivity(page),
 			),
 		),
 	)
@@ -440,6 +438,15 @@ func overviewTab(page *FeaturePage) g.Node {
 	)
 }
 
+func envActivitySidebar(page *FeaturePage) g.Node {
+	if len(page.AuditEntries) == 0 {
+		return nil
+	}
+	return h.Aside(h.Class("right-sidebar"),
+		components.CardCompact(recentEnvironmentActivity(page)),
+	)
+}
+
 func recentEnvironmentActivity(page *FeaturePage) g.Node {
 	if len(page.AuditEntries) == 0 {
 		return nil
@@ -461,8 +468,11 @@ func recentEnvironmentActivity(page *FeaturePage) g.Node {
 	}
 	return h.Section(h.Class("env-activity"),
 		h.Div(h.Class("env-activity-header"),
-			h.H3(g.Text("Recent activity")),
-			h.A(h.Href("/auditlog?q="+url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name)), g.Text("View all")),
+			h.Div(
+				h.H3(g.Text("Recent activity")),
+				h.Span(h.Class("activity-filter-badge"), g.Text(page.Tenant.Name+"/"+page.Environment.Name)),
+			),
+			h.A(h.Href("/auditlog?q="+url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name)), h.Class("link-muted"), g.Text("All →")),
 		),
 		h.Ul(h.Class("env-activity-list"), g.Group(items)),
 	)
