@@ -87,19 +87,6 @@ func matchesAll(text string, terms []string) bool {
 	return true
 }
 
-func targetKeyFromLabels(labels map[string]string) string {
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, k := range keys {
-		parts = append(parts, k+"="+labels[k])
-	}
-	return strings.Join(parts, ",")
-}
-
 func listPage(rows []Summary, query string) g.Node {
 	return h.Div(
 		h.Class("container"),
