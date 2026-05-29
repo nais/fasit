@@ -22,7 +22,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		var deps []*deployment.Deployment
 		var err error
 		if showInactive {
-			deps, err = deployment.ListRecent(r.Context())
+			deps, err = deployment.ListAll(r.Context())
 		} else {
 			deps, err = deployment.List(r.Context())
 		}

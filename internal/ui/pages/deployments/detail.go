@@ -103,7 +103,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 				Created: d.Created,
 			}
 			matching = append(matching, m)
-			if d.Created.After(dep.Created) && (supersededBy == nil || d.Created.After(supersededBy.Created)) {
+			if d.Active && d.Created.After(dep.Created) && (supersededBy == nil || d.Created.After(supersededBy.Created)) {
 				copy := m
 				supersededBy = &copy
 			}

@@ -25,6 +25,17 @@ WHERE
 ORDER BY
 	d.created DESC;
 
+-- name: ListAllDeployments :many
+SELECT
+	sqlc.embed(d),
+	sqlc.embed(fd)
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created DESC;
+
 -- name: ListDeploymentsByFeature :many
 SELECT
 	sqlc.embed(d),
