@@ -12,6 +12,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/uidata"
 )
 
 type Environment struct {
@@ -91,7 +92,7 @@ type envInfo struct {
 }
 
 func targetedEnvironments(ctx context.Context, feature *model.Feature) []envInfo {
-	tenants, err := envpkg.ListTenants(ctx)
+	tenants, err := uidata.ListTenants(ctx)
 	if err != nil {
 		return nil
 	}

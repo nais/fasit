@@ -1,0 +1,27 @@
+package uidata
+
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/dbtx"
+	"github.com/nais/fasit/internal/ui/uidata/sqlgen"
+)
+
+type ctxKey int
+
+const querierKey ctxKey = iota
+
+func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	return context.WithValue(ctx, querierKey, sqlgen.New(pool))
+}
+
+func querier(ctx context.Context) sqlgen.Querier {
+	q := ctx.Value(querierKey).(sqlgen.Querier)
+	if tx, ok := dbtx.Tx(ctx); ok {
+		if r, ok := q.(*sqlgen.Queries); ok {
+			return r.WithTx(tx)
+		}
+	}
+	return q
+}

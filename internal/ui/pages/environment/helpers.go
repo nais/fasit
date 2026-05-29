@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/featureworkspace"
+	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -83,7 +84,7 @@ func tenantCrumb(name string, allTenants []view.TenantNav) breadcrumb.Crumb {
 	return c
 }
 
-func toTenantNavs(tenants []*model.Tenant) []view.TenantNav {
+func toTenantNavs(tenants []*uidata.Tenant) []view.TenantNav {
 	ret := make([]view.TenantNav, 0, len(tenants))
 	for _, tenant := range tenants {
 		ret = append(ret, view.TenantNav{Name: tenant.Name})
