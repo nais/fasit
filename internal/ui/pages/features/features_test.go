@@ -97,7 +97,7 @@ func TestComputeAggStatus(t *testing.T) {
 	}
 }
 
-func TestFeatureIndexTableSourceIconAndNonSortableColumns(t *testing.T) {
+func TestFeatureIndexTableSourceKebabMenu(t *testing.T) {
 	var buf bytes.Buffer
 	err := featureIndexTable([]featureIndexRow{{
 		Name:        "kyverno",
@@ -109,17 +109,17 @@ func TestFeatureIndexTableSourceIconAndNonSortableColumns(t *testing.T) {
 	}
 
 	html := buf.String()
-	if !strings.Contains(html, `class="feature-source-link"`) || !strings.Contains(html, `aria-label="Open source"`) {
-		t.Fatalf("feature index should render source as icon link, got %s", html)
+	if !strings.Contains(html, `data-kebab-toggle="feature-kebab-0"`) {
+		t.Fatalf("feature index should render kebab button for source, got %s", html)
 	}
-	if !strings.Contains(html, "GitHub ↗") {
-		t.Fatalf("feature index should render source text with icon, got %s", html)
+	if !strings.Contains(html, "View on GitHub") {
+		t.Fatalf("feature index kebab should contain GitHub link, got %s", html)
 	}
-	if !strings.Contains(html, ">Source<") {
-		t.Fatalf("feature index should render a source column header, got %s", html)
+	if !strings.Contains(html, "https://github.com/nais/kyverno") {
+		t.Fatalf("feature index kebab should link to source URL, got %s", html)
 	}
 	if strings.Count(html, `data-no-sort`) != 2 {
-		t.Fatalf("description and source headers should be non-sortable, got %s", html)
+		t.Fatalf("description and kebab headers should be non-sortable, got %s", html)
 	}
 }
 

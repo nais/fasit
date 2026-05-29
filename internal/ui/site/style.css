@@ -504,19 +504,6 @@ nav .user {
 .feature-index-header h1 {
   margin: 0;
 }
-.feature-source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.feature-source-link svg {
-  flex: 0 0 auto;
-}
-.feature-source-link:hover {
-  color: var(--text-heading);
-}
 .feature-index-toolbar {
   margin-bottom: 0.85rem;
 }
@@ -1223,7 +1210,8 @@ nav .user {
   text-align: right;
   width: 1%;
 }
-.config-kebab-col {
+.config-kebab-col,
+.table-kebab-cell {
   width: 1%;
   white-space: nowrap;
   text-align: right;
