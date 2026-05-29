@@ -404,7 +404,8 @@ func main() {
 
 	// Seed older versions first — these will be automatically deactivated when
 	// the current versions are deployed to the same target, exercising the
-	// soft-delete (inactive deployment) flow in local dev.
+	// Seed older versions that get deactivated, exercising the
+	// deactivation flow in local dev.
 	addDeployment("naiserator", naiseratorOldV, environment.Labels{"kind": "tenant"}, tenantOnly)
 	addDeployment("kyverno", kyvernoOldV, environment.Labels{}, all)
 
