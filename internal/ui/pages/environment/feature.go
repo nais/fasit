@@ -18,6 +18,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
@@ -95,6 +96,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 			return
 		}
 
+		reconciler.TriggerReconcile()
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}
 }
@@ -112,6 +114,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			http.Error(w, "Failed to delete configuration: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		reconciler.TriggerReconcile()
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}
 }
@@ -176,6 +179,8 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 			http.Error(w, "Failed to create configuration: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		reconciler.TriggerReconcile()
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}
 }
@@ -268,10 +273,12 @@ func RedeployHandler() http.HandlerFunc {
 			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
 			return
 		}
-		if err := deployment.TriggerRedeploy(r.Context(), env.ID, feature.Name); err != nil {
+		if err := deployment.InvalidateLatestDeploy(r.Context(), env.ID, feature.Name); err != nil {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		reconciler.TriggerReconcile()
 
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}

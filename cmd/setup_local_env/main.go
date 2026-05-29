@@ -21,6 +21,7 @@ import (
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
 )
@@ -493,7 +494,8 @@ func main() {
 		// Trigger a redeploy (exercises ActionTriggered)
 		ctx = auth.SetEmail(ctx, actors[0])
 		testPartnerDev := envID("test-partner", "dev")
-		_ = deployment.TriggerRedeploy(ctx, testPartnerDev, "naiserator")
+		_ = deployment.InvalidateLatestDeploy(ctx, testPartnerDev, "naiserator")
+		reconciler.TriggerReconcile()
 
 		// Update environment labels (exercises SetLabels audit)
 		ctx = auth.SetEmail(ctx, actors[1])

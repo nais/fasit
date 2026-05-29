@@ -36,15 +36,15 @@ func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][
 }
 
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments.
-func TriggerReconcile(ctx context.Context) {
-	r := fromContext(ctx).reconciler
-
-	select {
-	case r.reconcileTrigger <- struct{}{}:
-	default:
-		r.log.Debug("there is already a reconcile event queued, skipping")
-	}
-}
+// func TriggerReconcile(ctx context.Context) {
+// 	r := fromContext(ctx).reconciler
+//
+// 	select {
+// 	case r.reconcileTrigger <- struct{}{}:
+// 	default:
+// 		r.log.Debug("there is already a reconcile event queued, skipping")
+// 	}
+// }
 
 func RunReconciler(ctx context.Context, interval time.Duration) {
 	fromContext(ctx).reconciler.Run(ctx, interval)
@@ -303,7 +303,7 @@ func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string
 	})
 }
 
-func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
+func InvalidateLatestDeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
 	err := querier(ctx).InvalidateDeployInstruction(ctx, deploymentsql.InvalidateDeployInstructionParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -329,7 +329,6 @@ func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) e
 		EnvironmentID: &envID,
 	})
 
-	TriggerReconcile(ctx)
 	return nil
 }
 

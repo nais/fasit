@@ -13,6 +13,7 @@ import (
 	"github.com/nais/fasit/internal/dbtx"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -264,6 +265,7 @@ func UpdateGlobalConfigHandler() http.HandlerFunc {
 			return
 		}
 
+		reconciler.TriggerReconcile()
 		featureName := chi.URLParam(r, "feature")
 		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
 	}
@@ -284,6 +286,7 @@ func DeleteGlobalConfigHandler() http.HandlerFunc {
 			return
 		}
 
+		reconciler.TriggerReconcile()
 		featureName := chi.URLParam(r, "feature")
 		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
 	}
@@ -340,6 +343,7 @@ func SetGlobalConfigHandler() http.HandlerFunc {
 			return
 		}
 
+		reconciler.TriggerReconcile()
 		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
 	}
 }

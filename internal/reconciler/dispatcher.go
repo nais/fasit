@@ -25,9 +25,9 @@ type Publisher interface {
 // NewPublisher creates a Publisher for a given topic.
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-// DBDispatcher writes deploy decisions to the database and publishes
+// pubSubDispatcher writes deploy decisions to the database and publishes
 // deploy instructions to naisd via Pub/Sub.
-type DBDispatcher struct {
+type pubSubDispatcher struct {
 	querier      reconcilersql.Querier
 	newPublisher NewPublisher
 	log          logrus.FieldLogger
@@ -38,12 +38,12 @@ type DBDispatcher struct {
 	deployMessages metric.Int64Counter
 }
 
-func NewDBDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*DBDispatcher, error) {
+func NewPubSubDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (Dispatcher, error) {
 	deployMessages, err := meter.Int64Counter("reconciler_deploy_messages", metric.WithDescription("Deploy messages sent by reconciler"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
-	return &DBDispatcher{
+	return &pubSubDispatcher{
 		querier:        reconcilersql.New(pool),
 		newPublisher:   publisher,
 		log:            log,
@@ -52,7 +52,7 @@ func NewDBDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Me
 	}, nil
 }
 
-func (w *DBDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision) error {
+func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision) error {
 	var instructions []reconcilersql.CreateDeployInstructionParams
 	var statuses []reconcilersql.UpsertDeploymentStatusParams
 
@@ -184,7 +184,7 @@ func (w *DBDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision)
 	return nil
 }
 
-func (w *DBDispatcher) publisher(topicID string) Publisher {
+func (w *pubSubDispatcher) publisher(topicID string) Publisher {
 	w.publishersMu.Lock()
 	defer w.publishersMu.Unlock()
 	if p, ok := w.publishers[topicID]; ok {

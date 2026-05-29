@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/sirupsen/logrus"
 )
 
@@ -122,7 +123,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		"id": deploymentID.String(),
 	})
 
-	deployment.TriggerReconcile(ctx)
+	reconciler.TriggerReconcile()
 }
 
 func (h *HttpHandler) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {

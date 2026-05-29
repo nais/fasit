@@ -7,6 +7,7 @@ import (
 
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/reconciler"
 )
 
 func CreateHandler() http.HandlerFunc {
@@ -65,7 +66,7 @@ func CreateHandler() http.HandlerFunc {
 			return
 		}
 
-		deployment.TriggerReconcile(r.Context())
+		reconciler.TriggerReconcile()
 
 		redirect := r.Referer()
 		if redirect == "" {

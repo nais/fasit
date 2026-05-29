@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/reconciler"
 )
 
 func DeleteHandler() http.HandlerFunc {
@@ -21,6 +22,8 @@ func DeleteHandler() http.HandlerFunc {
 			http.Error(w, "Failed to delete deployment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		reconciler.TriggerReconcile()
 
 		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
 	}
@@ -44,6 +47,8 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		reconciler.TriggerReconcile()
 
 		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
 	}

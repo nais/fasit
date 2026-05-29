@@ -158,7 +158,7 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 
 	// Wire new reconciler.
 	newPub := func(topicID string, log logrus.FieldLogger) reconciler.Publisher { return pub }
-	dispatcher, err := reconciler.NewDBDispatcher(pool, newPub, meter, logger)
+	dispatcher, err := reconciler.NewPubSubDispatcher(pool, newPub, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to create result writer: %v", err)
 	}

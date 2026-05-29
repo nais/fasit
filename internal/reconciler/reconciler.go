@@ -12,10 +12,15 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+var trigger chan struct{}
+
+func init() {
+	trigger = make(chan struct{}, 1)
+}
+
 type Reconciler struct {
 	querier reconcilersql.Querier
 	log     logrus.FieldLogger
-	trigger chan struct{}
 
 	// streamMu guards against concurrent streaming reconciles.
 	streamMu sync.Mutex
@@ -39,7 +44,6 @@ func New(pool *pgxpool.Pool, meter metric.Meter, log logrus.FieldLogger) (*Recon
 	return &Reconciler{
 		querier:           reconcilersql.New(pool),
 		log:               log,
-		trigger:           make(chan struct{}, 1),
 		reconcileLoopTime: reconcileLoopTime,
 	}, nil
 }
@@ -63,17 +67,16 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher
 		case <-ctx.Done():
 			return
 		case <-time.After(interval):
-		case <-r.trigger:
+		case <-trigger:
 			r.log.Info("manual reconcile triggered")
 		}
 	}
 }
 
-func (r *Reconciler) TriggerReconcile() {
+func TriggerReconcile() {
 	select {
-	case r.trigger <- struct{}{}:
+	case trigger <- struct{}{}:
 	default:
-		r.log.Debug("there is already a reconcile event queued, skipping")
 	}
 }
 

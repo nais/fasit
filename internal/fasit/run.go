@@ -88,13 +88,13 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error registering pool metrics: %w", err)
 	}
 
-	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+	deploymentPublisher := func(topicID string, log logrus.FieldLogger) reconciler.Publisher {
 		p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 		p.SetMeter(meter)
 		return p
 	}
 
-	loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, meter, log)
+	loadContext, err := contextloader.NewLoaderFunc(pool, nil, meter, log)
 	if err != nil {
 		return fmt.Errorf("creating setup context: %w", err)
 	}
@@ -102,13 +102,17 @@ func Run(ctx context.Context) error {
 	ctx = loadContext(ctx)
 	go deployment.TimeoutDeployInstructions(ctx, log)
 
-	go deployment.RunReconciler(ctx, 10*time.Minute)
-
 	rec, err := reconciler.New(pool, meter, log.WithField("component", "reconciler"))
 	if err != nil {
 		return fmt.Errorf("creating reconciler: %w", err)
 	}
 	ctx = reconciler.WithContext(ctx, rec)
+	dispatcher, err := reconciler.NewPubSubDispatcher(pool, deploymentPublisher, meter, log)
+	if err != nil {
+		return err
+	}
+
+	go rec.Run(ctx, 1*time.Minute, dispatcher)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 
