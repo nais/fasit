@@ -256,6 +256,24 @@ func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, erro
 	return ret, nil
 }
 
+func ListAllByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
+	rows, err := querier(ctx).ListAllDeploymentsByFeature(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Deployment, len(rows))
+	for i, row := range rows {
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret[i] = deployment
+	}
+
+	return ret, nil
+}
+
 func Deactivate(ctx context.Context, deploymentID uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
 		objectID := deploymentID.String()

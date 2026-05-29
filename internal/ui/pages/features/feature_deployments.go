@@ -550,18 +550,8 @@ func labelPills(labels map[string]string) g.Node {
 }
 
 func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) []DeploymentEnvStatus {
-	allDeployments, err := deployment.ListByFeature(ctx, feature.Name)
-	if err != nil || len(allDeployments) == 0 {
-		return []DeploymentEnvStatus{}
-	}
-
-	deployments := make([]*deployment.Deployment, 0, len(allDeployments))
-	for _, dep := range allDeployments {
-		if dep.Active {
-			deployments = append(deployments, dep)
-		}
-	}
-	if len(deployments) == 0 {
+	deployments, err := deployment.ListByFeature(ctx, feature.Name)
+	if err != nil || len(deployments) == 0 {
 		return []DeploymentEnvStatus{}
 	}
 	deployments = latestDeploymentPerTarget(deployments)

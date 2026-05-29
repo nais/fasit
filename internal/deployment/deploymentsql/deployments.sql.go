@@ -212,6 +212,66 @@ func (q *Queries) LatestStatusForDeploymentInEnvironment(ctx context.Context, ar
 	return status, err
 }
 
+const listAllDeploymentsByFeature = `-- name: ListAllDeploymentsByFeature :many
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	fd.name = $1
+ORDER BY
+	d.active DESC,
+	d.created DESC
+`
+
+type ListAllDeploymentsByFeatureRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) ListAllDeploymentsByFeature(ctx context.Context, featureName string) ([]ListAllDeploymentsByFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listAllDeploymentsByFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllDeploymentsByFeatureRow{}
+	for rows.Next() {
+		var i ListAllDeploymentsByFeatureRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.Deployment.Active,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDeployedFeaturesInEnvironment = `-- name: ListDeployedFeaturesInEnvironment :many
 SELECT DISTINCT ON (feature_name)
 	feature_name
@@ -419,8 +479,8 @@ FROM
 		AND d.version = fd.version
 WHERE
 	fd.name = $1
+	AND d.active = TRUE
 ORDER BY
-	d.active DESC,
 	d.created DESC
 `
 

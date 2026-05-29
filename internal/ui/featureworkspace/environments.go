@@ -27,17 +27,11 @@ type Environment struct {
 }
 
 func LoadEnvironments(ctx context.Context, feature *model.Feature) []Environment {
-	allDeployments, err := deployment.ListByFeature(ctx, feature.Name)
-	if err != nil || len(allDeployments) == 0 {
+	deployments, err := deployment.ListByFeature(ctx, feature.Name)
+	if err != nil || len(deployments) == 0 {
 		return []Environment{}
 	}
 
-	deployments := make([]*deployment.Deployment, 0, len(allDeployments))
-	for _, dep := range allDeployments {
-		if dep.Active {
-			deployments = append(deployments, dep)
-		}
-	}
 	if len(deployments) == 0 {
 		return []Environment{}
 	}

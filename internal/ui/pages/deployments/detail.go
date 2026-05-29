@@ -87,7 +87,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			}
 		}
 
-		allByFeature, _ := deployment.ListByFeature(r.Context(), dep.Feature.Name)
+		allByFeature, _ := deployment.ListAllByFeature(r.Context(), dep.Feature.Name)
 		var matching []matchingDeployment
 		var supersededBy *matchingDeployment
 		for _, d := range allByFeature {

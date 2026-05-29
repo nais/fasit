@@ -35,6 +35,20 @@ FROM
 		AND d.version = fd.version
 WHERE
 	fd.name = @feature_name
+	AND d.active = TRUE
+ORDER BY
+	d.created DESC;
+
+-- name: ListAllDeploymentsByFeature :many
+SELECT
+	sqlc.embed(d),
+	sqlc.embed(fd)
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	fd.name = @feature_name
 ORDER BY
 	d.active DESC,
 	d.created DESC;
