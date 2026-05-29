@@ -218,11 +218,17 @@ func renderComputedCells(ctx context.Context, feat *model.Feature, data *configE
 }
 
 func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExplorerEnv, error) {
-	deployments, err := deployment.ListByFeature(ctx, feat.Name)
+	allDeployments, err := deployment.ListByFeature(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}
-	deployments = latestDeploymentPerTarget(deployments)
+	var activeDeployments []*deployment.Deployment
+	for _, dep := range allDeployments {
+		if dep.Active {
+			activeDeployments = append(activeDeployments, dep)
+		}
+	}
+	activeDeployments = latestDeploymentPerTarget(activeDeployments)
 
 	tenants, err := uidata.ListTenants(ctx)
 	if err != nil {
@@ -255,7 +261,7 @@ func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExpl
 	var result []configExplorerEnv
 	seen := make(map[uuid.UUID]bool)
 	for _, env := range allEnvs {
-		for _, dep := range deployments {
+		for _, dep := range activeDeployments {
 			if targetMatchesLabels(dep.TargetLabels, env.labels) && !seen[env.env.ID] {
 				result = append(result, configExplorerEnv{
 					ID:         env.env.ID,

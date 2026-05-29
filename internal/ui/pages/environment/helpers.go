@@ -438,6 +438,9 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 	maxLabels := 0
 
 	for _, dep := range deployments {
+		if !dep.Active {
+			continue
+		}
 		target := dep.TargetLabels
 		if !labelsMatch(envLabels, target) {
 			continue

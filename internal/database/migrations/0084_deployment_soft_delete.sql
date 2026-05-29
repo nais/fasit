@@ -29,4 +29,3 @@ DROP INDEX IF EXISTS deployments_one_active_per_feature_target;
 
 ALTER TABLE deployments
 	DROP COLUMN active;
-
