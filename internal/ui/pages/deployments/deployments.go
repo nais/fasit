@@ -76,27 +76,6 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-// latestPerChartAndTarget returns the most recent deployment for each
-// unique (chart URI, target labels) combination.
-func latestPerChartAndTarget(deps []*deployment.Deployment) []*deployment.Deployment {
-	type key struct {
-		chart  string
-		target string
-	}
-	best := make(map[key]*deployment.Deployment)
-	for _, dep := range deps {
-		k := key{chart: dep.Feature.Chart, target: targetKeyFromLabels(dep.TargetLabels)}
-		if existing, ok := best[k]; !ok || dep.Created.After(existing.Created) {
-			best[k] = dep
-		}
-	}
-	result := make([]*deployment.Deployment, 0, len(best))
-	for _, dep := range best {
-		result = append(result, dep)
-	}
-	return result
-}
-
 func matchesAll(text string, terms []string) bool {
 	// Normalize "key: value" → "key:value" so either form matches
 	normalized := strings.ReplaceAll(text, ": ", ":")

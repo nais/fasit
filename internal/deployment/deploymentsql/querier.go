@@ -26,7 +26,6 @@ type Querier interface {
 	ListDeployInstructions(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsRow, error)
 	ListDeployedFeaturesInEnvironment(ctx context.Context, arg ListDeployedFeaturesInEnvironmentParams) ([]string, error)
 	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)
-	ListDeployments(ctx context.Context) ([]ListDeploymentsRow, error)
 	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)
 	ListDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsForEnvironmentRow, error)
 	ListDeploymentsForFeatureInEnvironment(ctx context.Context, arg ListDeploymentsForFeatureInEnvironmentParams) ([]ListDeploymentsForFeatureInEnvironmentRow, error)

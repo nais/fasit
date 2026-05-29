@@ -147,24 +147,6 @@ func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uui
 	}, nil
 }
 
-func List(ctx context.Context) ([]*Deployment, error) {
-	rows, err := querier(ctx).ListDeployments(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*Deployment, len(rows))
-	for i, row := range rows {
-		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
-		if err != nil {
-			return nil, fmt.Errorf("make deployment: %w", err)
-		}
-		ret[i] = deployment
-	}
-
-	return ret, nil
-}
-
 func ListAll(ctx context.Context) ([]*Deployment, error) {
 	rows, err := querier(ctx).ListAllDeployments(ctx)
 	if err != nil {
