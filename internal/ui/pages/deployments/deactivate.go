@@ -2,6 +2,8 @@ package deployments
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -25,7 +27,7 @@ func DeactivateHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirect(r), http.StatusSeeOther)
 	}
 }
 
@@ -50,6 +52,15 @@ func DeactivateByFeatureAndTargetHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirect(r), http.StatusSeeOther)
 	}
+}
+
+func deactivateRedirect(r *http.Request) string {
+	if ref := r.Header.Get("Referer"); ref != "" {
+		if u, err := url.Parse(ref); err == nil && strings.HasPrefix(u.Path, "/features/") {
+			return u.Path
+		}
+	}
+	return "/deployments"
 }
