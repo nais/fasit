@@ -17,6 +17,7 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 type Summary struct {
 	FeatureName, Chart, Version, Status, Target, Created, Completed, DeploymentID string
 	TargetLabels                                                                  map[string]string
+	Active                                                                        bool
 	createdAt                                                                     time.Time
 	disabledCount                                                                 int
 }

@@ -59,8 +59,8 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/deployments/preview-targets", deployments.PreviewTargetsHandler())
 	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage))
 	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
-	r.Post("/deployments/{id}/delete", deployments.DeleteHandler())
-	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
+	r.Post("/deployments/{id}/deactivate", deployments.DeactivateHandler())
+	r.Post("/deployments/{id}/deactivate-matching", deployments.DeactivateByFeatureAndTargetHandler())
 	r.Post("/reconcile", deployments.ReconcileHandler())
 
 	r.Get("/features", features.IndexHandler(s.renderPage))

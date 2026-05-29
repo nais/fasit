@@ -165,6 +165,24 @@ func List(ctx context.Context) ([]*Deployment, error) {
 	return ret, nil
 }
 
+func ListAll(ctx context.Context) ([]*Deployment, error) {
+	rows, err := querier(ctx).ListAllDeployments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Deployment, len(rows))
+	for i, row := range rows {
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret[i] = deployment
+	}
+
+	return ret, nil
+}
+
 func ListRecent(ctx context.Context) ([]*Deployment, error) {
 	rows, err := querier(ctx).ListRecentDeployments(ctx)
 	if err != nil {
@@ -256,7 +274,25 @@ func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, erro
 	return ret, nil
 }
 
-func Delete(ctx context.Context, deploymentID uuid.UUID) error {
+func ListAllByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
+	rows, err := querier(ctx).ListAllDeploymentsByFeature(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Deployment, len(rows))
+	for i, row := range rows {
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret[i] = deployment
+	}
+
+	return ret, nil
+}
+
+func Deactivate(ctx context.Context, deploymentID uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
 		objectID := deploymentID.String()
 		featureName := ""
@@ -267,7 +303,7 @@ func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 			return err
 		}
 
-		err := querier(ctx).DeleteDeployment(ctx, deploymentID)
+		err := querier(ctx).DeactivateDeployment(ctx, deploymentID)
 		if err != nil {
 			return err
 		}
@@ -283,9 +319,9 @@ func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 	})
 }
 
-func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
+func DeactivateByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		err := querier(ctx).DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
+		err := querier(ctx).DeactivateDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeactivateDeploymentsByFeatureAndTargetParams{
 			FeatureName: featureName,
 			Target:      target,
 		})

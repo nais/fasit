@@ -31,6 +31,10 @@ func LoadEnvironments(ctx context.Context, feature *model.Feature) []Environment
 	if err != nil || len(deployments) == 0 {
 		return []Environment{}
 	}
+
+	if len(deployments) == 0 {
+		return []Environment{}
+	}
 	deployments = latestDeploymentPerTarget(deployments)
 
 	targetedEnvs := targetedEnvironments(ctx, feature)

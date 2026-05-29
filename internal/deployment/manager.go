@@ -33,7 +33,7 @@ type Option func(*Manager)
 
 func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
 	querier := deploymentsql.New(pool)
-	d, err := newDeployer(querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
+	d, err := newDeployer(pool, querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
 	if err != nil {
 		return nil, err
 	}

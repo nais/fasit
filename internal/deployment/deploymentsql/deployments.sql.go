@@ -25,7 +25,7 @@ VALUES (
 	$4,
 	$5)
 RETURNING
-	id, feature_name, version, target, created, gh_ref, description
+	id, feature_name, version, target, created, gh_ref, description, active
 `
 
 type CreateDeploymentParams struct {
@@ -53,39 +53,70 @@ func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentPara
 		&i.Created,
 		&i.GhRef,
 		&i.Description,
+		&i.Active,
 	)
 	return i, err
 }
 
-const deleteDeployment = `-- name: DeleteDeployment :exec
-DELETE FROM deployments
-WHERE id = $1
-`
-
-func (q *Queries) DeleteDeployment(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteDeployment, id)
-	return err
-}
-
-const deleteDeploymentsByFeatureAndTarget = `-- name: DeleteDeploymentsByFeatureAndTarget :exec
-DELETE FROM deployments
-WHERE feature_name = $1
+const deactivateActiveDeploymentForTarget = `-- name: DeactivateActiveDeploymentForTarget :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	feature_name = $1
 	AND target = $2
+	AND active = TRUE
 `
 
-type DeleteDeploymentsByFeatureAndTargetParams struct {
+type DeactivateActiveDeploymentForTargetParams struct {
 	FeatureName string
 	Target      types.EnvironmentLabels
 }
 
-func (q *Queries) DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error {
-	_, err := q.db.Exec(ctx, deleteDeploymentsByFeatureAndTarget, arg.FeatureName, arg.Target)
+func (q *Queries) DeactivateActiveDeploymentForTarget(ctx context.Context, arg DeactivateActiveDeploymentForTargetParams) error {
+	_, err := q.db.Exec(ctx, deactivateActiveDeploymentForTarget, arg.FeatureName, arg.Target)
+	return err
+}
+
+const deactivateDeployment = `-- name: DeactivateDeployment :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	id = $1
+`
+
+func (q *Queries) DeactivateDeployment(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deactivateDeployment, id)
+	return err
+}
+
+const deactivateDeploymentsByFeatureAndTarget = `-- name: DeactivateDeploymentsByFeatureAndTarget :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	feature_name = $1
+	AND target = $2
+	AND active = TRUE
+`
+
+type DeactivateDeploymentsByFeatureAndTargetParams struct {
+	FeatureName string
+	Target      types.EnvironmentLabels
+}
+
+func (q *Queries) DeactivateDeploymentsByFeatureAndTarget(ctx context.Context, arg DeactivateDeploymentsByFeatureAndTargetParams) error {
+	_, err := q.db.Exec(ctx, deactivateDeploymentsByFeatureAndTarget, arg.FeatureName, arg.Target)
 	return err
 }
 
 const getDeployment = `-- name: GetDeployment :one
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
@@ -111,6 +142,7 @@ func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymen
 		&i.Deployment.Created,
 		&i.Deployment.GhRef,
 		&i.Deployment.Description,
+		&i.Deployment.Active,
 		&i.FeatureDatum.Name,
 		&i.FeatureDatum.Version,
 		&i.FeatureDatum.Chart,
@@ -178,6 +210,123 @@ func (q *Queries) LatestStatusForDeploymentInEnvironment(ctx context.Context, ar
 	var status string
 	err := row.Scan(&status)
 	return status, err
+}
+
+const listAllDeployments = `-- name: ListAllDeployments :many
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created DESC
+`
+
+type ListAllDeploymentsRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) ListAllDeployments(ctx context.Context) ([]ListAllDeploymentsRow, error) {
+	rows, err := q.db.Query(ctx, listAllDeployments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllDeploymentsRow{}
+	for rows.Next() {
+		var i ListAllDeploymentsRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.Deployment.Active,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllDeploymentsByFeature = `-- name: ListAllDeploymentsByFeature :many
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	fd.name = $1
+ORDER BY
+	d.active DESC,
+	d.created DESC
+`
+
+type ListAllDeploymentsByFeatureRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) ListAllDeploymentsByFeature(ctx context.Context, featureName string) ([]ListAllDeploymentsByFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listAllDeploymentsByFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllDeploymentsByFeatureRow{}
+	for rows.Next() {
+		var i ListAllDeploymentsByFeatureRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Description,
+			&i.Deployment.Active,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listDeployedFeaturesInEnvironment = `-- name: ListDeployedFeaturesInEnvironment :many
@@ -306,7 +455,7 @@ func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.
 
 const listDeployments = `-- name: ListDeployments :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
@@ -317,6 +466,8 @@ FROM
 			MAX(created) AS max_created
 		FROM
 			deployments
+		WHERE
+			active = TRUE
 		GROUP BY
 			feature_name,
 			target) latest ON d.feature_name = latest.feature_name
@@ -324,8 +475,10 @@ FROM
 	AND d.created = latest.max_created
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-	ORDER BY
-		d.created DESC
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.created DESC
 `
 
 type ListDeploymentsRow struct {
@@ -350,6 +503,7 @@ func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, er
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Active,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,
@@ -374,7 +528,7 @@ func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, er
 
 const listDeploymentsByFeature = `-- name: ListDeploymentsByFeature :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
@@ -382,6 +536,7 @@ FROM
 		AND d.version = fd.version
 WHERE
 	fd.name = $1
+	AND d.active = TRUE
 ORDER BY
 	d.created DESC
 `
@@ -408,6 +563,7 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Active,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,
@@ -432,7 +588,7 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 
 const listDeploymentsForEnvironment = `-- name: ListDeploymentsForEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
 (df.feature IS NOT NULL)::BOOL AS disabled
 FROM
@@ -443,10 +599,12 @@ FROM
 		AND d.version = fd.version
 	LEFT JOIN disabled_features df ON df.environment_id = e.id
 		AND df.feature = d.feature_name
-	ORDER BY
-		d.feature_name,
-		d.target,
-		d.created DESC
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC
 `
 
 type ListDeploymentsForEnvironmentRow struct {
@@ -472,6 +630,7 @@ func (q *Queries) ListDeploymentsForEnvironment(ctx context.Context, environment
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Active,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,
@@ -497,7 +656,7 @@ func (q *Queries) ListDeploymentsForEnvironment(ctx context.Context, environment
 
 const listDeploymentsForFeatureInEnvironment = `-- name: ListDeploymentsForFeatureInEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
@@ -507,6 +666,7 @@ FROM
 		AND d.version = fd.version
 WHERE
 	d.feature_name = $2
+	AND d.active = TRUE
 ORDER BY
 	d.feature_name,
 	d.target,
@@ -540,6 +700,7 @@ func (q *Queries) ListDeploymentsForFeatureInEnvironment(ctx context.Context, ar
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Active,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,
@@ -564,7 +725,7 @@ func (q *Queries) ListDeploymentsForFeatureInEnvironment(ctx context.Context, ar
 
 const listRecentDeployments = `-- name: ListRecentDeployments :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
@@ -597,6 +758,7 @@ func (q *Queries) ListRecentDeployments(ctx context.Context) ([]ListRecentDeploy
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Active,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,

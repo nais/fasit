@@ -129,7 +129,7 @@ func overviewCardGrid(envs []DeploymentEnvStatus, featureName, chart string) g.N
 	prefs := ViewPrefs{Group: "tenant", ShowVersion: false, ShowLastDeploy: false, ShowRowActions: false}
 	cards := groupByTenantCards(envs)
 	return h.Div(h.Class("feature-overview-grid"), h.ID("overview-grid"),
-		cardGrid(cards, featureName, chart, prefs),
+		cardGrid(cards, featureName, chart, prefs, nil),
 	)
 }
 
@@ -151,7 +151,22 @@ func deploymentSpecsContent(data *DetailPage) g.Node {
 
 	prefs := deploymentSpecsViewPrefs()
 	cards := buildCards(data.DeploymentEnvs, prefs.Group)
-	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs)
+	fallbacks := fallbackVersionMap(data.DeploymentEnvs)
+	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs, fallbacks)
+}
+
+// fallbackVersionMap returns a map from deployment ID to the version that
+// would take over if that deployment is removed. This is determined by looking
+// at environments that are overridden BY this deployment — their own deployment
+// version is the fallback.
+func fallbackVersionMap(envs []DeploymentEnvStatus) map[string]string {
+	fallbacks := map[string]string{}
+	for _, env := range envs {
+		if env.IsOverridden && env.OverriddenByID != "" {
+			fallbacks[env.OverriddenByID] = env.DeploymentVersion
+		}
+	}
+	return fallbacks
 }
 
 func buildCards(envs []DeploymentEnvStatus, groupBy string) []card {
@@ -246,18 +261,18 @@ func sortEnvs(envs []DeploymentEnvStatus) {
 	})
 }
 
-func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs) g.Node {
+func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallbackVersions map[string]string) g.Node {
 	if len(cards) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No environments to show."))
 	}
 	return h.Div(h.Class("feature-card-grid"),
 		g.Map(cards, func(c card) g.Node {
-			return renderCard(c, featureName, chart, prefs)
+			return renderCard(c, featureName, chart, prefs, fallbackVersions[c.DeploymentID])
 		}),
 	)
 }
 
-func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
+func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVersion string) g.Node {
 	heading := []g.Node{}
 
 	if prefs.Group == "tenant" {
@@ -281,19 +296,39 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs) g.Node {
 	}
 
 	actions := []g.Node{}
-	// Card-level kebab for deployment grouping (set version)
+	// Card-level kebab for deployment grouping (set version, remove)
 	if prefs.Group == "deployment" && c.DeploymentID != "" {
-		popoverID := "set-version-" + c.DeploymentID
+		setVersionPopoverID := "set-version-" + c.DeploymentID
+		removePopoverID := "remove-deployment-" + c.DeploymentID
 		actions = append(actions,
 			h.Div(h.Class("card-kebab-wrap"),
 				kebabButton("card-kebab-"+c.DeploymentID),
 				h.Div(h.Class("kebab-menu"), h.ID("card-kebab-"+c.DeploymentID),
 					h.Button(h.Type("button"), h.Class("kebab-item"),
-						g.Attr("popovertarget", popoverID),
+						g.Attr("popovertarget", setVersionPopoverID),
 						g.Text("Set version"),
 					),
+					h.Button(h.Type("button"), h.Class("kebab-item kebab-item-danger"),
+						g.Attr("popovertarget", removePopoverID),
+						g.Text("Remove"),
+					),
 				),
-				setVersionPopover(popoverID, featureName, chart, c.Labels),
+				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels),
+				h.Div(g.Attr("popover", ""), h.ID(removePopoverID),
+					h.H3(g.Text("Remove deployment spec")),
+					g.If(fallbackVersion != "",
+						h.P(g.Textf("This will remove this deployment spec. Version %s will take its place.", fallbackVersion)),
+					),
+					g.If(fallbackVersion == "",
+						h.P(g.Text("This will remove this deployment spec. It will no longer be reconciled.")),
+					),
+					h.Form(h.Method("POST"), h.Action("/deployments/"+c.DeploymentID+"/deactivate"),
+						h.Div(h.Class("popover-actions"),
+							h.Button(h.Type("submit"), g.Text("Remove")),
+							h.Button(h.Type("button"), g.Attr("popovertarget", removePopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+						),
+					),
+				),
 			),
 		)
 	}

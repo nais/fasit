@@ -2,6 +2,8 @@ package deployments
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -10,7 +12,7 @@ import (
 	"github.com/nais/fasit/internal/reconciler"
 )
 
-func DeleteHandler() http.HandlerFunc {
+func DeactivateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
@@ -18,18 +20,18 @@ func DeleteHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.Delete(r.Context(), id); err != nil {
-			http.Error(w, "Failed to delete deployment: "+err.Error(), http.StatusInternalServerError)
+		if err := deployment.Deactivate(r.Context(), id); err != nil {
+			http.Error(w, "Failed to deactivate deployment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirect(r), http.StatusSeeOther)
 	}
 }
 
-func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
+func DeactivateByFeatureAndTargetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
@@ -43,13 +45,22 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels)); err != nil {
-			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
+		if err := deployment.DeactivateByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels)); err != nil {
+			http.Error(w, "Failed to deactivate deployments: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirect(r), http.StatusSeeOther)
 	}
+}
+
+func deactivateRedirect(r *http.Request) string {
+	if ref := r.Header.Get("Referer"); ref != "" {
+		if u, err := url.Parse(ref); err == nil && u.Host == r.Host && strings.HasPrefix(u.Path, "/features/") {
+			return u.Path
+		}
+	}
+	return "/deployments"
 }

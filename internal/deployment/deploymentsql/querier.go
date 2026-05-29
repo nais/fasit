@@ -11,8 +11,9 @@ import (
 type Querier interface {
 	CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error)
 	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
-	DeleteDeployment(ctx context.Context, id uuid.UUID) error
-	DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error
+	DeactivateActiveDeploymentForTarget(ctx context.Context, arg DeactivateActiveDeploymentForTargetParams) error
+	DeactivateDeployment(ctx context.Context, id uuid.UUID) error
+	DeactivateDeploymentsByFeatureAndTarget(ctx context.Context, arg DeactivateDeploymentsByFeatureAndTargetParams) error
 	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	GetDeployInstructionByDeploymentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByDeploymentAndEnvironmentIDParams) (GetDeployInstructionByDeploymentAndEnvironmentIDRow, error)
@@ -20,6 +21,8 @@ type Querier interface {
 	GetDeploymentStatus(ctx context.Context, arg GetDeploymentStatusParams) (DeploymentStatus, error)
 	InvalidateDeployInstruction(ctx context.Context, arg InvalidateDeployInstructionParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
+	ListAllDeployments(ctx context.Context) ([]ListAllDeploymentsRow, error)
+	ListAllDeploymentsByFeature(ctx context.Context, featureName string) ([]ListAllDeploymentsByFeatureRow, error)
 	ListDeployInstructions(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsRow, error)
 	ListDeployedFeaturesInEnvironment(ctx context.Context, arg ListDeployedFeaturesInEnvironmentParams) ([]string, error)
 	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)

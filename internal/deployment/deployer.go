@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
@@ -39,6 +40,7 @@ type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 type deployer struct {
 	newPublisher   NewPublisher
 	querier        deploymentsql.Querier
+	pool           *pgxpool.Pool
 	log            logrus.FieldLogger
 	deployMessages metric.Int64Counter
 
@@ -46,7 +48,7 @@ type deployer struct {
 	publishers   map[string]Publisher
 }
 
-func newDeployer(querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
+func newDeployer(pool *pgxpool.Pool, querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
 	deployMessages, err := meter.Int64Counter("deployment_deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
@@ -55,6 +57,7 @@ func newDeployer(querier deploymentsql.Querier, publisher NewPublisher, meter me
 	return &deployer{
 		newPublisher:   publisher,
 		querier:        querier,
+		pool:           pool,
 		log:            log,
 		deployMessages: deployMessages,
 		publishers:     make(map[string]Publisher),
@@ -245,7 +248,23 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, de
 		ghRef = b
 	}
 
-	deployment, err := d.querier.CreateDeployment(ctx, deploymentsql.CreateDeploymentParams{
+	tx, err := d.pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	txQuerier := deploymentsql.New(tx)
+
+	err = txQuerier.DeactivateActiveDeploymentForTarget(ctx, deploymentsql.DeactivateActiveDeploymentForTargetParams{
+		FeatureName: feat.Name,
+		Target:      types.EnvironmentLabels(target),
+	})
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("deactivate previous deployment: %w", err)
+	}
+
+	deployment, err := txQuerier.CreateDeployment(ctx, deploymentsql.CreateDeploymentParams{
 		FeatureName: feat.Name,
 		Version:     feat.Version,
 		GhRef:       ghRef,
@@ -254,6 +273,10 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, de
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return uuid.Nil, fmt.Errorf("commit tx: %w", err)
 	}
 
 	return deployment.ID, nil

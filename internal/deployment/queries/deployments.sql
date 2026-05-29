@@ -11,11 +11,26 @@ FROM
 			MAX(created) AS max_created
 		FROM
 			deployments
+		WHERE
+			active = TRUE
 		GROUP BY
 			feature_name,
 			target) latest ON d.feature_name = latest.feature_name
 	AND d.target = latest.target
 	AND d.created = latest.max_created
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.created DESC;
+
+-- name: ListAllDeployments :many
+SELECT
+	sqlc.embed(d),
+	sqlc.embed(fd)
+FROM
+	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY
@@ -31,7 +46,22 @@ FROM
 		AND d.version = fd.version
 WHERE
 	fd.name = @feature_name
+	AND d.active = TRUE
 ORDER BY
+	d.created DESC;
+
+-- name: ListAllDeploymentsByFeature :many
+SELECT
+	sqlc.embed(d),
+	sqlc.embed(fd)
+FROM
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	fd.name = @feature_name
+ORDER BY
+	d.active DESC,
 	d.created DESC;
 
 -- name: CreateDeployment :one
@@ -50,9 +80,13 @@ VALUES (
 RETURNING
 	*;
 
--- name: DeleteDeployment :exec
-DELETE FROM deployments
-WHERE id = @id;
+-- name: DeactivateDeployment :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	id = @id;
 
 -- name: GetDeployment :one
 SELECT
@@ -78,10 +112,12 @@ FROM
 		AND d.version = fd.version
 	LEFT JOIN disabled_features df ON df.environment_id = e.id
 		AND df.feature = d.feature_name
-	ORDER BY
-		d.feature_name,
-		d.target,
-		d.created DESC;
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC;
 
 -- name: ListDeployedFeaturesInEnvironment :many
 SELECT DISTINCT ON (feature_name)
@@ -174,10 +210,15 @@ ORDER BY
 	last_modified DESC
 LIMIT 1;
 
--- name: DeleteDeploymentsByFeatureAndTarget :exec
-DELETE FROM deployments
-WHERE feature_name = @feature_name
-	AND target = @target;
+-- name: DeactivateDeploymentsByFeatureAndTarget :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	feature_name = @feature_name
+	AND target = @target
+	AND active = TRUE;
 
 -- name: GetDeploymentStatus :one
 SELECT
@@ -200,6 +241,7 @@ FROM
 		AND d.version = fd.version
 WHERE
 	d.feature_name = @feature_name
+	AND d.active = TRUE
 ORDER BY
 	d.feature_name,
 	d.target,
@@ -216,4 +258,14 @@ FROM
 	ORDER BY
 		d.created DESC
 	LIMIT 50;
+
+-- name: DeactivateActiveDeploymentForTarget :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	feature_name = @feature_name
+	AND target = @target
+	AND active = TRUE;
 

@@ -31,6 +31,7 @@ type Deployment struct {
 	Description *string        `json:"description"`
 	GHRef       []byte         `json:"ghRef,omitempty"`
 	Created     time.Time      `json:"created"`
+	Active      bool           `json:"active"`
 
 	TargetLabels    environment.Labels `json:"-"`
 	TplDetails      []byte             `json:"-"`
@@ -136,6 +137,7 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		Description:  d.Description,
 		GHRef:        d.GhRef,
 		Created:      d.Created.Time,
+		Active:       d.Active,
 		TargetLabels: environment.Labels(d.Target),
 		TplDetails:   fd.TplDetails,
 	}, nil

@@ -25,6 +25,8 @@ func Status(status string) g.Node {
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" Enabled")})
 	case "OVERRIDDEN":
 		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("⊘")), g.Text(" Overridden")})
+	case "INACTIVE":
+		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("◇")), g.Text(" Inactive")})
 	default:
 		return g.Text(status)
 	}
@@ -38,7 +40,7 @@ func StatusClass(status string) string {
 		return "status-error"
 	case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK", "INVALIDATED", "CREATED":
 		return "status-pending"
-	case "DISABLED", "OVERRIDDEN":
+	case "DISABLED", "OVERRIDDEN", "INACTIVE":
 		return "status-disabled"
 	default:
 		return "text-muted"
