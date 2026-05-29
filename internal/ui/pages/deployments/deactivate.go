@@ -58,7 +58,7 @@ func DeactivateByFeatureAndTargetHandler() http.HandlerFunc {
 
 func deactivateRedirect(r *http.Request) string {
 	if ref := r.Header.Get("Referer"); ref != "" {
-		if u, err := url.Parse(ref); err == nil && strings.HasPrefix(u.Path, "/features/") {
+		if u, err := url.Parse(ref); err == nil && u.Host == r.Host && strings.HasPrefix(u.Path, "/features/") {
 			return u.Path
 		}
 	}

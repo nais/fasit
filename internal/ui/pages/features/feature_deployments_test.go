@@ -247,3 +247,30 @@ func TestStatusTooltip(t *testing.T) {
 		assert.Equal(t, "No release deployed yet", statusTooltip(env))
 	})
 }
+
+func TestFallbackVersionMap(t *testing.T) {
+	t.Run("maps overrider to overridden version", func(t *testing.T) {
+		envs := []DeploymentEnvStatus{
+			{DeploymentID: "broad-1", DeploymentVersion: "1.0.0", IsOverridden: true, OverriddenByID: "specific-1"},
+			{DeploymentID: "specific-1", DeploymentVersion: "2.0.0", IsOverridden: false},
+		}
+		fallbacks := fallbackVersionMap(envs)
+		if got := fallbacks["specific-1"]; got != "1.0.0" {
+			t.Errorf("fallbackVersionMap()[specific-1] = %q, want %q", got, "1.0.0")
+		}
+		if got := fallbacks["broad-1"]; got != "" {
+			t.Errorf("fallbackVersionMap()[broad-1] = %q, want empty", got)
+		}
+	})
+
+	t.Run("returns empty map when no overrides", func(t *testing.T) {
+		envs := []DeploymentEnvStatus{
+			{DeploymentID: "dep-1", DeploymentVersion: "1.0.0"},
+			{DeploymentID: "dep-2", DeploymentVersion: "2.0.0"},
+		}
+		fallbacks := fallbackVersionMap(envs)
+		if len(fallbacks) != 0 {
+			t.Errorf("fallbackVersionMap() = %v, want empty map", fallbacks)
+		}
+	})
+}
