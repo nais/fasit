@@ -45,10 +45,12 @@ FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-	ORDER BY
-		d.feature_name,
-		d.target,
-		d.created DESC;
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC;
 
 -- name: ListDisabledFeatures :many
 SELECT
