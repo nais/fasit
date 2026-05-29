@@ -81,7 +81,7 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 				g.If(appVersion != "",
 					g.Group([]g.Node{
 						h.Div(h.Class("kebab-divider")),
-						h.Span(h.Class("kebab-version"), g.Textf("v%s", appVersion)),
+						h.Span(h.Class("kebab-version"), g.Text(appVersion)),
 					}),
 				),
 			),
