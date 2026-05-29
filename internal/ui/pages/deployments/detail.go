@@ -139,12 +139,12 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 				h.Summary(h.Class("env-actions-toggle"), g.Attr("title", "Actions"), g.Text("\u22ee")),
 				h.Div(h.Class("env-actions-menu"),
 					h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version")),
-					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete deployment")),
+					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "deactivate-deployment"), g.Text("Deactivate deployment")),
 				),
 			),
 		),
 		setVersionPopover(d),
-		deleteDeploymentPopover(d, len(matching)),
+		deactivateDeploymentPopover(d),
 	}
 
 	if supersededBy != nil {
@@ -301,14 +301,14 @@ func ghRefLink(ref *commonmodel.GitHubCommit) g.Node {
 	return g.Text(label)
 }
 
-func deleteDeploymentPopover(d *deployment.Deployment, versionCount int) g.Node {
-	return h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),
-		h.H3(g.Text("Delete deployment")),
-		h.P(g.Textf("This will permanently delete %s and all %d previous versions with this target. This cannot be undone.", d.Feature.Name, versionCount)),
-		h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
+func deactivateDeploymentPopover(d *deployment.Deployment) g.Node {
+	return h.Div(g.Attr("popover", ""), h.ID("deactivate-deployment"),
+		h.H3(g.Text("Deactivate deployment")),
+		h.P(g.Textf("This will deactivate %s. It will no longer be reconciled.", d.Feature.Name)),
+		h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/deactivate"),
 			h.Div(h.Class("popover-actions"),
-				h.Button(h.Type("submit"), g.Text("Delete")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", "delete-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+				h.Button(h.Type("submit"), g.Text("Deactivate")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", "deactivate-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 			),
 		),
 	)

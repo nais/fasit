@@ -389,6 +389,7 @@ func main() {
 	}
 
 	naiseratorV := newVersion()
+	naiseratorOldV := newVersion()
 	v13sV := newVersion()
 	consoleV := newVersion()
 	unleashV := newVersion()
@@ -399,6 +400,13 @@ func main() {
 	replicatorDevV := newVersion()
 	unleashDevV := newVersion()
 	kyvernoV := newVersion()
+	kyvernoOldV := newVersion()
+
+	// Seed older versions first — these will be automatically deactivated when
+	// the current versions are deployed to the same target, exercising the
+	// soft-delete (inactive deployment) flow in local dev.
+	addDeployment("naiserator", naiseratorOldV, environment.Labels{"kind": "tenant"}, tenantOnly)
+	addDeployment("kyverno", kyvernoOldV, environment.Labels{}, all)
 
 	addDeployment("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly)
 	addDeployment("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly)

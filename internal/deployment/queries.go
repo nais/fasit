@@ -256,7 +256,7 @@ func ListByFeature(ctx context.Context, featureName string) ([]*Deployment, erro
 	return ret, nil
 }
 
-func Delete(ctx context.Context, deploymentID uuid.UUID) error {
+func Deactivate(ctx context.Context, deploymentID uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
 		objectID := deploymentID.String()
 		featureName := ""
@@ -267,7 +267,7 @@ func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 			return err
 		}
 
-		err := querier(ctx).DeleteDeployment(ctx, deploymentID)
+		err := querier(ctx).DeactivateDeployment(ctx, deploymentID)
 		if err != nil {
 			return err
 		}
@@ -283,9 +283,9 @@ func Delete(ctx context.Context, deploymentID uuid.UUID) error {
 	})
 }
 
-func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
+func DeactivateByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		err := querier(ctx).DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
+		err := querier(ctx).DeactivateDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeactivateDeploymentsByFeatureAndTargetParams{
 			FeatureName: featureName,
 			Target:      target,
 		})

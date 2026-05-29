@@ -17,28 +17,39 @@ import (
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deps, err := deployment.List(r.Context())
+		showInactive := r.URL.Query().Get("show_inactive") == "true"
+
+		var deps []*deployment.Deployment
+		var err error
+		if showInactive {
+			deps, err = deployment.ListRecent(r.Context())
+		} else {
+			deps, err = deployment.List(r.Context())
+		}
 		if err != nil {
 			http.Error(w, "Failed to load deployments", http.StatusInternalServerError)
 			return
 		}
 
-		active := latestPerChartAndTarget(deps)
-
-		rows := make([]Summary, 0, len(active))
-		for _, dep := range active {
+		rows := make([]Summary, 0, len(deps))
+		for _, dep := range deps {
 			statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
 			state, disabledCount := deployment.AggregateState(statuses)
+			status := string(state)
+			if !dep.Active {
+				status = "INACTIVE"
+			}
 			rows = append(rows, Summary{
 				FeatureName:   dep.Feature.Name,
 				Chart:         dep.Feature.Chart,
 				Version:       dep.Feature.Version,
-				Status:        string(state),
+				Status:        status,
 				Target:        deploymentTarget(dep),
 				TargetLabels:  deploymentTargetLabels(dep),
 				Created:       view.FormatTime(dep.Created),
 				Completed:     latestStatusTime(statuses),
 				DeploymentID:  dep.ID.String(),
+				Active:        dep.Active,
 				createdAt:     dep.Created,
 				disabledCount: disabledCount,
 			})
@@ -64,7 +75,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		renderPage(w, r, layout.Props{
 			Title:       "Deployments",
 			CurrentPage: components.PageDeployments,
-			Content:     listPage(rows, query),
+			Content:     listPage(rows, query, showInactive),
 			Scripts:     []string{"deployments.js"},
 		})
 	}
@@ -115,7 +126,7 @@ func targetKeyFromLabels(labels map[string]string) string {
 	return strings.Join(parts, ",")
 }
 
-func listPage(rows []Summary, query string) g.Node {
+func listPage(rows []Summary, query string, showInactive bool) g.Node {
 	return h.Div(
 		h.Class("container"),
 		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments()}),
@@ -133,6 +144,14 @@ func listPage(rows []Summary, query string) g.Node {
 							g.Attr("autocomplete", "off"),
 							g.Attr("data-url-filter", "q"),
 							g.If(query != "", h.Value(query)),
+						),
+						h.Label(h.Class("toggle-label"),
+							h.Input(
+								h.Type("checkbox"),
+								g.Attr("onchange", "((c)=>{var p=new URLSearchParams(window.location.search);c.checked?p.set('show_inactive','true'):p.delete('show_inactive');var s=p.toString();window.location.href=window.location.pathname+(s?'?'+s:'')})(this)"),
+								g.If(showInactive, g.Attr("checked", "")),
+							),
+							g.Text(" Show inactive"),
 						),
 					),
 					h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "new-deployment"), g.Text("+ New deployment")),

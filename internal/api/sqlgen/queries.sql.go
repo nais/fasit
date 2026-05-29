@@ -12,7 +12,7 @@ import (
 
 const getDeployment = `-- name: GetDeployment :one
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
@@ -38,6 +38,7 @@ func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymen
 		&i.Deployment.Created,
 		&i.Deployment.GhRef,
 		&i.Deployment.Description,
+		&i.Deployment.Active,
 		&i.FeatureDatum.Name,
 		&i.FeatureDatum.Version,
 		&i.FeatureDatum.Chart,

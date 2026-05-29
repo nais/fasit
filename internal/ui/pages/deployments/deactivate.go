@@ -10,7 +10,7 @@ import (
 	"github.com/nais/fasit/internal/reconciler"
 )
 
-func DeleteHandler() http.HandlerFunc {
+func DeactivateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
@@ -18,8 +18,8 @@ func DeleteHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.Delete(r.Context(), id); err != nil {
-			http.Error(w, "Failed to delete deployment: "+err.Error(), http.StatusInternalServerError)
+		if err := deployment.Deactivate(r.Context(), id); err != nil {
+			http.Error(w, "Failed to deactivate deployment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -29,7 +29,7 @@ func DeleteHandler() http.HandlerFunc {
 	}
 }
 
-func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
+func DeactivateByFeatureAndTargetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
@@ -43,8 +43,8 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels)); err != nil {
-			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
+		if err := deployment.DeactivateByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels)); err != nil {
+			http.Error(w, "Failed to deactivate deployments: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
