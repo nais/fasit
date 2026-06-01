@@ -67,10 +67,16 @@ func (h *HelmClient) Execute(cmd *exec.Cmd) error {
 	h.logger.Println(cmd.String())
 
 	if cmd.Stdout != nil {
-		_, _ = fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
-		defer func() {
-			_, _ = fmt.Fprintln(cmd.Stdout, "end of mock executor")
-		}()
+		mockLines := []string{
+			"Pulled: europe-north1-docker.pkg.dev/nais-io/nais/feature/mock:1.0.0-local",
+			"Digest: sha256:dde4e99c363e53fea798b642e25fdfe6407a6cc1091dc9eaf9e68b04794e03fe",
+			"coalesce.go:298: warning: cannot overwrite table with non table for loki.loki.chunksCache.nodeSelector (map[])",
+			"coalesce.go:298: warning: cannot overwrite table with non table for loki.loki.defaults.nodeSelector (map[])",
+			"Release \"mock-feature\" has been upgraded. Happy Helming!",
+		}
+		for _, line := range mockLines {
+			_, _ = fmt.Fprintln(cmd.Stdout, line)
+		}
 	}
 	time.Sleep(3 * time.Second)
 
@@ -85,6 +91,16 @@ func (h *HelmClient) Execute(cmd *exec.Cmd) error {
 
 	if h.mockFailing {
 		if h.numSuccessful <= 0 {
+			if cmd.Stdout != nil {
+				failLines := []string{
+					name + "-0 (v1Pod): Back-off restarting failed container in pod " + name + "-0_nais-system",
+					name + "-0 (v1Pod): Readiness probe failed: HTTP probe failed with statuscode: 503",
+					name + "-0 (v1Pod): 0/10 nodes are available: 10 Insufficient cpu, 2 Insufficient memory. no new claims to deallocate, preemption: 0/10 nodes are available: 10 No preemption victims found for incoming pod.",
+				}
+				for _, line := range failLines {
+					_, _ = fmt.Fprintln(cmd.Stdout, line)
+				}
+			}
 			h.markFailed(name)
 			return fmt.Errorf("execution failed")
 		}
