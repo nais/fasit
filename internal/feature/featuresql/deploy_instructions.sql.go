@@ -133,3 +133,53 @@ func (q *Queries) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID
 	)
 	return i, err
 }
+
+const listRecentDeployInstructions = `-- name: ListRecentDeployInstructions :many
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+FROM
+	deploy_instructions
+WHERE
+	feature_name = $1
+	AND environment_id = $2
+ORDER BY
+	created DESC
+LIMIT $3
+`
+
+type ListRecentDeployInstructionsParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+	Limit         int32
+}
+
+func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]DeployInstruction, error) {
+	rows, err := q.db.Query(ctx, listRecentDeployInstructions, arg.FeatureName, arg.EnvironmentID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeployInstruction{}
+	for rows.Next() {
+		var i DeployInstruction
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.Hash,
+			&i.Created,
+			&i.LastModified,
+			&i.Values,
+			&i.DeploymentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

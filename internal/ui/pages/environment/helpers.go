@@ -25,22 +25,24 @@ import (
 type FeatureConfigItem = components.ConfigItem
 
 type FeaturePage struct {
-	Breadcrumbs      []breadcrumb.Crumb
-	Tenant           *model.Tenant
-	TenantSlug       string
-	Environment      *Environment
-	Feature          *FeatureDetail
-	WorkspaceEnvs    []featureworkspace.Environment
-	HelmValues       string
-	HelmValuesError  string
-	Deployments      []EnvDeploymentItem
-	FeatureLog       *FeatureLog
-	Status           string
-	StatusMessage    string
-	ActiveTab        string
-	PlaygroundCode   string
-	PlaygroundResult *PlaygroundResult
-	AuditEntries     []*audit.Entry
+	Breadcrumbs         []breadcrumb.Crumb
+	Tenant              *model.Tenant
+	TenantSlug          string
+	Environment         *Environment
+	Feature             *FeatureDetail
+	WorkspaceEnvs       []featureworkspace.Environment
+	HelmValues          string
+	HelmValuesError     string
+	Deployments         []EnvDeploymentItem
+	FeatureLog          *FeatureLog
+	Status              string
+	StatusMessage       string
+	ActiveTab           string
+	PlaygroundCode      string
+	PlaygroundResult    *PlaygroundResult
+	AuditEntries        []*audit.Entry
+	WinningDeployment   *deployment.Deployment
+	RecentDeployHistory []*model.DeployInstruction
 }
 
 type FeatureDetail struct {
@@ -213,9 +215,11 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		page.StatusMessage = msg
 	}
 
-	page.Feature.ConfigItems, err = loadFeatureConfigItems(ctx, feat, env.ID)
-	if err != nil {
-		return nil, err
+	if activeTab == "config" {
+		page.Feature.ConfigItems, err = loadFeatureConfigItems(ctx, feat, env.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	page.FeatureLog = loadFeatureLog(ctx, env.ID, feat)
@@ -229,6 +233,12 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	}
 	if activeTab == "deployments" {
 		page.Deployments = loadEnvironmentDeployments(ctx, featureName, env.ID)
+	}
+	if activeTab == "" || activeTab == "status" {
+		if dep, err := deployment.WinningDeployment(ctx, env.ID, featureName); err == nil {
+			page.WinningDeployment = dep
+		}
+		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, 5)
 	}
 	limit := int32(3)
 	if activeTab == "audit" {

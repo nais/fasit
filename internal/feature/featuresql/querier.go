@@ -35,6 +35,7 @@ type Querier interface {
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
+	ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]DeployInstruction, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)
 	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
 	LogsByID(ctx context.Context, id int64) (Log, error)

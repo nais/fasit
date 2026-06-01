@@ -97,7 +97,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
 	}
 }
 
@@ -115,7 +115,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			return
 		}
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
 	}
 }
 
@@ -181,7 +181,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
 	}
 }
 
@@ -293,19 +293,26 @@ func featurePageContent(page *FeaturePage) g.Node {
 		tabContent = helmTab(page)
 	case "deployments":
 		tabContent = deploymentsTab(page)
+	case "config":
+		tabContent = overviewTab(page)
 	case "playground":
 		tabContent = playgroundTab(page)
 	default:
-		tabContent = overviewTab(page)
+		tabContent = statusTab(page)
 	}
 
 	return h.Div(h.Class("container"),
 		featurePageSidebar(page),
 		components.Breadcrumbs(page.Breadcrumbs),
 		h.Main(h.Class("main-content"),
-			components.Card(featureEnvironmentHeader(page)),
 			components.Card(
-				components.TabsNav(page.ActiveTab, envFeatureTabs(page)),
+				h.Div(h.Class("card-header-row"),
+					envFeatureTabsNav(page),
+					h.Div(h.Class("card-header-actions"),
+						reconcileHeaderStatus(page),
+						pageKebab(page),
+					),
+				),
 				tabContent,
 			),
 		),
@@ -317,113 +324,190 @@ func featurePageSidebar(page *FeaturePage) g.Node {
 	return components.FeatureWorkspaceSidebar(page.Feature.Name, "", page.TenantSlug, page.Environment.Name, page.WorkspaceEnvs)
 }
 
-func featureEnvironmentHeader(page *FeaturePage) g.Node {
-	currentVersion := "—"
-	if page.FeatureLog != nil && page.FeatureLog.CurrentVersion != "" {
-		currentVersion = page.FeatureLog.CurrentVersion
+func envFeatureTabsNav(page *FeaturePage) g.Node {
+	base := featureBasePathForPage(page)
+	tabs := []components.Tab{
+		{ID: "status", Href: base, Label: "Status"},
+		{ID: "config", Href: base + "/config", Label: "Config"},
+		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
+		{ID: "playground", Href: base + "/playground", Label: "Playground"},
+	}
+	activeTab := page.ActiveTab
+	if activeTab == "" {
+		activeTab = "status"
+	}
+	return components.TabsNav(activeTab, tabs)
+}
+
+func pageKebab(page *FeaturePage) g.Node {
+	kebabID := "page-kebab"
+	items := []g.Node{}
+
+	if page.WinningDeployment != nil {
+		items = append(items,
+			h.A(h.Href("/deployments/"+page.WinningDeployment.ID.String()), h.Class("kebab-item"), g.Text("View deployment spec")),
+		)
 	}
 
-	statusNode := h.Span(h.Class("text-muted"), g.Text("No status"))
-	if page.Status != "" {
-		statusNode = components.Status(page.Status)
+	redeployPopoverID := "trigger-redeploy"
+	reconcilePopoverID := "toggle-reconcile"
+
+	if page.Feature.Enabled {
+		items = append(items,
+			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
+		)
 	}
 
-	statusMeta := []g.Node{h.Span(statusNode)}
-	if page.FeatureLog != nil && page.FeatureLog.LastModifiedRelative != "" {
-		statusMeta = append(statusMeta, h.Span(h.Class("text-muted"), h.Title(page.FeatureLog.LastModified), g.Text(page.FeatureLog.LastModifiedRelative)))
+	if page.Feature.Enabled {
+		items = append(items,
+			h.Button(h.Type("button"), h.Class("kebab-item kebab-item-danger"), g.Attr("popovertarget", reconcilePopoverID), g.Text("Disable reconcile")),
+		)
+	} else {
+		items = append(items,
+			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", reconcilePopoverID), g.Text("Enable reconcile")),
+		)
 	}
-	statusMeta = append(statusMeta, h.Span(h.Class("text-muted"), g.Text("Version "+currentVersion)))
 
-	return h.Div(h.Class("env-feature-header"),
-		h.Div(h.Class("env-feature-header-main"),
-			h.Div(h.Class("env-feature-identity"),
-				h.Div(
-					h.H2(g.Text(page.Environment.Name)),
-					h.Div(h.Class("env-feature-meta"), g.Group(statusMeta)),
-					h.Div(h.Class("env-feature-actions-row"),
-						reconcileControl(page),
-						redeployButton(page),
-					),
-				),
-			),
+	return h.Div(h.Class("kebab-wrap"),
+		h.Button(
+			h.Type("button"),
+			h.Class("kebab-btn"),
+			g.Attr("data-kebab-toggle", kebabID),
+			g.Attr("aria-label", "Actions"),
+			g.Text("\u22ee"),
 		),
+		h.Div(h.Class("kebab-menu"), h.ID(kebabID), g.Group(items)),
+		redeployPopover(page),
+		reconcilePopover(page),
 	)
 }
 
-func envFeatureTabs(page *FeaturePage) []components.Tab {
-	base := featureBasePathForPage(page)
-	return []components.Tab{
-		{ID: "overview", Href: base, Label: "Config"},
-		{ID: "logs", Href: base + "/logs", Label: "Logs"},
-		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
-		{ID: "deployments", Href: base + "/deployments", Label: "Deployments"},
-		{ID: "playground", Href: base + "/playground", Label: "Playground"},
-	}
-}
-
-func redeployButton(page *FeaturePage) g.Node {
+func redeployPopover(page *FeaturePage) g.Node {
 	if !page.Feature.Enabled {
 		return nil
 	}
 	redeployPopoverID := "trigger-redeploy"
 	redeployAction := featureBasePathForPage(page) + "/redeploy"
-	return h.Div(
-		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
-		h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
-			h.H3(g.Text("Confirm redeploy")),
-			h.Form(h.Method("POST"), h.Action(redeployAction),
-				h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy")), h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
+	return h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
+		h.H3(g.Text("Confirm redeploy")),
+		h.Form(h.Method("POST"), h.Action(redeployAction),
+			h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Trigger redeploy")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 			),
 		),
 	)
 }
 
-func reconcileControl(page *FeaturePage) g.Node {
+func reconcilePopover(page *FeaturePage) g.Node {
 	popoverID := "toggle-reconcile"
 	action := featureBasePathForPage(page) + "/toggle-reconcile"
-	statusClass, statusText, buttonText, newEnabled := "status-error", "Reconcile disabled", "Enable reconcile", "true"
-	var reasonText string
+
+	if page.Feature.Enabled {
+		return h.Div(g.Attr("popover", ""), h.ID(popoverID),
+			h.H3(g.Text("Disable reconcile")),
+			h.Form(h.Method("POST"), h.Action(action),
+				h.Input(h.Type("hidden"), h.Name("enabled"), h.Value("false")),
+				h.P(g.Textf("Disable reconcile for %s in %s? Reconciliation will stop until re-enabled.", page.Feature.Name, page.Environment.Name)),
+				h.Label(h.For("reconcile-reason"), g.Text("Reason for disabling reconcile")),
+				h.Textarea(h.ID("reconcile-reason"), h.Name("reason"), g.Attr("maxlength", "1000"), g.Attr("required", ""), h.Rows("3")),
+				h.Div(h.Class("popover-actions"),
+					h.Button(h.Type("submit"), g.Text("Disable reconcile")),
+					h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+				),
+			),
+		)
+	}
+
+	return h.Div(g.Attr("popover", ""), h.ID(popoverID),
+		h.H3(g.Text("Enable reconcile")),
+		h.Form(h.Method("POST"), h.Action(action),
+			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value("true")),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Enable reconcile")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		),
+	)
+}
+
+func statusTab(page *FeaturePage) g.Node {
+	return h.Div(h.Class("tab-content-wrapper env-feature-status"),
+		statusReconcileSection(page),
+		statusDeploysSection(page),
+	)
+}
+
+func reconcileHeaderStatus(page *FeaturePage) g.Node {
+	statusClass := "status-success"
+	statusText := "Reconcile enabled"
+	title := statusText
 	if !page.Feature.Enabled {
-		if page.Feature.DisableReason != "" {
-			reasonText = "reason: " + page.Feature.DisableReason
-		} else {
-			reasonText = "reason: disabled before we started requiring reason"
+		statusClass = "status-error"
+		statusText = "Reconcile disabled"
+		reason := page.Feature.DisableReason
+		if reason == "" {
+			reason = "disabled before we started requiring reason"
 		}
-	}
-	if page.Feature.Enabled {
-		statusClass, statusText, buttonText, newEnabled = "status-success", "Reconcile enabled", "Disable reconcile", "false"
+		title = statusText + ": " + reason
 	}
 
-	var dialogBody g.Node
+	return h.Span(h.Class("reconcile-header-status "+statusClass), h.Title(title),
+		h.Span(h.Class("reconcile-header-icon"), g.Text("●")),
+		h.Span(g.Text(statusText)),
+	)
+}
+
+func statusReconcileSection(page *FeaturePage) g.Node {
 	if page.Feature.Enabled {
-		dialogBody = h.Form(h.Method("POST"), h.Action(action),
-			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)),
-			h.P(g.Textf("Disable reconcile for %s in %s? Reconciliation will stop until re-enabled.", page.Feature.Name, page.Environment.Name)),
-			h.Label(h.For("reconcile-reason"), g.Text("Reason for disabling reconcile")),
-			h.Textarea(h.ID("reconcile-reason"), h.Name("reason"), g.Attr("maxlength", "1000"), g.Attr("required", ""), h.Rows("3")),
-			h.Div(h.Class("popover-actions"),
-				h.Button(h.Type("submit"), g.Text(buttonText)),
-				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
-			),
-		)
-	} else {
-		dialogBody = h.Form(h.Method("POST"), h.Action(action),
-			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)),
-			h.Div(h.Class("popover-actions"),
-				h.Button(h.Type("submit"), g.Text(buttonText)),
-				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
-			),
+		return nil
+	}
+
+	reason := page.Feature.DisableReason
+	if reason == "" {
+		reason = "disabled before we started requiring reason"
+	}
+
+	return h.Section(h.Class("status-section"),
+		h.H3(g.Text("Reconciliation")),
+		h.Div(h.Class("reconcile-reason"), g.Text(reason)),
+	)
+}
+
+func statusDeploysSection(page *FeaturePage) g.Node {
+	if len(page.RecentDeployHistory) == 0 && page.FeatureLog == nil {
+		return h.Section(h.Class("status-section"),
+			h.H3(g.Text("Deploys")),
+			h.P(h.Class("text-muted"), g.Text("No deploy history.")),
 		)
 	}
 
-	return h.Div(h.Class("reconcile-control"),
-		h.Span(h.Class(statusClass), g.Text(statusText)),
-		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
-		g.If(reasonText != "", h.Div(h.Class("reconcile-reason"), g.Text(reasonText))),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID),
-			h.H3(g.Text("Confirm reconcile toggle")),
-			dialogBody,
+	rows := g.Map(page.RecentDeployHistory, func(di *model.DeployInstruction) g.Node {
+		isCurrent := page.FeatureLog != nil && di.FeatureVersion == page.FeatureLog.CurrentVersion && string(di.Status) == strings.ToLower(page.FeatureLog.CurrentStatus)
+		return h.Tr(
+			h.Td(
+				h.Span(h.Class("deploy-version"),
+					g.Text(di.FeatureVersion),
+					g.If(isCurrent, h.Span(h.Class("badge-current"), g.Text("current"))),
+				),
+			),
+			h.Td(components.Status(strings.ToUpper(string(di.Status)))),
+			h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
+			h.Td(h.Title(view.FormatTime(di.LastModified)), g.Text(view.RelativeTime(di.LastModified))),
+		)
+	})
+
+	return h.Section(h.Class("status-section"),
+		h.H3(g.Text("Deploys")),
+		h.Table(h.Class("table table-compact"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Version")),
+				h.Th(g.Text("Status")),
+				h.Th(g.Text("Created")),
+				h.Th(g.Text("Last modified")),
+			)),
+			h.TBody(g.Group(rows)),
 		),
 	)
 }

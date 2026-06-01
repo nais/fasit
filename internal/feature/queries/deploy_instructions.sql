@@ -56,3 +56,15 @@ ORDER BY
 	last_modified DESC
 LIMIT 1;
 
+-- name: ListRecentDeployInstructions :many
+SELECT
+	*
+FROM
+	deploy_instructions
+WHERE
+	feature_name = @feature_name
+	AND environment_id = @environment_id
+ORDER BY
+	created DESC
+LIMIT sqlc.arg('limit');
+

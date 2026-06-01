@@ -20,7 +20,8 @@ func FeatureWorkspaceSidebar(featureName, activeTab, activeTenant, activeEnviron
 			),
 			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
 			h.Ul(g.Group(g.Map(envs, func(env featureworkspace.Environment) g.Node {
-				return workspaceEnvironmentItem(featureName, env, env.TenantSlug == activeTenant && env.EnvironmentName == activeEnvironment)
+				isActive := env.TenantSlug == activeTenant && env.EnvironmentName == activeEnvironment
+				return workspaceEnvironmentItem(featureName, env, isActive)
 			}))),
 		),
 	)

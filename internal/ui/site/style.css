@@ -38,6 +38,8 @@
   --shadow: rgba(0, 0, 0, 0.3);
   --shadow-hover: rgba(0, 0, 0, 0.5);
 
+  --panel-header-height: 3rem;
+
   --diff-del: #f87171;
   --diff-add: #4ade80;
   --diff-meta: #666;
@@ -348,7 +350,10 @@ nav .user {
   max-height: calc(100vh - 5.5rem);
 }
 .feature-workspace-header {
-  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  min-height: var(--panel-header-height);
+  padding: 0 1rem;
   border-bottom: 1px solid var(--border);
 }
 .feature-workspace-sidebar > .nav > ul:first-child {
@@ -372,7 +377,7 @@ nav .user {
   display: flex !important;
   align-items: center;
   gap: 0.45rem;
-  font-size: 0.9rem !important;
+  font-size: 0.875rem !important;
   color: var(--text-muted) !important;
 }
 .workspace-env-link:hover,
@@ -386,6 +391,7 @@ nav .user {
   border-radius: 999px;
   background: currentColor;
 }
+
 .text-muted {
   color: var(--text-muted);
 }
@@ -624,28 +630,26 @@ nav .user {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: var(--panel-header-height);
+  margin: -1.5rem -1.5rem 1.25rem -1.5rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border);
 }
-.env-feature-header-main {
-  display: flex;
-  align-items: start;
-}
-.env-feature-identity {
-  display: flex;
+.card-header-actions {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
+  gap: 0.65rem;
 }
-.env-feature-header h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.25rem;
-}
-.env-feature-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.75rem;
+.reconcile-header-status {
+  display: inline-flex;
   align-items: center;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.reconcile-header-icon {
+  font-size: 0.7rem;
+  line-height: 1;
 }
 .env-feature-overview {
   min-width: 0;
@@ -667,13 +671,6 @@ nav .user {
   margin-left: 0.4rem;
   vertical-align: middle;
 }
-.env-feature-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.55rem;
-}
 .reconcile-control {
   display: inline-flex;
   align-items: center;
@@ -687,6 +684,32 @@ nav .user {
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* Status tab */
+.env-feature-status {
+  display: grid;
+  gap: 1.5rem;
+}
+.status-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.deploy-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.badge-current {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  vertical-align: middle;
+}
+
 .env-activity {
   margin-bottom: 0;
 }
@@ -1060,16 +1083,25 @@ nav .user {
 }
 
 .tabs-nav {
-  border-bottom: 2px solid var(--border);
-  margin: 0 0 1rem 0;
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-bottom: 0;
+  align-items: center;
 }
 
 .tabs-nav a {
+  position: relative;
   display: inline-block;
-  padding: 0.5rem 1rem;
-  color: var(--text-secondary);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
 }
 
 .tabs-nav a:hover {
@@ -1077,9 +1109,18 @@ nav .user {
 }
 
 .tabs-nav a.active {
-  color: var(--accent);
-  border-bottom: 2px solid var(--accent);
-  margin-bottom: -2px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tabs-nav a.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
 }
 
 .badge {

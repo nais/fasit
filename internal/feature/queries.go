@@ -576,6 +576,33 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 	}, nil
 }
 
+func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureName string, limit int32) ([]*model.DeployInstruction, error) {
+	rows, err := querier(ctx).ListRecentDeployInstructions(ctx, featuresql.ListRecentDeployInstructionsParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+		Limit:         limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.DeployInstruction, 0, len(rows))
+	for _, di := range rows {
+		result = append(result, &model.DeployInstruction{
+			ID:             di.ID,
+			EnvironmentID:  di.EnvironmentID,
+			DeploymentID:   di.DeploymentID,
+			FeatureName:    di.FeatureName,
+			FeatureVersion: di.FeatureVersion,
+			Status:         model.RolloutStatus(di.Status),
+			Hash:           di.Hash,
+			Created:        di.Created.Time,
+			LastModified:   di.LastModified.Time,
+			Values:         di.Values,
+		})
+	}
+	return result, nil
+}
+
 func scrubSecrets(data []byte, secretKeys []string) []byte {
 	if len(secretKeys) == 0 {
 		return data

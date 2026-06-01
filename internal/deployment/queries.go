@@ -383,6 +383,12 @@ func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName str
 	return dep.Feature, nil
 }
 
+// WinningDeployment returns the most specific active deployment for a feature
+// in a given environment.
+func WinningDeployment(ctx context.Context, envID uuid.UUID, featureName string) (*Deployment, error) {
+	return mostSpecificDeployment(ctx, envID, featureName)
+}
+
 func mostSpecificDeployment(ctx context.Context, envID uuid.UUID, featureName string) (*Deployment, error) {
 	rows, err := querier(ctx).ListDeploymentsForFeatureInEnvironment(ctx, deploymentsql.ListDeploymentsForFeatureInEnvironmentParams{
 		EnvironmentID: envID,

@@ -37,6 +37,10 @@ func (f *fakeQuerier) GetPreviousDeployInstruction(ctx context.Context, id uuid.
 	panic("not implemented")
 }
 
+func (f *fakeQuerier) ListRecentDeployInstructions(ctx context.Context, arg featuresql.ListRecentDeployInstructionsParams) ([]featuresql.DeployInstruction, error) {
+	panic("not implemented")
+}
+
 func (f *fakeQuerier) ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error {
 	return f.configGlobalDeleteFunc(ctx, id)
 }
