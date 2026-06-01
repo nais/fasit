@@ -492,9 +492,9 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 		var logLink g.Node
 		if hasLogs {
 			if expanded {
-				logLink = h.A(h.Href(featureBasePathForPage(page)), h.Class("btn-link"), g.Text("Logs \u25b4"))
+				logLink = h.A(h.Href(featureBasePathForPage(page)), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25b4")))
 			} else {
-				logLink = h.A(h.Href(featureBasePathForPage(page)+"?logs="+diID), h.Class("btn-link"), g.Text("Logs \u25be"))
+				logLink = h.A(h.Href(featureBasePathForPage(page)+"?logs="+diID), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25be")))
 			}
 		}
 

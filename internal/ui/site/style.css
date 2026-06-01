@@ -1395,7 +1395,19 @@ nav .user {
   padding: 0;
   cursor: pointer;
   font: inherit;
-  text-decoration: underline;
+  text-decoration: none;
+}
+.log-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.log-toggle:hover {
+  text-decoration: none;
+  color: var(--text-heading);
+}
+.log-arrow {
+  font-size: 1.1em;
 }
 
 .log-row td {
