@@ -29,12 +29,11 @@ import (
 
 func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab)
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab, r.URL.Query().Get("logs"))
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		data.ExpandedLogID = r.URL.Query().Get("logs")
 
 		renderPage(w, r, layout.Props{
 			Title:       data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name,
@@ -487,19 +486,25 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 		diID := di.ID.String()
 		expanded := page.ExpandedLogID == diID
 		lines := page.DeployLogsByInstruction[diID]
-		hasLogs := len(lines) > 0
 
 		var logLink g.Node
-		if hasLogs {
-			if expanded {
-				logLink = h.A(h.Href(featureBasePathForPage(page)), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25b4")))
-			} else {
-				logLink = h.A(h.Href(featureBasePathForPage(page)+"?logs="+diID), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25be")))
-			}
+		if expanded {
+			logLink = h.A(h.Href(featureBasePathForPage(page)), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25b4")))
+		} else {
+			logLink = h.A(h.Href(featureBasePathForPage(page)+"?logs="+diID), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25be")))
+		}
+
+		var rowClickURL string
+		if expanded {
+			rowClickURL = featureBasePathForPage(page)
+		} else {
+			rowClickURL = featureBasePathForPage(page) + "?logs=" + diID
 		}
 
 		nodes := []g.Node{
 			h.Tr(
+				h.Class("deploy-row-clickable"),
+				g.Attr("onclick", "window.location.href='"+rowClickURL+"'"),
 				h.Td(
 					h.Span(h.Class("deploy-version"),
 						g.Text(di.FeatureVersion),
@@ -513,8 +518,14 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 			),
 		}
 		if expanded {
+			var logContent g.Node
+			if len(lines) > 0 {
+				logContent = logBlock(lines)
+			} else {
+				logContent = h.P(h.Class("text-muted"), g.Text("No logs available."))
+			}
 			nodes = append(nodes, h.Tr(h.Class("log-row"),
-				h.Td(g.Attr("colspan", "5"), logBlock(lines)),
+				h.Td(g.Attr("colspan", "5"), logContent),
 			))
 		}
 		return g.Group(nodes)

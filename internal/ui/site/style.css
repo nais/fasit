@@ -1410,6 +1410,13 @@ nav .user {
   font-size: 1.1em;
 }
 
+.deploy-row-clickable {
+  cursor: pointer;
+}
+.deploy-row-clickable:hover {
+  background: var(--bg-hover, rgba(0,0,0,0.03));
+}
+
 .log-row td {
   padding: 0;
   max-width: 0;

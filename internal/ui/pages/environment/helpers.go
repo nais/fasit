@@ -170,7 +170,7 @@ func featureBreadcrumbs(tenant *model.Tenant, env *model.Environment, featureNam
 	}
 }
 
-func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
+func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab, expandedLogID string) (*FeaturePage, error) {
 	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
@@ -199,13 +199,14 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	breadcrumbs := featureBreadcrumbs(tenant, env, featureName)
 
 	page := &FeaturePage{
-		Breadcrumbs: breadcrumbs,
-		Tenant:      tenant,
-		TenantSlug:  tenantSlug,
-		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:     &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
-		FeatureEnvs: featureenvs.LoadEnvironments(ctx, feat),
-		ActiveTab:   activeTab,
+		Breadcrumbs:   breadcrumbs,
+		Tenant:        tenant,
+		TenantSlug:    tenantSlug,
+		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
+		FeatureEnvs:   featureenvs.LoadEnvironments(ctx, feat),
+		ActiveTab:     activeTab,
+		ExpandedLogID: expandedLogID,
 	}
 
 	if !env.Reconcile {
@@ -242,16 +243,22 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		}
 		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, 5)
 		page.DeployLogsByInstruction = map[string][]LogLine{}
-		for _, di := range page.RecentDeployHistory {
-			lines, err := featurepkg.LogsGet(ctx, di.ID)
-			if err != nil {
-				continue
+		if page.ExpandedLogID != "" {
+			for _, di := range page.RecentDeployHistory {
+				if di.ID.String() != page.ExpandedLogID {
+					continue
+				}
+				lines, err := featurepkg.LogsGet(ctx, di.ID)
+				if err != nil {
+					break
+				}
+				entries := make([]LogLine, 0, len(lines))
+				for _, line := range lines {
+					entries = append(entries, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
+				}
+				page.DeployLogsByInstruction[di.ID.String()] = entries
+				break
 			}
-			entries := make([]LogLine, 0, len(lines))
-			for _, line := range lines {
-				entries = append(entries, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
-			}
-			page.DeployLogsByInstruction[di.ID.String()] = entries
 		}
 	}
 	limit := int32(3)
