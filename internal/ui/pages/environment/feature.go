@@ -321,7 +321,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 }
 
 func featurePageSidebar(page *FeaturePage) g.Node {
-	return components.FeatureWorkspaceSidebar(page.Feature.Name, "", page.TenantSlug, page.Environment.Name, page.WorkspaceEnvs)
+	return components.FeatureSidebar(page.Feature.Name, "", page.TenantSlug, page.Environment.Name, page.FeatureEnvs)
 }
 
 func envFeatureTabsNav(page *FeaturePage) g.Node {

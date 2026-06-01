@@ -17,7 +17,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
-	"github.com/nais/fasit/internal/ui/featureworkspace"
+	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
@@ -32,7 +32,7 @@ type DetailPage struct {
 	Features       []view.FeatureNav
 	CurrentFeature *model.Feature
 	DeploymentEnvs []DeploymentEnvStatus
-	WorkspaceEnvs  []featureworkspace.Environment
+	FeatureEnvs    []featureenvs.Environment
 	RecentActivity []*audit.Entry
 	ActiveTab      string
 	ConfigItems    []components.ConfigItem
@@ -517,7 +517,7 @@ func detailPage(data *DetailPage) g.Node {
 		}
 	}
 	return h.Div(h.Class("container"),
-		featureWorkspaceSidebar(data),
+		featureSidebar(data),
 		components.Breadcrumbs(data.Breadcrumbs, breadcrumbActions...),
 		h.Main(h.Class("main-content"),
 			components.Card(content),
@@ -526,8 +526,8 @@ func detailPage(data *DetailPage) g.Node {
 	)
 }
 
-func featureWorkspaceSidebar(data *DetailPage) g.Node {
-	return components.FeatureWorkspaceSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.WorkspaceEnvs)
+func featureSidebar(data *DetailPage) g.Node {
+	return components.FeatureSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.FeatureEnvs)
 }
 
 func featureRecentActivityCompact(featureName string, audits []*audit.Entry) g.Node {
@@ -574,7 +574,7 @@ func loadFeatureData(r *http.Request) (*DetailPage, error) {
 		CurrentFeature: feature,
 	}
 	loadDeploymentData(r.Context(), feature, data)
-	data.WorkspaceEnvs = featureworkspace.LoadEnvironments(r.Context(), feature)
+	data.FeatureEnvs = featureenvs.LoadEnvironments(r.Context(), feature)
 	setFeatureBreadcrumbSubtitle(data)
 	return data, nil
 }

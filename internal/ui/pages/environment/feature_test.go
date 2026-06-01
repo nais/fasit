@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/ui/featureworkspace"
+	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
@@ -99,12 +99,12 @@ func findElements(n *html.Node, tag string) []*html.Node {
 	return result
 }
 
-func TestFeatureContextSidebarUsesWorkspaceEnvironmentList(t *testing.T) {
+func TestFeatureSidebarUsesFeatureEnvironmentList(t *testing.T) {
 	page := &FeaturePage{
 		Feature:     &FeatureDetail{Feature: &model.Feature{Name: "azureator-nav"}},
 		TenantSlug:  "nav",
 		Environment: &Environment{Environment: &model.Environment{Name: "dev-fss"}},
-		WorkspaceEnvs: []featureworkspace.Environment{
+		FeatureEnvs: []featureenvs.Environment{
 			{TenantName: "ci-nais", TenantSlug: "ci-nais", EnvironmentName: "ci-fss", Status: "DEPLOYED"},
 			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev", Status: "DEPLOYED"},
 			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev-fss", Status: "DEPLOYED"},
@@ -123,7 +123,7 @@ func TestFeatureContextSidebarUsesWorkspaceEnvironmentList(t *testing.T) {
 	for _, label := range []string{"atil / dev", "dev-nais / dev", "ssb / prod", "test-nais / sandbox"} {
 		require.NotContains(t, html, label)
 	}
-	assert.Equal(t, 1, strings.Count(html, `class="workspace-env-link active"`))
+	assert.Equal(t, 1, strings.Count(html, `class="feature-env-link active"`))
 }
 
 func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {

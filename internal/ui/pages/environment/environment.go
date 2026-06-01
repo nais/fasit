@@ -230,8 +230,8 @@ func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *model.Tenant
 
 func environmentSidebar(tenantName, environmentName, activeTab string) g.Node {
 	base := "/tenants/" + tenantName + "/envs/" + environmentName
-	return h.Aside(h.Class("sidebar feature-workspace-sidebar"),
-		h.Div(h.Class("feature-workspace-header"),
+	return h.Aside(h.Class("sidebar feature-sidebar"),
+		h.Div(h.Class("feature-sidebar-header"),
 			h.H4(g.Text(environmentName)),
 		),
 		h.Div(h.Class("nav"),

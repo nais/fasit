@@ -345,21 +345,21 @@ nav .user {
   background: var(--bg-surface-hover);
   border-left-color: var(--accent);
 }
-.feature-workspace-sidebar {
+.feature-sidebar {
   align-self: flex-start;
   max-height: calc(100vh - 5.5rem);
 }
-.feature-workspace-header {
+.feature-sidebar-header {
   display: flex;
   align-items: center;
   min-height: var(--panel-header-height);
   padding: 0 1rem;
   border-bottom: 1px solid var(--border);
 }
-.feature-workspace-sidebar > .nav > ul:first-child {
+.feature-sidebar > .nav > ul:first-child {
   padding-top: 0;
 }
-.feature-workspace-header h4 {
+.feature-sidebar-header h4 {
   margin: 0;
   font-size: 1rem;
   color: var(--text-heading);
@@ -373,18 +373,18 @@ nav .user {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.workspace-env-link {
+.feature-env-link {
   display: flex !important;
   align-items: center;
   gap: 0.45rem;
   font-size: 0.875rem !important;
   color: var(--text-muted) !important;
 }
-.workspace-env-link:hover,
-.workspace-env-link.active {
+.feature-env-link:hover,
+.feature-env-link.active {
   color: var(--text-heading) !important;
 }
-.workspace-env-dot {
+.feature-env-dot {
   width: 0.45rem;
   height: 0.45rem;
   flex: 0 0 auto;

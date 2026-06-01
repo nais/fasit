@@ -16,7 +16,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
-	"github.com/nais/fasit/internal/ui/featureworkspace"
+	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	yaml "gopkg.in/yaml.v3"
@@ -30,7 +30,7 @@ type FeaturePage struct {
 	TenantSlug          string
 	Environment         *Environment
 	Feature             *FeatureDetail
-	WorkspaceEnvs       []featureworkspace.Environment
+	FeatureEnvs         []featureenvs.Environment
 	HelmValues          string
 	HelmValuesError     string
 	Deployments         []EnvDeploymentItem
@@ -197,13 +197,13 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	breadcrumbs := featureBreadcrumbs(tenant, env, featureName)
 
 	page := &FeaturePage{
-		Breadcrumbs:   breadcrumbs,
-		Tenant:        tenant,
-		TenantSlug:    tenantSlug,
-		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
-		WorkspaceEnvs: featureworkspace.LoadEnvironments(ctx, feat),
-		ActiveTab:     activeTab,
+		Breadcrumbs: breadcrumbs,
+		Tenant:      tenant,
+		TenantSlug:  tenantSlug,
+		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Feature:     &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
+		FeatureEnvs: featureenvs.LoadEnvironments(ctx, feat),
+		ActiveTab:   activeTab,
 	}
 
 	if !env.Reconcile {

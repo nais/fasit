@@ -1,4 +1,4 @@
-package featureworkspace
+package featureenvs
 
 import (
 	"context"
