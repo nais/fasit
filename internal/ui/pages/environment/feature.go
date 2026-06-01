@@ -34,6 +34,7 @@ func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.Hand
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		data.ExpandedLogID = r.URL.Query().Get("logs")
 
 		renderPage(w, r, layout.Props{
 			Title:       data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name,
@@ -287,8 +288,6 @@ func RedeployHandler() http.HandlerFunc {
 func featurePageContent(page *FeaturePage) g.Node {
 	var tabContent g.Node
 	switch page.ActiveTab {
-	case "logs":
-		tabContent = logsTab(page)
 	case "helm":
 		tabContent = helmTab(page)
 	case "deployments":
@@ -485,27 +484,50 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 
 	rows := g.Map(page.RecentDeployHistory, func(di *model.DeployInstruction) g.Node {
 		isCurrent := page.FeatureLog != nil && di.FeatureVersion == page.FeatureLog.CurrentVersion && string(di.Status) == strings.ToLower(page.FeatureLog.CurrentStatus)
-		return h.Tr(
-			h.Td(
-				h.Span(h.Class("deploy-version"),
-					g.Text(di.FeatureVersion),
-					g.If(isCurrent, h.Span(h.Class("badge-current"), g.Text("current"))),
+		diID := di.ID.String()
+		expanded := page.ExpandedLogID == diID
+		lines := page.DeployLogsByInstruction[diID]
+		hasLogs := len(lines) > 0
+
+		var logLink g.Node
+		if hasLogs {
+			if expanded {
+				logLink = h.A(h.Href(featureBasePathForPage(page)), h.Class("btn-link"), g.Text("Logs \u25b4"))
+			} else {
+				logLink = h.A(h.Href(featureBasePathForPage(page)+"?logs="+diID), h.Class("btn-link"), g.Text("Logs \u25be"))
+			}
+		}
+
+		nodes := []g.Node{
+			h.Tr(
+				h.Td(
+					h.Span(h.Class("deploy-version"),
+						g.Text(di.FeatureVersion),
+						g.If(isCurrent, h.Span(h.Class("badge-current"), g.Text("current"))),
+					),
 				),
+				h.Td(components.Status(strings.ToUpper(string(di.Status)))),
+				h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
+				h.Td(h.Title(view.FormatTime(di.LastModified)), g.Text(view.RelativeTime(di.LastModified))),
+				h.Td(logLink),
 			),
-			h.Td(components.Status(strings.ToUpper(string(di.Status)))),
-			h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
-			h.Td(h.Title(view.FormatTime(di.LastModified)), g.Text(view.RelativeTime(di.LastModified))),
-		)
+		}
+		if expanded {
+			nodes = append(nodes, h.Tr(h.Class("log-row"),
+				h.Td(g.Attr("colspan", "5"), logBlock(lines)),
+			))
+		}
+		return g.Group(nodes)
 	})
 
 	return h.Section(h.Class("status-section"),
-		h.H3(g.Text("Deploys")),
 		h.Table(h.Class("table table-compact"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Version")),
 				h.Th(g.Text("Status")),
 				h.Th(g.Text("Created")),
 				h.Th(g.Text("Last modified")),
+				h.Th(),
 			)),
 			h.TBody(g.Group(rows)),
 		),
@@ -639,24 +661,6 @@ func sourceLabel(item FeatureConfigItem) string {
 		}
 		return "helm value"
 	}
-}
-
-func logsTab(page *FeaturePage) g.Node {
-	if page.FeatureLog == nil {
-		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Logs")), h.P(g.Text("No logs available.")))
-	}
-	content := []g.Node{}
-	if len(page.FeatureLog.CurrentLog) > 0 {
-		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last checked: %s · Last successful deploy: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified, page.FeatureLog.LastDeployed)))
-		if page.FeatureLog.HelmDiff != nil && page.FeatureLog.HelmDiff.Diff != "" && page.FeatureLog.HelmDiff.Difference != model.HelmValueDifferenceFullMatch {
-			content = append(content, h.Details(h.Summary(g.Textf("Helm value changes (%s)", strings.ToLower(strings.ReplaceAll(page.FeatureLog.HelmDiff.Difference.String(), "_", " ")))), h.Pre(h.Class("code-block"), g.Raw(page.FeatureLog.HelmDiff.Diff))))
-		}
-		content = append(content, logBlock(page.FeatureLog.CurrentLog))
-	}
-	if len(content) == 0 {
-		content = append(content, h.H2(g.Text("Logs")), h.P(g.Text("No logs available.")))
-	}
-	return h.Div(h.Class("tab-content-wrapper"), g.Group(content))
 }
 
 func logBlock(lines []LogLine) g.Node {

@@ -70,7 +70,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features/{feature}/config-explorer", features.ConfigExplorerHandler(s.renderPage))
 	r.Get("/features/{feature}/envs/{tenant}/{env}", environment.FeatureContextTabHandler(s.renderPage, "status"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/config", environment.FeatureContextTabHandler(s.renderPage, "config"))
-	r.Get("/features/{feature}/envs/{tenant}/{env}/logs", environment.FeatureContextTabHandler(s.renderPage, "logs"))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/logs", environment.FeatureContextTabHandler(s.renderPage, "status"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/helm", environment.FeatureContextTabHandler(s.renderPage, "helm"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/deployments", environment.FeatureContextTabHandler(s.renderPage, "deployments"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/audit", environment.AuditRedirectHandler())

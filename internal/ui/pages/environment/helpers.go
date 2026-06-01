@@ -25,24 +25,26 @@ import (
 type FeatureConfigItem = components.ConfigItem
 
 type FeaturePage struct {
-	Breadcrumbs         []breadcrumb.Crumb
-	Tenant              *model.Tenant
-	TenantSlug          string
-	Environment         *Environment
-	Feature             *FeatureDetail
-	FeatureEnvs         []featureenvs.Environment
-	HelmValues          string
-	HelmValuesError     string
-	Deployments         []EnvDeploymentItem
-	FeatureLog          *FeatureLog
-	Status              string
-	StatusMessage       string
-	ActiveTab           string
-	PlaygroundCode      string
-	PlaygroundResult    *PlaygroundResult
-	AuditEntries        []*audit.Entry
-	WinningDeployment   *deployment.Deployment
-	RecentDeployHistory []*model.DeployInstruction
+	Breadcrumbs             []breadcrumb.Crumb
+	Tenant                  *model.Tenant
+	TenantSlug              string
+	Environment             *Environment
+	Feature                 *FeatureDetail
+	FeatureEnvs             []featureenvs.Environment
+	HelmValues              string
+	HelmValuesError         string
+	Deployments             []EnvDeploymentItem
+	FeatureLog              *FeatureLog
+	Status                  string
+	StatusMessage           string
+	ActiveTab               string
+	PlaygroundCode          string
+	PlaygroundResult        *PlaygroundResult
+	AuditEntries            []*audit.Entry
+	WinningDeployment       *deployment.Deployment
+	RecentDeployHistory     []*model.DeployInstruction
+	DeployLogsByInstruction map[string][]LogLine
+	ExpandedLogID           string
 }
 
 type FeatureDetail struct {
@@ -239,6 +241,18 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 			page.WinningDeployment = dep
 		}
 		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, 5)
+		page.DeployLogsByInstruction = map[string][]LogLine{}
+		for _, di := range page.RecentDeployHistory {
+			lines, err := featurepkg.LogsGet(ctx, di.ID)
+			if err != nil {
+				continue
+			}
+			entries := make([]LogLine, 0, len(lines))
+			for _, line := range lines {
+				entries = append(entries, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
+			}
+			page.DeployLogsByInstruction[di.ID.String()] = entries
+		}
 	}
 	limit := int32(3)
 	if activeTab == "audit" {
