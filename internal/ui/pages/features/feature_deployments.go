@@ -644,6 +644,8 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 
 			if di, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
 				es.LastDeployed = di.LastModified
+			}
+			if di, err := featurepkg.GetLatestDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
 				es.DeployInstructionID = di.ID.String()
 			}
 

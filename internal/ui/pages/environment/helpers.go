@@ -200,15 +200,14 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	breadcrumbs := featureBreadcrumbs(tenant, env, featureName)
 
 	page := &FeaturePage{
-		Breadcrumbs:    breadcrumbs,
-		Tenant:         tenant,
-		TenantSlug:     tenantSlug,
-		Environment:    &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:        &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
-		FeatureEnvs:    featureenvs.LoadEnvironments(ctx, feat),
-		ActiveTab:      activeTab,
-		ExpandedLogID:  expandedLogID,
-		ShowAllDeploys: showAllDeploys,
+		Breadcrumbs:   breadcrumbs,
+		Tenant:        tenant,
+		TenantSlug:    tenantSlug,
+		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
+		FeatureEnvs:   featureenvs.LoadEnvironments(ctx, feat),
+		ActiveTab:     activeTab,
+		ExpandedLogID: expandedLogID,
 	}
 
 	if !env.Reconcile {
@@ -243,11 +242,17 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		if dep, err := deployment.WinningDeployment(ctx, env.ID, featureName); err == nil {
 			page.WinningDeployment = dep
 		}
-		var deployLimit int32 = 10
+		deployLimit := 11
 		if showAllDeploys {
 			deployLimit = 100
 		}
 		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, deployLimit)
+		if !showAllDeploys && len(page.RecentDeployHistory) > 10 {
+			page.ShowAllDeploys = false // there are more
+			page.RecentDeployHistory = page.RecentDeployHistory[:10]
+		} else {
+			page.ShowAllDeploys = true // already showing everything
+		}
 		page.DeployLogsByInstruction = map[string][]LogLine{}
 		if page.ExpandedLogID != "" {
 			for _, di := range page.RecentDeployHistory {

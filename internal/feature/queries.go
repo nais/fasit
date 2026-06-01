@@ -576,11 +576,11 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 	}, nil
 }
 
-func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureName string, limit int32) ([]*model.DeployInstruction, error) {
+func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureName string, limit int) ([]*model.DeployInstruction, error) {
 	rows, err := querier(ctx).ListRecentDeployInstructions(ctx, featuresql.ListRecentDeployInstructionsParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
-		Limit:         limit,
+		Limit:         int32(limit), // #nosec G115 -- limit is always a small positive constant
 	})
 	if err != nil {
 		return nil, err

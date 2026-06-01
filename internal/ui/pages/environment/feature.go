@@ -580,7 +580,7 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 			)),
 			h.TBody(g.Group(rows)),
 		),
-		g.If(!page.ShowAllDeploys && len(page.RecentDeployHistory) >= 10,
+		g.If(!page.ShowAllDeploys,
 			h.Div(h.Style("text-align: center; padding: 0.75rem 0;"),
 				h.A(h.Href(featureBasePathForPage(page)+"?deploys=all"), h.Class("link-muted"), g.Text("Show all \u25be")),
 			),
