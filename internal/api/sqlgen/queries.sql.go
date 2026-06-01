@@ -10,35 +10,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getDeployment = `-- name: GetDeployment :one
+const getFeatureAssignment = `-- name: GetFeatureAssignment :one
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 WHERE
 	d.id = $1
 `
 
-type GetDeploymentRow struct {
-	Deployment   Deployment
-	FeatureDatum FeatureDatum
+type GetFeatureAssignmentRow struct {
+	FeatureAssignment FeatureAssignment
+	FeatureDatum      FeatureDatum
 }
 
-func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymentRow, error) {
-	row := q.db.QueryRow(ctx, getDeployment, id)
-	var i GetDeploymentRow
+func (q *Queries) GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error) {
+	row := q.db.QueryRow(ctx, getFeatureAssignment, id)
+	var i GetFeatureAssignmentRow
 	err := row.Scan(
-		&i.Deployment.ID,
-		&i.Deployment.FeatureName,
-		&i.Deployment.Version,
-		&i.Deployment.Target,
-		&i.Deployment.Created,
-		&i.Deployment.GhRef,
-		&i.Deployment.Description,
-		&i.Deployment.Active,
+		&i.FeatureAssignment.ID,
+		&i.FeatureAssignment.FeatureName,
+		&i.FeatureAssignment.Version,
+		&i.FeatureAssignment.Target,
+		&i.FeatureAssignment.Created,
+		&i.FeatureAssignment.GhRef,
+		&i.FeatureAssignment.Description,
+		&i.FeatureAssignment.Active,
 		&i.FeatureDatum.Name,
 		&i.FeatureDatum.Version,
 		&i.FeatureDatum.Chart,
@@ -54,23 +54,23 @@ func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymen
 	return i, err
 }
 
-const listDeploymentStatuses = `-- name: ListDeploymentStatuses :many
+const listReconcileStatuses = `-- name: ListReconcileStatuses :many
 WITH statuses AS (
 	SELECT
-		deployment_id,
+		feature_assignment_id,
 		environment_id,
 		status,
 		message,
 		last_modified,
 		created
 	FROM
-		deployment_statuses
+		feature_reconcile_statuses
 	WHERE
-		deployment_id = $1
+		feature_assignment_id = $1
 ),
 disabled AS (
 	SELECT
-		d.id AS deployment_id,
+		d.id AS feature_assignment_id,
 		e.id AS environment_id,
 		'DISABLED' AS status,
 		'feature is disabled in this environment' AS message,
@@ -79,24 +79,24 @@ disabled AS (
 	FROM
 		environments e
 		JOIN disabled_features df ON df.environment_id = e.id
-		JOIN deployments d ON df.feature = d.feature_name
+		JOIN feature_assignments d ON df.feature = d.feature_name
 	WHERE
 		e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 		AND d.id = $1
 ),
 computed AS (
 	SELECT
-		deployment_id, environment_id, status, message, last_modified, created
+		feature_assignment_id, environment_id, status, message, last_modified, created
 	FROM
 		statuses
 	UNION
 	SELECT
-		deployment_id, environment_id, status, message, last_modified, created
+		feature_assignment_id, environment_id, status, message, last_modified, created
 	FROM
 		disabled
 )
 SELECT
-	deployment_id, environment_id, status, message, last_modified, created
+	feature_assignment_id, environment_id, status, message, last_modified, created
 FROM
 	computed
 ORDER BY
@@ -104,26 +104,26 @@ ORDER BY
 	environment_id ASC
 `
 
-type ListDeploymentStatusesRow struct {
-	DeploymentID  uuid.UUID
-	EnvironmentID uuid.UUID
-	Status        string
-	Message       string
-	LastModified  pgtype.Timestamptz
-	Created       pgtype.Timestamptz
+type ListReconcileStatusesRow struct {
+	FeatureAssignmentID uuid.UUID
+	EnvironmentID       uuid.UUID
+	Status              string
+	Message             string
+	LastModified        pgtype.Timestamptz
+	Created             pgtype.Timestamptz
 }
 
-func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error) {
-	rows, err := q.db.Query(ctx, listDeploymentStatuses, deploymentID)
+func (q *Queries) ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error) {
+	rows, err := q.db.Query(ctx, listReconcileStatuses, featureAssignmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListDeploymentStatusesRow{}
+	items := []ListReconcileStatusesRow{}
 	for rows.Next() {
-		var i ListDeploymentStatusesRow
+		var i ListReconcileStatusesRow
 		if err := rows.Scan(
-			&i.DeploymentID,
+			&i.FeatureAssignmentID,
 			&i.EnvironmentID,
 			&i.Status,
 			&i.Message,

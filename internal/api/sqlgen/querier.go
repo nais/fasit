@@ -9,8 +9,8 @@ import (
 )
 
 type Querier interface {
-	GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymentRow, error)
-	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)
+	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
+	ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

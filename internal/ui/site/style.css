@@ -396,8 +396,8 @@ nav .user {
   color: var(--text-muted);
 }
 
-.deployment-overridden td:nth-child(1),
-.deployment-overridden td:nth-child(2) a {
+.assignment-overridden td:nth-child(1),
+.assignment-overridden td:nth-child(2) a {
   text-decoration: line-through;
   color: var(--text-muted);
 }
@@ -1455,14 +1455,14 @@ nav .user {
   border-color: var(--btn-hover-border);
 }
 
-.deployments-header {
+.assignments-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.deployments-toolbar {
+.assignments-toolbar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1924,7 +1924,7 @@ a:hover .status-badge {
   color: var(--text-heading);
 }
 
-.deployment-overridden {
+.assignment-overridden {
   cursor: pointer;
 }
 .label-pills {

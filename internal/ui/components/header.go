@@ -11,7 +11,7 @@ const (
 	PageHome         Page = "home"
 	PageEnvironments Page = "environments"
 	PageFeatures     Page = "features"
-	PageDeployments  Page = "deployments"
+	PageAssignments  Page = "assignments"
 	PageLabels       Page = "labels"
 	PageNaisd        Page = "naisd"
 	PageReconciler   Page = "reconciler"
@@ -50,7 +50,7 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 				h.Button(h.Type("button"), h.Class("nav-hotdog-hint-close"), g.Attr("onclick", "dismissNavHint()"), g.Raw("&times;")),
 			),
 			h.Div(h.Class("kebab-menu"), h.ID("nav-kebab"),
-				h.A(h.Href("/deployments"), h.Class("kebab-item"), g.Text("Deployments")),
+				h.A(h.Href("/assignments"), h.Class("kebab-item"), g.Text("Assignments")),
 				h.A(h.Href("/auditlog"), h.Class("kebab-item"), g.Text("Activity Log")),
 				h.A(h.Href("/labels"), h.Class("kebab-item"), g.Text("Labels")),
 				h.A(h.Href("/naisd"), h.Class("kebab-item"), g.Text("Naisd")),
@@ -89,7 +89,7 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 		h.Span(h.Class("user"), g.Text(userEmail)),
 		h.Div(g.Attr("popover", ""), h.ID("reconcile-confirm"),
 			h.H3(g.Text("Confirm reconcile")),
-			h.P(g.Text("Trigger a full reconcile of all deployments?")),
+			h.P(g.Text("Trigger a full reconcile of all assignments?")),
 			h.Form(h.Method("post"), h.Action("/reconcile"),
 				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Reconcile")), h.Button(h.Type("button"), g.Attr("popovertarget", "reconcile-confirm"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
 			),

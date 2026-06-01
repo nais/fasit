@@ -72,7 +72,7 @@ SELECT DISTINCT ON (d.feature_name)
 	fd.description,
 	fd.source
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY
@@ -110,7 +110,7 @@ const featureNames = `-- name: FeatureNames :many
 SELECT DISTINCT
 	feature_name
 FROM
-	deployments
+	feature_assignments
 ORDER BY
 	feature_name
 `
@@ -139,7 +139,7 @@ const latestFeatureData = `-- name: LatestFeatureData :one
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 WHERE

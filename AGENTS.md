@@ -16,7 +16,7 @@ internal/
   database/        → Postgres connection, migrations, shared repo interface
   contextloader/   → Per-request dependency injection via context.Context
   ui/              → Server-rendered HTML (gomponents) — see internal/ui/AGENTS.md
-  deployment/      → Deployment reconciler — see internal/deployment/AGENTS.md
+  deployment/      → Deployment reconciler — see internal/featureassignment/AGENTS.md
   feature/         → Feature CRUD, template parsing, computed helm values
   environment/     → Environment CRUD, label matching
   workers/         → Background job scheduler (receiver + scheduler)
@@ -40,13 +40,13 @@ Domain packages expose `Register(ctx, pool)` and package-level functions that ex
 
 SQL queries in `queries/*.sql` per domain package. Generated Go in `*sql/` subdirectories. Config in `sqlc.yaml` (YAML anchors for shared settings). All share migration source: `internal/database/migrations`.
 
-New queries go in the domain package that owns the data (`internal/deployment/queries/`, `internal/feature/queries/`, `internal/environment/queries/`, etc). `internal/database/queries/` is a legacy shared location — avoid adding new queries there; move them to the owning domain package when practical.
+New queries go in the domain package that owns the data (`internal/featureassignment/queries/`, `internal/feature/queries/`, `internal/environment/queries/`, etc). `internal/database/queries/` is a legacy shared location — avoid adding new queries there; move them to the owning domain package when practical.
 
 ### Code Generation
 
 `mise run generate` runs: sqlc, protoc.
 
-Never edit files in: `deploymentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`.
+Never edit files in: `featureassignmentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`.
 
 ## Build & Run
 

@@ -14,9 +14,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
@@ -180,10 +180,10 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		featureName := chi.URLParam(r, "feature")
 		key := r.FormValue("key")
 
-		feat, err := deployment.FeatureForEnvironment(r.Context(), env.ID, featureName)
+		feat, err := featureassignment.FeatureForEnvironment(r.Context(), env.ID, featureName)
 		if err != nil {
 			status := http.StatusInternalServerError
-			if errors.Is(err, deployment.ErrFeatureNotFound) {
+			if errors.Is(err, featureassignment.ErrFeatureNotFound) {
 				status = http.StatusNotFound
 			}
 			http.Error(w, "Failed to get feature: "+err.Error(), status)
@@ -231,10 +231,10 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		feature, err := deployment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
+		feature, err := featureassignment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
 		if err != nil {
 			status := http.StatusInternalServerError
-			if errors.Is(err, deployment.ErrFeatureNotFound) {
+			if errors.Is(err, featureassignment.ErrFeatureNotFound) {
 				status = http.StatusNotFound
 			}
 			http.Error(w, "Failed to get feature: "+err.Error(), status)
@@ -284,10 +284,10 @@ func RedeployHandler() http.HandlerFunc {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		feature, err := deployment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
+		feature, err := featureassignment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
 		if err != nil {
 			status := http.StatusInternalServerError
-			if errors.Is(err, deployment.ErrFeatureNotFound) {
+			if errors.Is(err, featureassignment.ErrFeatureNotFound) {
 				status = http.StatusNotFound
 			}
 			http.Error(w, "Failed to get feature: "+err.Error(), status)
@@ -302,7 +302,7 @@ func RedeployHandler() http.HandlerFunc {
 			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
 			return
 		}
-		if err := deployment.InvalidateLatestDeploy(r.Context(), env.ID, feature.Name); err != nil {
+		if err := featureassignment.InvalidateLatestDeploy(r.Context(), env.ID, feature.Name); err != nil {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -318,8 +318,8 @@ func featurePageContent(page *FeaturePage) g.Node {
 	switch page.ActiveTab {
 	case "helm":
 		tabContent = helmTab(page)
-	case "deployments":
-		tabContent = deploymentsTab(page)
+	case "assignments":
+		tabContent = assignmentsTab(page)
 	case "config":
 		tabContent = overviewTab(page)
 	case "playground":
@@ -376,7 +376,6 @@ func pageKebab(page *FeaturePage) g.Node {
 			g.Text("Loki logs ↗"),
 		),
 	)
-
 	redeployPopoverID := "trigger-redeploy"
 	reconcilePopoverID := "toggle-reconcile"
 
@@ -405,11 +404,11 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
-	if page.WinningDeployment != nil {
+	if page.WinningAssignment != nil {
 		items = append(items,
-			h.A(h.Href("/deployments/"+page.WinningDeployment.ID.String()), h.Class("kebab-item"),
+			h.A(h.Href("/assignments/"+page.WinningAssignment.ID.String()), h.Class("kebab-item"),
 				g.Raw(`<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1h8l4 4v10H2V1zm1 1v12h10V5.5L7.5 2H3zm2 5h6v1H5V7zm0 2h6v1H5V9zm0 2h4v1H5v-1z"/></svg> `),
-				g.Text("View deployment spec"),
+				g.Text("View assignment"),
 			),
 		)
 	}
@@ -880,22 +879,22 @@ func deepMerge(dst, src map[string]any) {
 	}
 }
 
-func deploymentsTab(page *FeaturePage) g.Node {
-	if len(page.Deployments) == 0 {
-		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")), h.P(g.Text("No deployments target this environment.")))
+func assignmentsTab(page *FeaturePage) g.Node {
+	if len(page.Assignments) == 0 {
+		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Assignments")), h.P(g.Text("No assignments target this environment.")))
 	}
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")),
-		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-deployments"),
+	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Assignments")),
+		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-assignments"),
 			h.THead(h.Tr(
-				h.Th(g.Text("Deployment")),
+				h.Th(g.Text("FeatureAssignment")),
 				h.Th(g.Text("Version")),
 				h.Th(g.Text("Status")),
 				h.Th(g.Text("Target")),
 				h.Th(g.Text("Created")),
 			)),
-			h.TBody(g.Group(g.Map(page.Deployments, func(dep EnvDeploymentItem) g.Node {
+			h.TBody(g.Group(g.Map(page.Assignments, func(dep EnvAssignmentItem) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/deployments/"+dep.ID), g.Text(dep.ID[:8]))),
+					h.Td(h.A(h.Href("/assignments/"+dep.ID), g.Text(dep.ID[:8]))),
 					h.Td(g.Text(dep.Version)),
 					h.Td(components.Status(dep.Status)),
 					h.Td(labelPills(dep.TargetLabels)),

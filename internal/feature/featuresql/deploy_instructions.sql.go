@@ -11,7 +11,7 @@ import (
 
 const getLatestDeployInstruction = `-- name: GetLatestDeployInstruction :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
 FROM
 	deploy_instructions
 WHERE
@@ -40,14 +40,14 @@ func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestD
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
-		&i.DeploymentID,
+		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
 
 const getLatestDeployedDeployInstruction = `-- name: GetLatestDeployedDeployInstruction :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
 FROM
 	deploy_instructions
 WHERE
@@ -77,7 +77,7 @@ func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg Ge
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
-		&i.DeploymentID,
+		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
@@ -85,14 +85,14 @@ func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg Ge
 const getPreviousDeployInstruction = `-- name: GetPreviousDeployInstruction :one
 WITH CURRENT AS (
 	SELECT
-		di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
+		di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.feature_assignment_id
 	FROM
 		deploy_instructions di
 	WHERE
 		di.id = $1
 )
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
 FROM
 	deploy_instructions
 WHERE
@@ -129,14 +129,14 @@ func (q *Queries) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
-		&i.DeploymentID,
+		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
 
 const listRecentDeployInstructions = `-- name: ListRecentDeployInstructions :many
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
 FROM
 	deploy_instructions
 WHERE
@@ -172,7 +172,7 @@ func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRece
 			&i.Created,
 			&i.LastModified,
 			&i.Values,
-			&i.DeploymentID,
+			&i.FeatureAssignmentID,
 		); err != nil {
 			return nil, err
 		}

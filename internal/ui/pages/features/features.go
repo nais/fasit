@@ -12,8 +12,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/deployment"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -31,8 +31,8 @@ type DetailPage struct {
 	Breadcrumbs    []breadcrumb.Crumb
 	Features       []view.FeatureNav
 	CurrentFeature *model.Feature
-	DeploymentEnvs []DeploymentEnvStatus
 	FeatureEnvs    []featureenvs.Environment
+	AssignmentEnvs []AssignmentEnvStatus
 	RecentActivity []*audit.Entry
 	ActiveTab      string
 	ConfigItems    []components.ConfigItem
@@ -47,41 +47,41 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		deps, _ := deployment.ListRecent(r.Context())
+		fas, _ := featureassignment.ListRecent(r.Context())
 		audits, _ := audit.ListRecent(r.Context(), 200)
-		deploymentActors := deploymentActorsByID(audits)
+		assignmentActors := assignmentActorsByID(audits)
 
-		var depRows []depRow
-		for _, dep := range deps {
-			statuses, err := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
+		var assignmentRows []assignmentRow
+		for _, fa := range fas {
+			statuses, err := featureassignment.ListFeatureReconcileStatuses(r.Context(), fa.ID)
 			if err != nil || len(statuses) == 0 {
-				depRows = append(depRows, depRow{
-					FeatureName: dep.Feature.Name,
-					Version:     dep.Feature.Version,
-					Status:      "UNKNOWN",
-					Created:     dep.Created,
-					DepID:       dep.ID.String(),
-					Actor:       deploymentActors[dep.ID.String()],
+				assignmentRows = append(assignmentRows, assignmentRow{
+					FeatureName:  fa.Feature.Name,
+					Version:      fa.Feature.Version,
+					Status:       "UNKNOWN",
+					Created:      fa.Created,
+					AssignmentID: fa.ID.String(),
+					Actor:        assignmentActors[fa.ID.String()],
 				})
 			} else {
 				for _, s := range statuses {
-					depRows = append(depRows, depRow{
-						FeatureName: dep.Feature.Name,
-						Version:     dep.Feature.Version,
-						Status:      string(s.State),
-						Created:     dep.Created,
-						DepID:       dep.ID.String(),
-						Actor:       deploymentActors[dep.ID.String()],
+					assignmentRows = append(assignmentRows, assignmentRow{
+						FeatureName:  fa.Feature.Name,
+						Version:      fa.Feature.Version,
+						Status:       string(s.State),
+						Created:      fa.Created,
+						AssignmentID: fa.ID.String(),
+						Actor:        assignmentActors[fa.ID.String()],
 					})
 				}
 			}
 		}
 
-		sort.Slice(depRows, func(i, j int) bool {
-			return depRows[i].Created.After(depRows[j].Created)
+		sort.Slice(assignmentRows, func(i, j int) bool {
+			return assignmentRows[i].Created.After(assignmentRows[j].Created)
 		})
 
-		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(toFeatureNavs(features), depRows, audits), HideHeaderSearch: true})
+		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(toFeatureNavs(features), assignmentRows, audits), HideHeaderSearch: true})
 	}
 }
 
@@ -133,7 +133,7 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
 		}
-		data.ActiveTab = "deploy-specs"
+		data.ActiveTab = "assignments"
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Deploy specs", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
@@ -174,12 +174,12 @@ func ConfigExplorerHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func listPage(features []view.FeatureNav, deps []depRow, audits []*audit.Entry) g.Node {
+func listPage(features []view.FeatureNav, fas []assignmentRow, audits []*audit.Entry) g.Node {
 	return h.Div(h.Class("container"),
 		h.Main(h.Class("main-content landing-page"),
 			landingSearch(features),
 			components.CardCompact(
-				recentDeployments(deps),
+				recentAssignments(fas),
 			),
 			components.CardCompact(
 				recentActivity(audits),
@@ -283,35 +283,35 @@ func featureRowKebab(feature featureIndexRow, idx int) g.Node {
 	)
 }
 
-type depRow struct {
-	FeatureName string
-	Version     string
-	Status      string
-	Created     time.Time
-	DepID       string
-	Actor       string
+type assignmentRow struct {
+	FeatureName  string
+	Version      string
+	Status       string
+	Created      time.Time
+	AssignmentID string
+	Actor        string
 }
 
-func deploymentActorsByID(audits []*audit.Entry) map[string]string {
+func assignmentActorsByID(audits []*audit.Entry) map[string]string {
 	ret := make(map[string]string)
 	for _, a := range audits {
-		if a.ObjectType != audit.ObjectTypeDeployment || a.Action != audit.ActionCreated || len(a.Metadata) == 0 {
+		if a.ObjectType != audit.ObjectTypeFeatureAssignment || a.Action != audit.ActionCreated || len(a.Metadata) == 0 {
 			continue
 		}
 		var metadata struct {
-			DeploymentID string `json:"deploymentId"`
+			FeatureAssignmentID string `json:"deploymentId"`
 		}
-		if err := json.Unmarshal(a.Metadata, &metadata); err != nil || metadata.DeploymentID == "" {
+		if err := json.Unmarshal(a.Metadata, &metadata); err != nil || metadata.FeatureAssignmentID == "" {
 			continue
 		}
-		ret[metadata.DeploymentID] = a.Actor
+		ret[metadata.FeatureAssignmentID] = a.Actor
 	}
 	return ret
 }
 
-func recentDeployments(rows []depRow) g.Node {
+func recentAssignments(rows []assignmentRow) g.Node {
 	if len(rows) == 0 {
-		return h.P(h.Class("text-muted"), g.Text("No deployments."))
+		return h.P(h.Class("text-muted"), g.Text("No assignments."))
 	}
 
 	// Aggregate by feature+version
@@ -357,7 +357,7 @@ func recentDeployments(rows []depRow) g.Node {
 			h.Td(renderAggStatus(agg.Statuses)),
 			h.Td(view.ActorName(agg.Actor)),
 			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(agg.Latest)), g.Text(view.RelativeTime(agg.Latest))),
-			h.Td(h.Class("table-kebab-cell"), deploymentRowKebab(agg.Actor, i)),
+			h.Td(h.Class("table-kebab-cell"), assignmentRowKebab(agg.Actor, i)),
 		))
 	}
 
@@ -374,16 +374,16 @@ func recentDeployments(rows []depRow) g.Node {
 			)),
 			h.TBody(g.Group(tableRows)),
 		),
-		h.Div(h.Class("section-link-row"), h.A(h.Href("/deployments"), h.Class("link-muted"), g.Text("All deployments →"))),
+		h.Div(h.Class("section-link-row"), h.A(h.Href("/assignments"), h.Class("link-muted"), g.Text("All assignments →"))),
 	})
 }
 
-func deploymentRowKebab(actor string, idx int) g.Node {
+func assignmentRowKebab(actor string, idx int) g.Node {
 	href := view.ActorWorkflowURL(actor)
 	if href == "" {
 		return g.Text("")
 	}
-	kebabID := fmt.Sprintf("dep-kebab-%d", idx)
+	kebabID := fmt.Sprintf("assignment-kebab-%d", idx)
 	return h.Div(h.Class("kebab-wrap"),
 		h.Button(
 			h.Type("button"),
@@ -401,7 +401,7 @@ func deploymentRowKebab(actor string, idx int) g.Node {
 func recentActivity(audits []*audit.Entry) g.Node {
 	filtered := make([]*audit.Entry, 0, len(audits))
 	for _, a := range audits {
-		if a.ObjectType == audit.ObjectTypeDeployment && a.Action == audit.ActionCreated {
+		if a.ObjectType == audit.ObjectTypeFeatureAssignment && a.Action == audit.ActionCreated {
 			continue
 		}
 		filtered = append(filtered, a)
@@ -501,14 +501,14 @@ func detailPage(data *DetailPage) g.Node {
 	var breadcrumbActions []g.Node
 	var rightSidebar g.Node
 	switch data.ActiveTab {
-	case "deploy-specs":
-		content = deploymentSpecsContent(data)
+	case "assignments":
+		content = assignmentSpecsContent(data)
 	case "config":
 		content = globalConfigContent(data)
 	case "config-explorer":
 		content = configExplorerContent(data.CurrentFeature.Name, data.ExplorerData)
 	default:
-		content = deploymentDetailContent(data)
+		content = assignmentDetailContent(data)
 		breadcrumbActions = append(breadcrumbActions, overviewToolbar())
 		if len(data.RecentActivity) > 0 {
 			rightSidebar = h.Aside(h.Class("right-sidebar"),
@@ -573,7 +573,7 @@ func loadFeatureData(r *http.Request) (*DetailPage, error) {
 		Features:       toFeatureNavs(features),
 		CurrentFeature: feature,
 	}
-	loadDeploymentData(r.Context(), feature, data)
+	loadAssignmentData(r.Context(), feature, data)
 	data.FeatureEnvs = featureenvs.LoadEnvironments(r.Context(), feature)
 	setFeatureBreadcrumbSubtitle(data)
 	return data, nil

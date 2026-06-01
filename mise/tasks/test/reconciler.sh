@@ -3,7 +3,7 @@
 set -uo pipefail
 
 test_exit=0
-raw=$(go test -tags integration_test,reconciler_bench -v -count=1 -timeout 600s -run "TestReconcile" ./internal/deployment/ 2>&1) || test_exit=$?
+raw=$(go test -tags integration_test,reconciler_bench -v -count=1 -timeout 600s -run "TestReconcile" ./internal/featureassignment/ 2>&1) || test_exit=$?
 
 echo "$raw" | grep -E "=== RUN|--- PASS|--- FAIL|took|phases|seeded|deployed" | sed 's/^    //'
 

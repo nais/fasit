@@ -8,10 +8,10 @@ import (
 	"sort"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/uidata"
@@ -218,11 +218,11 @@ func renderComputedCells(ctx context.Context, feat *model.Feature, data *configE
 }
 
 func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExplorerEnv, error) {
-	deployments, err := deployment.ListByFeature(ctx, feat.Name)
+	assignments, err := featureassignment.ListByFeature(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}
-	deployments = latestDeploymentPerTarget(deployments)
+	assignments = latestAssignmentPerTarget(assignments)
 
 	tenants, err := uidata.ListTenants(ctx)
 	if err != nil {
@@ -255,7 +255,7 @@ func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configExpl
 	var result []configExplorerEnv
 	seen := make(map[uuid.UUID]bool)
 	for _, env := range allEnvs {
-		for _, dep := range deployments {
+		for _, dep := range assignments {
 			if targetMatchesLabels(dep.TargetLabels, env.labels) && !seen[env.env.ID] {
 				result = append(result, configExplorerEnv{
 					ID:         env.env.ID,

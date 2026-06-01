@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/api/sqlgen"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/sirupsen/logrus"
@@ -34,54 +34,54 @@ func NewHttpHandler(ctx context.Context, pool *pgxpool.Pool, log logrus.FieldLog
 	return &HttpHandler{
 		provider:       provider,
 		verifier:       verifier,
-		log:            log.WithField("subsystem", "deployment-http"),
+		log:            log.WithField("subsystem", "featureassignment-http"),
 		programContext: ctx,
 		querier:        sqlgen.New(pool),
 	}, nil
 }
 
-func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
+func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
 	if _, valid := h.validateToken(w, req); !valid {
 		return
 	}
 
-	deploymentID, err := uuid.Parse(chi.URLParam(req, "id"))
+	assignmentID, err := uuid.Parse(chi.URLParam(req, "id"))
 	if err != nil {
-		http.Error(w, "invalid deployment id", http.StatusBadRequest)
-		h.log.WithError(err).Error("convert deployment ID")
+		http.Error(w, "invalid assignment id", http.StatusBadRequest)
+		h.log.WithError(err).Error("convert assignment ID")
 		return
 	}
 
-	if _, err := h.querier.GetDeployment(ctx, deploymentID); errors.Is(err, pgx.ErrNoRows) {
-		http.Error(w, "deployment does not exist", http.StatusNotFound)
+	if _, err := h.querier.GetFeatureAssignment(ctx, assignmentID); errors.Is(err, pgx.ErrNoRows) {
+		http.Error(w, "assignment does not exist", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, "unable to get deployment", http.StatusInternalServerError)
-		h.log.WithError(err).Error("get deployment")
+		http.Error(w, "unable to get assignment", http.StatusInternalServerError)
+		h.log.WithError(err).Error("get assignment")
 		return
 	}
 
-	state := model.DeploymentStatusStateUnknown
-	states, err := h.listDeploymentStatuses(ctx, deploymentID)
+	state := model.FeatureReconcileStatusStateUnknown
+	states, err := h.listReconcileStatuses(ctx, assignmentID)
 	if err != nil {
 		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
-		h.log.WithError(err).Warn("list deployment statuses; returning UNKNOWN")
+		h.log.WithError(err).Warn("list reconcile statuses; returning UNKNOWN")
 	} else {
 		state, _ = states.Aggregate()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(GetDeploymentResponse{
-		ID:    deploymentID,
+	if err := json.NewEncoder(w).Encode(GetFeatureAssignmentResponse{
+		ID:    assignmentID,
 		State: state,
 	}); err != nil {
-		h.log.WithError(err).Error("encode deployment response")
+		h.log.WithError(err).Error("encode assignment response")
 	}
 }
 
-func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request) {
+func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.Request) {
 	actor, valid := h.validateToken(w, req)
 	if !valid {
 		return
@@ -91,7 +91,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 	// deployments may take a while to create
 	ctx := auth.SetEmail(h.programContext, actor)
 
-	body := CreateDeploymentRequest{}
+	body := CreateFeatureAssignmentRequest{}
 	err := json.NewDecoder(req.Body).Decode(&body)
 	if err != nil {
 		http.Error(w, "Unable to decode JSON body: "+err.Error(), http.StatusBadRequest)
@@ -105,7 +105,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	deploymentID, err := deployment.Create(ctx, deployment.CreateDeployment{
+	deploymentID, err := featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
 		Chart:       body.Chart,
 		Version:     body.Version,
 		Description: &body.Description,
@@ -114,7 +114,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.log.WithError(err).Error("create deployment")
+		h.log.WithError(err).Error("create assignment")
 		return
 	}
 
@@ -128,7 +128,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 
 func (h *HttpHandler) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {
 	if h.AllowAll {
-		return "mockdeployment", true
+		return "mockassignment", true
 	}
 
 	token, err := getAuthToken(req)

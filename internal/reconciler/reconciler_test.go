@@ -8,9 +8,9 @@ import (
 
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"github.com/sirupsen/logrus"
@@ -25,7 +25,7 @@ var (
 	meter    = provider.Meter("test-meter")
 )
 
-func TestListLatestDeploymentsFiltersInactive(t *testing.T) {
+func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 	ctx := context.Background()
 	logger, _ := test.NewNullLogger()
 
@@ -38,11 +38,11 @@ func TestListLatestDeploymentsFiltersInactive(t *testing.T) {
 	}
 	defer pool.Close()
 
-	seeder := deploymenttest.NewSeeder()
-	deployment.ChartDownloader = seeder.ChartDownloader()
+	seeder := featureassignmenttest.NewSeeder()
+	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	pub := &noopPublisher{}
-	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+	newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(pool, newPublisher, meter, logger)
@@ -52,8 +52,8 @@ func TestListLatestDeploymentsFiltersInactive(t *testing.T) {
 	ctx = loadContext(ctx)
 
 	// Broad deployment v1, then override v2 for same target (deactivates v1)
-	seeder.AddDeployment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
-	seeder.AddDeployment("myapp", "2.0.0", environment.Labels{"kind": "tenant"})
+	seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
+	seeder.AddAssignment("myapp", "2.0.0", environment.Labels{"kind": "tenant"})
 	ids, err := seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seed: %v", err)
@@ -61,27 +61,27 @@ func TestListLatestDeploymentsFiltersInactive(t *testing.T) {
 
 	// v1 is inactive (deactivated by v2 create), v2 is active
 	// Now deactivate v2 — simulates "remove override"
-	if err := deployment.Deactivate(ctx, ids[1]); err != nil {
+	if err := featureassignment.Deactivate(ctx, ids[1]); err != nil {
 		t.Fatalf("deactivate: %v", err)
 	}
 
 	// Query the reconciler uses
 	querier := reconcilersql.New(pool)
-	rows, err := querier.ListLatestDeployments(ctx)
+	rows, err := querier.ListLatestFeatureAssignments(ctx)
 	if err != nil {
-		t.Fatalf("ListLatestDeployments: %v", err)
+		t.Fatalf("ListLatestFeatureAssignments: %v", err)
 	}
 
 	// After both are inactive, there should be NO deployments to reconcile
 	if len(rows) != 0 {
-		t.Errorf("ListLatestDeployments() returned %d rows, want 0 (all inactive)", len(rows))
+		t.Errorf("ListLatestFeatureAssignments() returned %d rows, want 0 (all inactive)", len(rows))
 		for _, row := range rows {
 			t.Logf("  got: feature=%s version=%s", row.FeatureName, row.Version)
 		}
 	}
 }
 
-func TestListLatestDeploymentsPicksBroadAfterOverrideRemoved(t *testing.T) {
+func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T) {
 	ctx := context.Background()
 	logger, _ := test.NewNullLogger()
 
@@ -94,11 +94,11 @@ func TestListLatestDeploymentsPicksBroadAfterOverrideRemoved(t *testing.T) {
 	}
 	defer pool.Close()
 
-	seeder := deploymenttest.NewSeeder()
-	deployment.ChartDownloader = seeder.ChartDownloader()
+	seeder := featureassignmenttest.NewSeeder()
+	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	pub := &noopPublisher{}
-	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+	newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(pool, newPublisher, meter, logger)
@@ -108,31 +108,31 @@ func TestListLatestDeploymentsPicksBroadAfterOverrideRemoved(t *testing.T) {
 	ctx = loadContext(ctx)
 
 	// Broad deployment v1 (targets all tenants)
-	seeder.AddDeployment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
+	seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
 	// Specific override v2 (targets tenant=dev-nais)
-	seeder.AddDeployment("myapp", "2.0.0", environment.Labels{"kind": "tenant", "tenant": "dev-nais"})
+	seeder.AddAssignment("myapp", "2.0.0", environment.Labels{"kind": "tenant", "tenant": "dev-nais"})
 	ids, err := seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 
 	// Both are active (different targets). Now deactivate the specific override.
-	if err := deployment.Deactivate(ctx, ids[1]); err != nil {
+	if err := featureassignment.Deactivate(ctx, ids[1]); err != nil {
 		t.Fatalf("deactivate: %v", err)
 	}
 
 	// The reconciler should still see v1 (broad, active)
 	querier := reconcilersql.New(pool)
-	rows, err := querier.ListLatestDeployments(ctx)
+	rows, err := querier.ListLatestFeatureAssignments(ctx)
 	if err != nil {
-		t.Fatalf("ListLatestDeployments: %v", err)
+		t.Fatalf("ListLatestFeatureAssignments: %v", err)
 	}
 
 	if len(rows) != 1 {
-		t.Fatalf("ListLatestDeployments() returned %d rows, want 1", len(rows))
+		t.Fatalf("ListLatestFeatureAssignments() returned %d rows, want 1", len(rows))
 	}
 	if rows[0].Version != "1.0.0" {
-		t.Errorf("ListLatestDeployments()[0].Version = %q, want %q", rows[0].Version, "1.0.0")
+		t.Errorf("ListLatestFeatureAssignments()[0].Version = %q, want %q", rows[0].Version, "1.0.0")
 	}
 }
 

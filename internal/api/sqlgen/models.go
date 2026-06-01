@@ -8,7 +8,7 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
-type Deployment struct {
+type FeatureAssignment struct {
 	ID          uuid.UUID
 	FeatureName string
 	Version     string

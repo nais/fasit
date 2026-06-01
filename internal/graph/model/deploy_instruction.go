@@ -7,16 +7,16 @@ import (
 )
 
 type DeployInstruction struct {
-	ID             uuid.UUID     `json:"id"`
-	EnvironmentID  uuid.UUID     `json:"environmentId"`
-	DeploymentID   *uuid.UUID    `json:"deploymentId"`
-	FeatureName    string        `json:"-"`
-	FeatureVersion string        `json:"-"`
-	Status         RolloutStatus `json:"status"`
-	Hash           string        `json:"-"`
-	Created        time.Time     `json:"created"`
-	LastModified   time.Time     `json:"lastModified"`
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID *uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              RolloutStatus
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
 
 	// Helm values for this deploy instruction.
-	Values []byte `json:"-"`
+	Values []byte
 }

@@ -23,7 +23,7 @@ FROM
 ORDER BY
 	environment_id;
 
--- name: ListLatestDeployments :many
+-- name: ListLatestFeatureAssignments :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id,
 	d.feature_name,
@@ -42,7 +42,7 @@ SELECT DISTINCT ON (d.feature_name, d.target)
 	fd.timeout,
 	fd.tpl_details
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 WHERE
@@ -110,7 +110,7 @@ SELECT DISTINCT ON (feature_name, environment_id)
 	feature_name,
 	hash,
 	status,
-	deployment_id
+	feature_assignment_id
 FROM
 	deploy_instructions
 ORDER BY
@@ -138,7 +138,7 @@ INSERT INTO deploy_instructions(
 	feature_version,
 	hash,
 	"values",
-	deployment_id)
+	feature_assignment_id)
 VALUES (
 	@id,
 	@environment_id,
@@ -146,21 +146,21 @@ VALUES (
 	@feature_version,
 	@hash,
 	@vals,
-	@deployment_id);
+	@feature_assignment_id);
 
--- name: UpsertDeploymentStatus :batchexec
-INSERT INTO deployment_statuses(
-	deployment_id,
+-- name: UpsertReconcileStatus :batchexec
+INSERT INTO feature_reconcile_statuses(
+	feature_assignment_id,
 	environment_id,
 	status,
 	message)
 VALUES (
-	@deployment_id,
+	@feature_assignment_id,
 	@environment_id,
 	@status,
 	@message)
 ON CONFLICT (
-	deployment_id,
+	feature_assignment_id,
 	environment_id)
 	DO UPDATE SET
 		status = EXCLUDED.status,

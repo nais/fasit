@@ -10,9 +10,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -121,7 +121,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	di, err := deployment.GetDeployInstruction(ctx, helmStatus.DIID)
+	di, err := featureassignment.GetDeployInstruction(ctx, helmStatus.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")
@@ -152,7 +152,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	if err := deployment.UpdateDeployInstructionStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
+	if err := featureassignment.UpdateDeployInstructionStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
 		return fmt.Errorf("updating deploy instruction status: %w", err)
 	}
 
@@ -194,13 +194,13 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 	}
 
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		err = deployment.DeleteReleaseStatus(ctx, env.ID)
+		err = featureassignment.DeleteReleaseStatus(ctx, env.ID)
 		if err != nil {
 			return fmt.Errorf("deleting release status: %w", err)
 		}
 
 		for _, rel := range status.Releases {
-			err = deployment.SetReleaseStatus(ctx, env.ID, &rel)
+			err = featureassignment.SetReleaseStatus(ctx, env.ID, &rel)
 			if err != nil {
 				return fmt.Errorf("creating release status: %w", err)
 			}

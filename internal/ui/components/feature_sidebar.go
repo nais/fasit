@@ -14,7 +14,7 @@ func FeatureSidebar(featureName, activeTab, activeTenant, activeEnvironment stri
 		h.Div(h.Class("nav"),
 			h.Ul(
 				featureNavItem("/features/"+featureName, "Overview", activeTab == "overview"),
-				featureNavItem("/features/"+featureName+"/deploy-specs", "Deploy specs", activeTab == "deploy-specs"),
+				featureNavItem("/features/"+featureName+"/assignments", "Assignments", activeTab == "assignments"),
 				featureNavItem("/features/"+featureName+"/config", "Config", activeTab == "config"),
 				featureNavItem("/features/"+featureName+"/config-explorer", "Config explorer", activeTab == "config-explorer"),
 			),

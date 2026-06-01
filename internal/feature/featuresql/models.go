@@ -30,16 +30,16 @@ type ConfigurationsGlobal struct {
 }
 
 type DeployInstruction struct {
-	ID             uuid.UUID
-	EnvironmentID  uuid.UUID
-	FeatureName    string
-	FeatureVersion string
-	Status         string
-	Hash           string
-	Created        pgtype.Timestamptz
-	LastModified   pgtype.Timestamptz
-	Values         []byte
-	DeploymentID   *uuid.UUID
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             pgtype.Timestamptz
+	LastModified        pgtype.Timestamptz
+	Values              []byte
+	FeatureAssignmentID *uuid.UUID
 }
 
 type DisabledFeature struct {

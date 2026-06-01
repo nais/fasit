@@ -15,10 +15,10 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/reconciler"
@@ -197,8 +197,8 @@ func main() {
 		return env.ID
 	}
 
-	seeder := deploymenttest.NewSeeder()
-	deployment.ChartDownloader = seeder.ChartDownloader()
+	seeder := featureassignmenttest.NewSeeder()
+	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	// Targets are chosen so that, when paired with mise/tasks/naisd-all.sh
 	// (test-partner/prod runs --mock-failing, test-partner/staging has no
@@ -384,8 +384,8 @@ func main() {
 		"hookd":           "GitHub deployment webhook handler",
 	}
 
-	addDeployment := func(name, version string, target environment.Labels, kinds []model.EnvironmentKind) {
-		seeder.AddDeploymentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name], featureDescriptions[name])
+	addAssignment := func(name, version string, target environment.Labels, kinds []model.EnvironmentKind) {
+		seeder.AddAssignmentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name], featureDescriptions[name])
 	}
 
 	naiseratorV := newVersion()
@@ -406,20 +406,20 @@ func main() {
 	// the current versions are deployed to the same target, exercising the
 	// Seed older versions that get deactivated, exercising the
 	// deactivation flow in local dev.
-	addDeployment("naiserator", naiseratorOldV, environment.Labels{"kind": "tenant"}, tenantOnly)
-	addDeployment("kyverno", kyvernoOldV, environment.Labels{}, all)
+	addAssignment("naiserator", naiseratorOldV, environment.Labels{"kind": "tenant"}, tenantOnly)
+	addAssignment("kyverno", kyvernoOldV, environment.Labels{}, all)
 
-	addDeployment("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly)
-	addDeployment("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly)
-	addDeployment("console", consoleV, environment.Labels{"kind": "management"}, managementOnly)
-	addDeployment("unleash", unleashV, environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly)
-	addDeployment("replicator", replicatorV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "name": "prod"}, tenantOnly)
-	addDeployment("dependencytrack", dependencytrackV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "name": "staging"}, tenantOnly)
-	addDeployment("naiserator", naiseratorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "name": "dev"}, tenantOnly)
-	addDeployment("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "name": "dev"}, tenantOnly)
-	addDeployment("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "name": "dev"}, tenantOnly)
-	addDeployment("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly)
-	addDeployment("kyverno", kyvernoV, environment.Labels{}, all)
+	addAssignment("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly)
+	addAssignment("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly)
+	addAssignment("console", consoleV, environment.Labels{"kind": "management"}, managementOnly)
+	addAssignment("unleash", unleashV, environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly)
+	addAssignment("replicator", replicatorV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "name": "prod"}, tenantOnly)
+	addAssignment("dependencytrack", dependencytrackV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "name": "staging"}, tenantOnly)
+	addAssignment("naiserator", naiseratorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "name": "dev"}, tenantOnly)
+	addAssignment("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "name": "dev"}, tenantOnly)
+	addAssignment("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "name": "dev"}, tenantOnly)
+	addAssignment("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly)
+	addAssignment("kyverno", kyvernoV, environment.Labels{}, all)
 
 	ctx = auth.SetEmail(ctx, "tronghn@nais/fasit/123456789")
 	if _, err := seeder.Seed(ctx); err != nil {
@@ -503,7 +503,7 @@ func main() {
 		// Trigger a redeploy (exercises ActionTriggered)
 		ctx = auth.SetEmail(ctx, actors[0])
 		testPartnerDev := envID("test-partner", "dev")
-		_ = deployment.InvalidateLatestDeploy(ctx, testPartnerDev, "naiserator")
+		_ = featureassignment.InvalidateLatestDeploy(ctx, testPartnerDev, "naiserator")
 		reconciler.TriggerReconcile()
 
 		// Update environment labels (exercises SetLabels audit)
