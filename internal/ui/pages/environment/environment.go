@@ -394,7 +394,7 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 					h.Th(g.Text("Feature")),
 					h.Th(g.Text("Status")),
 					h.Th(g.Text("Version")),
-					h.Th(h.Title("When the latest successful deploy instruction completed"), g.Text("Last successful deploy")),
+					h.Th(h.Title("When the latest successful deploy instruction completed"), g.Text("Deployed")),
 				)),
 				h.TBody(g.Group(g.Map(features, func(feature environmentFeatureRow) g.Node {
 					return h.Tr(

@@ -105,10 +105,10 @@ func overviewTable(envs []DeploymentEnvStatus, featureName string) g.Node {
 	prefs := overviewViewPrefs()
 	thNodes := []g.Node{
 		h.Th(g.Text("Tenant")),
-		h.Th(g.Text("Environment")),
+		h.Th(g.Text("Env")),
 		h.Th(g.Text("Status")),
 		h.Th(g.Text("Version")),
-		h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Last successful deploy")),
+		h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Deployed")),
 		h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")),
 	}
 	rows := g.Map(envs, func(env DeploymentEnvStatus) g.Node {
@@ -347,13 +347,13 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 	if showTenant {
 		thNodes = append(thNodes, h.Th(g.Text("Tenant")))
 	}
-	thNodes = append(thNodes, h.Th(g.Text("Environment")))
+	thNodes = append(thNodes, h.Th(g.Text("Env")))
 	thNodes = append(thNodes, h.Th(g.Text("Status")))
 	if showVersion {
 		thNodes = append(thNodes, h.Th(g.Text("Version")))
 	}
 	if prefs.ShowLastDeploy {
-		thNodes = append(thNodes, h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Last successful deploy")))
+		thNodes = append(thNodes, h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Deployed")))
 	}
 	if prefs.ShowRowActions {
 		thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))

@@ -305,7 +305,7 @@ func configExplorerContent(featureName string, data *configExplorerData) g.Node 
 	}
 
 	// Table: rows = envs, columns = selected keys
-	headers := []g.Node{h.Th(g.Text("Environment"))}
+	headers := []g.Node{h.Th(g.Text("Env"))}
 	for _, k := range selectedKeys {
 		label := k.Key
 		if k.DisplayName != "" {
