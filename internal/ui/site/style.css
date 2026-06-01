@@ -1417,6 +1417,15 @@ nav .user {
   background: var(--bg-hover, rgba(0,0,0,0.03));
 }
 
+.deploy-row-superseded {
+  color: var(--text-muted, #888);
+  opacity: 0.7;
+}
+.deploy-row-superseded:hover {
+  color: inherit;
+  opacity: 1;
+}
+
 .log-row td {
   padding: 0;
   max-width: 0;

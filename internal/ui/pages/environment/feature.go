@@ -534,9 +534,14 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 			rowClickURL = featureBasePathForPage(page) + "?logs=" + diID
 		}
 
+		rowClass := "deploy-row-clickable"
+		if currentFound && !isCurrent {
+			rowClass += " deploy-row-superseded"
+		}
+
 		nodes := []g.Node{
 			h.Tr(
-				h.Class("deploy-row-clickable"),
+				h.Class(rowClass),
 				g.Attr("onclick", "window.location.href='"+rowClickURL+"'"),
 				h.Td(
 					h.Span(h.Class("deploy-version"),
@@ -576,7 +581,9 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 			h.TBody(g.Group(rows)),
 		),
 		g.If(!page.ShowAllDeploys && len(page.RecentDeployHistory) >= 10,
-			h.A(h.Href(featureBasePathForPage(page)+"?deploys=all"), h.Class("link-muted"), g.Text("Show all →")),
+			h.Div(h.Style("text-align: center; padding: 0.75rem 0;"),
+				h.A(h.Href(featureBasePathForPage(page)+"?deploys=all"), h.Class("link-muted"), g.Text("Show all \u25be")),
+			),
 		),
 	)
 }
