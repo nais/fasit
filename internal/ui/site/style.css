@@ -1672,16 +1672,14 @@ a:hover .status-badge {
 
 /* Feature card grid */
 .feature-card-grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
+  align-items: start;
   gap: 1rem;
   max-width: 100%;
   margin-top: 0.5rem;
 }
 .feature-card {
-  flex: 0 1 auto;
-  min-width: min-content;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 6px;
