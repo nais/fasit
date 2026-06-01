@@ -45,6 +45,7 @@ type FeaturePage struct {
 	RecentDeployHistory     []*model.DeployInstruction
 	DeployLogsByInstruction map[string][]LogLine
 	ExpandedLogID           string
+	ShowAllDeploys          bool
 }
 
 type FeatureDetail struct {
@@ -170,7 +171,7 @@ func featureBreadcrumbs(tenant *model.Tenant, env *model.Environment, featureNam
 	}
 }
 
-func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab, expandedLogID string) (*FeaturePage, error) {
+func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab, expandedLogID string, showAllDeploys bool) (*FeaturePage, error) {
 	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
@@ -199,14 +200,15 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	breadcrumbs := featureBreadcrumbs(tenant, env, featureName)
 
 	page := &FeaturePage{
-		Breadcrumbs:   breadcrumbs,
-		Tenant:        tenant,
-		TenantSlug:    tenantSlug,
-		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
-		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
-		FeatureEnvs:   featureenvs.LoadEnvironments(ctx, feat),
-		ActiveTab:     activeTab,
-		ExpandedLogID: expandedLogID,
+		Breadcrumbs:    breadcrumbs,
+		Tenant:         tenant,
+		TenantSlug:     tenantSlug,
+		Environment:    &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Feature:        &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
+		FeatureEnvs:    featureenvs.LoadEnvironments(ctx, feat),
+		ActiveTab:      activeTab,
+		ExpandedLogID:  expandedLogID,
+		ShowAllDeploys: showAllDeploys,
 	}
 
 	if !env.Reconcile {
@@ -241,7 +243,11 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		if dep, err := deployment.WinningDeployment(ctx, env.ID, featureName); err == nil {
 			page.WinningDeployment = dep
 		}
-		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, 5)
+		var deployLimit int32 = 10
+		if showAllDeploys {
+			deployLimit = 100
+		}
+		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, deployLimit)
 		page.DeployLogsByInstruction = map[string][]LogLine{}
 		if page.ExpandedLogID != "" {
 			for _, di := range page.RecentDeployHistory {

@@ -29,7 +29,8 @@ import (
 
 func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab, r.URL.Query().Get("logs"))
+		showAll := r.URL.Query().Get("deploys") == "all"
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab, r.URL.Query().Get("logs"), showAll)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -60,6 +61,34 @@ func AuditRedirectHandler() http.HandlerFunc {
 		env := chi.URLParam(r, "env")
 		query := url.QueryEscape(feature + " " + tenant + "/" + env)
 		http.Redirect(w, r, "/auditlog?q="+query, http.StatusSeeOther)
+	}
+}
+
+// FeatureLogsRedirectHandler redirects /logs to the status tab with the latest
+// deploy instruction's logs expanded.
+func FeatureLogsRedirectHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		featureName := chi.URLParam(r, "feature")
+		tenantSlug := chi.URLParam(r, "tenant")
+		envName := chi.URLParam(r, "env")
+		basePath := "/features/" + featureName + "/envs/" + tenantSlug + "/" + envName
+
+		tenant, err := envpkg.GetTenantByName(r.Context(), tenantSlug)
+		if err != nil {
+			http.Redirect(w, r, basePath, http.StatusSeeOther)
+			return
+		}
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, envName)
+		if err != nil {
+			http.Redirect(w, r, basePath, http.StatusSeeOther)
+			return
+		}
+		di, err := featurepkg.GetLatestDeployInstruction(r.Context(), env.ID, featureName)
+		if err != nil || di == nil {
+			http.Redirect(w, r, basePath, http.StatusSeeOther)
+			return
+		}
+		http.Redirect(w, r, basePath+"?logs="+di.ID.String(), http.StatusSeeOther)
 	}
 }
 
@@ -481,8 +510,12 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 		)
 	}
 
+	currentFound := false
 	rows := g.Map(page.RecentDeployHistory, func(di *model.DeployInstruction) g.Node {
-		isCurrent := page.FeatureLog != nil && di.FeatureVersion == page.FeatureLog.CurrentVersion && string(di.Status) == strings.ToLower(page.FeatureLog.CurrentStatus)
+		isCurrent := !currentFound && page.FeatureLog != nil && di.FeatureVersion == page.FeatureLog.CurrentVersion && string(di.Status) == strings.ToLower(page.FeatureLog.CurrentStatus)
+		if isCurrent {
+			currentFound = true
+		}
 		diID := di.ID.String()
 		expanded := page.ExpandedLogID == diID
 		lines := page.DeployLogsByInstruction[diID]
@@ -541,6 +574,9 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 				h.Th(),
 			)),
 			h.TBody(g.Group(rows)),
+		),
+		g.If(!page.ShowAllDeploys && len(page.RecentDeployHistory) >= 10,
+			h.A(h.Href(featureBasePathForPage(page)+"?deploys=all"), h.Class("link-muted"), g.Text("Show all →")),
 		),
 	)
 }

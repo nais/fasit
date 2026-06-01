@@ -37,6 +37,7 @@ type DeploymentEnvStatus struct {
 	OverriddenByID       string
 	OverriddenByVersion  string
 	OverriddenByLabels   map[string]string
+	DeployInstructionID  string
 }
 
 type ViewPrefs struct {
@@ -377,7 +378,10 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 func envCardRow(env DeploymentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion, showTenantAvatar, showActions bool) g.Node {
 	baseHref := "/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.Name
 	envLink := h.A(h.Href(baseHref), g.Text(env.Name))
-	logsHref := baseHref + "/logs"
+	logsHref := baseHref
+	if env.DeployInstructionID != "" {
+		logsHref += "?logs=" + env.DeployInstructionID
+	}
 
 	rowAttrs := []g.Node{}
 	if env.IsOverridden {
@@ -640,6 +644,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, feature *model.Feature) [
 
 			if di, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
 				es.LastDeployed = di.LastModified
+				es.DeployInstructionID = di.ID.String()
 			}
 
 			releases, err := deployment.ListReleaseStatuses(ctx, env.env.ID)
