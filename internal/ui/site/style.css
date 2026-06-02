@@ -1903,7 +1903,9 @@ a:hover .status-badge {
 .kebab-item,
 .kebab-menu a.kebab-item,
 .kebab-menu a.kebab-item:visited {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.4rem 0.75rem;
   color: var(--text-secondary);
