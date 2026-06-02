@@ -401,9 +401,13 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	for _, a := range filtered {
 		resource := auditlog.ResourceLink(a)
 		description := auditlog.Description(a)
-		showDesc := description != "" && a.ObjectType != audit.ObjectTypeConfiguration
+		action := string(a.Action)
+		if a.ObjectType == audit.ObjectTypeFeatureAssignment && a.Action == audit.ActionTriggered {
+			action = "redeploy"
+		}
+		showDesc := description != "" && !descriptionRedundant(a)
 		tableRows = append(tableRows, h.Tr(
-			h.Td(g.Text(string(a.Action))),
+			h.Td(g.Text(action)),
 			h.Td(resource),
 			h.Td(h.Class("text-muted"), components.ConfigChangeNode(a), g.If(showDesc, h.Div(g.Text(description)))),
 			h.Td(view.ActorNode(a.Actor)),
@@ -536,6 +540,16 @@ func configKeyNode(e *audit.Entry) g.Node {
 		}
 	}
 	return auditlog.ResourceLink(e)
+}
+
+func descriptionRedundant(e *audit.Entry) bool {
+	if e.ObjectType == audit.ObjectTypeConfiguration {
+		return true
+	}
+	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.Action == audit.ActionTriggered {
+		return true
+	}
+	return false
 }
 
 func loadFeatureData(r *http.Request) (*DetailPage, error) {
