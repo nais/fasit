@@ -54,10 +54,10 @@ func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
 
 	html := buf.String()
 	assert.Contains(t, html, `id="row-kebab-nav-dev"`)
-	assert.Contains(t, html, `View logs`)
+	assert.Contains(t, html, `Deploy logs`)
 	assert.Contains(t, html, `/features/naiserator/envs/nav/dev`)
 	assert.Equal(t, 1, strings.Count(html, `id="row-kebab-nav-dev"`))
-	assert.Equal(t, 1, strings.Count(html, `View logs`))
+	assert.Equal(t, 1, strings.Count(html, `Deploy logs`))
 }
 
 func TestDeploymentDetailContentRendersTableAndGrid(t *testing.T) {

@@ -1334,6 +1334,8 @@ nav .user {
   min-width: 21.5rem;
   overflow: visible;
   max-height: none;
+  text-align: left;
+  white-space: normal;
 }
 [popover]::backdrop {
   background: var(--popover-backdrop);

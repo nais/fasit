@@ -371,7 +371,7 @@ func pageKebab(page *FeaturePage) g.Node {
 	items := []g.Node{}
 
 	items = append(items,
-		h.A(h.Href(lokiExploreURL(page.Tenant.Name, page.Environment.Name, page.Feature.Name)), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener"),
+		h.A(h.Href(LokiExploreURL(page.Tenant.Name, page.Environment.Name, page.Feature.Name)), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener"),
 			g.Raw(`<svg width="14" height="14" viewBox="0 0 48 56" fill="currentColor"><path d="M12.05 54.92l-.66-4.46-4.46.67.76 4.46 4.36-.67z"/><path d="M46.96 42.4l-.76-4.36-19.45 3.04.57 4.36 19.64-3.04z"/><path d="M20.4 46.58l4.45-.76-.66-4.36-4.46.66.67 4.46z"/><path d="M19.07 53.79l-.76-4.36-4.36.66.57 4.46 4.55-.76z"/><path d="M5.88 44.2l.67 4.46 4.45-.67-.66-4.46-4.46.67z"/><path d="M27.7 47.9l.76 4.56 19.54-3.04-.66-4.46L27.7 47.9z"/><path d="M21.53 53.4l4.36-.57-.66-4.55-4.46.76.76 4.36z"/><path d="M12.81 43.16l.76 4.46 4.36-.67-.66-4.46-4.46.67z"/><path d="M7.4 41.45L1.99 5.98 0 6.26l5.5 35.48 1.9-.29z"/><path d="M9.96 41.07L4.08 2.94l-1.9.38 5.88 38.04 1.9-.29z"/><path d="M14.32 40.41L8.16 0 6.26.38l6.17 40.22 1.89-.19z"/><path d="M16.89 40.03L11.19 3.23l-1.8.28 5.69 36.71 1.81-.19z"/><path d="M21.25 39.27L16.22 6.64l-1.9.28 5.03 32.73 1.9-.38z"/><path d="M23.81 38.89L18.59 5.03l-1.9.28 5.31 33.87 1.81-.29z"/></svg> `),
 			g.Text("Loki logs ↗"),
 		),
@@ -428,53 +428,11 @@ func pageKebab(page *FeaturePage) g.Node {
 }
 
 func redeployPopover(page *FeaturePage) g.Node {
-	if !page.Feature.Enabled {
-		return nil
-	}
-	redeployPopoverID := "trigger-redeploy"
-	redeployAction := featureBasePathForPage(page) + "/redeploy"
-	return h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
-		h.H3(g.Text("Confirm redeploy")),
-		h.Form(h.Method("POST"), h.Action(redeployAction),
-			h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
-			h.Div(h.Class("popover-actions"),
-				h.Button(h.Type("submit"), g.Text("Trigger redeploy")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
-			),
-		),
-	)
+	return components.RedeployPopover("trigger-redeploy", featureBasePathForPage(page)+"/redeploy", page.Feature.Name, page.Environment.Name, page.Feature.Enabled)
 }
 
 func reconcilePopover(page *FeaturePage) g.Node {
-	popoverID := "toggle-reconcile"
-	action := featureBasePathForPage(page) + "/toggle-reconcile"
-
-	if page.Feature.Enabled {
-		return h.Div(g.Attr("popover", ""), h.ID(popoverID),
-			h.H3(g.Text("Disable reconcile")),
-			h.Form(h.Method("POST"), h.Action(action),
-				h.Input(h.Type("hidden"), h.Name("enabled"), h.Value("false")),
-				h.P(g.Textf("Disable reconcile for %s in %s? Reconciliation will stop until re-enabled.", page.Feature.Name, page.Environment.Name)),
-				h.Label(h.For("reconcile-reason"), g.Text("Reason for disabling reconcile")),
-				h.Textarea(h.ID("reconcile-reason"), h.Name("reason"), g.Attr("maxlength", "1000"), g.Attr("required", ""), h.Rows("3")),
-				h.Div(h.Class("popover-actions"),
-					h.Button(h.Type("submit"), g.Text("Disable reconcile")),
-					h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
-				),
-			),
-		)
-	}
-
-	return h.Div(g.Attr("popover", ""), h.ID(popoverID),
-		h.H3(g.Text("Enable reconcile")),
-		h.Form(h.Method("POST"), h.Action(action),
-			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value("true")),
-			h.Div(h.Class("popover-actions"),
-				h.Button(h.Type("submit"), g.Text("Enable reconcile")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
-			),
-		),
-	)
+	return components.ReconcilePopover("toggle-reconcile", featureBasePathForPage(page)+"/toggle-reconcile", page.Feature.Name, page.Environment.Name, page.Feature.Enabled)
 }
 
 func statusTab(page *FeaturePage) g.Node {
@@ -636,6 +594,12 @@ func recentEnvironmentActivity(page *FeaturePage) g.Node {
 	if len(page.AuditEntries) == 0 {
 		return nil
 	}
+
+	title := "Recent activity"
+	if page.ActiveTab == "config" {
+		title = "Config activity"
+	}
+
 	items := make([]g.Node, 0, len(page.AuditEntries))
 	for _, entry := range page.AuditEntries {
 		description := auditlog.Description(entry)
@@ -654,7 +618,7 @@ func recentEnvironmentActivity(page *FeaturePage) g.Node {
 	return h.Section(h.Class("env-activity"),
 		h.Div(h.Class("env-activity-header"),
 			h.Div(
-				h.H3(g.Text("Recent activity")),
+				h.H3(g.Text(title)),
 				h.Span(h.Class("activity-filter-badge"), g.Text(page.Tenant.Name+"/"+page.Environment.Name)),
 			),
 			h.A(h.Href("/auditlog?q="+url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name)), h.Class("link-muted"), g.Text("All →")),
@@ -975,7 +939,7 @@ func featureBasePathValues(tenant, env, feature string) string {
 	return "/features/" + feature + "/envs/" + tenant + "/" + env
 }
 
-func lokiExploreURL(tenant, env, feature string) string {
+func LokiExploreURL(tenant, env, feature string) string {
 	ds := tenant + "-logs"
 	return "https://monitoring.nais.io/a/grafana-lokiexplore-app/explore/service_name/" + feature + "/logs" +
 		"?patterns=%5B%5D&from=now-15m&to=now&var-lineFormat=" +
