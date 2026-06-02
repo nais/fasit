@@ -7,45 +7,85 @@ import (
 
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestParseConfigValue_JSONMode(t *testing.T) {
 	t.Parallel()
 	t.Run("STRING json mode minifies valid JSON", func(t *testing.T) {
 		v, err := components.ParseConfigValue("{\n  \"a\": 1,\n  \"b\": [2, 3]\n}", "STRING", "json")
-		require.NoError(t, err)
-		assert.Equal(t, `{"a":1,"b":[2,3]}`, v)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if v != `{"a":1,"b":[2,3]}` {
+			t.Errorf("got %v, want %v", v, `{"a":1,"b":[2,3]}`)
+		}
 	})
 
 	t.Run("STRING json mode rejects invalid JSON", func(t *testing.T) {
 		_, err := components.ParseConfigValue("not json", "STRING", "json")
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid JSON")
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !strings.Contains(err.Error(), "invalid JSON") {
+			t.Errorf("error = %v, want to contain 'invalid JSON'", err)
+		}
 	})
 
 	t.Run("STRING raw mode accepts arbitrary text", func(t *testing.T) {
 		v, err := components.ParseConfigValue("not json at all\nmultiline", "STRING", "raw")
-		require.NoError(t, err)
-		assert.Equal(t, "not json at all\nmultiline", v)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if v != "not json at all\nmultiline" {
+			t.Errorf("got %v, want original text", v)
+		}
 	})
 
 	t.Run("STRING_ARRAY json mode rejects non-array JSON", func(t *testing.T) {
 		_, err := components.ParseConfigValue(`{"not":"array"}`, "STRING_ARRAY", "json")
-		require.Error(t, err)
+		if err == nil {
+			t.Fatal("expected error")
+		}
 	})
 
 	t.Run("STRING_ARRAY json mode parses array", func(t *testing.T) {
 		v, err := components.ParseConfigValue(`["FOO=bar","BAZ=qux"]`, "STRING_ARRAY", "json")
-		require.NoError(t, err)
-		assert.Equal(t, []string{"FOO=bar", "BAZ=qux"}, v)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got, ok := v.([]string)
+		if !ok {
+			t.Fatalf("got type %T, want []string", v)
+		}
+		want := []string{"FOO=bar", "BAZ=qux"}
+		if len(got) != len(want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("got[%d] = %q, want %q", i, got[i], want[i])
+			}
+		}
 	})
 
 	t.Run("STRING_ARRAY raw mode falls back to comma split", func(t *testing.T) {
 		v, err := components.ParseConfigValue("a, b ,c", "STRING_ARRAY", "raw")
-		require.NoError(t, err)
-		assert.Equal(t, []string{"a", "b", "c"}, v)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got, ok := v.([]string)
+		if !ok {
+			t.Fatalf("got type %T, want []string", v)
+		}
+		want := []string{"a", "b", "c"}
+		if len(got) != len(want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("got[%d] = %q, want %q", i, got[i], want[i])
+			}
+		}
 	})
 }
 
@@ -53,24 +93,30 @@ func TestTryPrettyJSON(t *testing.T) {
 	t.Parallel()
 	t.Run("detects object", func(t *testing.T) {
 		out, ok := components.TryPrettyJSON(`{"a":1,"b":2}`)
-		require.True(t, ok)
-		assert.Contains(t, out, "\n")
-		assert.Contains(t, out, `"a": 1`)
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
+		if !strings.Contains(out, "\n") || !strings.Contains(out, `"a": 1`) {
+			t.Errorf("got %q, want pretty-printed JSON", out)
+		}
 	})
 
 	t.Run("rejects plain string", func(t *testing.T) {
-		_, ok := components.TryPrettyJSON("just text")
-		assert.False(t, ok)
+		if _, ok := components.TryPrettyJSON("just text"); ok {
+			t.Error("expected ok=false")
+		}
 	})
 
 	t.Run("rejects empty", func(t *testing.T) {
-		_, ok := components.TryPrettyJSON("")
-		assert.False(t, ok)
+		if _, ok := components.TryPrettyJSON(""); ok {
+			t.Error("expected ok=false")
+		}
 	})
 
 	t.Run("rejects malformed JSON", func(t *testing.T) {
-		_, ok := components.TryPrettyJSON(`{"a":}`)
-		assert.False(t, ok)
+		if _, ok := components.TryPrettyJSON(`{"a":}`); ok {
+			t.Error("expected ok=false")
+		}
 	})
 }
 
@@ -99,12 +145,20 @@ func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	require.NoError(t, overviewTab(page).Render(&buf))
+	if err := overviewTab(page).Render(&buf); err != nil {
+		t.Fatalf("render: %v", err)
+	}
 	html := buf.String()
 
-	assert.Contains(t, html, "public-value", "non-secret computed value should render its rendered content")
-	assert.NotContains(t, html, "real-secret", "secret computed value must never appear in rendered HTML")
-	assert.Contains(t, html, "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022", "secret computed value should render as the masked placeholder")
+	if !strings.Contains(html, "public-value") {
+		t.Error("non-secret computed value should render its content")
+	}
+	if strings.Contains(html, "real-secret") {
+		t.Error("secret computed value must never appear in rendered HTML")
+	}
+	if !strings.Contains(html, "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022") {
+		t.Error("secret computed value should render as the masked placeholder")
+	}
 }
 
 func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
@@ -133,20 +187,32 @@ func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	require.NoError(t, overviewTab(page).Render(&buf))
+	if err := overviewTab(page).Render(&buf); err != nil {
+		t.Fatalf("render: %v", err)
+	}
 	html := buf.String()
 
 	configIdx := strings.Index(html, "Configuration")
 	computedIdx := strings.Index(html, "Computed")
-	require.NotEqual(t, -1, configIdx, "Configuration heading should be present")
-	require.NotEqual(t, -1, computedIdx, "Computed heading should be present")
-	assert.Less(t, configIdx, computedIdx, "Configuration should render before Computed")
+	if configIdx == -1 {
+		t.Fatal("Configuration heading should be present")
+	}
+	if computedIdx == -1 {
+		t.Fatal("Computed heading should be present")
+	}
+	if configIdx >= computedIdx {
+		t.Error("Configuration should render before Computed")
+	}
 
-	// Source pills tag each row with where its value came from.
-	assert.Contains(t, html, `source-label">helm value`, "configurable item without override should be tagged helm value")
-	assert.Contains(t, html, `source-label">mapping`, "computed item should be tagged mapping")
-	// Actions column should be marked non-sortable.
-	assert.Contains(t, html, `data-no-sort`)
+	if !strings.Contains(html, `source-label">helm value`) {
+		t.Error("configurable item without override should be tagged 'helm value'")
+	}
+	if !strings.Contains(html, `source-label">mapping`) {
+		t.Error("computed item should be tagged 'mapping'")
+	}
+	if !strings.Contains(html, `data-no-sort`) {
+		t.Error("actions column should be marked non-sortable")
+	}
 }
 
 func TestOverviewTab_SourceLabels(t *testing.T) {
@@ -173,9 +239,14 @@ func TestOverviewTab_SourceLabels(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	require.NoError(t, overviewTab(page).Render(&buf))
+	if err := overviewTab(page).Render(&buf); err != nil {
+		t.Fatalf("render: %v", err)
+	}
 	html := buf.String()
-	// Override row → "env config" pill; non-override row → "helm value" pill.
-	assert.Contains(t, html, `>env config<`, "env-override item should display 'env config' source pill")
-	assert.Contains(t, html, `>helm value<`, "non-overridden item should display 'helm value' source pill")
+	if !strings.Contains(html, `>env config<`) {
+		t.Error("env-override item should display 'env config' source pill")
+	}
+	if !strings.Contains(html, `>helm value<`) {
+		t.Error("non-overridden item should display 'helm value' source pill")
+	}
 }

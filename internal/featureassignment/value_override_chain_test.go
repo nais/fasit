@@ -18,9 +18,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestDeployInstructionValueOverrideChain verifies the precedence chain that
@@ -32,7 +29,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
-	require.NoError(t, err, "start postgres")
+	if err != nil {
+		t.Fatalf("start postgres: %v", err)
+	}
 
 	mgr := setupTestMgr(ctx, t, container, dsn, logger)
 
@@ -43,7 +42,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	ctx = loadContext(ctx)
 
 	mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -53,19 +54,29 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 	})
 
 	tenant, err := environment.GetTenantByName(ctx, "acme")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	mgmtEnv, err := environment.GetByName(ctx, tenant.ID, "mgmt")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	devEnv, err := environment.GetByName(ctx, tenant.ID, "dev")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	setEnvVal := func(envID uuid.UUID, key string, val any, secret bool) {
 		t.Helper()
 		b, err := json.Marshal(val)
-		require.NoError(t, err)
-		require.NoError(t, environment.SetEnvironmentValue(ctx, envID, key, b, secret))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if err := environment.SetEnvironmentValue(ctx, envID, key, b, secret); err != nil {
+			t.Fatalf("SetEnvironmentValue: %v", err)
+		}
 	}
 
 	setEnvVal(mgmtEnv.ID, "mgmt_only", "from-mgmt", false)
@@ -104,12 +115,16 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 	)
 
 	_, err = mgr.seeder.Seed(ctx)
-	require.NoError(t, err, "seed deployments")
+	if err != nil {
+		t.Fatalf("seed deployments: %v", err)
+	}
 
 	createConfig := func(key string, val any, envID *uuid.UUID) {
 		t.Helper()
 		b, err := json.Marshal(val)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		c := model.NewConfiguration{
 			Feature:       "kitchen-sink",
 			Key:           key,
@@ -121,7 +136,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		} else {
 			_, err = feature.ConfigGlobalCreate(ctx, c)
 		}
-		require.NoError(t, err, "create config %s", key)
+		if err != nil {
+			t.Fatalf("create config %s: %v", key, err)
+		}
 	}
 
 	createConfig("globalConfigOnly", "global-val", nil)
@@ -135,7 +152,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 	createConfig("envBeatsGlobal", "env-val", &devEnv.ID)
 	createConfig("envConfigBeatsComputed", "env-val", &devEnv.ID)
 
-	require.NoError(t, featureassignment.GetManager(ctx).Reconcile(ctx))
+	if err := featureassignment.GetManager(ctx).Reconcile(ctx); err != nil {
+		t.Fatalf("Reconcile: %v", err)
+	}
 
 	instructions := map[string]message.DeployInstruction{}
 	for _, msg := range pub.msg {
@@ -144,18 +163,28 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 			 JOIN environments e ON e.id = di.environment_id
 			 WHERE di.id = $1`, msg.ID)
 		var envName string
-		require.NoError(t, row.Scan(&envName))
+		if err := row.Scan(&envName); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
 		instructions[envName] = msg
 	}
 
-	require.Contains(t, instructions, "dev", "expected deploy instruction for dev")
-	require.Contains(t, instructions, "mgmt", "expected deploy instruction for mgmt")
-	require.Contains(t, instructions, "clean", "expected deploy instruction for clean")
+	if _, ok := instructions["dev"]; !ok {
+		t.Error("expected deploy instruction for dev")
+	}
+	if _, ok := instructions["mgmt"]; !ok {
+		t.Error("expected deploy instruction for mgmt")
+	}
+	if _, ok := instructions["clean"]; !ok {
+		t.Error("expected deploy instruction for clean")
+	}
 
 	t.Run("dev environment values", func(t *testing.T) {
 		vals := instructions["dev"].Values
 
-		assert.NotContains(t, vals, "chartDefault")
+		if _, has := vals["chartDefault"]; has {
+			t.Errorf("vals should not contain chartDefault")
+		}
 		assertValue(t, vals, "computedOnly", "computed-result")
 		assertValue(t, vals, "globalConfigOnly", "global-val")
 		assertValue(t, vals, "envConfigOnly", "env-val")
@@ -174,20 +203,34 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		assertValue(t, vals, "boolConfig", true)
 
 		fasit, ok := vals["fasit"].(map[string]any)
-		require.True(t, ok)
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
 		envMeta, ok := fasit["env"].(map[string]string)
-		require.True(t, ok)
-		assert.Equal(t, "dev", envMeta["name"])
-		assert.Equal(t, "tenant", envMeta["kind"])
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
+		if envMeta["name"] != "dev" {
+			t.Errorf("got %v, want dev", envMeta["name"])
+		}
+		if envMeta["kind"] != "tenant" {
+			t.Errorf("got %v, want tenant", envMeta["kind"])
+		}
 		tenantMeta, ok := fasit["tenant"].(map[string]string)
-		require.True(t, ok)
-		assert.Equal(t, "acme", tenantMeta["name"])
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
+		if tenantMeta["name"] != "acme" {
+			t.Errorf("got %v, want acme", tenantMeta["name"])
+		}
 	})
 
 	t.Run("mgmt environment values", func(t *testing.T) {
 		vals := instructions["mgmt"].Values
 
-		assert.NotContains(t, vals, "ignoredForMgmt")
+		if _, has := vals["ignoredForMgmt"]; has {
+			t.Errorf("vals should not contain ignoredForMgmt")
+		}
 		assertValue(t, vals, "globalConfigOnly", "global-val")
 		assertValue(t, vals, "globalBeatsChartDefault", "global-val")
 		assertValue(t, vals, "intConfig", float64(42))
@@ -195,7 +238,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 
 		assertValue(t, vals, "envBeatsGlobal", "global-val")
 		assertValue(t, vals, "configBeatsComputed", "global-val")
-		assert.NotContains(t, vals, "envConfigOnly")
+		if _, has := vals["envConfigOnly"]; has {
+			t.Errorf("vals should not contain envConfigOnly")
+		}
 		assertValue(t, vals, "envConfigBeatsComputed", "computed-value")
 		assertValue(t, vals, "computedWinsWhenNoConfigSet", "computed-wins")
 		assertValue(t, vals, "computedOnly", "computed-result")
@@ -205,17 +250,27 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		assertValue(t, vals, "computedFromSecretEnv", "<no value>")
 
 		fasit, ok := vals["fasit"].(map[string]any)
-		require.True(t, ok)
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
 		envMeta, ok := fasit["env"].(map[string]string)
-		require.True(t, ok)
-		assert.Equal(t, "mgmt", envMeta["name"])
-		assert.Equal(t, "management", envMeta["kind"])
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
+		if envMeta["name"] != "mgmt" {
+			t.Errorf("got %v, want mgmt", envMeta["name"])
+		}
+		if envMeta["kind"] != "management" {
+			t.Errorf("got %v, want management", envMeta["kind"])
+		}
 	})
 
 	t.Run("clean environment values", func(t *testing.T) {
 		vals := instructions["clean"].Values
 
-		assert.NotContains(t, vals, "chartDefault")
+		if _, has := vals["chartDefault"]; has {
+			t.Errorf("vals should not contain chartDefault")
+		}
 		assertValue(t, vals, "ignoredForMgmt", "present")
 
 		assertValue(t, vals, "globalConfigOnly", "global-val")
@@ -225,7 +280,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		assertValue(t, vals, "intConfig", float64(42))
 		assertValue(t, vals, "boolConfig", true)
 
-		assert.NotContains(t, vals, "envConfigOnly")
+		if _, has := vals["envConfigOnly"]; has {
+			t.Errorf("vals should not contain envConfigOnly")
+		}
 		assertValue(t, vals, "envConfigBeatsComputed", "computed-value")
 		assertValue(t, vals, "computedWinsWhenNoConfigSet", "computed-wins")
 		assertValue(t, vals, "computedOnly", "computed-result")
@@ -235,11 +292,19 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		assertValue(t, vals, "computedFromSecretEnv", "<no value>")
 
 		fasit, ok := vals["fasit"].(map[string]any)
-		require.True(t, ok)
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
 		envMeta, ok := fasit["env"].(map[string]string)
-		require.True(t, ok)
-		assert.Equal(t, "clean", envMeta["name"])
-		assert.Equal(t, "tenant", envMeta["kind"])
+		if !ok {
+			t.Fatal("expected ok=true")
+		}
+		if envMeta["name"] != "clean" {
+			t.Errorf("got %v, want clean", envMeta["name"])
+		}
+		if envMeta["kind"] != "tenant" {
+			t.Errorf("got %v, want tenant", envMeta["kind"])
+		}
 	})
 }
 

@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // renderBoth renders the given feature values twice: once with the supplied
@@ -26,13 +24,17 @@ func renderBoth(t *testing.T, values model.Values, kind model.EnvironmentKind, c
 	}
 
 	control := rawToMap(configs)
-	require.NoError(t, GenerateWith(values, kind, controlMV, control, deterministicTemplateFuncs))
+	if err := GenerateWith(values, kind, controlMV, control, deterministicTemplateFuncs); err != nil {
+		t.Fatalf("control render: %v", err)
+	}
 
 	probe := rawToMap(configs)
 	for _, key := range secretConfigKeys {
 		setNestedSentinel(probe, key)
 	}
-	require.NoError(t, GenerateWith(values, kind, probeMV, probe, deterministicTemplateFuncs))
+	if err := GenerateWith(values, kind, probeMV, probe, deterministicTemplateFuncs); err != nil {
+		t.Fatalf("probe render: %v", err)
+	}
 
 	return computedSecretTaint(values, control, probe)
 }
@@ -238,10 +240,14 @@ func TestComputedSecretTaint(t *testing.T) {
 			t.Parallel()
 			got := renderBoth(t, tc.values, model.EnvironmentKindTenant, tc.realMV, tc.probeMV, tc.configs, tc.secretConfigKeys)
 			for _, k := range tc.wantSecret {
-				assert.Truef(t, got[k], "expected key %q to be tainted as secret; taint=%v", k, got)
+				if !got[k] {
+					t.Errorf("expected key %q to be tainted as secret; taint=%v", k, got)
+				}
 			}
 			for _, k := range tc.wantNotSecret {
-				assert.Falsef(t, got[k], "expected key %q not to be tainted as secret; taint=%v", k, got)
+				if got[k] {
+					t.Errorf("expected key %q not to be tainted as secret; taint=%v", k, got)
+				}
 			}
 		})
 	}
@@ -255,7 +261,10 @@ func TestSetNestedSentinel(t *testing.T) {
 			"a": json.RawMessage(`"original"`),
 		}
 		setNestedSentinel(m, "a")
-		assert.Equal(t, json.RawMessage(`"`+probeSecretSentinel+`"`), m["a"])
+		want := json.RawMessage(`"` + probeSecretSentinel + `"`)
+		if got := m["a"]; string(got.(json.RawMessage)) != string(want) {
+			t.Errorf("got %s, want %s", got, want)
+		}
 	})
 
 	t.Run("replaces nested leaf", func(t *testing.T) {
@@ -266,13 +275,18 @@ func TestSetNestedSentinel(t *testing.T) {
 		}
 		setNestedSentinel(m, "outer.inner")
 		inner := m["outer"].(map[string]any)["inner"]
-		assert.Equal(t, json.RawMessage(`"`+probeSecretSentinel+`"`), inner)
+		want := json.RawMessage(`"` + probeSecretSentinel + `"`)
+		if string(inner.(json.RawMessage)) != string(want) {
+			t.Errorf("got %s, want %s", inner, want)
+		}
 	})
 
 	t.Run("missing key is a no-op", func(t *testing.T) {
 		m := map[string]any{"other": json.RawMessage(`"x"`)}
 		setNestedSentinel(m, "missing")
-		assert.Equal(t, map[string]any{"other": json.RawMessage(`"x"`)}, m)
+		if string(m["other"].(json.RawMessage)) != `"x"` {
+			t.Errorf("map mutated unexpectedly: %v", m)
+		}
 	})
 }
 
@@ -292,12 +306,22 @@ func TestMaskEnvSecrets(t *testing.T) {
 		secretKeys := map[string]bool{"token": true}
 		maskEnvSecrets(mv, secretKeys)
 
-		assert.Equal(t, probeSecretSentinel, mv.Env["token"])
-		assert.Equal(t, "e1", mv.Env["name"])
-		assert.Equal(t, probeSecretSentinel, mv.Management["token"])
-		assert.Equal(t, "mgmt", mv.Management["name"])
-		for _, e := range mv.Envs {
-			assert.Equal(t, probeSecretSentinel, e["token"])
+		if mv.Env["token"] != probeSecretSentinel {
+			t.Errorf("Env[token] = %v, want sentinel", mv.Env["token"])
+		}
+		if mv.Env["name"] != "e1" {
+			t.Errorf("Env[name] = %v, want e1", mv.Env["name"])
+		}
+		if mv.Management["token"] != probeSecretSentinel {
+			t.Errorf("Management[token] = %v, want sentinel", mv.Management["token"])
+		}
+		if mv.Management["name"] != "mgmt" {
+			t.Errorf("Management[name] = %v, want mgmt", mv.Management["name"])
+		}
+		for i, e := range mv.Envs {
+			if e["token"] != probeSecretSentinel {
+				t.Errorf("Envs[%d][token] = %v, want sentinel", i, e["token"])
+			}
 		}
 	})
 }
@@ -314,13 +338,19 @@ func TestDeterministicFuncs_NoFalsePositive(t *testing.T) {
 	}
 
 	control := map[string]any{}
-	require.NoError(t, GenerateWith(values, model.EnvironmentKindTenant, mv, control, deterministicTemplateFuncs))
+	if err := GenerateWith(values, model.EnvironmentKindTenant, mv, control, deterministicTemplateFuncs); err != nil {
+		t.Fatalf("control render: %v", err)
+	}
 
 	probe := map[string]any{}
-	require.NoError(t, GenerateWith(values, model.EnvironmentKindTenant, mv, probe, deterministicTemplateFuncs))
+	if err := GenerateWith(values, model.EnvironmentKindTenant, mv, probe, deterministicTemplateFuncs); err != nil {
+		t.Fatalf("probe render: %v", err)
+	}
 
 	taint := computedSecretTaint(values, control, probe)
-	assert.Empty(t, taint, "deterministic funcs should produce identical output; no false positive taint")
+	if len(taint) != 0 {
+		t.Errorf("deterministic funcs should produce identical output; got taint=%v", taint)
+	}
 }
 
 func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
@@ -342,7 +372,9 @@ func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
 
 	// Control render with real int value succeeds.
 	controlCfg := map[string]any{"port": json.RawMessage(`8080`)}
-	require.NoError(t, GenerateWith(values, model.EnvironmentKindTenant, mv, controlCfg, deterministicTemplateFuncs))
+	if err := GenerateWith(values, model.EnvironmentKindTenant, mv, controlCfg, deterministicTemplateFuncs); err != nil {
+		t.Fatalf("control render: %v", err)
+	}
 
 	// Probe render with string sentinel: the template may still succeed
 	// (Go templates are loosely typed), but the output will differ from
@@ -362,5 +394,7 @@ func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
 	// operations), the taint comparison should still flag the key because
 	// the sentinel differs from the real value.
 	taint := computedSecretTaint(values, controlCfg, probeCfg)
-	assert.True(t, taint["out"], "non-string secret config should taint computed values that reference it")
+	if !taint["out"] {
+		t.Error("non-string secret config should taint computed values that reference it")
+	}
 }

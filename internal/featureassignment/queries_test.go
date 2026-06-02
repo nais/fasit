@@ -4,6 +4,7 @@ package featureassignment_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -12,9 +13,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFeatureForEnvironment(t *testing.T) {
@@ -22,7 +20,9 @@ func TestFeatureForEnvironment(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	t.Run("returns most-specific deployment feature", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
@@ -32,7 +32,9 @@ func TestFeatureForEnvironment(t *testing.T) {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		ctx := loadContext(ctx)
 
 		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -45,19 +47,31 @@ func TestFeatureForEnvironment(t *testing.T) {
 		mgr.seeder.AddAssignment("myapp", "2.0.0", environment.Labels{"team": "myteam"})
 
 		_, err = mgr.seeder.Seed(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		tenant, err := environment.GetTenantByName(ctx, "nav")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		feat, err := featureassignment.FeatureForEnvironment(ctx, env.ID, "myapp")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
-		assert.Equal(t, "myapp", feat.Name)
-		assert.Equal(t, "2.0.0", feat.Version, "should pick the more specific deployment")
+		if feat.Name != "myapp" {
+			t.Errorf("got name %q, want myapp", feat.Name)
+		}
+		if feat.Version != "2.0.0" {
+			t.Errorf("should pick the more specific deployment: got %q", feat.Version)
+		}
 	})
 
 	t.Run("returns ErrFeatureNotFound when no deployment exists", func(t *testing.T) {
@@ -68,7 +82,9 @@ func TestFeatureForEnvironment(t *testing.T) {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		ctx := loadContext(ctx)
 
 		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -76,13 +92,19 @@ func TestFeatureForEnvironment(t *testing.T) {
 		})
 
 		tenant, err := environment.GetTenantByName(ctx, "nav")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		_, err = featureassignment.FeatureForEnvironment(ctx, env.ID, "nonexistent")
-		assert.ErrorIs(t, err, featureassignment.ErrFeatureNotFound)
+		if !errors.Is(err, featureassignment.ErrFeatureNotFound) {
+			t.Errorf("got err %v, want ErrFeatureNotFound", err)
+		}
 	})
 
 	t.Run("returns feature even when disabled", func(t *testing.T) {
@@ -93,7 +115,9 @@ func TestFeatureForEnvironment(t *testing.T) {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		ctx := loadContext(ctx)
 
 		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -102,20 +126,32 @@ func TestFeatureForEnvironment(t *testing.T) {
 
 		mgr.seeder.AddAssignment("myapp", "1.0.0", environment.Labels{})
 		_, err = mgr.seeder.Seed(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		tenant, err := environment.GetTenantByName(ctx, "nav")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		err = featurepkg.FeatureDisable(ctx, env.ID, "myapp", "test")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		feat, err := featureassignment.FeatureForEnvironment(ctx, env.ID, "myapp")
-		require.NoError(t, err)
-		assert.Equal(t, "myapp", feat.Name, "disabled features should still be returned")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if feat.Name != "myapp" {
+			t.Errorf("disabled features should still be returned: got %q", feat.Name)
+		}
 	})
 }
 
@@ -124,7 +160,9 @@ func TestListEnvironmentFeatures(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	t.Run("returns sorted deduplicated feature names", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
@@ -134,7 +172,9 @@ func TestListEnvironmentFeatures(t *testing.T) {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		ctx := loadContext(ctx)
 
 		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -148,25 +188,43 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		mgr.seeder.AddAssignment("alpha", "2.0.0", environment.Labels{"team": "myteam"})
 
 		_, err = mgr.seeder.Seed(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		tenant, err := environment.GetTenantByName(ctx, "nav")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		names := make([]string, len(features))
 		for i, f := range features {
 			names[i] = f.Name
 		}
-		assert.Equal(t, []string{"alpha", "bravo", "charlie"}, names)
+		want := []string{"alpha", "bravo", "charlie"}
+		if len(names) != len(want) {
+			t.Fatalf("got %v, want %v", names, want)
+		}
+		for i := range want {
+			if names[i] != want[i] {
+				t.Errorf("names[%d] = %q, want %q", i, names[i], want[i])
+			}
+		}
 
 		for _, f := range features {
-			assert.False(t, f.FeatureDisabled, "no features should be disabled")
+			if f.FeatureDisabled {
+				t.Errorf("no features should be disabled")
+			}
 		}
 	})
 
@@ -178,7 +236,9 @@ func TestListEnvironmentFeatures(t *testing.T) {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		ctx := loadContext(ctx)
 
 		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -189,27 +249,41 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		mgr.seeder.AddAssignment("disabled-app", "1.0.0", environment.Labels{})
 
 		_, err = mgr.seeder.Seed(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		tenant, err := environment.GetTenantByName(ctx, "nav")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		err = featurepkg.FeatureDisable(ctx, env.ID, "disabled-app", "test")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		featureMap := make(map[string]bool, len(features))
 		for _, f := range features {
 			featureMap[f.Name] = f.FeatureDisabled
 		}
 
-		assert.False(t, featureMap["enabled-app"], "enabled-app should not be disabled")
-		assert.True(t, featureMap["disabled-app"], "disabled-app should be disabled")
+		if featureMap["enabled-app"] {
+			t.Errorf("enabled-app should not be disabled")
+		}
+		if !featureMap["disabled-app"] {
+			t.Errorf("disabled-app should be disabled")
+		}
 	})
 
 	t.Run("returns empty list when no deployments match", func(t *testing.T) {
@@ -220,7 +294,9 @@ func TestListEnvironmentFeatures(t *testing.T) {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		ctx := loadContext(ctx)
 
 		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
@@ -228,14 +304,22 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		})
 
 		tenant, err := environment.GetTenantByName(ctx, "nav")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
-		assert.Empty(t, features)
+		if len(features) != 0 {
+			t.Errorf("got %d features, want 0", len(features))
+		}
 	})
 }

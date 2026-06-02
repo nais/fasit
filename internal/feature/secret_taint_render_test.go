@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestRenderHelmValuesWithSecretTaint_NoLeakBetweenRenders is a regression
@@ -45,13 +43,20 @@ func TestRenderHelmValuesWithSecretTaint_NoLeakBetweenRenders(t *testing.T) {
 	}
 
 	rendered, taint, probeOK, err := renderHelmValuesWithSecretTaint(data, f)
-	require.NoError(t, err)
-	require.True(t, probeOK, "probe must succeed for this template")
+	if err != nil {
+		t.Fatalf("renderHelmValuesWithSecretTaint: %v", err)
+	}
+	if !probeOK {
+		t.Fatal("probe must succeed for this template")
+	}
 
-	assert.Equal(t, "https://hooks.slack.com/services/xoxb-dev-token/alerts", rendered["slackAlertUrl"],
-		"real render should produce the unmasked URL")
-	assert.True(t, taint["slackAlertUrl"],
-		"slackAlertUrl depends on secret env slack_token and must be tainted")
-	assert.False(t, taint["notificationUrl"],
-		"notificationUrl uses no secret and must not be tainted")
+	if got := rendered["slackAlertUrl"]; got != "https://hooks.slack.com/services/xoxb-dev-token/alerts" {
+		t.Errorf("slackAlertUrl = %v, want unmasked URL", got)
+	}
+	if !taint["slackAlertUrl"] {
+		t.Error("slackAlertUrl depends on secret env slack_token and must be tainted")
+	}
+	if taint["notificationUrl"] {
+		t.Error("notificationUrl uses no secret and must not be tainted")
+	}
 }

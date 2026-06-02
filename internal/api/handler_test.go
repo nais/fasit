@@ -29,8 +29,6 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -96,14 +94,18 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		assert.Equal(t, http.StatusCreated, rr.Code)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("got status %d, want %d", rr.Code, http.StatusCreated)
+		}
 
 		var resp map[string]string
-		err := json.NewDecoder(rr.Body).Decode(&resp)
-		require.NoError(t, err)
+		if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+			t.Fatalf("decode response: %v", err)
+		}
 
-		_, err = uuid.Parse(resp["id"])
-		assert.NoError(t, err, "response id should be a valid UUID")
+		if _, err := uuid.Parse(resp["id"]); err != nil {
+			t.Errorf("response id should be a valid UUID: %v", err)
+		}
 	})
 
 	t.Run("invalid JSON returns 400", func(t *testing.T) {
@@ -112,7 +114,9 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("got status %d, want %d", rr.Code, http.StatusBadRequest)
+		}
 	})
 
 	t.Run("unknown chart returns 400", func(t *testing.T) {
@@ -126,7 +130,9 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("got status %d, want %d", rr.Code, http.StatusBadRequest)
+		}
 	})
 
 	t.Run("get deployment returns id and state", func(t *testing.T) {
@@ -140,21 +146,31 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		createReq.Header.Set("Content-Type", "application/json")
 		createRR := httptest.NewRecorder()
 		router.ServeHTTP(createRR, createReq)
-		require.Equal(t, http.StatusCreated, createRR.Code)
+		if createRR.Code != http.StatusCreated {
+			t.Fatalf("create: got status %d, want %d", createRR.Code, http.StatusCreated)
+		}
 
 		var createResp map[string]string
-		require.NoError(t, json.NewDecoder(createRR.Body).Decode(&createResp))
+		if err := json.NewDecoder(createRR.Body).Decode(&createResp); err != nil {
+			t.Fatalf("decode create response: %v", err)
+		}
 
 		// Get the deployment.
 		getReq := httptest.NewRequest(http.MethodGet, "/github/deployment/"+createResp["id"], nil)
 		getRR := httptest.NewRecorder()
 		router.ServeHTTP(getRR, getReq)
 
-		assert.Equal(t, http.StatusOK, getRR.Code)
+		if getRR.Code != http.StatusOK {
+			t.Fatalf("get: got status %d, want %d", getRR.Code, http.StatusOK)
+		}
 
 		var getResp api.GetFeatureAssignmentResponse
-		require.NoError(t, json.NewDecoder(getRR.Body).Decode(&getResp))
-		assert.Equal(t, createResp["id"], getResp.ID.String())
+		if err := json.NewDecoder(getRR.Body).Decode(&getResp); err != nil {
+			t.Fatalf("decode get response: %v", err)
+		}
+		if getResp.ID.String() != createResp["id"] {
+			t.Errorf("got id %s, want %s", getResp.ID, createResp["id"])
+		}
 	})
 
 	t.Run("get nonexistent deployment returns 404", func(t *testing.T) {
@@ -162,7 +178,9 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		getRR := httptest.NewRecorder()
 		router.ServeHTTP(getRR, getReq)
 
-		assert.Equal(t, http.StatusNotFound, getRR.Code)
+		if getRR.Code != http.StatusNotFound {
+			t.Errorf("got status %d, want %d", getRR.Code, http.StatusNotFound)
+		}
 	})
 }
 

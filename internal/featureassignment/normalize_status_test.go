@@ -1,20 +1,25 @@
 package featureassignment
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
+import "testing"
 
 func TestNormalizeStatus(t *testing.T) {
-	assert.Equal(t, "PENDING", NormalizeStatus("created"))
-	assert.Equal(t, "PENDING", NormalizeStatus("CREATED"))
-	assert.Equal(t, "PENDING", NormalizeStatus("Created"))
-	assert.Equal(t, "PENDING", NormalizeStatus("invalidated"))
-	assert.Equal(t, "PENDING", NormalizeStatus("INVALIDATED"))
-	assert.Equal(t, "DEPLOYED", NormalizeStatus("deployed"))
-	assert.Equal(t, "FAILED", NormalizeStatus("failed"))
-	assert.Equal(t, "PENDING", NormalizeStatus("pending"))
-	assert.Equal(t, "UNKNOWN", NormalizeStatus(""))
-	assert.Equal(t, "SOMETHING", NormalizeStatus("something"))
+	tests := []struct {
+		input, want string
+	}{
+		{"created", "PENDING"},
+		{"CREATED", "PENDING"},
+		{"Created", "PENDING"},
+		{"invalidated", "PENDING"},
+		{"INVALIDATED", "PENDING"},
+		{"deployed", "DEPLOYED"},
+		{"failed", "FAILED"},
+		{"pending", "PENDING"},
+		{"", "UNKNOWN"},
+		{"something", "SOMETHING"},
+	}
+	for _, tt := range tests {
+		if got := NormalizeStatus(tt.input); got != tt.want {
+			t.Errorf("NormalizeStatus(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
 }

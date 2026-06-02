@@ -90,23 +90,29 @@ func ConfigChangeNode(e *audit.Entry) g.Node {
 	if !hasOld && !hasNew {
 		return nil
 	}
+	oldClean := cleanVal(oldVal)
+	newClean := cleanVal(newVal)
 	if !hasOld {
-		return h.Code(g.Text(truncateVal(newVal)))
+		return h.Code(h.Title(newClean), g.Text(truncateVal(newClean)))
 	}
 	if !hasNew {
-		return h.Code(h.Class("val-deleted"), g.Text(truncateVal(oldVal)))
+		return h.Code(h.Class("val-deleted"), h.Title(oldClean), g.Text(truncateVal(oldClean)))
 	}
-	return g.Group([]g.Node{
-		h.Code(h.Class("val-old"), g.Text(truncateVal(oldVal))),
+	return h.Span(h.Class("config-change"), h.Title(oldClean+" → "+newClean),
+		h.Code(h.Class("val-old"), g.Text(truncateVal(oldClean))),
 		g.Text(" → "),
-		h.Code(g.Text(truncateVal(newVal))),
-	})
+		h.Code(g.Text(truncateVal(newClean))),
+	)
+}
+
+func cleanVal(s string) string {
+	s = strings.TrimPrefix(s, `"`)
+	s = strings.TrimSuffix(s, `"`)
+	return s
 }
 
 func truncateVal(s string) string {
-	const max = 40
-	s = strings.TrimPrefix(s, `"`)
-	s = strings.TrimSuffix(s, `"`)
+	const max = 24
 	if len(s) <= max {
 		return s
 	}

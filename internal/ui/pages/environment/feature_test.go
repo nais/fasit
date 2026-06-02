@@ -12,8 +12,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/featureenvs"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
 )
 
@@ -26,8 +24,12 @@ func TestLegacyFeatureRedirectHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	require.Equal(t, http.StatusSeeOther, w.Code)
-	require.Equal(t, "/features/kyverno/envs/dev-nais/dev/logs", w.Header().Get("Location"))
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("got status %d, want %d", w.Code, http.StatusSeeOther)
+	}
+	if got := w.Header().Get("Location"); got != "/features/kyverno/envs/dev-nais/dev/logs" {
+		t.Fatalf("got location %q, want /features/kyverno/envs/dev-nais/dev/logs", got)
+	}
 }
 
 var normalizedAttrs = map[string]bool{
@@ -54,7 +56,6 @@ func skeleton(n *html.Node) string {
 func writeSkeleton(buf *strings.Builder, n *html.Node) {
 	switch n.Type {
 	case html.TextNode:
-		// Skip text nodes entirely — we only care about structural/attribute differences.
 		return
 	case html.ElementNode:
 		buf.WriteString("<")
@@ -114,16 +115,24 @@ func TestFeatureSidebarUsesFeatureEnvironmentList(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	require.NoError(t, featurePageSidebar(page).Render(&buf))
+	if err := featurePageSidebar(page).Render(&buf); err != nil {
+		t.Fatalf("render: %v", err)
+	}
 
-	html := buf.String()
+	output := buf.String()
 	for _, label := range []string{"ci-nais / ci-fss", "nav / dev", "nav / dev-fss", "nav / prod", "nav / prod-fss"} {
-		require.Contains(t, html, label)
+		if !strings.Contains(output, label) {
+			t.Errorf("missing expected label %q", label)
+		}
 	}
 	for _, label := range []string{"atil / dev", "dev-nais / dev", "ssb / prod", "test-nais / sandbox"} {
-		require.NotContains(t, html, label)
+		if strings.Contains(output, label) {
+			t.Errorf("unexpected label %q present", label)
+		}
 	}
-	assert.Equal(t, 1, strings.Count(html, `class="feature-env-link active"`))
+	if c := strings.Count(output, `class="feature-env-link active"`); c != 1 {
+		t.Errorf("active link count = %d, want 1", c)
+	}
 }
 
 func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
@@ -177,21 +186,25 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 	node := overviewTab(page)
 
 	var buf bytes.Buffer
-	err := node.Render(&buf)
-	require.NoError(t, err, "overviewTab should render without error")
+	if err := node.Render(&buf); err != nil {
+		t.Fatalf("overviewTab render: %v", err)
+	}
 
 	doc, err := html.Parse(strings.NewReader(buf.String()))
-	require.NoError(t, err, "rendered HTML should parse")
+	if err != nil {
+		t.Fatalf("parse HTML: %v", err)
+	}
 
 	trs := findElements(doc, "tr")
-	require.GreaterOrEqual(t, len(trs), 3, "expected at least 3 <tr> elements (1 header + 2 data rows)")
+	if len(trs) < 3 {
+		t.Fatalf("got %d <tr> elements, want at least 3 (1 header + 2 data rows)", len(trs))
+	}
 
-	// Skip the first <tr> (header row in <thead>), data rows follow in fixture order.
 	dataRows := trs[1:]
-	require.GreaterOrEqual(t, len(dataRows), 2, "expected at least 2 data rows")
+	if len(dataRows) < 2 {
+		t.Fatalf("got %d data rows, want at least 2", len(dataRows))
+	}
 
-	// Determine which rows should warn based on the spec rule:
-	// warn iff feat.Values[item.Key].Required && item.Source == "HELM" && item.Value == ""
 	type rowInfo struct {
 		skeleton   string
 		shouldWarn bool
@@ -207,21 +220,19 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 		}
 	}
 
-	// Sanity: exactly one warn row and one non-warn row
-	require.True(t, rows[0].shouldWarn, "certificates row should be flagged as warn")
-	require.False(t, rows[1].shouldWarn, "max_replicas row should not be flagged as warn")
+	if !rows[0].shouldWarn {
+		t.Fatal("certificates row should be flagged as warn")
+	}
+	if rows[1].shouldWarn {
+		t.Fatal("max_replicas row should not be flagged as warn")
+	}
 
-	// The warn row skeleton must differ from the non-warn row skeleton,
-	// proving there is a visual warning indicator for the required-but-unset field.
-	assert.NotEqual(t, rows[0].skeleton, rows[1].skeleton,
-		"required-but-unset config row skeleton should differ from non-warn row skeleton, "+
+	if rows[0].skeleton == rows[1].skeleton {
+		t.Error("required-but-unset config row skeleton should differ from non-warn row skeleton, " +
 			"indicating a visual warning indicator; but both rows have identical structure")
+	}
 }
 
-// TestOverviewTab_RequiredEmptyStructuredConfigWarning verifies that required
-// HELM-sourced fields whose chart default is an "empty" JSON value (empty
-// array, empty object, null) are also flagged as missing — not just literal
-// empty strings.
 func TestOverviewTab_RequiredEmptyStructuredConfigWarning(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -262,14 +273,22 @@ func TestOverviewTab_RequiredEmptyStructuredConfigWarning(t *testing.T) {
 				},
 			}
 			var buf bytes.Buffer
-			require.NoError(t, overviewTab(page).Render(&buf))
+			if err := overviewTab(page).Render(&buf); err != nil {
+				t.Fatalf("render: %v", err)
+			}
 			doc, err := html.Parse(strings.NewReader(buf.String()))
-			require.NoError(t, err)
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
 			trs := findElements(doc, "tr")
-			require.GreaterOrEqual(t, len(trs), 2)
+			if len(trs) < 2 {
+				t.Fatalf("got %d <tr>, want >= 2", len(trs))
+			}
 			class := attrValue(trs[1], "class")
 			hasWarn := strings.Contains(class, "config-warning")
-			assert.Equal(t, tc.warn, hasWarn, "value %q: expected warn=%v, got class=%q", tc.value, tc.warn, class)
+			if hasWarn != tc.warn {
+				t.Errorf("value %q: expected warn=%v, got class=%q", tc.value, tc.warn, class)
+			}
 		})
 	}
 }

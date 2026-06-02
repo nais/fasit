@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -23,7 +24,6 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
@@ -328,8 +328,12 @@ func TestReconcile(t *testing.T) {
 					copy(sorted, expected)
 					sort.Strings(sorted)
 
-					assert.Equal(t, sorted, instructions)
-					assert.Len(t, pub.msg, len(expected))
+					if !slices.Equal(sorted, instructions) {
+						t.Errorf("instructions mismatch:\ngot:  %v\nwant: %v", instructions, sorted)
+					}
+					if len(pub.msg) != len(expected) {
+						t.Fatalf("pub.msg len = %d, want %d", len(pub.msg), len(expected))
+					}
 
 					for _, exp := range expected {
 						found := false
@@ -381,7 +385,9 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 		}
 
 		count := db.countInstructions(ctx, t, "feature-pending", "2.0.0")
-		assert.Equal(t, 0, count, "should not deploy v2 while v1 is in progress")
+		if count != 0 {
+			t.Errorf("count = %d; should not deploy v2 while v1 is in progress", count)
+		}
 	})
 }
 
@@ -420,7 +426,9 @@ func TestReconcileWhenPreviousIsFailed(t *testing.T) {
 		}
 
 		count := db.countInstructions(ctx, t, "feature-failed", "1.0.0")
-		assert.Equal(t, 1, count, "should not redeploy when previous failed and hash unchanged")
+		if count != 1 {
+			t.Errorf("count = %d; should not redeploy when previous failed and hash unchanged", count)
+		}
 	})
 }
 
@@ -457,8 +465,12 @@ func TestReconcileDisabledFeature(t *testing.T) {
 				t.Fatalf("reconcile: %v", err)
 			}
 
-			assert.Len(t, pub.msg, 1)
-			assert.Equal(t, "clamav", pub.msg[0].Name)
+			if len(pub.msg) != 1 {
+				t.Fatalf("pub.msg len = %d, want 1", len(pub.msg))
+			}
+			if pub.msg[0].Name != "clamav" {
+				t.Errorf("msg name = %q, want clamav", pub.msg[0].Name)
+			}
 		})
 	})
 
@@ -505,7 +517,9 @@ func TestReconcileDisabledFeature(t *testing.T) {
 				t.Fatalf("reconcile: %v", err)
 			}
 
-			assert.Len(t, pub.msg, 2, "both environments should receive deploy instructions")
+			if len(pub.msg) != 2 {
+				t.Fatalf("pub.msg len = %d, want 2 (both environments should receive deploy instructions)", len(pub.msg))
+			}
 		})
 	})
 }
@@ -533,11 +547,25 @@ func TestReconcileGlobalDeployment(t *testing.T) {
 			t.Fatalf("reconcile: %v", err)
 		}
 
-		assert.Len(t, pub.msg, 3)
+		if len(pub.msg) != 3 {
+			t.Fatalf("pub.msg len = %d, want 3", len(pub.msg))
+		}
 		deployed := db.queryDeployedFeatures(ctx, t, "global-tool")
-		assert.Len(t, deployed, 3)
-		assert.Contains(t, deployed, "tenant1:dev")
-		assert.Contains(t, deployed, "tenant1:prod")
-		assert.Contains(t, deployed, "tenant1:management")
+		if len(deployed) != 3 {
+			t.Fatalf("deployed len = %d, want 3", len(deployed))
+		}
+		deployedSet := map[string]bool{}
+		for _, d := range deployed {
+			deployedSet[d] = true
+		}
+		if !deployedSet["tenant1:dev"] {
+			t.Error("missing tenant1:dev in deployed")
+		}
+		if !deployedSet["tenant1:prod"] {
+			t.Error("missing tenant1:prod in deployed")
+		}
+		if !deployedSet["tenant1:management"] {
+			t.Error("missing tenant1:management in deployed")
+		}
 	})
 }

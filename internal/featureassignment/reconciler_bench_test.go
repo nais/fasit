@@ -20,8 +20,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // TestReconcileRealisticScale seeds 100 features × 2 deployments each across
@@ -191,7 +189,9 @@ func TestReconcileRealisticScale(t *testing.T) {
 		var totalInstructions int
 		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed'`).Scan(&totalInstructions)
 		t.Logf("deployed instructions: %d", totalInstructions)
-		assert.Equal(t, numFeatures*len(allEnvs), totalInstructions)
+		if totalInstructions != numFeatures*len(allEnvs) {
+			t.Errorf("deployed instructions = %d, want %d", totalInstructions, numFeatures*len(allEnvs))
+		}
 
 		// --- Second pass: deploy a new version of ONE feature only. ---
 		// The reconciler must re-evaluate everything but only deploy 30 new
@@ -268,8 +268,12 @@ func TestReconcileRealisticScale(t *testing.T) {
 		var newInstructions int
 		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed' AND feature_name = $1 AND feature_version = '3.0.0'`, changedFeature).Scan(&newInstructions)
 		t.Logf("new deployed instructions for %s v3.0.0: %d", changedFeature, newInstructions)
-		assert.Equal(t, expectedChanged, newInstructions)
-		assert.Len(t, pub.msg, expectedChanged, "only the changed feature should produce new messages")
+		if newInstructions != expectedChanged {
+			t.Errorf("new instructions = %d, want %d", newInstructions, expectedChanged)
+		}
+		if len(pub.msg) != expectedChanged {
+			t.Errorf("published messages = %d, want %d (only the changed feature should produce new messages)", len(pub.msg), expectedChanged)
+		}
 	})
 }
 
