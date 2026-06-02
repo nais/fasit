@@ -2,11 +2,11 @@ package audit
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit/auditsql"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/sirupsen/logrus"
 )
 
 type ctxKey int
@@ -17,13 +17,13 @@ const (
 	logKey
 )
 
-func Register(ctx context.Context, pool *pgxpool.Pool, log logrus.FieldLogger) context.Context {
+func Register(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) context.Context {
 	ctx = context.WithValue(ctx, QuerierKey, auditsql.Querier(auditsql.New(pool)))
 	ctx = context.WithValue(ctx, logKey, log)
 	return ctx
 }
 
-func RegisterTestDeps(ctx context.Context, q auditsql.Querier, log logrus.FieldLogger) context.Context {
+func RegisterTestDeps(ctx context.Context, q auditsql.Querier, log *slog.Logger) context.Context {
 	ctx = context.WithValue(ctx, QuerierKey, q)
 	ctx = context.WithValue(ctx, logKey, log)
 	return ctx
@@ -39,6 +39,6 @@ func querier(ctx context.Context) auditsql.Querier {
 	return q
 }
 
-func log(ctx context.Context) logrus.FieldLogger {
-	return ctx.Value(logKey).(logrus.FieldLogger)
+func logger(ctx context.Context) *slog.Logger {
+	return ctx.Value(logKey).(*slog.Logger)
 }

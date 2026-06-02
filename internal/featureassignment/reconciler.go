@@ -3,6 +3,7 @@ package featureassignment
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -11,14 +12,13 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
 type reconciler struct {
 	querier          featureassignmentsql.Querier
-	log              logrus.FieldLogger
+	log              *slog.Logger
 	reconcileTrigger chan struct{}
 	deployer         *deployer
 
@@ -29,7 +29,7 @@ type reconciler struct {
 	reconcileLoopTime metric.Int64Histogram
 }
 
-func newReconciler(querier featureassignmentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
+func newReconciler(querier featureassignmentsql.Querier, deployer *deployer, meter metric.Meter, log *slog.Logger) (*reconciler, error) {
 	reconcileTime, err := meter.Int64Histogram("assignment_reconcile_time", metric.WithDescription("Time spent reconciling per environment"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
@@ -54,7 +54,7 @@ func (r *reconciler) Run(ctx context.Context, interval time.Duration) {
 		r.log.Info("reconciling")
 		err := r.Reconcile(ctx)
 		if err != nil {
-			r.log.WithError(err).Error("reconcile")
+			r.log.Error("reconcile", "error", err)
 		}
 
 		select {
@@ -81,7 +81,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("get tenant environments: %w", err)
 	}
 
-	r.log.WithField("num_envs", len(tenantEnvironments)).Info("reconciling tenant environments")
+	r.log.Info("reconciling tenant environments", "num_envs", len(tenantEnvironments))
 	for _, environment := range tenantEnvironments {
 		if err := r.reconcileEnvironment(ctx, environment); err != nil {
 			return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, environment.TenantName, err)
@@ -130,11 +130,10 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		return fmt.Errorf("get feature assignments for environment %q: %w", environment.Name, err)
 	}
 
-	r.log.
-		WithField("tenant", environment.TenantName).
-		WithField("env", environment.Name).
-		WithField("num_assignments", len(assignments)).
-		Info("feature assignments to reconcile for environment")
+	r.log.Info("feature assignments to reconcile for environment",
+		"tenant", environment.TenantName,
+		"env", environment.Name,
+		"num_assignments", len(assignments))
 	for _, assignment := range assignments {
 		if err := r.deployer.deployToEnvironment(ctx, assignment, environment, publisher); err != nil {
 			return err

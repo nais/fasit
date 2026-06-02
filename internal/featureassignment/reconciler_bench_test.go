@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -18,8 +20,7 @@ import (
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -288,7 +289,7 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 	envKinds := []string{"dev", "staging", "prod"}
 
 	// Only use new reconciler for this test.
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatalf("connect: %v", err)
@@ -296,7 +297,7 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 	defer pool.Close()
 
 	// Wire context for seeding.
-	oldPub := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+	oldPub := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 		return &sqlPublisher{pool: pool}
 	}
 	loadContext, err := contextloader.NewLoaderFunc(pool, oldPub, meter, logger)

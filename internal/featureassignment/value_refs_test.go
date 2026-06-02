@@ -4,6 +4,8 @@ package featureassignment_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"sort"
 	"testing"
 
@@ -12,15 +14,14 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestValueRefsForEnvironment(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
 	require.NoError(t, err)
@@ -29,7 +30,7 @@ func TestValueRefsForEnvironment(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -91,7 +92,7 @@ func TestValueRefsForEnvironment(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -135,7 +136,7 @@ func TestValueRefsForEnvironment(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)

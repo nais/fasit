@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -12,7 +13,6 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/naisd"
 	reconcilerpage "github.com/nais/fasit/internal/ui/pages/reconciler"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
-	"github.com/sirupsen/logrus"
 )
 
 func (s *Server) Routes() http.Handler {
@@ -20,7 +20,7 @@ func (s *Server) Routes() http.Handler {
 
 	mm, err := NewMetricsMiddleware(s.meter)
 	if err != nil {
-		logrus.WithError(err).Warn("failed to create HTTP metrics middleware")
+		slog.Warn("failed to create HTTP metrics middleware", "error", err)
 	} else {
 		r.Use(mm.Handler)
 	}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -9,7 +10,6 @@ import (
 	"github.com/nais/fasit/internal/api/sqlgen"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/model"
-	"github.com/sirupsen/logrus"
 )
 
 type GetFeatureAssignmentResponse struct {
@@ -30,7 +30,7 @@ type FeatureReconcileStatus struct {
 type HttpHandler struct {
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
-	log      logrus.FieldLogger
+	log      *slog.Logger
 	AllowAll bool
 
 	programContext context.Context

@@ -2,12 +2,11 @@ package ioconvenience
 
 import (
 	"io"
-
-	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
-func CloseWithLog(r io.Closer, log logrus.FieldLogger) {
+func CloseWithLog(r io.Closer, log *slog.Logger) {
 	if err := r.Close(); err != nil {
-		log.WithError(err).Warn("unable to close reader")
+		log.Warn("unable to close reader", "error", err)
 	}
 }

@@ -2,11 +2,10 @@ package naisd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Exec interface {
@@ -14,14 +13,14 @@ type Exec interface {
 }
 
 type MockExecutor struct {
-	Logger        *logrus.Entry
+	Logger        *slog.Logger
 	Timeout       time.Duration
 	NumSuccessful *int
 	Fail          bool
 }
 
 func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
-	m.Logger.Println(cmd.String())
+	m.Logger.Info(cmd.String())
 
 	if cmd.Stdout != nil {
 		_, _ = fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())

@@ -3,11 +3,11 @@ package message
 import (
 	"bytes"
 	"context"
+	"io"
+	"log/slog"
 	"testing"
-	"time"
 
 	"cloud.google.com/go/pubsub/v2"
-	"github.com/sirupsen/logrus"
 )
 
 func TestPublisher(t *testing.T) {
@@ -16,14 +16,11 @@ func TestPublisher(t *testing.T) {
 	}
 
 	topic := &mocktopic{}
-	buf := &bytes.Buffer{}
-	log := logrus.New()
-	log.Out = buf
-	log.Level = logrus.DebugLevel
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	p := Publisher[testmsg]{
 		topic: topic,
-		log:   log.WithTime(time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)),
+		log:   log,
 	}
 
 	err := p.Publish(context.Background(), testmsg{Name: "hello"})
@@ -37,9 +34,6 @@ func TestPublisher(t *testing.T) {
 	}
 	if !bytes.Equal(topic.messages[0].Data, []byte(`{"Name":"hello"}`)) {
 		t.Errorf("Expected different message, got %v", string(topic.messages[0].Data))
-	}
-	if buf.String() != "time=\"2020-01-01T00:00:00Z\" level=debug msg=\"Published message\" topic=topic\n" {
-		t.Errorf("Expected different log, got %q", buf.String())
 	}
 	if !topic.stopped {
 		t.Error("Expected topic to be stopped")

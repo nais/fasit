@@ -2,8 +2,7 @@ package featureassignment
 
 import (
 	"encoding/json"
-
-	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 func collectKeyRefs(assignments []*FeatureAssignment) map[string][]string {
@@ -19,7 +18,7 @@ func collectKeyRefs(assignments []*FeatureAssignment) map[string][]string {
 			Management []string `json:"Management"`
 		}
 		if err := json.Unmarshal(dep.TplDetails, &details); err != nil {
-			logrus.WithError(err).WithField("feature", dep.Feature.Name).Warn("failed to unmarshal tpl_details")
+			slog.Warn("failed to unmarshal tpl_details", "error", err, "feature", dep.Feature.Name)
 			continue
 		}
 		seen := make(map[string]bool)

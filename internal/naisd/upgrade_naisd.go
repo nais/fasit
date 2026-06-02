@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
-	"github.com/sirupsen/logrus"
 )
 
-func Upgrade(ctx context.Context, mgr *DeployManager, log *logrus.Entry) error {
+func Upgrade(ctx context.Context, mgr *DeployManager, log *slog.Logger) error {
 	log.Info("Starting upgrade")
 	mgr.performNaisdUpgrades = true
 	msg, err := getInstructionFromFile()
@@ -32,7 +32,7 @@ func getInstructionFromFile() (message.DeployInstruction, error) {
 	if err != nil {
 		return message.DeployInstruction{}, err
 	}
-	defer ioconvenience.CloseWithLog(f, logrus.StandardLogger())
+	defer ioconvenience.CloseWithLog(f, slog.Default())
 
 	err = json.NewDecoder(f).Decode(&msg)
 	if err != nil {

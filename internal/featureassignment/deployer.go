@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 	"sync"
@@ -25,7 +26,6 @@ import (
 	"github.com/nais/fasit/internal/message"
 	commonmodel "github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/naisdstatus"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -35,20 +35,20 @@ type Publisher interface {
 	Stop()
 }
 
-type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
+type NewPublisher func(topicID string, log *slog.Logger) Publisher
 
 type deployer struct {
 	newPublisher   NewPublisher
 	querier        featureassignmentsql.Querier
 	pool           *pgxpool.Pool
-	log            logrus.FieldLogger
+	log            *slog.Logger
 	deployMessages metric.Int64Counter
 
 	publishersMu sync.Mutex
 	publishers   map[string]Publisher
 }
 
-func newDeployer(pool *pgxpool.Pool, querier featureassignmentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
+func newDeployer(pool *pgxpool.Pool, querier featureassignmentsql.Querier, publisher NewPublisher, meter metric.Meter, log *slog.Logger) (*deployer, error) {
 	deployMessages, err := meter.Int64Counter("assignment_deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
@@ -178,12 +178,13 @@ func (d *deployer) setFeatureReconcileStatus(ctx context.Context, featureAssignm
 		Message:             message,
 	})
 	if err != nil {
-		d.log.WithFields(logrus.Fields{
-			"feature_assignment_id": featureAssignmentID,
-			"environment_id":        environmentID,
-			"status":                status,
-			"msg":                   message,
-		}).WithError(err).Error("create feature assignment status")
+		d.log.Error("create feature assignment status",
+			"error", err,
+			"feature_assignment_id", featureAssignmentID,
+			"environment_id", environmentID,
+			"status", status,
+			"msg", message,
+		)
 	}
 }
 

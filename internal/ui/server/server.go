@@ -5,13 +5,13 @@ import (
 	"encoding/hex"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 
 	"github.com/nais/fasit/internal/auth"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ui/layout"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -59,20 +59,20 @@ func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, props layout
 	props.AppVersion = s.appVersion
 	names, err := featurepkg.FeatureNames(r.Context())
 	if err != nil {
-		logrus.WithError(err).Error("loading feature names for search")
+		slog.Error("loading feature names for search", "error", err)
 	} else {
 		props.FeatureNames = names
 	}
 	err = layout.Page(props).Render(w)
 	if err != nil {
-		logrus.WithError(err).Error("error rendering page")
+		slog.Error("error rendering page", "error", err)
 	}
 }
 
 func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, file string) {
 	data, err := s.siteFS.Open("site/" + file)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"file": file}).WithError(err).Error("error opening file")
+		slog.Error("error opening file", "error", err, "file", file)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +91,7 @@ func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, file string) 
 	}
 	_, err = io.Copy(w, data)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"file": file}).WithError(err).Error("error serving file")
+		slog.Error("error serving file", "error", err, "file", file)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

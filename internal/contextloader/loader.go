@@ -2,6 +2,7 @@ package contextloader
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
@@ -11,7 +12,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/uidata"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -21,7 +21,7 @@ func NewLoaderFunc(
 	pool *pgxpool.Pool,
 	publisher featureassignment.NewPublisher,
 	meter metric.Meter,
-	log logrus.FieldLogger,
+	log *slog.Logger,
 ) (LoaderFunc, error) {
 	manager, err := featureassignment.NewManager(pool, publisher, meter, log)
 	if err != nil {

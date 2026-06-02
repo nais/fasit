@@ -3,10 +3,10 @@ package message
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"time"
 
 	"cloud.google.com/go/pubsub/v2"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -38,14 +38,14 @@ type Topic interface {
 
 type Publisher[T any] struct {
 	topic           Topic
-	log             logrus.FieldLogger
+	log             *slog.Logger
 	config          publisherConfig
 	publishCount    metric.Int64Counter
 	publishDuration metric.Float64Histogram
 	topicName       string
 }
 
-func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log logrus.FieldLogger, opts ...publisherOpts) *Publisher[T] {
+func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log *slog.Logger, opts ...publisherOpts) *Publisher[T] {
 	cfg := publisherConfig{}
 	for _, opt := range opts {
 		opt(&cfg)
@@ -65,7 +65,7 @@ func (p *Publisher[T]) SetMeter(meter metric.Meter) {
 		metric.WithDescription("Total pub/sub messages published"),
 	)
 	if err != nil {
-		p.log.WithError(err).Warn("failed to create publish counter")
+		p.log.Warn("failed to create publish counter", "error", err)
 	}
 
 	p.publishDuration, err = meter.Float64Histogram("pubsub_publish_duration_seconds",
@@ -73,7 +73,7 @@ func (p *Publisher[T]) SetMeter(meter metric.Meter) {
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		p.log.WithError(err).Warn("failed to create publish duration histogram")
+		p.log.Warn("failed to create publish duration histogram", "error", err)
 	}
 }
 
@@ -85,7 +85,7 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 
 	start := time.Now()
 
-	p.log.WithField("topic", p.topic.String()).Debug("Published message")
+	p.log.Debug("Published message", "topic", p.topic.String())
 	res := p.topic.Publish(ctx, &pubsub.Message{
 		Data:       data,
 		Attributes: p.config.attributes,

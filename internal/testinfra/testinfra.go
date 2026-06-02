@@ -7,6 +7,8 @@ package testinfra
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,8 +18,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/naisdstatus"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -26,6 +26,10 @@ import (
 type DB struct {
 	Container *postgres.PostgresContainer
 	DSN       string
+}
+
+func discardLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 
 // Start launches a PostgreSQL container, connects, runs migrations, and
@@ -53,8 +57,7 @@ func Start(ctx context.Context, t *testing.T) *DB {
 	}
 
 	// Run migrations by connecting once.
-	log, _ := test.NewNullLogger()
-	pool, _, err := database.NewConnPool(ctx, dsn, logrus.NewEntry(log))
+	pool, _, err := database.NewConnPool(ctx, dsn, discardLogger())
 	if err != nil {
 		t.Fatalf("connect for migrations: %v", err)
 	}
@@ -71,8 +74,7 @@ func Start(ctx context.Context, t *testing.T) *DB {
 // that closes the pool and restores the DB snapshot.
 func (db *DB) Pool(ctx context.Context, t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	log, _ := test.NewNullLogger()
-	pool, _, err := database.NewConnPool(ctx, db.DSN, logrus.NewEntry(log))
+	pool, _, err := database.NewConnPool(ctx, db.DSN, discardLogger())
 	if err != nil {
 		t.Fatalf("connect: %v", err)
 	}
@@ -89,8 +91,7 @@ func (db *DB) Pool(ctx context.Context, t *testing.T) *pgxpool.Pool {
 // deployment, naisdstatus) wired to the given pool. Callers that need
 // additional registrations (e.g. feature.Register) should add them after.
 func Context(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	log, _ := test.NewNullLogger()
-	ctx = audit.Register(ctx, pool, log)
+	ctx = audit.Register(ctx, pool, discardLogger())
 	ctx = environment.Register(ctx, pool)
 	ctx = featureassignment.RegisterForTest(ctx, featureassignmentsql.New(pool))
 	ctx = naisdstatus.Register(ctx, pool)

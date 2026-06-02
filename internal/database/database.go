@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/url"
 	"runtime"
@@ -17,7 +18,6 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/pressly/goose/v3"
-	"github.com/sirupsen/logrus"
 )
 
 type ConnPoolOption func(*pgxpool.Config)
@@ -43,7 +43,7 @@ func (c closeFuncs) Close() error {
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
 
-func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger, opts ...ConnPoolOption) (*pgxpool.Pool, io.Closer, error) {
+func NewConnPool(ctx context.Context, dbConnDSN string, log *slog.Logger, opts ...ConnPoolOption) (*pgxpool.Pool, io.Closer, error) {
 	cloudsql := !strings.Contains(dbConnDSN, "://")
 
 	cloudsqlHost := ""
@@ -112,11 +112,15 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger, 
 	return pool, closers, nil
 }
 
-func Migrate(pool *pgxpool.Pool, log logrus.FieldLogger) error {
-	log = log.WithField("subsystem", "database-migration")
+// gooseLogger adapts *slog.Logger to goose.Logger.
+type gooseLogger struct{ log *slog.Logger }
 
+func (g gooseLogger) Fatalf(format string, v ...any) { g.log.Error(fmt.Sprintf(format, v...)) }
+func (g gooseLogger) Printf(format string, v ...any) { g.log.Info(fmt.Sprintf(format, v...)) }
+
+func Migrate(pool *pgxpool.Pool, log *slog.Logger) error {
 	goose.SetBaseFS(embedMigrations)
-	goose.SetLogger(log)
+	goose.SetLogger(gooseLogger{log: log.With("subsystem", "database-migration")})
 
 	db := stdlib.OpenDBFromPool(pool)
 	defer ioconvenience.CloseWithLog(db, log)

@@ -4,6 +4,8 @@ package reconciler_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/nais/fasit/internal/contextloader"
@@ -13,8 +15,7 @@ import (
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -27,7 +28,7 @@ var (
 
 func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn := startPostgres(ctx, t)
 	_ = container
@@ -42,7 +43,7 @@ func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	pub := &noopPublisher{}
-	newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+	newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(pool, newPublisher, meter, logger)
@@ -83,7 +84,7 @@ func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 
 func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn := startPostgres(ctx, t)
 	_ = container
@@ -98,7 +99,7 @@ func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	pub := &noopPublisher{}
-	newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+	newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(pool, newPublisher, meter, logger)
@@ -157,7 +158,7 @@ func startPostgres(ctx context.Context, t *testing.T) (*postgres.PostgresContain
 	}
 
 	// Run migrations
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatalf("connect for migrations: %v", err)

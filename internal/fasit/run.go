@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -23,7 +24,6 @@ import (
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sethvargo/go-envconfig"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -51,10 +51,7 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	log, err := newLogger(cfg.LogLevel)
-	if err != nil {
-		return fmt.Errorf("error creating logger: %w", err)
-	}
+	log := newLogger(cfg.LogLevel)
 
 	log.Info("starting pub/sub client")
 	pubSubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
@@ -62,7 +59,7 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error creating pub/sub client: %w", err)
 	}
 	defer ioconvenience.CloseWithLog(pubSubClient, log)
-	log.Info("-- successfully started pub/sub client")
+	log.Info("successfully started pub/sub client")
 
 	meter, err := newMetricsProvider()
 	if err != nil {
@@ -88,7 +85,7 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error registering pool metrics: %w", err)
 	}
 
-	assignmentPublisher := func(topicID string, log logrus.FieldLogger) reconciler.Publisher {
+	assignmentPublisher := func(topicID string, log *slog.Logger) reconciler.Publisher {
 		p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 		p.SetMeter(meter)
 		return p
@@ -102,7 +99,7 @@ func Run(ctx context.Context) error {
 	ctx = loadContext(ctx)
 	go featureassignment.TimeoutDeployInstructions(ctx, log)
 
-	rec, err := reconciler.New(pool, meter, log.WithField("component", "reconciler"))
+	rec, err := reconciler.New(pool, meter, log.With("component", "reconciler"))
 	if err != nil {
 		return fmt.Errorf("creating reconciler: %w", err)
 	}
@@ -128,7 +125,7 @@ func Run(ctx context.Context) error {
 
 	go func() {
 		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, log); err != nil {
-			log.WithError(err).Fatal("running GRPC server")
+			log.Error("running GRPC server", "error", err)
 		}
 	}()
 
@@ -141,9 +138,9 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		log.Printf("listening on http://%s/", cfg.HTTPBindAddress)
+		log.Info("listening", "addr", "http://"+cfg.HTTPBindAddress+"/")
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.WithError(err).Fatal("running server")
+			log.Error("running server", "error", err)
 		}
 	}()
 
@@ -157,26 +154,29 @@ func Run(ctx context.Context) error {
 	defer cancel()
 
 	if err := httpServer.Shutdown(timeoutCtx); err != nil {
-		log.WithError(err).Error("shutting down server")
+		log.Error("shutting down server", "error", err)
 	}
 
 	return nil
 }
 
-func newLogger(level string) (logrus.FieldLogger, error) {
-	log := logrus.StandardLogger()
-	log.SetFormatter(&logrus.JSONFormatter{})
-
-	l, err := logrus.ParseLevel(level)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing log level: %w", err)
+func newLogger(level string) *slog.Logger {
+	lvl := new(slog.LevelVar)
+	switch level {
+	case "debug":
+		lvl.Set(slog.LevelDebug)
+	case "warn", "warning":
+		lvl.Set(slog.LevelWarn)
+	case "error":
+		lvl.Set(slog.LevelError)
+	default:
+		lvl.Set(slog.LevelInfo)
 	}
-	log.SetLevel(l)
-	return log, nil
+	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: lvl}))
 }
 
-func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, log logrus.FieldLogger) error {
-	log.Info("GRPC serving on port", bindAddress)
+func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, log *slog.Logger) error {
+	log.Info("GRPC serving", "addr", bindAddress)
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)

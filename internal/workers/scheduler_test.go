@@ -2,11 +2,10 @@ package workers
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 func TestScheduler(t *testing.T) {
@@ -18,7 +17,7 @@ func TestScheduler(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	s := NewScheduler(logrus.NewEntry(logrus.StandardLogger()))
+	s := NewScheduler(slog.Default())
 
 	tw1 := &testWorker{}
 	tw2 := &testWorker{}

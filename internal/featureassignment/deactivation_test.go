@@ -5,19 +5,19 @@ package featureassignment_test
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 )
 
 func TestDeactivation(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
 	if err != nil {
@@ -29,7 +29,7 @@ func TestDeactivation(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -175,7 +175,7 @@ func TestDeactivation(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)

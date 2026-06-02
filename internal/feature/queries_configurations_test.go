@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -20,7 +22,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -699,7 +701,7 @@ ON CONFLICT (
 }
 
 func setupContext(pool *pgxpool.Pool) context.Context {
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx := Register(context.Background(), pool)
 	ctx = audit.Register(ctx, pool, log)
 	ctx = environment.Register(ctx, pool)
@@ -729,7 +731,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 		t.Fatal(err)
 	}
 
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatal(err)
@@ -745,7 +747,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 
 func newPool(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string) *pgxpool.Pool {
 	t.Helper()
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, log)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)

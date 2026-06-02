@@ -3,6 +3,7 @@ package featureassignment
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -10,7 +11,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -18,7 +18,7 @@ type Manager struct {
 	deployer   *deployer
 	reconciler *reconciler
 	querier    featureassignmentsql.Querier
-	log        logrus.FieldLogger
+	log        *slog.Logger
 	pool       *pgxpool.Pool
 }
 
@@ -31,14 +31,14 @@ var ChartDownloader = func(chartURL, version string) (*model.Feature, error) {
 
 type Option func(*Manager)
 
-func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
+func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log *slog.Logger, opts ...Option) (*Manager, error) {
 	querier := featureassignmentsql.New(pool)
-	d, err := newDeployer(pool, querier, publisher, m, log.WithField("subsystem", "featureassignment-deployer"))
+	d, err := newDeployer(pool, querier, publisher, m, log.With("subsystem", "featureassignment-deployer"))
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := newReconciler(querier, d, m, log.WithField("subsystem", "featureassignment-reconciler"))
+	r, err := newReconciler(querier, d, m, log.With("subsystem", "featureassignment-reconciler"))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log 
 		reconciler: r,
 		pool:       pool,
 		querier:    querier,
-		log:        log.WithField("subsystem", "featureassignment-manager"),
+		log:        log.With("subsystem", "featureassignment-manager"),
 	}
 	for _, opt := range opts {
 		opt(mgr)
@@ -70,7 +70,7 @@ func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {
 	di, err := GetDeployInstruction(ctx, status.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			m.log.WithField("diid", status.DIID).Warn("unknown deploy instruction")
+			m.log.Warn("unknown deploy instruction", "diid", status.DIID)
 			return nil
 		}
 		return err
@@ -88,12 +88,13 @@ func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {
 			Message:             msg,
 		})
 		if err != nil {
-			m.log.WithFields(logrus.Fields{
-				"feature_assignment_id": di.FeatureAssignmentID,
-				"environment_id":        di.EnvironmentID,
-				"status":                status.RolloutStatus,
-				"msg":                   msg,
-			}).WithError(err).Error("create feature assignment status")
+			m.log.Error("create feature assignment status",
+				"error", err,
+				"feature_assignment_id", di.FeatureAssignmentID,
+				"environment_id", di.EnvironmentID,
+				"status", status.RolloutStatus,
+				"msg", msg,
+			)
 		}
 	}
 	return nil

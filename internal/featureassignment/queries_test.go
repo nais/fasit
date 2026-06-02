@@ -4,21 +4,22 @@ package featureassignment_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFeatureForEnvironment(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
 	require.NoError(t, err)
@@ -27,7 +28,7 @@ func TestFeatureForEnvironment(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -63,7 +64,7 @@ func TestFeatureForEnvironment(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -88,7 +89,7 @@ func TestFeatureForEnvironment(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -120,7 +121,7 @@ func TestFeatureForEnvironment(t *testing.T) {
 
 func TestListEnvironmentFeatures(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
 	require.NoError(t, err)
@@ -129,7 +130,7 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -173,7 +174,7 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
@@ -215,7 +216,7 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 			return mgr.publisher
 		}
 		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)

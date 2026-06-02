@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/testinfra"
 	"github.com/nais/fasit/internal/workers"
-	"github.com/sirupsen/logrus"
+
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
@@ -48,7 +49,7 @@ func TestReceiverIntegration(t *testing.T) {
 			&fakeClient{messages: []message.Status{
 				{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
 			}},
-			logrus.NewEntry(logrus.New()),
+			slog.Default(),
 			fake.NewFakeSlackClient(),
 			"test",
 			noop.Meter{},
@@ -75,7 +76,7 @@ func TestReceiverIntegration(t *testing.T) {
 				&fakeClient{messages: []message.Status{
 					{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
 				}},
-				logrus.NewEntry(logrus.New()),
+				slog.Default(),
 				fake.NewFakeSlackClient(),
 				"test",
 				noop.Meter{},
@@ -114,7 +115,7 @@ func TestReceiverIntegration(t *testing.T) {
 			&fakeClient{messages: []message.Status{
 				{Type: message.StatusTypeHealth, Tenant: "mytenant", Environment: "dev", Data: data},
 			}},
-			logrus.NewEntry(logrus.New()),
+			slog.Default(),
 			fake.NewFakeSlackClient(),
 			"test",
 			noop.Meter{},
@@ -152,7 +153,7 @@ func TestReceiverIntegration(t *testing.T) {
 			&fakeClient{messages: []message.Status{
 				{Type: message.StatusTypeHelm, Tenant: "mytenant", Environment: "dev", Data: data},
 			}},
-			logrus.NewEntry(logrus.New()),
+			slog.Default(),
 			fake.NewFakeSlackClient(),
 			"test",
 			noop.Meter{},

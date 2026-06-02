@@ -5,6 +5,8 @@ package featureassignment_test
 import (
 	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"sort"
 	"strings"
 	"testing"
@@ -20,8 +22,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -128,7 +129,7 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	lastResult **reconciler.DesiredState,
 ) {
 	t.Helper()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
@@ -145,7 +146,7 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	seeder = featureassignmenttest.NewSeeder()
 
 	// Wire old reconciler via context loader.
-	oldPub := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher { return pub }
+	oldPub := func(topicID string, log *slog.Logger) featureassignment.Publisher { return pub }
 	loadContext, err := contextloader.NewLoaderFunc(pool, oldPub, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to create loader: %v", err)
@@ -157,7 +158,7 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	}
 
 	// Wire new reconciler.
-	newPub := func(topicID string, log logrus.FieldLogger) reconciler.Publisher { return pub }
+	newPub := func(topicID string, log *slog.Logger) reconciler.Publisher { return pub }
 	dispatcher, err := reconciler.NewPubSubDispatcher(pool, newPub, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to create result writer: %v", err)

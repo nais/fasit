@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit/auditsql"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/sirupsen/logrus"
 )
 
 const unknownActor = "unknown"
@@ -192,10 +191,10 @@ func sanitizeForLog(s string) string {
 func actorOrUnknown(ctx context.Context, description, objectType string) string {
 	actor := auth.GetEmail(ctx)
 	if actor == auth.UnauthorizedName {
-		log(ctx).WithFields(logrus.Fields{
-			"description": sanitizeForLog(description),
-			"objectType":  sanitizeForLog(objectType),
-		}).Warn("unknown actor")
+		logger(ctx).Warn("unknown actor",
+			"description", sanitizeForLog(description),
+			"objectType", sanitizeForLog(objectType),
+		)
 		return unknownActor
 	}
 	return actor

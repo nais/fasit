@@ -2,12 +2,12 @@ package local
 
 import (
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"sync"
 	"time"
 
 	"github.com/nais/fasit/internal/naisd"
-	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
 	htime "helm.sh/helm/v3/pkg/time"
@@ -22,7 +22,7 @@ type helmRecord struct {
 }
 
 type HelmClient struct {
-	logger        *logrus.Entry
+	logger        *slog.Logger
 	mockFailing   bool
 	numSuccessful int
 
@@ -30,7 +30,7 @@ type HelmClient struct {
 	releases map[string]*helmRecord
 }
 
-func NewHelmClient(logger *logrus.Entry, mockFailing bool) *HelmClient {
+func NewHelmClient(logger *slog.Logger, mockFailing bool) *HelmClient {
 	return &HelmClient{
 		logger:      logger,
 		mockFailing: mockFailing,
@@ -64,7 +64,7 @@ func (h *HelmClient) List() ([]*release.Release, error) {
 }
 
 func (h *HelmClient) Execute(cmd *exec.Cmd) error {
-	h.logger.Println(cmd.String())
+	h.logger.Info(cmd.String())
 
 	if cmd.Stdout != nil {
 		mockLines := []string{

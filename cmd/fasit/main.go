@@ -2,16 +2,15 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/nais/fasit/internal/fasit"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	if err := fasit.Run(context.Background()); err != nil {
-		logrus.SetFormatter(&logrus.JSONFormatter{})
-		logrus.WithError(err).Error("error occurred while running fasit")
+		slog.Error("error occurred while running fasit", "error", err)
 		os.Exit(1)
 	}
 }

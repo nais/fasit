@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -26,8 +28,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -38,7 +39,7 @@ import (
 // TODO: simplify test setup and generalize across tests
 func TestCreateDeploymentHTTP(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	container, dsn, err := startPostgresql(ctx, t)
 	if err != nil {
@@ -55,7 +56,7 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	pub := &publisher{}
-	newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
+	newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, httpMeter, logger)
@@ -188,7 +189,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 		return nil, "", fmt.Errorf("failed to get connection string: %w", err)
 	}
 
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
@@ -207,7 +208,7 @@ type TestMgr struct {
 	db        Db
 	seeder    *featureassignmenttest.Seeder
 	publisher *publisher
-	log       logrus.FieldLogger
+	log       *slog.Logger
 }
 
 type publisher struct {
@@ -219,7 +220,7 @@ func setupTestMgr(
 	t *testing.T,
 	container *postgres.PostgresContainer,
 	dsn string,
-	log logrus.FieldLogger,
+	log *slog.Logger,
 ) *TestMgr {
 	t.Helper()
 	db := getDb(ctx, t, container, dsn, log)
@@ -234,7 +235,7 @@ func setupTestMgr(
 	}
 }
 
-func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {
+func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log *slog.Logger) Db {
 	t.Helper()
 
 	pool, _, err := database.NewConnPool(ctx, dsn, log)

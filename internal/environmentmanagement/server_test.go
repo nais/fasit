@@ -4,6 +4,8 @@ package environmentmanagement
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"net"
 	"testing"
 
@@ -15,7 +17,7 @@ import (
 	"github.com/nais/fasit/internal/environmentmanagement/protogen"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"google.golang.org/grpc"
@@ -27,7 +29,7 @@ func TestProvider(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresql(ctx, t)
 	pool := newPool(ctx, t, container, dsn)
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	loadContext := func(ctx context.Context) context.Context {
 		ctx = environment.Register(ctx, pool)
 		ctx = audit.Register(ctx, pool, log)
@@ -91,7 +93,7 @@ func TestProvider(t *testing.T) {
 func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) protogen.FasitClient {
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	grpcServer := NewGrpcServer(loadContext, pool)
 
 	go func() {
@@ -143,7 +145,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 		t.Fatal(err)
 	}
 
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatal(err)
@@ -159,7 +161,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 
 func newPool(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string) *pgxpool.Pool {
 	t.Helper()
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, log)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)

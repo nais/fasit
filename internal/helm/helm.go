@@ -2,8 +2,8 @@ package helm
 
 import (
 	"fmt"
+	"log/slog"
 
-	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
@@ -20,11 +20,13 @@ type Client struct {
 	cfg *action.Configuration
 }
 
-func New(restConfig *rest.Config, namespace string, log *logrus.Entry) *Client {
+func New(restConfig *rest.Config, namespace string, log *slog.Logger) *Client {
 	cfg := &action.Configuration{}
 
 	// Init cannot error, it will panic if something goes wrong
-	_ = cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", log.Debugf)
+	_ = cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", func(format string, v ...interface{}) {
+		log.Debug(fmt.Sprintf(format, v...))
+	})
 	return &Client{
 		cfg: cfg,
 	}

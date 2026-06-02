@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,11 +14,10 @@ import (
 	"github.com/nais/fasit/internal/ui"
 	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
-func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log logrus.FieldLogger, appVersion string) (http.Handler, error) {
+func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log *slog.Logger, appVersion string) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {

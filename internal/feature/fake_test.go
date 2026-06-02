@@ -2,13 +2,14 @@ package feature
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/audit/auditsqlfake"
 	"github.com/nais/fasit/internal/feature/featuresql"
-	"github.com/sirupsen/logrus/hooks/test"
 )
 
 // fakeQuerier implements featuresql.Querier for unit tests.
@@ -151,7 +152,7 @@ var _ featuresql.Querier = (*fakeQuerier)(nil)
 // Returns the context, feature fake, and audit fake.
 func newTestCtx(t *testing.T) (context.Context, *fakeQuerier, *auditsqlfake.Querier) {
 	t.Helper()
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	fq := &fakeQuerier{}
 	aq := &auditsqlfake.Querier{}
 	ctx := context.WithValue(context.Background(), QuerierKey, featuresql.Querier(fq))

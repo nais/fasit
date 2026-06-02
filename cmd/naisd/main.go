@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,7 +16,6 @@ import (
 	"github.com/nais/fasit/internal/naisd"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -55,15 +55,24 @@ func main() {
 	}
 
 	if envLvl := os.Getenv("LOG_LEVEL"); envLvl != "" {
-		if lvl, err := logrus.ParseLevel(envLvl); err != nil {
-			log.WithError(err).Warn("log level not parsable")
-		} else {
-			log.SetLevel(lvl)
+		// Override log level from environment
+		var lvl slog.LevelVar
+		switch envLvl {
+		case "debug":
+			lvl.Set(slog.LevelDebug)
+		case "warn", "warning":
+			lvl.Set(slog.LevelWarn)
+		case "error":
+			lvl.Set(slog.LevelError)
+		default:
+			lvl.Set(slog.LevelInfo)
 		}
+		log = slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: &lvl}))
 	}
 
 	if err := run(ctx, log); err != nil {
-		log.Fatal(err)
+		log.Error("fatal", "error", err)
+		os.Exit(1)
 	}
 
 	log.Info("Run cancelled, exiting. If we've started an upgrade, we'll keep running until it's done.")
@@ -71,11 +80,12 @@ func main() {
 	case <-ctx.Done():
 		log.Info("Shutting down")
 	case <-time.After(30 * time.Minute):
-		log.Fatal("Shutdown timed out")
+		log.Error("Shutdown timed out")
+		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, log *logrus.Logger) error {
+func run(ctx context.Context, log *slog.Logger) error {
 	meter, err := newNaisdMetricsProvider()
 	if err != nil {
 		return err
@@ -86,13 +96,13 @@ func run(ctx context.Context, log *logrus.Logger) error {
 		mux.Handle("/metrics", promhttp.Handler())
 		srv := &http.Server{Addr: cfg.BindAddress, Handler: mux, ReadHeaderTimeout: 2 * time.Second}
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.WithError(err).Error("metrics server")
+			log.Error("metrics server", "error", err)
 		}
 	}()
 
 	receiver, helmClient, statusPublisher := sharedDependencies(ctx, log, meter)
 
-	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
+	s := workers.NewScheduler(log.With("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
 	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
@@ -121,29 +131,34 @@ func ensureAnnotation(ctx context.Context, client kubernetes.Interface, id strin
 	return err
 }
 
-func newLogger() *logrus.Logger {
-	log := logrus.StandardLogger()
-	log.SetFormatter(&logrus.JSONFormatter{})
-
-	l, err := logrus.ParseLevel(cfg.LogLevel)
-	if err != nil {
-		log.Fatal(err)
+func newLogger() *slog.Logger {
+	lvl := new(slog.LevelVar)
+	switch cfg.LogLevel {
+	case "debug":
+		lvl.Set(slog.LevelDebug)
+	case "warn", "warning":
+		lvl.Set(slog.LevelWarn)
+	case "error":
+		lvl.Set(slog.LevelError)
+	default:
+		lvl.Set(slog.LevelInfo)
 	}
-	log.SetLevel(l)
-	return log
+	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: lvl}))
 }
 
-func upgrade(ctx context.Context, log *logrus.Logger) {
+func upgrade(ctx context.Context, log *slog.Logger) {
 	log.Info("Upgrading naisd")
 	meter, err := newNaisdMetricsProvider()
 	if err != nil {
-		log.WithError(err).Fatal("creating metrics provider")
+		log.Error("creating metrics provider", "error", err)
+		os.Exit(1)
 	}
 	receiver, _, _ := sharedDependencies(ctx, log, meter)
 
-	err = naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
+	err = naisd.Upgrade(ctx, receiver, log.With("subsystem", "self-upgrade"))
 	if err != nil {
-		log.WithError(err).Fatal("upgrading naisd")
+		log.Error("upgrading naisd", "error", err)
+		os.Exit(1)
 	}
 
 	// We sleep a few seconds to let possible requests finish (e.g. status report pubsub)
@@ -152,18 +167,19 @@ func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Done")
 }
 
-func sharedDependencies(ctx context.Context, log *logrus.Logger, meter metric.Meter) (*naisd.DeployManager, naisd.HelmClient, *message.Publisher[message.Status]) {
+func sharedDependencies(ctx context.Context, log *slog.Logger, meter metric.Meter) (*naisd.DeployManager, naisd.HelmClient, *message.Publisher[message.Status]) {
 	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
 	if err != nil {
-		log.WithError(err).Fatal("setting up new pub/sub client")
+		log.Error("setting up new pub/sub client", "error", err)
+		os.Exit(1)
 	}
 
-	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, cfg.DeploySubscription, log.WithField("subsystem", "instruction-subscriber"))
+	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, cfg.DeploySubscription, log.With("subsystem", "instruction-subscriber"))
 	statusPublisher := message.NewPublisher[message.Status](
 		deployClient,
 		cfg.NaisProjectID,
 		naisStatusTopic,
-		log.WithField("subsystem", "status-pubsub"),
+		log.With("subsystem", "status-pubsub"),
 		message.WithWaithForPublish(),
 		message.WithAttributes(map[string]string{
 			"tenant":      cfg.TenantName,
@@ -174,7 +190,7 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger, meter metric.Me
 
 	kubeConfig := local.RESTConfig()
 
-	localHelm := local.NewHelmClient(log.WithField("subsystem", "executor"), cfg.MockFailing)
+	localHelm := local.NewHelmClient(log.With("subsystem", "executor"), cfg.MockFailing)
 	var executor naisd.Exec = localHelm
 	var helmClient naisd.HelmClient = localHelm
 	k8sClient := local.NewKubernetesClient()
@@ -183,16 +199,18 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger, meter metric.Me
 
 		kubeConfig, err = rest.InClusterConfig()
 		if err != nil {
-			log.WithError(err).Fatal("failed to get kubeconfig")
+			log.Error("failed to get kubeconfig", "error", err)
+			os.Exit(1)
 		}
-		helmClient = helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
+		helmClient = helm.New(kubeConfig, "nais-system", log.With("subsystem", "helm"))
 		k8sClient, err = kubernetes.NewForConfig(kubeConfig)
 		if err != nil {
-			log.WithError(err).Fatal("setting up k8s client")
+			log.Error("setting up k8s client", "error", err)
+			os.Exit(1)
 		}
 		err := ensureAnnotation(ctx, k8sClient, cfg.EnvProjectID)
 		if err != nil {
-			log.WithError(err).Error("annotating namespace")
+			log.Error("annotating namespace", "error", err)
 		}
 	}
 	receiver, err := naisd.NewDeployManager(
@@ -205,10 +223,11 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger, meter metric.Me
 		kubeConfig,
 		os.Getenv("NAIS_SA_NAME"),
 		cfg.NaisProjectID,
-		log.WithField("subsystem", "deploy"),
+		log.With("subsystem", "deploy"),
 	)
 	if err != nil {
-		log.WithError(err).Fatal("setting up worker")
+		log.Error("setting up worker", "error", err)
+		os.Exit(1)
 	}
 	receiver.SetMeter(meter)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-	"github.com/sirupsen/logrus"
 )
 
 var ErrFeatureNotFound = fmt.Errorf("feature not found")
@@ -417,11 +417,11 @@ func mostSpecificAssignment(ctx context.Context, envID uuid.UUID, featureName st
 
 // TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
 // more than one hour and mark them as failed
-func TimeoutDeployInstructions(ctx context.Context, log logrus.FieldLogger) {
+func TimeoutDeployInstructions(ctx context.Context, log *slog.Logger) {
 	for {
 		err := querier(ctx).TimeoutDeployInstructions(ctx)
 		if err != nil {
-			log.WithError(err).Error("failed to timeout deploy instructions")
+			log.Error("failed to timeout deploy instructions", "error", err)
 		}
 
 		select {

@@ -5,6 +5,8 @@ package featureassignment_test
 import (
 	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"maps"
 	"strings"
 	"testing"
@@ -18,8 +20,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -96,7 +97,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get connection string: %w", err)
 	}
-	logger, _ := test.NewNullLogger()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
@@ -113,7 +114,7 @@ type TestMgr struct {
 	db        Db
 	seeder    *featureassignmenttest.Seeder
 	publisher *oldPublisher
-	log       logrus.FieldLogger
+	log       *slog.Logger
 }
 
 func setupTestMgr(
@@ -121,7 +122,7 @@ func setupTestMgr(
 	t *testing.T,
 	container *postgres.PostgresContainer,
 	dsn string,
-	log logrus.FieldLogger,
+	log *slog.Logger,
 ) *TestMgr {
 	t.Helper()
 	db := getDb(ctx, t, container, dsn, log)
@@ -136,7 +137,7 @@ func setupTestMgr(
 	}
 }
 
-func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {
+func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log *slog.Logger) Db {
 	t.Helper()
 	pool, _, err := database.NewConnPool(ctx, dsn, log)
 	if err != nil {

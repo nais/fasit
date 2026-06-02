@@ -3,12 +3,12 @@ package reconciler
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -20,7 +20,7 @@ func init() {
 
 type Reconciler struct {
 	querier reconcilersql.Querier
-	log     logrus.FieldLogger
+	log     *slog.Logger
 
 	// streamMu guards against concurrent streaming reconciles.
 	streamMu sync.Mutex
@@ -35,7 +35,7 @@ type DesiredState struct {
 	ComputeDur time.Duration
 }
 
-func New(pool *pgxpool.Pool, meter metric.Meter, log logrus.FieldLogger) (*Reconciler, error) {
+func New(pool *pgxpool.Pool, meter metric.Meter, log *slog.Logger) (*Reconciler, error) {
 	reconcileLoopTime, err := meter.Int64Histogram("reconciler_loop_duration", metric.WithDescription("Total time for one full reconcile loop"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile loop time histogram: %w", err)
@@ -54,13 +54,13 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher
 		r.log.Info("reconciling")
 		result, err := r.ComputeDesiredState(ctx)
 		if err != nil {
-			r.log.WithError(err).Error("reconcile")
+			r.log.Error("reconcile", "error", err)
 		} else {
 			ioStart := time.Now()
 			if err := dispatcher.Dispatch(ctx, result.Decisions); err != nil {
-				r.log.WithError(err).Error("dispatch")
+				r.log.Error("dispatch", "error", err)
 			}
-			r.log.WithField("io", time.Since(ioStart)).Info("decisions dispatched")
+			r.log.Info("decisions dispatched", "io", time.Since(ioStart))
 		}
 
 		select {
@@ -93,9 +93,9 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 	}
 	fetchDur := time.Since(fetchStart)
 
-	r.log.WithField("num_envs", len(snap.environments)).
-		WithField("num_assignments", len(snap.assignments)).
-		Info("reconciling tenant environments")
+	r.log.Info("reconciling tenant environments",
+		"num_envs", len(snap.environments),
+		"num_assignments", len(snap.assignments))
 
 	computeStart := time.Now()
 	decisions := r.computeActions(snap)
@@ -107,15 +107,15 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 			deployCount++
 		}
 	}
-	r.log.WithField("total_decisions", len(decisions)).
-		WithField("deploy_count", deployCount).
-		Info("compute complete")
+	r.log.Info("compute complete",
+		"total_decisions", len(decisions),
+		"deploy_count", deployCount)
 
 	totalDur := time.Since(loopStart)
-	r.log.WithField("fetch", fetchDur).
-		WithField("compute", computeDur).
-		WithField("total", totalDur).
-		Info("reconcile complete")
+	r.log.Info("reconcile complete",
+		"fetch", fetchDur,
+		"compute", computeDur,
+		"total", totalDur)
 
 	r.reconcileLoopTime.Record(ctx, totalDur.Milliseconds())
 	return &DesiredState{

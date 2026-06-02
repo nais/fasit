@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -17,7 +18,6 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/slack"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -32,7 +32,7 @@ type HelmListener interface {
 
 type Receiver struct {
 	manager        ReceiverClient
-	log            logrus.FieldLogger
+	log            *slog.Logger
 	slack          slack.SlackClient
 	slackChannel   string
 	listeners      []HelmListener
@@ -42,7 +42,7 @@ type Receiver struct {
 
 func NewReceiver(
 	mgr ReceiverClient,
-	log logrus.FieldLogger,
+	log *slog.Logger,
 	slackClient slack.SlackClient,
 	slackChannel string,
 	meter metric.Meter,
@@ -52,7 +52,7 @@ func NewReceiver(
 		metric.WithDescription("Total status messages received from naisd, by type"),
 	)
 	if err != nil {
-		log.WithError(err).Warn("failed to create status messages counter")
+		log.Warn("failed to create status messages counter", "error", err)
 	}
 
 	deployDuration, err := meter.Float64Histogram("deploy_instruction_duration_seconds",
@@ -60,12 +60,12 @@ func NewReceiver(
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		log.WithError(err).Warn("failed to create deploy duration histogram")
+		log.Warn("failed to create deploy duration histogram", "error", err)
 	}
 
 	receiver := &Receiver{
 		manager:        mgr,
-		log:            log.WithField("subsystem", "status-receiver"),
+		log:            log.With("subsystem", "status-receiver"),
 		slack:          slackClient,
 		slackChannel:   slackChannel,
 		listeners:      listeners,
@@ -78,7 +78,7 @@ func NewReceiver(
 func (r *Receiver) Run(ctx context.Context) {
 	err := r.manager.Receive(ctx, r.handler)
 	if err != nil {
-		r.log.WithError(err).Error("receive status messages")
+		r.log.Error("receive status messages", "error", err)
 	}
 }
 
@@ -101,7 +101,7 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 	case message.StatusTypeLog:
 		return r.handleStatusLog(ctx, msg)
 	default:
-		r.log.WithField("type", msg.Type).Warn("unknown status type")
+		r.log.Warn("unknown status type", "type", msg.Type)
 	}
 
 	return nil
@@ -111,20 +111,20 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	helmStatus := &message.Helm{}
 	err := json.Unmarshal(msg.Data, helmStatus)
 	if err != nil {
-		r.log.WithError(err).Errorf("invalid json")
+		r.log.Error("invalid json", "error", err)
 		return nil
 	}
 
 	for _, l := range r.listeners {
 		if err := l.Receive(ctx, helmStatus); err != nil {
-			r.log.WithError(err).Error("notifying helm listener")
+			r.log.Error("notifying helm listener", "error", err)
 		}
 	}
 
 	di, err := featureassignment.GetDeployInstruction(ctx, helmStatus.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")
+			r.log.Warn("unknown deploy instruction", "diid", helmStatus.DIID)
 			return nil
 		}
 		return err
@@ -133,8 +133,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	env, err := environment.Get(ctx, di.EnvironmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("deploy_instruction", helmStatus.DIID).
-				Warn("unknown deploy instruction")
+			r.log.Warn("unknown deploy instruction", "deploy_instruction", helmStatus.DIID)
 			return nil
 		}
 		return err
@@ -148,7 +147,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 
 		slackMsg := r.slack.GetFeatureDeployFailedMessageOptions(di.FeatureName, tenant.Name, env.Name)
 		if _, _, err := r.slack.PostMessage(r.slackChannel, slackMsg); err != nil {
-			r.log.WithError(err).Error("sending slack message")
+			r.log.Error("sending slack message", "error", err)
 		}
 	}
 
@@ -171,23 +170,21 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 	status := &message.HelmRelease{}
 	err := json.Unmarshal(msg.Data, status)
 	if err != nil {
-		r.log.WithError(err).Errorf("invalid json")
+		r.log.Error("invalid json", "error", err)
 		return nil
 	}
 
 	t, err := environment.GetTenantByName(ctx, msg.Tenant)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("tenant", msg.Tenant).Warn("unknown tenant")
+			r.log.Warn("unknown tenant", "tenant", msg.Tenant)
 		}
 		return nil
 	}
 	env, err := environment.GetByName(ctx, t.ID, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			r.log.WithField("tenant", msg.Tenant).
-				WithField("environment", msg.Environment).
-				Warn("unknown tenant and/or environment")
+			r.log.Warn("unknown tenant and/or environment", "tenant", msg.Tenant, "environment", msg.Environment)
 			return nil
 		}
 		return fmt.Errorf("getting environment id: %w", err)
@@ -213,22 +210,20 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 	status := &message.Health{}
 	err := json.Unmarshal(msg.Data, status)
 	if err != nil {
-		r.log.WithError(err).Errorf("invalid json")
+		r.log.Error("invalid json", "error", err)
 		return nil
 	}
 	t, err := environment.GetTenantByName(ctx, msg.Tenant)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("tenant", msg.Tenant).Warn("unknown tenant")
+			r.log.Warn("unknown tenant", "tenant", msg.Tenant)
 		}
 		return nil
 	}
 	env, err := environment.GetByName(ctx, t.ID, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			r.log.WithField("tenant", msg.Tenant).
-				WithField("environment", msg.Environment).
-				Warn("unknown tenant and/or environment")
+			r.log.Warn("unknown tenant and/or environment", "tenant", msg.Tenant, "environment", msg.Environment)
 			return nil
 		}
 		return err
@@ -240,12 +235,12 @@ func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) erro
 	status := &message.StatusLog{}
 
 	if err := json.Unmarshal(msg.Data, status); err != nil {
-		r.log.WithError(err).Errorf("invalid json")
+		r.log.Error("invalid json", "error", err)
 		return nil
 	}
 
 	if err := feature.LogCreate(ctx, status.DIID, status.Logs); err != nil {
-		r.log.WithError(err).Errorf("unable to log status")
+		r.log.Error("unable to log status", "error", err)
 	}
 
 	return nil

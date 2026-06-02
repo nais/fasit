@@ -17,7 +17,6 @@ import (
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd/selfupgrade"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"gopkg.in/yaml.v3"
@@ -100,7 +99,7 @@ type DeployManager struct {
 	k8sClient             kubernetes.Interface
 	k8sServiceAccountName string
 	naisProjectID         string
-	log                   *logrus.Entry
+	log                   *slog.Logger
 	helmCache             string
 	env                   string
 	tenantName            string
@@ -130,7 +129,7 @@ func NewDeployManager(
 	kubeConfig *rest.Config,
 	k8sServiceAccountName,
 	naisProjectID string,
-	log *logrus.Entry,
+	log *slog.Logger,
 ) (*DeployManager, error) {
 	helmCache, err := os.MkdirTemp(os.TempDir(), "naisd-helm-*")
 	if err != nil {
@@ -163,7 +162,7 @@ func (d *DeployManager) SetMeter(meter metric.Meter) {
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		d.log.WithError(err).Warn("failed to create helm duration histogram")
+		d.log.Warn("failed to create helm duration histogram", "error", err)
 	}
 
 	d.handlerDuration, err = meter.Float64Histogram("deploy_handler_duration_seconds",
@@ -171,12 +170,12 @@ func (d *DeployManager) SetMeter(meter metric.Meter) {
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		d.log.WithError(err).Warn("failed to create handler duration histogram")
+		d.log.Warn("failed to create handler duration histogram", "error", err)
 	}
 }
 
 func (d *DeployManager) Run(ctx context.Context) {
-	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
+	d.log.Info("Starting deploy receiver", "subscription", d.deployments.Name())
 	d.deployments.Synchronous()
 
 	ctx, d.stop = context.WithCancel(ctx)
@@ -187,7 +186,7 @@ func (d *DeployManager) Run(ctx context.Context) {
 				d.log.Info("Restarting deploy receiver")
 				return
 			}
-			d.log.WithError(err).Error("receive status messages")
+			d.log.Error("receive status messages", "error", err)
 			// retry logic? This should only trigger when an upgrade is triggered.
 		}
 
@@ -225,11 +224,11 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		return d.uninstallHandler(ctx, msg)
 	}
 
-	d.log.WithFields(logrus.Fields{
-		"name":    msg.Name,
-		"chart":   msg.Chart,
-		"version": msg.Version,
-	}).Debug("Received instruction")
+	d.log.Debug("Received instruction",
+		"name", msg.Name,
+		"chart", msg.Chart,
+		"version", msg.Version,
+	)
 
 	pubsubLog := newPubsubLogger(msg.ID, d.statuses, d.log)
 
@@ -239,7 +238,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
 		if d.inProgress.Value() > 0 {
 			if d.lastChecked.Get().Add(15 * time.Second).Before(time.Now()) {
-				d.log.WithField("inProgress", d.inProgress.Value()).Debug("Postponing naisd upgrade")
+				d.log.Debug("Postponing naisd upgrade", "inProgress", d.inProgress.Value())
 				_, _ = fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
 				d.lastChecked.Set()
 			}
@@ -270,7 +269,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 	defer func() {
 		if err := os.Remove(valuesFile); err != nil {
-			d.log.WithError(err).Error("error removing values file")
+			d.log.Error("error removing values file", "error", err)
 		}
 	}()
 
@@ -297,7 +296,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStart := time.Now()
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args)
 	if err != nil {
-		d.log.WithField("feature", msg.Name).WithError(err).Warn("failed to run helm")
+		d.log.Warn("failed to run helm", "error", err, "feature", msg.Name)
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
 		helmStatus.Error = err.Error()
 	} else {
@@ -327,7 +326,7 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 	watcher, err := d.k8sClient.CoreV1().Events(namespace).Watch(ctx, opts)
 	if err != nil {
 		_, _ = fmt.Fprintf(pubsubLog, "failed to watch events: %s\n", err)
-		d.log.Warnf("failed to watch events: %v", err)
+		d.log.Warn("failed to watch events", "error", err)
 		return
 	}
 
@@ -362,7 +361,7 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 			}
 
 			if strings.Contains(e.InvolvedObject.Name, msg.Name) {
-				d.log.WithField("event", e.Message).Info("Add event")
+				d.log.Info("Add event", "event", e.Message)
 				pubsubLog.AddEvent(e)
 			}
 		}
@@ -429,7 +428,7 @@ func (d *DeployManager) runOnce() {
 }
 
 func (d *DeployManager) uninstallHandler(ctx context.Context, msg message.DeployInstruction) error {
-	log := d.log.WithFields(logrus.Fields{"feature": msg.Name, "method": "uninstall"})
+	log := d.log.With("feature", msg.Name, "method", "uninstall")
 	if msg.Name == "naisd" || msg.Name == "" {
 		log.Warn("will not uninstall")
 		return nil

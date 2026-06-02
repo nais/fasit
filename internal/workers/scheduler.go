@@ -3,9 +3,8 @@ package workers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Schedulable interface {
@@ -19,13 +18,13 @@ type scheduledWorker struct {
 }
 
 type Scheduler struct {
-	log     logrus.FieldLogger
+	log     *slog.Logger
 	workers []*scheduledWorker
 }
 
-func NewScheduler(log logrus.FieldLogger) *Scheduler {
+func NewScheduler(log *slog.Logger) *Scheduler {
 	return &Scheduler{
-		log: log.WithField("subsystem", "scheduler"),
+		log: log.With("subsystem", "scheduler"),
 	}
 }
 
@@ -50,11 +49,11 @@ func (s *Scheduler) Start(ctx context.Context) {
 }
 
 func (s *Scheduler) run(ctx context.Context, w *scheduledWorker) {
-	log := s.log.WithField("worker", w.name)
+	log := s.log.With("worker", w.name)
 	for {
 		log.Debug("running")
 		if err := w.v.Run(ctx); err != nil {
-			log.WithError(err).Error("error running scheduled worker")
+			log.Error("error running scheduled worker", "error", err)
 		}
 		select {
 		case <-ctx.Done():

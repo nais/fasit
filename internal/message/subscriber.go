@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 
 	"cloud.google.com/go/pubsub/v2"
-	"github.com/sirupsen/logrus"
 )
 
 type contextKey int
@@ -26,13 +25,13 @@ func ForceAck(ctx context.Context) {
 
 type Subscriber[T any] struct {
 	subscription *pubsub.Subscriber
-	log          logrus.FieldLogger
+	log          *slog.Logger
 }
 
-func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string, log logrus.FieldLogger) *Subscriber[T] {
+func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string, log *slog.Logger) *Subscriber[T] {
 	return &Subscriber[T]{
 		subscription: client.Subscriber("projects/" + projectID + "/subscriptions/" + subscriptionID),
-		log:          log.WithField("subsystem", "status-subscriber"),
+		log:          log.With("subsystem", "status-subscriber"),
 	}
 }
 
@@ -52,7 +51,7 @@ func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context,
 		default:
 		}
 		if err := s.receive(ctx, f); err != nil {
-			s.log.WithError(err).Error("subscriber error during receive")
+			s.log.Error("subscriber error during receive", "error", err)
 		}
 	}
 }
@@ -62,14 +61,14 @@ func (s *Subscriber[T]) receive(ctx context.Context, f func(ctx context.Context,
 		ctx = context.WithValue(ctx, ackContext, msg)
 		var t T
 		if err := json.Unmarshal(msg.Data, &t); err != nil {
-			log.Println(err)
+			s.log.Error("unmarshal message", "error", err)
 			msg.Ack()
 			return
 		}
 
 		if err := f(ctx, t); err != nil {
 			if !errors.Is(err, ErrNack) {
-				log.Println(err)
+				s.log.Error("handle message", "error", err)
 			}
 			msg.Nack()
 			return

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"testing"
@@ -14,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -128,7 +128,7 @@ func TestDeployReceiver(t *testing.T) {
 				},
 				"naisd",
 				"nais-project",
-				logrus.NewEntry(logrus.StandardLogger()),
+				slog.Default(),
 			)
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
@@ -168,7 +168,7 @@ func TestDeployReceiver_naisd_postpone_if_others_in_progress(t *testing.T) {
 		nil,
 		"naisd",
 		"nais-project",
-		logrus.NewEntry(logrus.StandardLogger()),
+		slog.Default(),
 	)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -206,7 +206,7 @@ func TestDeployReceiver_naisd_if_none_in_progress(t *testing.T) {
 		},
 		"naisd",
 		"nais-project",
-		logrus.NewEntry(logrus.StandardLogger()),
+		slog.Default(),
 	)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/google/uuid"
@@ -11,7 +12,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -22,15 +22,14 @@ type Publisher interface {
 	Stop()
 }
 
-// NewPublisher creates a Publisher for a given topic.
-type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
+type NewPublisher func(topicID string, log *slog.Logger) Publisher
 
 // pubSubDispatcher writes deploy decisions to the database and publishes
 // deploy instructions to naisd via Pub/Sub.
 type pubSubDispatcher struct {
 	querier      reconcilersql.Querier
 	newPublisher NewPublisher
-	log          logrus.FieldLogger
+	log          *slog.Logger
 
 	publishersMu sync.Mutex
 	publishers   map[string]Publisher
@@ -38,7 +37,7 @@ type pubSubDispatcher struct {
 	deployMessages metric.Int64Counter
 }
 
-func NewPubSubDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (Dispatcher, error) {
+func NewPubSubDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log *slog.Logger) (Dispatcher, error) {
 	deployMessages, err := meter.Int64Counter("reconciler_deploy_messages", metric.WithDescription("Deploy messages sent by reconciler"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
@@ -165,14 +164,14 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 	for _, item := range toPublish {
 		pub := w.publisher(item.topicID)
 		if err := pub.Publish(ctx, item.instruction); err != nil {
-			w.log.WithError(err).WithField("feature", item.featureName).WithField("env", item.envName).Error("publish deploy instruction")
+			w.log.Error("publish deploy instruction", "error", err, "feature", item.featureName, "env", item.envName)
 			continue
 		}
 		if err := w.querier.SetDeployInstructionStatus(ctx, reconcilersql.SetDeployInstructionStatusParams{
 			ID:     item.instruction.ID,
 			Status: model.RolloutStatusPending.String(),
 		}); err != nil {
-			w.log.WithError(err).WithField("id", item.instruction.ID).Error("set instruction status to sent")
+			w.log.Error("set instruction status to sent", "error", err, "id", item.instruction.ID)
 		}
 		w.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(
 			attribute.String("tenant", item.tenantName),

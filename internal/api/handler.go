@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -18,10 +19,9 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/sirupsen/logrus"
 )
 
-func NewHttpHandler(ctx context.Context, pool *pgxpool.Pool, log logrus.FieldLogger) (*HttpHandler, error) {
+func NewHttpHandler(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) (*HttpHandler, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func NewHttpHandler(ctx context.Context, pool *pgxpool.Pool, log logrus.FieldLog
 	return &HttpHandler{
 		provider:       provider,
 		verifier:       verifier,
-		log:            log.WithField("subsystem", "featureassignment-http"),
+		log:            log.With("subsystem", "featureassignment-http"),
 		programContext: ctx,
 		querier:        sqlgen.New(pool),
 	}, nil
@@ -50,7 +50,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 	assignmentID, err := uuid.Parse(chi.URLParam(req, "id"))
 	if err != nil {
 		http.Error(w, "invalid assignment id", http.StatusBadRequest)
-		h.log.WithError(err).Error("convert assignment ID")
+		h.log.Error("convert assignment ID", "error", err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 		return
 	} else if err != nil {
 		http.Error(w, "unable to get assignment", http.StatusInternalServerError)
-		h.log.WithError(err).Error("get assignment")
+		h.log.Error("get assignment", "error", err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 	states, err := h.listReconcileStatuses(ctx, assignmentID)
 	if err != nil {
 		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
-		h.log.WithError(err).Warn("list reconcile statuses; returning UNKNOWN")
+		h.log.Warn("list reconcile statuses; returning UNKNOWN", "error", err)
 	} else {
 		state, _ = states.Aggregate()
 	}
@@ -77,7 +77,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 		ID:    assignmentID,
 		State: state,
 	}); err != nil {
-		h.log.WithError(err).Error("encode assignment response")
+		h.log.Error("encode assignment response", "error", err)
 	}
 }
 
@@ -114,7 +114,7 @@ func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.R
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.log.WithError(err).Error("create assignment")
+		h.log.Error("create assignment", "error", err)
 		return
 	}
 

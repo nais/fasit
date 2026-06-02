@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -22,7 +23,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
@@ -97,7 +97,7 @@ var (
 )
 
 func main() {
-	log := logrus.StandardLogger()
+	log := slog.Default()
 	now := time.Now().UTC().Format("2006-01-02-150405")
 	seq := 0
 	newVersion := func() string {
@@ -108,7 +108,8 @@ func main() {
 	}
 
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
-		log.Fatal(err)
+		log.Error("fatal", "error", err)
+		os.Exit(1)
 	}
 
 	ctx := context.Background()
@@ -118,7 +119,7 @@ func main() {
 	}
 	defer ioconvenience.CloseWithLog(cancel, log)
 
-	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, noop.NewMeterProvider().Meter(""), logrus.New())
+	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, noop.NewMeterProvider().Meter(""), slog.Default())
 	if err != nil {
 		panic(err)
 	}
@@ -132,13 +133,15 @@ func main() {
 		_, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
 		if err != nil {
 			if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-				log.Fatal(err)
+				log.Error("fatal", "error", err)
+				os.Exit(1)
 			}
 		}
 
 		tenant, err := environment.GetTenantByName(ctx, tenantName)
 		if err != nil {
-			log.Fatal(err)
+			log.Error("fatal", "error", err)
+			os.Exit(1)
 		}
 
 		for env, spec := range environments {
@@ -156,17 +159,20 @@ func main() {
 					continue
 				}
 
-				log.Fatal(err)
+				log.Error("fatal", "error", err)
+				os.Exit(1)
 			}
 
 			err = environment.SetEnvironmentValue(ctx, e.ID, "project_id", json.RawMessage(fmt.Sprintf("%q", "nais-"+env)), false)
 			if err != nil {
-				log.Fatal(err)
+				log.Error("fatal", "error", err)
+				os.Exit(1)
 			}
 
 			err = environment.SetEnvironmentValue(ctx, e.ID, "updated_at", json.RawMessage(fmt.Sprintf("%q", time.Now().String())), false)
 			if err != nil {
-				log.Fatal(err)
+				log.Error("fatal", "error", err)
+				os.Exit(1)
 			}
 
 			// Secret env values: consumed by computed templates in several features
@@ -179,7 +185,8 @@ func main() {
 			}
 			for k, v := range secretEnvValues {
 				if err := environment.SetEnvironmentValue(ctx, e.ID, k, json.RawMessage(fmt.Sprintf("%q", v)), true); err != nil {
-					log.Fatal(err)
+					log.Error("fatal", "error", err)
+					os.Exit(1)
 				}
 			}
 		}
@@ -188,11 +195,13 @@ func main() {
 	envID := func(tenantName, envName string) uuid.UUID {
 		t, err := environment.GetTenantByName(ctx, tenantName)
 		if err != nil {
-			log.Fatal(err)
+			log.Error("fatal", "error", err)
+			os.Exit(1)
 		}
 		env, err := environment.GetByName(ctx, t.ID, envName)
 		if err != nil {
-			log.WithField("tenant", tenantName).WithField("env", envName).Fatal(err)
+			log.Error("fatal", "error", err, "tenant", tenantName, "env", envName)
+			os.Exit(1)
 		}
 		return env.ID
 	}
@@ -423,7 +432,8 @@ func main() {
 
 	ctx = auth.SetEmail(ctx, "tronghn@nais/fasit/123456789")
 	if _, err := seeder.Seed(ctx); err != nil {
-		log.Fatal(err)
+		log.Error("fatal", "error", err)
+		os.Exit(1)
 	}
 
 	ctx = auth.SetEmail(ctx, "setup_local_env")
@@ -436,7 +446,7 @@ func main() {
 		for key, val := range defaults {
 			b, err := json.Marshal(val)
 			if err != nil {
-				log.WithError(err).Errorf("marshal default %s/%s", featureName, key)
+				log.Error("marshal default", "error", err, "feature", featureName, "key", key)
 				continue
 			}
 			// Skip empty values: they wouldn't satisfy required-field validation,
@@ -451,7 +461,7 @@ func main() {
 				Value:   json.RawMessage(b),
 			}); err != nil {
 				if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					log.WithError(err).Errorf("seed global default %s/%s", featureName, key)
+					log.Error("seed global default", "error", err, "feature", featureName, "key", key)
 				}
 			}
 		}
@@ -460,7 +470,7 @@ func main() {
 	// Features are enabled by default (absence from disabled_features = enabled).
 	// Disable one feature to get a DISABLED status row in the mix.
 	if err := feature.FeatureDisable(ctx, envID("dev-nais", "dev"), "dependencytrack", "seeded as disabled for local dev"); err != nil {
-		log.WithError(err).Errorf("disable dependencytrack in dev-nais/dev")
+		log.Error("disable dependencytrack in dev-nais/dev", "error", err)
 	}
 
 	// Sprinkle a couple of env-level config overrides on naiserator so the Config
@@ -484,7 +494,7 @@ func main() {
 			Key:           o.key,
 			Value:         json.RawMessage(o.value),
 		}); err != nil {
-			log.WithError(err).Errorf("seed override %s/%s in %s/%s", o.feature, o.key, o.tenant, o.env)
+			log.Error("seed override", "error", err, "feature", o.feature, "key", o.key, "tenant", o.tenant, "env", o.env)
 		}
 	}
 
@@ -547,21 +557,22 @@ func main() {
 	// Set up pubsub topics and subscriptions.
 	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("fatal", "error", err)
+		os.Exit(1)
 	}
 
 	topicRes, err := client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
 		Name: "projects/" + naisProjectID + "/topics/" + statusTopic,
 	})
 	if err != nil {
-		log.Println(err)
+		log.Error("error", "error", err)
 	}
 	_, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 		Name:  "projects/" + naisProjectID + "/subscriptions/" + statusSubscription,
 		Topic: topicRes.GetName(),
 	})
 	if err != nil {
-		log.Println(err)
+		log.Error("error", "error", err)
 	}
 
 	for tenant, envs := range envs {
@@ -571,19 +582,20 @@ func main() {
 
 			_, err = client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{Name: topic})
 			if err != nil {
-				log.Println(err)
+				log.Error("error", "error", err)
 			}
 
 			envClient, err := pubsub.NewClient(ctx, "local-"+tenant+"-"+env)
 			if err != nil {
-				log.Fatal(err)
+				log.Error("fatal", "error", err)
+				os.Exit(1)
 			}
 			_, err = envClient.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 				Name:  subscription,
 				Topic: topic,
 			})
 			if err != nil {
-				log.Println(err)
+				log.Error("error", "error", err)
 			}
 		}
 	}

@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/message"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -20,11 +20,11 @@ type pubsubLogger struct {
 	lock  sync.Mutex
 	lines []message.LogLine
 
-	log   logrus.FieldLogger
+	log   *slog.Logger
 	close chan struct{}
 }
 
-func newPubsubLogger(diid uuid.UUID, topic StatusPublisher, log logrus.FieldLogger) *pubsubLogger {
+func newPubsubLogger(diid uuid.UUID, topic StatusPublisher, log *slog.Logger) *pubsubLogger {
 	return &pubsubLogger{
 		diid:  diid,
 		topic: topic,
@@ -76,13 +76,13 @@ func (p *pubsubLogger) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			if err := p.Publish(context.Background()); err != nil {
-				p.log.WithError(err).Error("publishing logs")
+				p.log.Error("publishing logs", "error", err)
 			}
 		case <-ctx.Done():
 			return
 		case <-p.close:
 			if err := p.Publish(context.Background()); err != nil {
-				p.log.WithError(err).Error("publishing logs")
+				p.log.Error("publishing logs", "error", err)
 			}
 			return
 		}

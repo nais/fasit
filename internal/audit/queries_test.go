@@ -3,11 +3,12 @@ package audit
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"reflect"
 	"testing"
 
 	"github.com/nais/fasit/internal/audit/auditsqlfake"
-	"github.com/sirupsen/logrus/hooks/test"
 )
 
 func TestCreate(t *testing.T) {
@@ -47,7 +48,7 @@ func TestCreate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			log, _ := test.NewNullLogger()
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
 			q := &auditsqlfake.Querier{}
 			ctx := RegisterTestDeps(context.Background(), q, log)
 
@@ -74,7 +75,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestSearchRecentPassesTermsBeforeLimit(t *testing.T) {
-	log, _ := test.NewNullLogger()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	q := &auditsqlfake.Querier{}
 	ctx := RegisterTestDeps(context.Background(), q, log)
 
