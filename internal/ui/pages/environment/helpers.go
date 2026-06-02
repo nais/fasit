@@ -33,7 +33,7 @@ type FeaturePage struct {
 	FeatureEnvs             []featureenvs.Environment
 	HelmValues              string
 	HelmValuesError         string
-	Assignments         []EnvAssignmentItem
+	Assignments             []EnvAssignmentItem
 	FeatureLog              *FeatureLog
 	Status                  string
 	StatusMessage           string
@@ -41,7 +41,7 @@ type FeaturePage struct {
 	PlaygroundCode          string
 	PlaygroundResult        *PlaygroundResult
 	AuditEntries            []*audit.Entry
-	WinningAssignment   *featureassignment.FeatureAssignment
+	WinningAssignment       *featureassignment.FeatureAssignment
 	RecentDeployHistory     []*model.DeployInstruction
 	DeployLogsByInstruction map[string][]LogLine
 	ExpandedLogID           string
