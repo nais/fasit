@@ -57,6 +57,7 @@ Tool management via mise. Tasks in `mise/tasks/`. Key commands: `mise run fasit`
 - Unit tests: `_test.go` alongside source
 - Integration: `testcontainers-go` for Postgres
 - End-to-end: Lua-based in `integration_tests/` using [tester](https://github.com/nais/tester)
+- **stdlib only**: Use `testing` package directly — no testify, no assertion libraries. Use `t.Fatalf` for fatal preconditions, `t.Errorf` for check assertions. Table-driven tests preferred. Use `t.Helper()` in test helpers.
 
 Never modify or delete existing tests — especially integration tests in `integration_tests/` and any code behind the `integration_test` build tag — without first consulting the user. Tests encode intended behavior; if a change appears to require touching a test, ask before doing so. This also applies to seemingly "unused" test helpers: code reachable only from build-tagged tests can look dead to static analysis but is not.
 
@@ -65,6 +66,10 @@ Never modify or delete existing tests — especially integration tests in `integ
 PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). `database.Repo` composes domain-specific repo interfaces; some domains have their own sqlc querier via context loader instead.
 
 ## Code Style
+
+### Logging
+
+Use `log/slog` exclusively. No logrus, no third-party logging libraries. Pass `*slog.Logger` as an explicit dependency. Use structured key-value pairs: `log.Error("msg", "key", value, "error", err)`.
 
 ### Comments
 
