@@ -152,6 +152,7 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load config", http.StatusInternalServerError)
 			return
 		}
+		data.RecentActivity, _ = audit.ListGlobalConfigForFeature(r.Context(), data.CurrentFeature.Name, 10)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
@@ -496,8 +497,11 @@ func detailPage(data *DetailPage) g.Node {
 	}
 	if len(data.RecentActivity) > 0 {
 		title := "Recent activity"
-		if data.ActiveTab == "assignments" {
+		switch data.ActiveTab {
+		case "assignments":
 			title = "Assignment activity"
+		case "config":
+			title = "Config activity"
 		}
 		rightSidebar = h.Aside(h.Class("right-sidebar"),
 			components.CardCompact(featureRecentActivityCompact(data.CurrentFeature.Name, title, data.RecentActivity)),

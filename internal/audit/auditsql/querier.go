@@ -14,6 +14,7 @@ type Querier interface {
 	ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]ListForEnvironmentRow, error)
 	ListForFeature(ctx context.Context, arg ListForFeatureParams) ([]ListForFeatureRow, error)
 	ListForFeatureInEnvironment(ctx context.Context, arg ListForFeatureInEnvironmentParams) ([]ListForFeatureInEnvironmentRow, error)
+	ListGlobalConfigForFeature(ctx context.Context, arg ListGlobalConfigForFeatureParams) ([]ListGlobalConfigForFeatureRow, error)
 	ListRecent(ctx context.Context, pageSize int32) ([]ListRecentRow, error)
 	SearchRecent(ctx context.Context, arg SearchRecentParams) ([]SearchRecentRow, error)
 }
