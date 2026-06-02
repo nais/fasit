@@ -1,90 +1,65 @@
 # Fasit
 
-Fasit manages feature deployments across environments for NAIS tenants.
-It consists of two components:
+Fasit is a multi-tenant feature management platform. It deploys OCI Helm charts — called **features** — across environments, using label-based targeting and automatic reconciliation.
 
-- **fasit** — HTTP/gRPC server with a web UI for managing environments, features, deployments, and labels
-- **naisd** — per-environment agent that reconciles feature state using Helm
+## How it works
+
+```mermaid
+graph LR
+    A[Feature author] -->|push OCI chart| B[Registry]
+    B --> C[Fasit]
+    C -->|match labels| D[Environments]
+    C -->|deploy instruction| E[naisd agent]
+    E -->|helm install/upgrade| D
+```
+
+1. A **feature** is an OCI Helm chart with a `Feature.yaml` that declares its configurable values and target environment kinds.
+2. An operator creates an **assignment** — handing a feature version to Fasit with a set of target **labels** (e.g. `tenant=nav`, `env=prod`).
+3. Fasit matches the assignment to all **environments** whose labels are a superset of the target.
+4. The **reconciler** renders helm values for each matched environment and sends **deploy instructions** to the **naisd** agent running there.
+5. naisd executes `helm install/upgrade` and reports status back.
+
+When configs, environment values, or feature versions change, the reconciler detects the drift and re-deploys automatically.
+
+## Documentation
+
+- **[Concepts](docs/concepts.md)** — environments, features, assignments, values, reconciliation
+- **[Authoring a Feature](docs/feature.md)** — Feature.yaml spec, templates, template functions
+
+## Components
+
+| Component | Role |
+|-----------|------|
+| **fasit** | HTTP/gRPC server, web UI, reconciler, deployment orchestration |
+| **naisd** | Per-environment agent that executes Helm and reports status |
 
 ## Local development
 
 ```sh
-# Install tools
-mise install
-
-# Configure environment
-cp .env.example .env
-
-# Start postgres + pubsub emulator and seed the database
-mise run setup
-
-# Run fasit with auto-reload on changes
-mise run dev
-
-# Or without auto-reload
-mise run fasit
+mise install              # install tools
+cp .env.example .env     # configure environment
+mise run setup            # start postgres + pubsub emulator, seed database
+mise run dev              # run fasit with auto-reload
 ```
 
-### Running naisd locally
-
-```sh
-# Run naisd for all seeded environments in parallel.
-# test-partner/prod uses --mock-failing and test-partner/staging is left
-# without naisd, giving a mix of DEPLOYED, FAILED, and PENDING states.
-mise run naisd-all
-```
-
-Single-environment alternatives:
-
-- `mise run naisd` — test-partner/dev
-- `mise run naisd-failing` — test-partner/dev with mocked helm failures
-- `mise run naisd-management` — test-partner/management
-- `mise run naisd-management-failing` — test-partner/management with mocked helm failures
-
-## Features
-
-Features are OCI Helm charts with a `Feature.yaml` alongside the `Chart.yaml`.
-See [`docs/feature.md`](./docs/feature.md) for the spec.
-
-### JSON schema
-
-Enable autocompletion/validation with:
-`https://storage.googleapis.com/fasit-jsonschema/feature.json`
-
-See https://docs.nais.io/appendix/json-schema/ for IDE setup.
+See `mise run --list` for all available tasks.
 
 ## Testing
 
 ```sh
-mise run test          # unit + integration tests
-mise run test:unit     # unit tests only
-mise run test:integration  # integration tests (requires testcontainers)
+mise run test             # unit + integration tests
+mise run test:unit        # unit tests only
+mise run test:integration # integration tests (requires testcontainers)
 ```
 
-## Static checks
+## JSON Schema
 
-```sh
-mise run check   # lint, fmt, vet
+Enable IDE autocompletion/validation for `Feature.yaml`:
+
+```
+https://storage.googleapis.com/fasit-jsonschema/feature.json
 ```
 
-## Releasing
+## License
 
-### Fasit
-
-Pushed to main → image built, pushed to GAR, deployed via Helm.
-Chart changes require manually updating the workflow.
-
-### naisd
-
-Tag `naisd-<version>` → image built, pushed to GAR, rolled out via Fasit.
-
-## Access production postgres
-
-```sh
-# Retrieve password (requires nais-io tenant access)
-kubectl --context nais-io -n nais-system get secrets fasit-backend-db -o json \
-  | jq -r '.data.FASIT_DBCONN_STRING' | base64 -d | awk -F '=' '{print $6}'
-
-# Connect
-gcloud sql connect fasit --project nais-io --user fasit --database fasit
-```
+[MIT](LICENSE)

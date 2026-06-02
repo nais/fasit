@@ -33,7 +33,7 @@ To make the chart into a feature, you must create a `Feature.yaml` file in the s
 Minimal example:
 
 ```yaml
-# environmentKinds is required, and defines which environments the feature can be enabled in.
+# environmentKinds defines which environments the feature can be enabled in.
 environmentKinds:
   - tenant
 ```
