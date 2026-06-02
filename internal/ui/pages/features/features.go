@@ -270,18 +270,9 @@ func featureRowKebab(feature featureIndexRow, idx int) g.Node {
 		return g.Text("")
 	}
 	kebabID := fmt.Sprintf("feature-kebab-%d", idx)
-	return h.Div(h.Class("kebab-wrap"),
-		h.Button(
-			h.Type("button"),
-			h.Class("kebab-btn"),
-			g.Attr("data-kebab-toggle", kebabID),
-			g.Attr("aria-label", "Actions"),
-			g.Text("\u22ee"),
-		),
-		h.Div(h.Class("kebab-menu"), h.ID(kebabID),
-			h.A(h.Href(feature.Source), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener noreferrer"), g.Text("View on GitHub")),
-		),
-	)
+	return components.KebabWrap(kebabID, []g.Node{
+		h.A(h.Href(feature.Source), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener noreferrer"), g.Text("View on GitHub")),
+	})
 }
 
 type assignmentRow struct {
@@ -385,18 +376,9 @@ func assignmentRowKebab(actor string, idx int) g.Node {
 		return g.Text("")
 	}
 	kebabID := fmt.Sprintf("assignment-kebab-%d", idx)
-	return h.Div(h.Class("kebab-wrap"),
-		h.Button(
-			h.Type("button"),
-			h.Class("kebab-btn"),
-			g.Attr("data-kebab-toggle", kebabID),
-			g.Attr("aria-label", "Actions"),
-			g.Text("\u22ee"),
-		),
-		h.Div(h.Class("kebab-menu"), h.ID(kebabID),
-			h.A(h.Href(href), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener noreferrer"), g.Text("View workflow run")),
-		),
-	)
+	return components.KebabWrap(kebabID, []g.Node{
+		h.A(h.Href(href), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener noreferrer"), g.Text("View workflow run")),
+	})
 }
 
 func recentActivity(audits []*audit.Entry) g.Node {

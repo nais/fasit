@@ -84,18 +84,7 @@ func ConfigKebab(featureName, configKey string, extraItems ...g.Node) g.Node {
 		h.A(h.Href(explorerHref), h.Class("kebab-item"), g.Text("Compare across environments")),
 	}
 	items = append(items, extraItems...)
-	return h.Div(h.Class("kebab-wrap"),
-		h.Button(
-			h.Type("button"),
-			h.Class("kebab-btn"),
-			g.Attr("data-kebab-toggle", kebabID),
-			g.Attr("aria-label", "Actions"),
-			g.Text("\u22ee"),
-		),
-		h.Div(h.Class("kebab-menu"), h.ID(kebabID),
-			g.Group(items),
-		),
-	)
+	return KebabWrap(kebabID, items)
 }
 
 // ValueDisplay renders a value, pretty-printing JSON when applicable.
