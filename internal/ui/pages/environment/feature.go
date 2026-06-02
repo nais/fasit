@@ -575,13 +575,12 @@ func envActivitySidebar(page *FeaturePage) g.Node {
 		title = "Config activity"
 	}
 	return h.Aside(h.Class("right-sidebar"),
-		components.CardCompact(components.ActivityList(components.ActivityListParams{
-			Title:         title,
-			FilterBadge:   page.Tenant.Name + "/" + page.Environment.Name,
-			AllHref:       "/auditlog?q=" + url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name),
-			Entries:       page.AuditEntries,
-			ResourceNode:  envResourceNode,
-			DescriptionFn: auditview.Description,
+		components.CardCompact(auditview.ActivityList(auditview.ActivityListParams{
+			Title:        title,
+			FilterBadge:  page.Tenant.Name + "/" + page.Environment.Name,
+			AllHref:      "/auditlog?q=" + url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name),
+			Entries:      page.AuditEntries,
+			ResourceNode: envResourceNode,
 		})),
 	)
 }

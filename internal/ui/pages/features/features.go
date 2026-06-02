@@ -504,12 +504,11 @@ func detailPage(data *DetailPage) g.Node {
 			title = "Config activity"
 		}
 		rightSidebar = h.Aside(h.Class("right-sidebar"),
-			components.CardCompact(components.ActivityList(components.ActivityListParams{
-				Title:         title,
-				AllHref:       "/auditlog?q=" + url.QueryEscape(data.CurrentFeature.Name),
-				Entries:       data.RecentActivity,
-				ResourceNode:  configKeyNode,
-				DescriptionFn: auditview.Description,
+			components.CardCompact(auditview.ActivityList(auditview.ActivityListParams{
+				Title:        title,
+				AllHref:      "/auditlog?q=" + url.QueryEscape(data.CurrentFeature.Name),
+				Entries:      data.RecentActivity,
+				ResourceNode: configKeyNode,
 			})),
 		)
 	}

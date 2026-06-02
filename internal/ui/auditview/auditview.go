@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -122,19 +122,124 @@ func EnvLink(e *audit.Entry) g.Node {
 	return h.A(h.Href(href), g.Text(label))
 }
 
-// DetailNode renders the details cell content for an audit entry.
+// DetailNode renders the details cell content for an audit entry (table view).
 func DetailNode(e *audit.Entry) g.Node {
 	desc := Description(e)
 	showDesc := desc != "" && !IsDescriptionRedundant(e)
 	return g.Group([]g.Node{
-		components.ConfigChangeNode(e),
+		ConfigChangeNode(e),
 		g.If(showDesc, h.Div(g.Text(desc))),
 	})
+}
+
+// ActivityListParams configures the compact activity sidebar.
+type ActivityListParams struct {
+	Title       string
+	FilterBadge string
+	AllHref     string
+	Entries     []*audit.Entry
+	// ResourceNode overrides how the resource is rendered per entry.
+	// If nil, uses ResourceLink.
+	ResourceNode func(*audit.Entry) g.Node
+}
+
+// ActivityList renders a compact activity sidebar section.
+func ActivityList(p ActivityListParams) g.Node {
+	if len(p.Entries) == 0 {
+		return nil
+	}
+
+	resourceFn := p.ResourceNode
+	if resourceFn == nil {
+		resourceFn = ResourceLink
+	}
+
+	items := make([]g.Node, 0, len(p.Entries))
+	for _, e := range p.Entries {
+		desc := Description(e)
+		showDesc := desc != "" && !IsDescriptionRedundant(e)
+		items = append(items, h.Li(
+			h.Div(h.Class("activity-meta"),
+				h.Span(
+					g.Text(DisplayAction(e)),
+					g.If(e.Actor != "", g.Group([]g.Node{g.Text(" by "), h.Span(h.Class("activity-actor"), view.ActorNode(e.Actor))})),
+				),
+				h.Span(h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
+			),
+			h.Div(h.Class("activity-resource"), resourceFn(e)),
+			ConfigChangeNode(e),
+			g.If(showDesc, h.Div(h.Class("activity-description"), g.Text(desc))),
+		))
+	}
+
+	headerContent := []g.Node{
+		h.Div(
+			h.H3(g.Text(p.Title)),
+			g.If(p.FilterBadge != "", h.Span(h.Class("activity-filter-badge"), g.Text(p.FilterBadge))),
+		),
+	}
+	if p.AllHref != "" {
+		headerContent = append(headerContent, h.A(h.Href(p.AllHref), h.Class("link-muted"), g.Text("All →")))
+	}
+
+	return h.Section(h.Class("activity-section"),
+		h.Div(h.Class("activity-header"), g.Group(headerContent)),
+		h.Ul(h.Class("activity-list"), g.Group(items)),
+	)
+}
+
+// ConfigChangeNode renders a compact old→new diff for config audit entries.
+func ConfigChangeNode(e *audit.Entry) g.Node {
+	if e.ObjectType != audit.ObjectTypeConfiguration {
+		return nil
+	}
+	if len(e.Metadata) == 0 {
+		return nil
+	}
+	var meta map[string]string
+	if json.Unmarshal(e.Metadata, &meta) != nil {
+		return nil
+	}
+	if meta["secret"] == "true" {
+		return h.Span(h.Class("text-muted"), g.Text("(secret)"))
+	}
+	oldVal, hasOld := meta["old"]
+	newVal, hasNew := meta["new"]
+	if !hasOld && !hasNew {
+		return nil
+	}
+	oldClean := cleanVal(oldVal)
+	newClean := cleanVal(newVal)
+	if !hasOld {
+		return h.Code(h.Title(newClean), g.Text(truncateVal(newClean)))
+	}
+	if !hasNew {
+		return h.Code(h.Class("val-deleted"), h.Title(oldClean), g.Text(truncateVal(oldClean)))
+	}
+	return h.Span(h.Class("config-change"), h.Title(oldClean+" → "+newClean),
+		h.Code(h.Class("val-old"), g.Text(truncateVal(oldClean))),
+		g.Text(" → "),
+		h.Code(g.Text(truncateVal(newClean))),
+	)
 }
 
 func isRedeploy(e *audit.Entry) bool {
 	return e.ObjectType == audit.ObjectTypeFeatureAssignment &&
 		(e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy)
+}
+
+func cleanVal(s string) string {
+	s = strings.TrimPrefix(s, `"`)
+	s = strings.TrimSuffix(s, `"`)
+	return s
+}
+
+func truncateVal(s string) string {
+	const max = 24
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "…"
 }
 
 func auditTargetDescription(e *audit.Entry) string {
