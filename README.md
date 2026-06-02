@@ -4,6 +4,34 @@ Fasit is a multi-tenant feature management platform. It deploys OCI Helm charts 
 
 ## How it works
 
+```
+  Feature author
+       │
+       ├─── push chart ───────► OCI Registry
+       │                              ▲
+       └─── create assignment ──┐     │
+                                ▼     │
+     ┌────── Fasit ─────────────────────────────┐
+     │                                           │
+     │  Desired state        Reconciler          │
+     │  ┌─────────────┐         │               │
+     │  │ assignment   │────► compare ◄─────┐   │
+     │  │ config       │         │          │   │
+     │  │ env values   │    deploy instr.   │   │
+     │  └─────────────┘         │          │   │
+     │                           │          │   │
+     └───────────────────────────┼──────────┼───┘
+                                 ▼          │
+                      ┌──────────────────┐  │
+                      │  Environment     │  │
+                      │                  │  │
+                      │  naisd ► helm    │  │
+                      │                  │  │
+                      │  Actual state    │──┘
+                      │  feature @ v1.2  │ (status report)
+                      └──────────────────┘
+```
+
 1. A **feature** is an OCI Helm chart with a `Feature.yaml` that declares its configurable values and target environment kinds.
 2. A feature author creates an **assignment** — handing a feature version to Fasit with a set of target **labels** (e.g. `tenant=nav`, `env=prod`).
 3. Fasit matches the assignment to all **environments** whose labels are a superset of the target.
