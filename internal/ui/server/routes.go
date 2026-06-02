@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nais/fasit/internal/ui/pages/assignments"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
-	"github.com/nais/fasit/internal/ui/pages/deployments"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
@@ -27,7 +27,7 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/site.css", s.CSS)
 	r.Get("/site.js", s.JS)
-	r.Get("/deployments.js", s.PageJS)
+	r.Get("/assignments.js", s.PageJS)
 	r.Get("/features.js", s.PageJS)
 	r.Get("/reconciler.js", s.PageJS)
 	r.Get("/favicon.ico", s.Favicon)
@@ -41,7 +41,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}", environment.LegacyFeatureRedirectHandler(""))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/logs", environment.LegacyFeatureRedirectHandler("/logs"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/helm", environment.LegacyFeatureRedirectHandler("/helm"))
-	r.Get("/tenants/{tenant}/envs/{env}/{feature}/deployments", environment.LegacyFeatureRedirectHandler("/deployments"))
+	r.Get("/tenants/{tenant}/envs/{env}/{feature}/assignments", environment.LegacyFeatureRedirectHandler("/assignments"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/audit", environment.AuditRedirectHandler())
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.LegacyFeatureRedirectHandler("/playground"))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.LegacyFeatureRedirectHandler("/playground"))
@@ -54,25 +54,25 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/toggle-reconcile", environment.ToggleFeatureStateHandler())
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/redeploy", environment.RedeployHandler())
 
-	r.Get("/deployments", deployments.ListHandler(s.renderPage))
-	r.Post("/deployments", deployments.CreateHandler())
-	r.Post("/deployments/preview-targets", deployments.PreviewTargetsHandler())
-	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage))
-	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
-	r.Post("/deployments/{id}/deactivate", deployments.DeactivateHandler())
-	r.Post("/deployments/{id}/deactivate-matching", deployments.DeactivateByFeatureAndTargetHandler())
-	r.Post("/reconcile", deployments.ReconcileHandler())
+	r.Get("/assignments", assignments.ListHandler(s.renderPage))
+	r.Post("/assignments", assignments.CreateHandler())
+	r.Post("/assignments/preview-targets", assignments.PreviewTargetsHandler())
+	r.Get("/assignments/{id}", assignments.DetailHandler(s.renderPage))
+	r.Get("/assignments/{id}/logs/{envID}", assignments.LogsHandler(s.renderPage))
+	r.Post("/assignments/{id}/deactivate", assignments.DeactivateHandler())
+	r.Post("/assignments/{id}/deactivate-matching", assignments.DeactivateByFeatureAndTargetHandler())
+	r.Post("/reconcile", assignments.ReconcileHandler())
 
 	r.Get("/features", features.IndexHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
-	r.Get("/features/{feature}/deploy-specs", features.DeploySpecsHandler(s.renderPage))
+	r.Get("/features/{feature}/assignments", features.DeploySpecsHandler(s.renderPage))
 	r.Get("/features/{feature}/config", features.ConfigTabHandler(s.renderPage))
 	r.Get("/features/{feature}/config-explorer", features.ConfigExplorerHandler(s.renderPage))
 	r.Get("/features/{feature}/envs/{tenant}/{env}", environment.FeatureContextTabHandler(s.renderPage, "status"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/config", environment.FeatureContextTabHandler(s.renderPage, "config"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/logs", environment.FeatureLogsRedirectHandler())
 	r.Get("/features/{feature}/envs/{tenant}/{env}/helm", environment.FeatureContextTabHandler(s.renderPage, "helm"))
-	r.Get("/features/{feature}/envs/{tenant}/{env}/deployments", environment.FeatureContextTabHandler(s.renderPage, "deployments"))
+	r.Get("/features/{feature}/envs/{tenant}/{env}/assignments", environment.FeatureContextTabHandler(s.renderPage, "assignments"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/audit", environment.AuditRedirectHandler())
 	r.Get("/features/{feature}/envs/{tenant}/{env}/playground", environment.FeatureContextPlaygroundTabHandler(s.renderPage))
 	r.Post("/features/{feature}/envs/{tenant}/{env}/playground", environment.FeatureContextPlaygroundSubmitHandler(s.renderPage))

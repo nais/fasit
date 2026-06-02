@@ -12,9 +12,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -92,7 +92,7 @@ func Context(ctx context.Context, pool *pgxpool.Pool) context.Context {
 	log, _ := test.NewNullLogger()
 	ctx = audit.Register(ctx, pool, log)
 	ctx = environment.Register(ctx, pool)
-	ctx = deployment.RegisterForTest(ctx, deploymentsql.New(pool))
+	ctx = featureassignment.RegisterForTest(ctx, featureassignmentsql.New(pool))
 	ctx = naisdstatus.Register(ctx, pool)
 	return ctx
 }

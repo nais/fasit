@@ -20,9 +20,9 @@ import (
 	"github.com/nais/fasit/internal/api"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -50,12 +50,12 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 
 	mgr := setupTestMgr(ctx, t, container, dsn, logger)
 
-	seeder := deploymenttest.NewSeeder()
-	seeder.AddDeployment("my-feature", "1.0.0", environment.Labels{"kind": "tenant"})
-	deployment.ChartDownloader = seeder.ChartDownloader()
+	seeder := featureassignmenttest.NewSeeder()
+	seeder.AddAssignment("my-feature", "1.0.0", environment.Labels{"kind": "tenant"})
+	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
 	pub := &publisher{}
-	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+	newPublisher := func(topicID string, log logrus.FieldLogger) featureassignment.Publisher {
 		return pub
 	}
 	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, httpMeter, logger)
@@ -81,8 +81,8 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 			next.ServeHTTP(w, r)
 		})
 	})
-	router.Post("/github/deployment", handler.CreateDeployment)
-	router.Get("/github/deployment/{id}", handler.GetDeployment)
+	router.Post("/github/deployment", handler.CreateFeatureAssignment)
+	router.Get("/github/deployment/{id}", handler.GetFeatureAssignment)
 
 	t.Run("valid request returns 201 with id", func(t *testing.T) {
 		body := `{
@@ -151,7 +151,7 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, getRR.Code)
 
-		var getResp api.GetDeploymentResponse
+		var getResp api.GetFeatureAssignmentResponse
 		require.NoError(t, json.NewDecoder(getRR.Body).Decode(&getResp))
 		assert.Equal(t, createResp["id"], getResp.ID.String())
 	})
@@ -205,7 +205,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 type TestMgr struct {
 	t         *testing.T
 	db        Db
-	seeder    *deploymenttest.Seeder
+	seeder    *featureassignmenttest.Seeder
 	publisher *publisher
 	log       logrus.FieldLogger
 }
@@ -223,7 +223,7 @@ func setupTestMgr(
 ) *TestMgr {
 	t.Helper()
 	db := getDb(ctx, t, container, dsn, log)
-	seeder := deploymenttest.NewSeeder()
+	seeder := featureassignmenttest.NewSeeder()
 	pub := &publisher{}
 	return &TestMgr{
 		t:         t,
@@ -268,7 +268,7 @@ func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) 
 	if strings.HasSuffix(msg.Name, "-pending") {
 		status = model.RolloutStatusPending
 	}
-	return deployment.UpdateDeployInstructionStatus(ctx, msg.ID, status)
+	return featureassignment.UpdateDeployInstructionStatus(ctx, msg.ID, status)
 }
 
 func (p *publisher) Stop() {}

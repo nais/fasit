@@ -6,9 +6,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/sirupsen/logrus"
@@ -19,11 +19,11 @@ type LoaderFunc func(context.Context) context.Context
 
 func NewLoaderFunc(
 	pool *pgxpool.Pool,
-	deploymentPublisher deployment.NewPublisher,
+	publisher featureassignment.NewPublisher,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (LoaderFunc, error) {
-	deploymentManager, err := deployment.NewManager(pool, deploymentPublisher, meter, log)
+	manager, err := featureassignment.NewManager(pool, publisher, meter, log)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func NewLoaderFunc(
 		ctx = feature.Register(ctx, pool)
 		ctx = naisdstatus.Register(ctx, pool)
 		ctx = uidata.Register(ctx, pool)
-		ctx = deployment.Register(ctx, deploymentManager)
+		ctx = featureassignment.Register(ctx, manager)
 		return ctx
 	}, nil
 }

@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -33,7 +33,7 @@ type FeaturePage struct {
 	FeatureEnvs             []featureenvs.Environment
 	HelmValues              string
 	HelmValuesError         string
-	Deployments             []EnvDeploymentItem
+	Assignments             []EnvAssignmentItem
 	FeatureLog              *FeatureLog
 	Status                  string
 	StatusMessage           string
@@ -41,7 +41,7 @@ type FeaturePage struct {
 	PlaygroundCode          string
 	PlaygroundResult        *PlaygroundResult
 	AuditEntries            []*audit.Entry
-	WinningDeployment       *deployment.Deployment
+	WinningAssignment       *featureassignment.FeatureAssignment
 	RecentDeployHistory     []*model.DeployInstruction
 	DeployLogsByInstruction map[string][]LogLine
 	ExpandedLogID           string
@@ -55,7 +55,7 @@ type FeatureDetail struct {
 	ConfigItems   []FeatureConfigItem
 }
 
-type EnvDeploymentItem struct {
+type EnvAssignmentItem struct {
 	ID           string
 	Version      string
 	Status       string
@@ -182,7 +182,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		return nil, err
 	}
 
-	feat, err := deployment.FeatureForEnvironment(ctx, env.ID, featureName)
+	feat, err := featureassignment.FeatureForEnvironment(ctx, env.ID, featureName)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		page.Status = "DISABLED"
 	} else if disabled {
 		page.Status = "DISABLED"
-	} else if status, msg, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
+	} else if status, msg, err := featureassignment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
 		page.Status = status
 		page.StatusMessage = msg
 	}
@@ -235,12 +235,12 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 			page.HelmValuesError = herr.Error()
 		}
 	}
-	if activeTab == "deployments" {
-		page.Deployments = loadEnvironmentDeployments(ctx, featureName, env.ID)
+	if activeTab == "assignments" {
+		page.Assignments = loadEnvironmentAssignments(ctx, featureName, env.ID)
 	}
 	if activeTab == "" || activeTab == "status" {
-		if dep, err := deployment.WinningDeployment(ctx, env.ID, featureName); err == nil {
-			page.WinningDeployment = dep
+		if dep, err := featureassignment.WinningAssignment(ctx, env.ID, featureName); err == nil {
+			page.WinningAssignment = dep
 		}
 		deployLimit := 11
 		if showAllDeploys {
@@ -457,13 +457,13 @@ func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (
 	return string(b), nil
 }
 
-func loadEnvironmentDeployments(ctx context.Context, featureName string, envID uuid.UUID) []EnvDeploymentItem {
+func loadEnvironmentAssignments(ctx context.Context, featureName string, envID uuid.UUID) []EnvAssignmentItem {
 	envLabels, err := envpkg.GetLabels(ctx, envID)
 	if err != nil {
 		return nil
 	}
 
-	deployments, err := deployment.ListByFeature(ctx, featureName)
+	assignments, err := featureassignment.ListByFeature(ctx, featureName)
 	if err != nil {
 		return nil
 	}
@@ -479,17 +479,17 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 	var candidates []candidate
 	maxLabels := 0
 
-	for _, dep := range deployments {
+	for _, dep := range assignments {
 		target := dep.TargetLabels
 		if !labelsMatch(envLabels, target) {
 			continue
 		}
 
 		fallbackState := "UNKNOWN"
-		if statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID); err == nil {
+		if statuses, err := featureassignment.ListFeatureReconcileStatuses(ctx, dep.ID); err == nil {
 			for _, s := range statuses {
 				if s.EnvironmentID == envID {
-					fallbackState = deployment.NormalizeStatus(string(s.State))
+					fallbackState = featureassignment.NormalizeStatus(string(s.State))
 					break
 				}
 			}
@@ -508,10 +508,10 @@ func loadEnvironmentDeployments(ctx context.Context, featureName string, envID u
 		}
 	}
 
-	items := make([]EnvDeploymentItem, 0, len(candidates))
+	items := make([]EnvAssignmentItem, 0, len(candidates))
 	for _, c := range candidates {
 		if len(c.target) == maxLabels {
-			items = append(items, EnvDeploymentItem{
+			items = append(items, EnvAssignmentItem{
 				ID:           c.id,
 				Version:      c.version,
 				Status:       c.status,

@@ -537,16 +537,16 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 	}
 
 	return &model.DeployInstruction{
-		ID:             di.ID,
-		EnvironmentID:  di.EnvironmentID,
-		DeploymentID:   di.DeploymentID,
-		FeatureName:    di.FeatureName,
-		FeatureVersion: di.FeatureVersion,
-		Status:         model.RolloutStatus(di.Status),
-		Hash:           di.Hash,
-		Created:        di.Created.Time,
-		LastModified:   di.LastModified.Time,
-		Values:         di.Values,
+		ID:                  di.ID,
+		EnvironmentID:       di.EnvironmentID,
+		FeatureAssignmentID: di.FeatureAssignmentID,
+		FeatureName:         di.FeatureName,
+		FeatureVersion:      di.FeatureVersion,
+		Status:              model.RolloutStatus(di.Status),
+		Hash:                di.Hash,
+		Created:             di.Created.Time,
+		LastModified:        di.LastModified.Time,
+		Values:              di.Values,
 	}, nil
 }
 
@@ -563,16 +563,16 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 	}
 
 	return &model.DeployInstruction{
-		ID:             di.ID,
-		EnvironmentID:  di.EnvironmentID,
-		DeploymentID:   di.DeploymentID,
-		FeatureName:    di.FeatureName,
-		FeatureVersion: di.FeatureVersion,
-		Status:         model.RolloutStatus(di.Status),
-		Hash:           di.Hash,
-		Created:        di.Created.Time,
-		LastModified:   di.LastModified.Time,
-		Values:         di.Values,
+		ID:                  di.ID,
+		EnvironmentID:       di.EnvironmentID,
+		FeatureAssignmentID: di.FeatureAssignmentID,
+		FeatureName:         di.FeatureName,
+		FeatureVersion:      di.FeatureVersion,
+		Status:              model.RolloutStatus(di.Status),
+		Hash:                di.Hash,
+		Created:             di.Created.Time,
+		LastModified:        di.LastModified.Time,
+		Values:              di.Values,
 	}, nil
 }
 
@@ -588,16 +588,16 @@ func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureN
 	result := make([]*model.DeployInstruction, 0, len(rows))
 	for _, di := range rows {
 		result = append(result, &model.DeployInstruction{
-			ID:             di.ID,
-			EnvironmentID:  di.EnvironmentID,
-			DeploymentID:   di.DeploymentID,
-			FeatureName:    di.FeatureName,
-			FeatureVersion: di.FeatureVersion,
-			Status:         model.RolloutStatus(di.Status),
-			Hash:           di.Hash,
-			Created:        di.Created.Time,
-			LastModified:   di.LastModified.Time,
-			Values:         di.Values,
+			ID:                  di.ID,
+			EnvironmentID:       di.EnvironmentID,
+			FeatureAssignmentID: di.FeatureAssignmentID,
+			FeatureName:         di.FeatureName,
+			FeatureVersion:      di.FeatureVersion,
+			Status:              model.RolloutStatus(di.Status),
+			Hash:                di.Hash,
+			Created:             di.Created.Time,
+			LastModified:        di.LastModified.Time,
+			Values:              di.Values,
 		})
 	}
 	return result, nil

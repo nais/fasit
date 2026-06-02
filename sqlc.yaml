@@ -7,16 +7,16 @@ rules:
       SELECT statements must have an ORDER BY clause
 sql:
   - &default_domain
-    name: "Deployment SQL"
+    name: "FeatureAssignment SQL"
     engine: "postgresql"
     schema: "internal/database/migrations"
-    queries: "internal/deployment/queries"
+    queries: "internal/featureassignment/queries"
     rules:
       - "always-order-by"
     gen:
       go: &default_go
-        package: "deploymentsql"
-        out: "internal/deployment/deploymentsql"
+        package: "featureassignmentsql"
+        out: "internal/featureassignment/featureassignmentsql"
         sql_package: "pgx/v5"
         emit_interface: true
         omit_sqlc_version: true
@@ -37,7 +37,7 @@ sql:
             nullable: true
           - column: "environments.labels"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
-          - column: "deployments.target"
+          - column: "feature_assignments.target"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
   - name: "UI SQL"
     !!merge <<: *default_domain

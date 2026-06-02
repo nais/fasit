@@ -12,18 +12,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type GetDeploymentResponse struct {
-	ID    uuid.UUID                   `json:"id"`
-	State model.DeploymentStatusState `json:"state"`
+type GetFeatureAssignmentResponse struct {
+	ID    uuid.UUID                         `json:"id"`
+	State model.FeatureReconcileStatusState `json:"state"`
 }
 
-type DeploymentStatus struct {
-	State        model.DeploymentStatusState `json:"state"`
-	Message      string                      `json:"message"`
-	LastModified time.Time                   `json:"lastModified"`
-	Created      time.Time                   `json:"created"`
+type FeatureReconcileStatus struct {
+	State        model.FeatureReconcileStatusState `json:"state"`
+	Message      string                            `json:"message"`
+	LastModified time.Time                         `json:"lastModified"`
+	Created      time.Time                         `json:"created"`
 
-	// DeploymentID  uuid.UUID `json:"-"`
+	// FeatureAssignmentID  uuid.UUID `json:"-"`
 	// EnvironmentID uuid.UUID `json:"-"`
 }
 
@@ -44,7 +44,7 @@ type Claims struct {
 	RunID      string `json:"run_id"`
 }
 
-type CreateDeploymentRequest struct {
+type CreateFeatureAssignmentRequest struct {
 	Chart       string              `json:"chart"`
 	Version     string              `json:"version"`
 	Description string              `json:"description"`

@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -110,12 +110,12 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load environment values: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		valueRefs, err := deployment.ValueRefsForEnvironment(r.Context(), env.ID)
+		valueRefs, err := featureassignment.ValueRefsForEnvironment(r.Context(), env.ID)
 		if err != nil {
 			http.Error(w, "Failed to load environment value references: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		releases, err := deployment.ListReleaseStatuses(r.Context(), env.ID)
+		releases, err := featureassignment.ListReleaseStatuses(r.Context(), env.ID)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -174,7 +174,7 @@ func sortedKeys(m map[string]string) []string {
 }
 
 func loadEnvironmentFeatureRows(ctx context.Context, env *model.Environment) ([]environmentFeatureRow, error) {
-	features, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
+	features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +183,8 @@ func loadEnvironmentFeatureRows(ctx context.Context, env *model.Environment) ([]
 		row := environmentFeatureRow{Name: feature.Name, Status: "UNKNOWN"}
 		if !env.Reconcile || feature.FeatureDisabled {
 			row.Status = "DISABLED"
-		} else if status, _, err := deployment.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
-			row.Status = deployment.NormalizeStatus(status)
+		} else if status, _, err := featureassignment.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
+			row.Status = featureassignment.NormalizeStatus(status)
 		}
 		if latest, err := featurepkg.GetLatestDeployInstruction(ctx, env.ID, feature.Name); err == nil && latest != nil {
 			row.Version = latest.FeatureVersion

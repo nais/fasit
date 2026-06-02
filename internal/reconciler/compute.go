@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/errs"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
@@ -33,7 +33,7 @@ func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
 // workItem is sent through the work channel to a worker goroutine.
 type workItem struct {
 	env environment
-	dep *reconcileDeployment
+	dep *reconcileAssignment
 }
 
 // computeActionsStream dispatches deploy decisions to out and closes it when
@@ -58,32 +58,32 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecis
 		reportedAt, ok := snap.healthByEnv[env.ID]
 		healthy := ok && time.Since(reportedAt) <= 3*time.Minute
 
-		matched := matchDeployments(snap.deployments, env)
+		matched := matchAssignments(snap.assignments, env)
 		winners := mostSpecificPerFeature(matched)
 
 		for _, dep := range winners {
 			if !healthy {
 				out <- DeployDecision{
-					EnvironmentID:   env.ID,
-					EnvironmentName: env.Name,
-					TenantName:      env.TenantName,
-					DeploymentID:    dep.ID,
-					Feature:         dep.Feature,
-					Action:          ActionSkipUnhealthy,
-					Message:         "naisd is unhealthy",
+					EnvironmentID:       env.ID,
+					EnvironmentName:     env.Name,
+					TenantName:          env.TenantName,
+					FeatureAssignmentID: dep.ID,
+					Feature:             dep.Feature,
+					Action:              ActionSkipUnhealthy,
+					Message:             "naisd is unhealthy",
 				}
 				continue
 			}
 
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
 				out <- DeployDecision{
-					EnvironmentID:   env.ID,
-					EnvironmentName: env.Name,
-					TenantName:      env.TenantName,
-					DeploymentID:    dep.ID,
-					Feature:         dep.Feature,
-					Action:          ActionSkipDisabled,
-					Message:         "feature reconcile disabled",
+					EnvironmentID:       env.ID,
+					EnvironmentName:     env.Name,
+					TenantName:          env.TenantName,
+					FeatureAssignmentID: dep.ID,
+					Feature:             dep.Feature,
+					Action:              ActionSkipDisabled,
+					Message:             "feature reconcile disabled",
 				}
 				continue
 			}
@@ -97,13 +97,13 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecis
 	close(out)  // signal consumer we're done
 }
 
-func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileDeployment) DeployDecision {
+func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileAssignment) DeployDecision {
 	base := DeployDecision{
-		EnvironmentID:   env.ID,
-		EnvironmentName: env.Name,
-		TenantName:      env.TenantName,
-		DeploymentID:    dep.ID,
-		Feature:         dep.Feature,
+		EnvironmentID:       env.ID,
+		EnvironmentName:     env.Name,
+		TenantName:          env.TenantName,
+		FeatureAssignmentID: dep.ID,
+		Feature:             dep.Feature,
 	}
 
 	// Check dependencies.
@@ -193,8 +193,8 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 	return base
 }
 
-func matchDeployments(all []*reconcileDeployment, env environment) []*reconcileDeployment {
-	var matched []*reconcileDeployment
+func matchAssignments(all []*reconcileAssignment, env environment) []*reconcileAssignment {
+	var matched []*reconcileAssignment
 	for _, dep := range all {
 		if labelsContain(env.Labels, dep.TargetLabels) {
 			matched = append(matched, dep)
@@ -203,20 +203,20 @@ func matchDeployments(all []*reconcileDeployment, env environment) []*reconcileD
 	return matched
 }
 
-func mostSpecificPerFeature(deps []*reconcileDeployment) []*reconcileDeployment {
-	winners := map[string]*reconcileDeployment{}
+func mostSpecificPerFeature(deps []*reconcileAssignment) []*reconcileAssignment {
+	winners := map[string]*reconcileAssignment{}
 	for _, dep := range deps {
 		existing, ok := winners[dep.Feature.Name]
-		if !ok || deployment.IsMoreSpecific(dep.TargetLabels, existing.TargetLabels, dep.Created, existing.Created) {
+		if !ok || featureassignment.IsMoreSpecific(dep.TargetLabels, existing.TargetLabels, dep.Created, existing.Created) {
 			winners[dep.Feature.Name] = dep
 		}
 	}
 
-	result := make([]*reconcileDeployment, 0, len(winners))
+	result := make([]*reconcileAssignment, 0, len(winners))
 	for _, d := range winners {
 		result = append(result, d)
 	}
-	slices.SortStableFunc(result, func(a, b *reconcileDeployment) int {
+	slices.SortStableFunc(result, func(a, b *reconcileAssignment) int {
 		return a.Created.Compare(b.Created)
 	})
 	return result

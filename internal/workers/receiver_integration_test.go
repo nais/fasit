@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/slack/fake"
@@ -55,7 +55,7 @@ func TestReceiverIntegration(t *testing.T) {
 		)
 		rec.Run(ctx)
 
-		got, err := deployment.ListReleaseStatuses(ctx, envID)
+		got, err := featureassignment.ListReleaseStatuses(ctx, envID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,7 +90,7 @@ func TestReceiverIntegration(t *testing.T) {
 			{Name: "new-app", Status: "deployed", Version: "2.0.0"},
 		})
 
-		got, err := deployment.ListReleaseStatuses(ctx, envID)
+		got, err := featureassignment.ListReleaseStatuses(ctx, envID)
 		if err != nil {
 			t.Fatal(err)
 		}

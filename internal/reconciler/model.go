@@ -21,7 +21,7 @@ type environment struct {
 	TenantName string
 }
 
-type reconcileDeployment struct {
+type reconcileAssignment struct {
 	ID           uuid.UUID
 	Feature      *model.Feature
 	TargetLabels map[string]string
@@ -57,16 +57,16 @@ func (a Action) IsFailure() bool {
 
 // DeployDecision is the output of the compute phase for one deployment×environment pair.
 type DeployDecision struct {
-	EnvironmentID   uuid.UUID
-	EnvironmentName string
-	TenantName      string
-	DeploymentID    uuid.UUID
-	Feature         *model.Feature
-	Values          map[string]any
-	Hash            string
-	Action          Action
-	Message         string
-	Status          string
+	EnvironmentID       uuid.UUID
+	EnvironmentName     string
+	TenantName          string
+	FeatureAssignmentID uuid.UUID
+	Feature             *model.Feature
+	Values              map[string]any
+	Hash                string
+	Action              Action
+	Message             string
+	Status              string
 }
 
 // ErrReconcileInProgress is returned when a streaming reconcile is already running.
@@ -78,7 +78,7 @@ type Dispatcher interface {
 	Dispatch(ctx context.Context, decisions []DeployDecision) error
 }
 
-func deploymentFromRow(row reconcilersql.ListLatestDeploymentsRow) (*reconcileDeployment, error) {
+func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reconcileAssignment, error) {
 	var deps model.Dependencies
 	if err := json.Unmarshal(row.Dependencies, &deps); err != nil {
 		return nil, fmt.Errorf("unmarshal dependencies for %s: %w", row.FeatureName, err)
@@ -99,7 +99,7 @@ func deploymentFromRow(row reconcilersql.ListLatestDeploymentsRow) (*reconcileDe
 		return nil, fmt.Errorf("unmarshal default values for %s: %w", row.FeatureName, err)
 	}
 
-	return &reconcileDeployment{
+	return &reconcileAssignment{
 		ID: row.ID,
 		Feature: &model.Feature{
 			FeatureYAML: model.FeatureYAML{

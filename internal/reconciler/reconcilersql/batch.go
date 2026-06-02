@@ -23,7 +23,7 @@ INSERT INTO deploy_instructions(
 	feature_version,
 	hash,
 	"values",
-	deployment_id)
+	feature_assignment_id)
 VALUES (
 	$1,
 	$2,
@@ -41,13 +41,13 @@ type CreateDeployInstructionBatchResults struct {
 }
 
 type CreateDeployInstructionParams struct {
-	ID             uuid.UUID
-	EnvironmentID  uuid.UUID
-	FeatureName    string
-	FeatureVersion string
-	Hash           string
-	Vals           []byte
-	DeploymentID   *uuid.UUID
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Hash                string
+	Vals                []byte
+	FeatureAssignmentID *uuid.UUID
 }
 
 func (q *Queries) CreateDeployInstruction(ctx context.Context, arg []CreateDeployInstructionParams) *CreateDeployInstructionBatchResults {
@@ -60,7 +60,7 @@ func (q *Queries) CreateDeployInstruction(ctx context.Context, arg []CreateDeplo
 			a.FeatureVersion,
 			a.Hash,
 			a.Vals,
-			a.DeploymentID,
+			a.FeatureAssignmentID,
 		}
 		batch.Queue(createDeployInstruction, vals...)
 	}
@@ -89,9 +89,9 @@ func (b *CreateDeployInstructionBatchResults) Close() error {
 	return b.br.Close()
 }
 
-const upsertDeploymentStatus = `-- name: UpsertDeploymentStatus :batchexec
-INSERT INTO deployment_statuses(
-	deployment_id,
+const upsertReconcileStatus = `-- name: UpsertReconcileStatus :batchexec
+INSERT INTO feature_reconcile_statuses(
+	feature_assignment_id,
 	environment_id,
 	status,
 	message)
@@ -101,42 +101,42 @@ VALUES (
 	$3,
 	$4)
 ON CONFLICT (
-	deployment_id,
+	feature_assignment_id,
 	environment_id)
 	DO UPDATE SET
 		status = EXCLUDED.status,
 		message = EXCLUDED.message
 `
 
-type UpsertDeploymentStatusBatchResults struct {
+type UpsertReconcileStatusBatchResults struct {
 	br     pgx.BatchResults
 	tot    int
 	closed bool
 }
 
-type UpsertDeploymentStatusParams struct {
-	DeploymentID  uuid.UUID
-	EnvironmentID uuid.UUID
-	Status        string
-	Message       string
+type UpsertReconcileStatusParams struct {
+	FeatureAssignmentID uuid.UUID
+	EnvironmentID       uuid.UUID
+	Status              string
+	Message             string
 }
 
-func (q *Queries) UpsertDeploymentStatus(ctx context.Context, arg []UpsertDeploymentStatusParams) *UpsertDeploymentStatusBatchResults {
+func (q *Queries) UpsertReconcileStatus(ctx context.Context, arg []UpsertReconcileStatusParams) *UpsertReconcileStatusBatchResults {
 	batch := &pgx.Batch{}
 	for _, a := range arg {
 		vals := []interface{}{
-			a.DeploymentID,
+			a.FeatureAssignmentID,
 			a.EnvironmentID,
 			a.Status,
 			a.Message,
 		}
-		batch.Queue(upsertDeploymentStatus, vals...)
+		batch.Queue(upsertReconcileStatus, vals...)
 	}
 	br := q.db.SendBatch(ctx, batch)
-	return &UpsertDeploymentStatusBatchResults{br, len(arg), false}
+	return &UpsertReconcileStatusBatchResults{br, len(arg), false}
 }
 
-func (b *UpsertDeploymentStatusBatchResults) Exec(f func(int, error)) {
+func (b *UpsertReconcileStatusBatchResults) Exec(f func(int, error)) {
 	defer b.br.Close()
 	for t := 0; t < b.tot; t++ {
 		if b.closed {
@@ -152,7 +152,7 @@ func (b *UpsertDeploymentStatusBatchResults) Exec(f func(int, error)) {
 	}
 }
 
-func (b *UpsertDeploymentStatusBatchResults) Close() error {
+func (b *UpsertReconcileStatusBatchResults) Close() error {
 	b.closed = true
 	return b.br.Close()
 }

@@ -35,7 +35,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 
 		renderPage(w, r, layout.Props{
 			Title:       "Activity Log",
-			CurrentPage: components.PageDeployments,
+			CurrentPage: components.PageAssignments,
 			Content:     listPage(entries, query),
 		})
 	}
@@ -48,8 +48,8 @@ func listPage(entries []*audit.Entry, query string) g.Node {
 		h.Main(
 			h.Class("main-content"),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
-				h.Div(h.Class("deployments-header"),
-					h.Form(h.Method("get"), h.Action("/auditlog"), h.Class("deployments-toolbar"),
+				h.Div(h.Class("assignments-header"),
+					h.Form(h.Method("get"), h.Action("/auditlog"), h.Class("assignments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),
@@ -98,7 +98,7 @@ func activityTable(entries []*audit.Entry) g.Node {
 }
 
 func Description(e *audit.Entry) string {
-	if e.ObjectType == audit.ObjectTypeDeployment && e.Action == audit.ActionCreated {
+	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.Action == audit.ActionCreated {
 		description := strings.TrimSpace(e.Description)
 		version := strings.TrimSpace(strings.TrimPrefix(strings.Split(description, "→")[0], "version"))
 		if version == "" {
@@ -148,16 +148,16 @@ func ResourceLink(e *audit.Entry) g.Node {
 	var nodes []g.Node
 
 	// Deployment with metadata deploymentId: "deployment of feature" with two links
-	if e.ObjectType == audit.ObjectTypeDeployment && e.ObjectID != "all" {
+	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.ObjectID != "all" {
 		if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
 			nodes = append(nodes,
-				h.A(h.Href("/deployments/"+depID), g.Text("deployment")),
+				h.A(h.Href("/assignments/"+depID), g.Text("assignment")),
 				g.Text(" of "),
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)
 		} else if e.Action == audit.ActionTriggered {
 			nodes = append(nodes,
-				g.Text("re-deployment of "),
+				g.Text("re-assignment of "),
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)
 		}
@@ -180,7 +180,7 @@ func ResourceHref(e *audit.Entry) string {
 	switch e.ObjectType {
 	case audit.ObjectTypeFeature:
 		return "/features/" + e.ObjectID
-	case audit.ObjectTypeDeployment:
+	case audit.ObjectTypeFeatureAssignment:
 		if e.ObjectID == "all" {
 			return ""
 		}

@@ -10,7 +10,7 @@ ui/
   layout/        → Page shell: HTML5 boilerplate, head tags, body wrapper
   components/    → SiteHeader, nav, Page type constants
   pages/         → Page handlers organized by domain:
-    deployments/ → Deployment list/detail/logs
+    assignments/ → Assignment list/detail/logs
     environment/ → Environment detail, feature in env (tabs per feature: overview/logs/helm/audit/playground)
     features/    → Feature overview, feature overview/detail
   breadcrumb/    → Supports dropdown switcher via Alternatives

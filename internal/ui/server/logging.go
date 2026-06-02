@@ -42,7 +42,7 @@ var skipMetricsPaths = map[string]bool{
 	"/site.css":       true,
 	"/site.js":        true,
 	"/favicon.ico":    true,
-	"/deployments.js": true,
+	"/assignments.js": true,
 	"/features.js":    true,
 	"/reconciler.js":  true,
 }

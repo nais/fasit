@@ -15,7 +15,7 @@ import (
 
 type snapshot struct {
 	environments   []environment
-	deployments    []*reconcileDeployment
+	assignments    []*reconcileAssignment
 	healthByEnv    map[uuid.UUID]time.Time
 	disabledByEnv  map[uuid.UUID]map[string]bool
 	globalConfig   map[string][]featurepkg.MergedConfigRow
@@ -74,19 +74,19 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 	})
 
 	g.Go(func() error {
-		rows, err := r.querier.ListLatestDeployments(gctx)
+		rows, err := r.querier.ListLatestFeatureAssignments(gctx)
 		if err != nil {
-			return fmt.Errorf("list deployments: %w", err)
+			return fmt.Errorf("list assignments: %w", err)
 		}
-		deps := make([]*reconcileDeployment, 0, len(rows))
+		deps := make([]*reconcileAssignment, 0, len(rows))
 		for _, row := range rows {
-			dep, err := deploymentFromRow(row)
+			dep, err := assignmentFromRow(row)
 			if err != nil {
 				return err
 			}
 			deps = append(deps, dep)
 		}
-		snap.deployments = deps
+		snap.assignments = deps
 		return nil
 	})
 

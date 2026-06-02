@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/uidata"
 )
@@ -27,19 +27,19 @@ type Environment struct {
 }
 
 func LoadEnvironments(ctx context.Context, feature *model.Feature) []Environment {
-	deployments, err := deployment.ListByFeature(ctx, feature.Name)
-	if err != nil || len(deployments) == 0 {
+	assignments, err := featureassignment.ListByFeature(ctx, feature.Name)
+	if err != nil || len(assignments) == 0 {
 		return []Environment{}
 	}
 
-	if len(deployments) == 0 {
+	if len(assignments) == 0 {
 		return []Environment{}
 	}
-	deployments = latestDeploymentPerTarget(deployments)
+	assignments = latestAssignmentPerTarget(assignments)
 
 	targetedEnvs := targetedEnvironments(ctx, feature)
-	winners := winningDeployments(deployments, targetedEnvs)
-	statusByDepEnv := deploymentStatuses(ctx, deployments)
+	winners := winningAssignments(assignments, targetedEnvs)
+	statusByAssignmentEnv := reconcileStatuses(ctx, assignments)
 
 	ret := make([]Environment, 0, len(winners))
 	for _, env := range targetedEnvs {
@@ -71,10 +71,10 @@ func LoadEnvironments(ctx context.Context, feature *model.Feature) []Environment
 			status.Status = "DISABLED"
 		case disabled:
 			status.Status = "DISABLED"
-		case statusByDepEnv[winner.ID.String()+":"+env.env.ID.String()] != nil:
-			deploymentStatus := statusByDepEnv[winner.ID.String()+":"+env.env.ID.String()]
-			status.Status = deployment.NormalizeStatus(string(deploymentStatus.State))
-			status.LastModified = deploymentStatus.LastModified
+		case statusByAssignmentEnv[winner.ID.String()+":"+env.env.ID.String()] != nil:
+			reconcileStatus := statusByAssignmentEnv[winner.ID.String()+":"+env.env.ID.String()]
+			status.Status = featureassignment.NormalizeStatus(string(reconcileStatus.State))
+			status.LastModified = reconcileStatus.LastModified
 		}
 
 		ret = append(ret, status)
@@ -121,46 +121,46 @@ func targetedEnvironments(ctx context.Context, feature *model.Feature) []envInfo
 	return ret
 }
 
-func winningDeployments(deployments []*deployment.Deployment, envs []envInfo) map[uuid.UUID]*deployment.Deployment {
-	winners := map[uuid.UUID]*deployment.Deployment{}
+func winningAssignments(assignments []*featureassignment.FeatureAssignment, envs []envInfo) map[uuid.UUID]*featureassignment.FeatureAssignment {
+	winners := map[uuid.UUID]*featureassignment.FeatureAssignment{}
 	for _, env := range envs {
-		for _, dep := range deployments {
-			if !targetMatchesLabels(dep.TargetLabels, env.labels) {
+		for _, fa := range assignments {
+			if !targetMatchesLabels(fa.TargetLabels, env.labels) {
 				continue
 			}
 			existing, ok := winners[env.env.ID]
-			if !ok || deployment.IsMoreSpecific(dep.TargetLabels, existing.TargetLabels, dep.Created, existing.Created) {
-				winners[env.env.ID] = dep
+			if !ok || featureassignment.IsMoreSpecific(fa.TargetLabels, existing.TargetLabels, fa.Created, existing.Created) {
+				winners[env.env.ID] = fa
 			}
 		}
 	}
 	return winners
 }
 
-func deploymentStatuses(ctx context.Context, deployments []*deployment.Deployment) map[string]*deployment.DeploymentStatus {
-	ret := map[string]*deployment.DeploymentStatus{}
-	for _, dep := range deployments {
-		statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID)
+func reconcileStatuses(ctx context.Context, assignments []*featureassignment.FeatureAssignment) map[string]*featureassignment.FeatureReconcileStatus {
+	ret := map[string]*featureassignment.FeatureReconcileStatus{}
+	for _, fa := range assignments {
+		statuses, err := featureassignment.ListFeatureReconcileStatuses(ctx, fa.ID)
 		if err != nil {
 			continue
 		}
 		for _, status := range statuses {
-			ret[dep.ID.String()+":"+status.EnvironmentID.String()] = status
+			ret[fa.ID.String()+":"+status.EnvironmentID.String()] = status
 		}
 	}
 	return ret
 }
 
-func latestDeploymentPerTarget(deps []*deployment.Deployment) []*deployment.Deployment {
+func latestAssignmentPerTarget(fas []*featureassignment.FeatureAssignment) []*featureassignment.FeatureAssignment {
 	seen := map[string]struct{}{}
-	ret := make([]*deployment.Deployment, 0, len(deps))
-	for _, dep := range deps {
-		key := targetKey(dep.TargetLabels)
+	ret := make([]*featureassignment.FeatureAssignment, 0, len(fas))
+	for _, fa := range fas {
+		key := targetKey(fa.TargetLabels)
 		if _, ok := seen[key]; ok {
 			continue
 		}
 		seen[key] = struct{}{}
-		ret = append(ret, dep)
+		ret = append(ret, fa)
 	}
 	return ret
 }

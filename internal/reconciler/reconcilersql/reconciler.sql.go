@@ -321,7 +321,7 @@ SELECT DISTINCT ON (feature_name, environment_id)
 	feature_name,
 	hash,
 	status,
-	deployment_id
+	feature_assignment_id
 FROM
 	deploy_instructions
 ORDER BY
@@ -331,12 +331,12 @@ ORDER BY
 `
 
 type ListLatestDeployInstructionsRow struct {
-	ID            uuid.UUID
-	EnvironmentID uuid.UUID
-	FeatureName   string
-	Hash          string
-	Status        string
-	DeploymentID  *uuid.UUID
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	Hash                string
+	Status              string
+	FeatureAssignmentID *uuid.UUID
 }
 
 func (q *Queries) ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error) {
@@ -354,7 +354,7 @@ func (q *Queries) ListLatestDeployInstructions(ctx context.Context) ([]ListLates
 			&i.FeatureName,
 			&i.Hash,
 			&i.Status,
-			&i.DeploymentID,
+			&i.FeatureAssignmentID,
 		); err != nil {
 			return nil, err
 		}
@@ -366,7 +366,7 @@ func (q *Queries) ListLatestDeployInstructions(ctx context.Context) ([]ListLates
 	return items, nil
 }
 
-const listLatestDeployments = `-- name: ListLatestDeployments :many
+const listLatestFeatureAssignments = `-- name: ListLatestFeatureAssignments :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id,
 	d.feature_name,
@@ -385,7 +385,7 @@ SELECT DISTINCT ON (d.feature_name, d.target)
 	fd.timeout,
 	fd.tpl_details
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 WHERE
@@ -396,7 +396,7 @@ ORDER BY
 	d.created DESC
 `
 
-type ListLatestDeploymentsRow struct {
+type ListLatestFeatureAssignmentsRow struct {
 	ID            uuid.UUID
 	FeatureName   string
 	Version       string
@@ -415,15 +415,15 @@ type ListLatestDeploymentsRow struct {
 	TplDetails    []byte
 }
 
-func (q *Queries) ListLatestDeployments(ctx context.Context) ([]ListLatestDeploymentsRow, error) {
-	rows, err := q.db.Query(ctx, listLatestDeployments)
+func (q *Queries) ListLatestFeatureAssignments(ctx context.Context) ([]ListLatestFeatureAssignmentsRow, error) {
+	rows, err := q.db.Query(ctx, listLatestFeatureAssignments)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListLatestDeploymentsRow{}
+	items := []ListLatestFeatureAssignmentsRow{}
 	for rows.Next() {
-		var i ListLatestDeploymentsRow
+		var i ListLatestFeatureAssignmentsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FeatureName,

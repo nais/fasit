@@ -54,7 +54,7 @@ func NewPubSubDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metri
 
 func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision) error {
 	var instructions []reconcilersql.CreateDeployInstructionParams
-	var statuses []reconcilersql.UpsertDeploymentStatusParams
+	var statuses []reconcilersql.UpsertReconcileStatusParams
 
 	type publishItem struct {
 		topicID     string
@@ -75,20 +75,20 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 			}
 
 			instructions = append(instructions, reconcilersql.CreateDeployInstructionParams{
-				ID:             id,
-				EnvironmentID:  res.EnvironmentID,
-				FeatureName:    res.Feature.Name,
-				FeatureVersion: res.Feature.Version,
-				Hash:           res.Hash,
-				Vals:           vals,
-				DeploymentID:   &res.DeploymentID,
+				ID:                  id,
+				EnvironmentID:       res.EnvironmentID,
+				FeatureName:         res.Feature.Name,
+				FeatureVersion:      res.Feature.Version,
+				Hash:                res.Hash,
+				Vals:                vals,
+				FeatureAssignmentID: &res.FeatureAssignmentID,
 			})
 
-			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
-				DeploymentID:  res.DeploymentID,
-				EnvironmentID: res.EnvironmentID,
-				Status:        model.RolloutStatusCreated.String(),
-				Message:       res.Message,
+			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
+				FeatureAssignmentID: res.FeatureAssignmentID,
+				EnvironmentID:       res.EnvironmentID,
+				Status:              model.RolloutStatusCreated.String(),
+				Message:             res.Message,
 			})
 
 			toPublish = append(toPublish, publishItem{
@@ -108,27 +108,27 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 			})
 
 		case ActionSkipInProgress, ActionSkipUnchanged:
-			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
-				DeploymentID:  res.DeploymentID,
-				EnvironmentID: res.EnvironmentID,
-				Status:        res.Status,
-				Message:       res.Message,
+			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
+				FeatureAssignmentID: res.FeatureAssignmentID,
+				EnvironmentID:       res.EnvironmentID,
+				Status:              res.Status,
+				Message:             res.Message,
 			})
 
 		case ActionFailMissingDeps, ActionFailMissingConfig, ActionFailRender:
-			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
-				DeploymentID:  res.DeploymentID,
-				EnvironmentID: res.EnvironmentID,
-				Status:        model.RolloutStatusFailed.String(),
-				Message:       res.Message,
+			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
+				FeatureAssignmentID: res.FeatureAssignmentID,
+				EnvironmentID:       res.EnvironmentID,
+				Status:              model.RolloutStatusFailed.String(),
+				Message:             res.Message,
 			})
 
 		case ActionSkipUnhealthy:
-			statuses = append(statuses, reconcilersql.UpsertDeploymentStatusParams{
-				DeploymentID:  res.DeploymentID,
-				EnvironmentID: res.EnvironmentID,
-				Status:        model.RolloutStatusPending.String(),
-				Message:       res.Message,
+			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
+				FeatureAssignmentID: res.FeatureAssignmentID,
+				EnvironmentID:       res.EnvironmentID,
+				Status:              model.RolloutStatusPending.String(),
+				Message:             res.Message,
 			})
 
 		case ActionSkipDisabled:
@@ -150,7 +150,7 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 	}
 
 	if len(statuses) > 0 {
-		br := w.querier.UpsertDeploymentStatus(ctx, statuses)
+		br := w.querier.UpsertReconcileStatus(ctx, statuses)
 		var batchErr error
 		br.Exec(func(i int, err error) {
 			if err != nil {

@@ -29,7 +29,7 @@ VALUES (
 SELECT
 	sqlc.embed(fd)
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 WHERE
@@ -42,7 +42,7 @@ LIMIT 1;
 SELECT DISTINCT
 	feature_name
 FROM
-	deployments
+	feature_assignments
 ORDER BY
 	feature_name;
 
@@ -52,7 +52,7 @@ SELECT DISTINCT ON (d.feature_name)
 	fd.description,
 	fd.source
 FROM
-	deployments d
+	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY

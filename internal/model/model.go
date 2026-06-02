@@ -1,52 +1,52 @@
 package model
 
-type DeploymentStatusState string
+type FeatureReconcileStatusState string
 
 const (
-	DeploymentStatusStateUnknown  DeploymentStatusState = "UNKNOWN"
-	DeploymentStatusStateCreated  DeploymentStatusState = "CREATED"
-	DeploymentStatusStatePending  DeploymentStatusState = "PENDING"
-	DeploymentStatusStateDeployed DeploymentStatusState = "DEPLOYED"
-	DeploymentStatusStateFailed   DeploymentStatusState = "FAILED"
-	DeploymentStatusStateDisabled DeploymentStatusState = "DISABLED"
+	FeatureReconcileStatusStateUnknown  FeatureReconcileStatusState = "UNKNOWN"
+	FeatureReconcileStatusStateCreated  FeatureReconcileStatusState = "CREATED"
+	FeatureReconcileStatusStatePending  FeatureReconcileStatusState = "PENDING"
+	FeatureReconcileStatusStateDeployed FeatureReconcileStatusState = "DEPLOYED"
+	FeatureReconcileStatusStateFailed   FeatureReconcileStatusState = "FAILED"
+	FeatureReconcileStatusStateDisabled FeatureReconcileStatusState = "DISABLED"
 )
 
-type DeploymentStatusStates []DeploymentStatusState
+type FeatureReconcileStatusStates []FeatureReconcileStatusState
 
-func (states DeploymentStatusStates) Aggregate() (state DeploymentStatusState, disabledCount int) {
+func (states FeatureReconcileStatusStates) Aggregate() (state FeatureReconcileStatusState, disabledCount int) {
 	if len(states) == 0 {
-		return DeploymentStatusStateUnknown, 0
+		return FeatureReconcileStatusStateUnknown, 0
 	}
 
 	for _, s := range states {
-		if s == DeploymentStatusStateDisabled {
+		if s == FeatureReconcileStatusStateDisabled {
 			disabledCount++
 		}
 	}
 
 	if disabledCount == len(states) {
-		return DeploymentStatusStateDisabled, disabledCount
+		return FeatureReconcileStatusStateDisabled, disabledCount
 	}
 
 	allDeployed := true
 	for _, s := range states {
-		if s == DeploymentStatusStateDisabled {
+		if s == FeatureReconcileStatusStateDisabled {
 			continue
 		}
 		switch s {
-		case DeploymentStatusStateFailed:
-			return DeploymentStatusStateFailed, disabledCount
-		case DeploymentStatusStateDeployed:
+		case FeatureReconcileStatusStateFailed:
+			return FeatureReconcileStatusStateFailed, disabledCount
+		case FeatureReconcileStatusStateDeployed:
 		default:
 			allDeployed = false
 		}
 	}
 
 	if allDeployed {
-		return DeploymentStatusStateDeployed, disabledCount
+		return FeatureReconcileStatusStateDeployed, disabledCount
 	}
 
-	return DeploymentStatusStatePending, disabledCount
+	return FeatureReconcileStatusStatePending, disabledCount
 }
 
 type GitHubCommit struct {

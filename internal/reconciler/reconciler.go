@@ -94,7 +94,7 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 	fetchDur := time.Since(fetchStart)
 
 	r.log.WithField("num_envs", len(snap.environments)).
-		WithField("num_deployments", len(snap.deployments)).
+		WithField("num_assignments", len(snap.assignments)).
 		Info("reconciling tenant environments")
 
 	computeStart := time.Now()

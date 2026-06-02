@@ -35,8 +35,8 @@ func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool
 		return nil, fmt.Errorf("error creating deployment http handler: %w", err)
 	}
 	deploy.AllowAll = insecureSkipProxy
-	router.Post("/github/deployment", deploy.CreateDeployment)
-	router.Get("/github/deployment/{id}", deploy.GetDeployment)
+	router.Post("/github/deployment", deploy.CreateFeatureAssignment)
+	router.Get("/github/deployment/{id}", deploy.GetFeatureAssignment)
 	uiServer := uiserver.New(ui.SiteFS, meter, appVersion)
 	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil

@@ -15,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
@@ -88,7 +88,7 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error registering pool metrics: %w", err)
 	}
 
-	deploymentPublisher := func(topicID string, log logrus.FieldLogger) reconciler.Publisher {
+	assignmentPublisher := func(topicID string, log logrus.FieldLogger) reconciler.Publisher {
 		p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 		p.SetMeter(meter)
 		return p
@@ -100,14 +100,14 @@ func Run(ctx context.Context) error {
 	}
 
 	ctx = loadContext(ctx)
-	go deployment.TimeoutDeployInstructions(ctx, log)
+	go featureassignment.TimeoutDeployInstructions(ctx, log)
 
 	rec, err := reconciler.New(pool, meter, log.WithField("component", "reconciler"))
 	if err != nil {
 		return fmt.Errorf("creating reconciler: %w", err)
 	}
 	ctx = reconciler.WithContext(ctx, rec)
-	dispatcher, err := reconciler.NewPubSubDispatcher(pool, deploymentPublisher, meter, log)
+	dispatcher, err := reconciler.NewPubSubDispatcher(pool, assignmentPublisher, meter, log)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func Run(ctx context.Context) error {
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
 		meter,
-		deployment.GetManager(ctx),
+		featureassignment.GetManager(ctx),
 	)
 	go receiver.Run(ctx)
 

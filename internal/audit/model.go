@@ -23,12 +23,12 @@ const (
 type ObjectType string
 
 const (
-	ObjectTypeDeployment       ObjectType = "deployment"
-	ObjectTypeEnvironment      ObjectType = "environment"
-	ObjectTypeEnvironmentValue ObjectType = "environment_value"
-	ObjectTypeTenant           ObjectType = "tenant"
-	ObjectTypeFeature          ObjectType = "feature"
-	ObjectTypeConfiguration    ObjectType = "configuration"
+	ObjectTypeFeatureAssignment ObjectType = "deployment"
+	ObjectTypeEnvironment       ObjectType = "environment"
+	ObjectTypeEnvironmentValue  ObjectType = "environment_value"
+	ObjectTypeTenant            ObjectType = "tenant"
+	ObjectTypeFeature           ObjectType = "feature"
+	ObjectTypeConfiguration     ObjectType = "configuration"
 )
 
 type CreateParams struct {

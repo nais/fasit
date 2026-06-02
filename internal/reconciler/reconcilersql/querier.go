@@ -16,9 +16,9 @@ type Querier interface {
 	ListDisabledFeatures(ctx context.Context) ([]ListDisabledFeaturesRow, error)
 	ListHealthStatuses(ctx context.Context) ([]HealthStatus, error)
 	ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error)
-	ListLatestDeployments(ctx context.Context) ([]ListLatestDeploymentsRow, error)
+	ListLatestFeatureAssignments(ctx context.Context) ([]ListLatestFeatureAssignmentsRow, error)
 	SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error
-	UpsertDeploymentStatus(ctx context.Context, arg []UpsertDeploymentStatusParams) *UpsertDeploymentStatusBatchResults
+	UpsertReconcileStatus(ctx context.Context, arg []UpsertReconcileStatusParams) *UpsertReconcileStatusBatchResults
 }
 
 var _ Querier = (*Queries)(nil)

@@ -124,17 +124,17 @@ func TestFeatureIndexTableSourceKebabMenu(t *testing.T) {
 }
 
 func TestDeploymentActorsByID(t *testing.T) {
-	actors := deploymentActorsByID([]*audit.Entry{
+	actors := assignmentActorsByID([]*audit.Entry{
 		{
 			Actor:      "tronghn@nais/fasit/123456789",
 			Action:     audit.ActionCreated,
-			ObjectType: audit.ObjectTypeDeployment,
+			ObjectType: audit.ObjectTypeFeatureAssignment,
 			Metadata:   []byte(`{"deploymentId":"dep-1"}`),
 		},
 		{
 			Actor:      "ignored@nais/fasit/1",
 			Action:     audit.ActionUpdated,
-			ObjectType: audit.ObjectTypeDeployment,
+			ObjectType: audit.ObjectTypeFeatureAssignment,
 			Metadata:   []byte(`{"deploymentId":"dep-2"}`),
 		},
 	})
@@ -149,13 +149,13 @@ func TestDeploymentActorsByID(t *testing.T) {
 
 func TestRecentDeploymentsRendersActor(t *testing.T) {
 	var buf bytes.Buffer
-	err := recentDeployments([]depRow{{
-		FeatureName: "kyverno",
-		Version:     "2026-05-27-abc",
-		Status:      "DEPLOYED",
-		Created:     time.Now(),
-		DepID:       "dep-1",
-		Actor:       "tronghn@nais/fasit/123456789",
+	err := recentAssignments([]assignmentRow{{
+		FeatureName:  "kyverno",
+		Version:      "2026-05-27-abc",
+		Status:       "DEPLOYED",
+		Created:      time.Now(),
+		AssignmentID: "dep-1",
+		Actor:        "tronghn@nais/fasit/123456789",
 	}}).Render(&buf)
 	if err != nil {
 		t.Fatal(err)
