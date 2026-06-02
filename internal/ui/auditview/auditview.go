@@ -15,7 +15,7 @@ import (
 // DisplayAction returns the user-facing label for an audit entry's action.
 func DisplayAction(e *audit.Entry) string {
 	if isRedeploy(e) {
-		return "redeploy"
+		return "redeployed"
 	}
 	return string(e.Action)
 }
@@ -60,9 +60,11 @@ func ResourceLink(e *audit.Entry) g.Node {
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)
 		} else if isRedeploy(e) {
-			nodes = append(nodes,
-				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
-			)
+			parts := []g.Node{h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID))}
+			if e.TenantName != "" && e.EnvironmentName != "" {
+				parts = append(parts, g.Text(" in "+e.TenantName+"/"+e.EnvironmentName))
+			}
+			nodes = append(nodes, parts...)
 		}
 	}
 

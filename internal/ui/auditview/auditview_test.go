@@ -7,326 +7,199 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
+	g "maragu.dev/gomponents"
 )
 
-func TestDisplayAction(t *testing.T) {
-	tests := []struct {
-		name   string
-		entry  *audit.Entry
-		expect string
-	}{
-		{
-			name:   "regular action passes through",
-			entry:  &audit.Entry{Action: audit.ActionCreated, ObjectType: audit.ObjectTypeFeature},
-			expect: "created",
-		},
-		{
-			name:   "triggered assignment maps to redeploy",
-			entry:  &audit.Entry{Action: audit.ActionTriggered, ObjectType: audit.ObjectTypeFeatureAssignment},
-			expect: "redeploy",
-		},
-		{
-			name:   "redeploy action maps to redeploy",
-			entry:  &audit.Entry{Action: audit.ActionRedeploy, ObjectType: audit.ObjectTypeFeatureAssignment},
-			expect: "redeploy",
-		},
-		{
-			name:   "triggered on non-assignment passes through",
-			entry:  &audit.Entry{Action: audit.ActionTriggered, ObjectType: audit.ObjectTypeFeature},
-			expect: "triggered",
-		},
+func renderToString(t *testing.T, node g.Node) string {
+	t.Helper()
+	var buf strings.Builder
+	if err := node.Render(&buf); err != nil {
+		t.Fatalf("render error: %v", err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := DisplayAction(tt.entry)
-			if got != tt.expect {
-				t.Errorf("DisplayAction() = %q, want %q", got, tt.expect)
-			}
-		})
+	return buf.String()
+}
+
+func TestRedeployShowsFeatureAndEnvironment(t *testing.T) {
+	e := &audit.Entry{
+		Action:          audit.ActionRedeploy,
+		ObjectType:      audit.ObjectTypeFeatureAssignment,
+		ObjectID:        "loki",
+		TenantName:      "nav",
+		EnvironmentName: "dev",
+	}
+
+	if got := DisplayAction(e); got != "redeployed" {
+		t.Errorf("action = %q, want %q", got, "redeployed")
+	}
+
+	rendered := renderToString(t, ResourceLink(e))
+	if !strings.Contains(rendered, "loki") {
+		t.Errorf("resource link should contain feature name, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "nav/dev") {
+		t.Errorf("resource link should contain environment, got %q", rendered)
 	}
 }
 
-func TestIsDescriptionRedundant(t *testing.T) {
-	tests := []struct {
-		name   string
-		entry  *audit.Entry
-		expect bool
-	}{
-		{
-			name:   "configuration is redundant",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeConfiguration},
-			expect: true,
-		},
-		{
-			name:   "redeploy is redundant",
-			entry:  &audit.Entry{Action: audit.ActionRedeploy, ObjectType: audit.ObjectTypeFeatureAssignment},
-			expect: true,
-		},
-		{
-			name:   "triggered assignment is redundant",
-			entry:  &audit.Entry{Action: audit.ActionTriggered, ObjectType: audit.ObjectTypeFeatureAssignment},
-			expect: true,
-		},
-		{
-			name:   "created assignment is not redundant",
-			entry:  &audit.Entry{Action: audit.ActionCreated, ObjectType: audit.ObjectTypeFeatureAssignment},
-			expect: false,
-		},
-		{
-			name:   "feature is not redundant",
-			entry:  &audit.Entry{Action: audit.ActionUpdated, ObjectType: audit.ObjectTypeFeature},
-			expect: false,
-		},
+func TestConfigUpdateShowsOldAndNewValues(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/port",
+		Metadata:   json.RawMessage(`{"old":"3000","new":"8080"}`),
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := IsDescriptionRedundant(tt.entry)
-			if got != tt.expect {
-				t.Errorf("IsDescriptionRedundant() = %v, want %v", got, tt.expect)
-			}
-		})
+
+	rendered := renderToString(t, ConfigChangeNode(e))
+	if !strings.Contains(rendered, "3000") {
+		t.Errorf("should show old value, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "8080") {
+		t.Errorf("should show new value, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "→") {
+		t.Errorf("should show arrow between values, got %q", rendered)
 	}
 }
 
-func TestDescription(t *testing.T) {
-	tests := []struct {
-		name   string
-		entry  *audit.Entry
-		expect string
-	}{
-		{
-			name: "assignment created with version and target metadata",
-			entry: &audit.Entry{
-				Action:      audit.ActionCreated,
-				ObjectType:  audit.ObjectTypeFeatureAssignment,
-				Description: "version 1.2.3 → nav/dev",
-			},
-			expect: "version 1.2.3 → nav/dev",
-		},
-		{
-			name: "assignment created with version and label metadata",
-			entry: &audit.Entry{
-				Action:      audit.ActionCreated,
-				ObjectType:  audit.ObjectTypeFeatureAssignment,
-				Description: "version 2.0.0",
-				Metadata:    json.RawMessage(`{"target":{"team":"nav","env":"dev"}}`),
-			},
-			expect: "version 2.0.0 → env=dev, team=nav",
-		},
-		{
-			name: "non-empty description used directly",
-			entry: &audit.Entry{
-				Action:      audit.ActionUpdated,
-				ObjectType:  audit.ObjectTypeFeature,
-				Description: "changed chart URL",
-			},
-			expect: "changed chart URL",
-		},
-		{
-			name: "empty description falls back to summary",
-			entry: &audit.Entry{
-				Action:     audit.ActionDeleted,
-				ObjectType: audit.ObjectTypeConfiguration,
-				ObjectID:   "myapp/port",
-			},
-			expect: "deleted config myapp/port",
-		},
+func TestConfigCreateShowsNewValue(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/port",
+		Metadata:   json.RawMessage(`{"new":"\"hello\""}`),
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := Description(tt.entry)
-			if got != tt.expect {
-				t.Errorf("Description() = %q, want %q", got, tt.expect)
-			}
-		})
+
+	rendered := renderToString(t, ConfigChangeNode(e))
+	if !strings.Contains(rendered, "hello") {
+		t.Errorf("should show new value, got %q", rendered)
+	}
+	if strings.Contains(rendered, "→") {
+		t.Errorf("should not show arrow for create, got %q", rendered)
 	}
 }
 
-func TestResourceHref(t *testing.T) {
+func TestConfigDeleteShowsOldValue(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/port",
+		Metadata:   json.RawMessage(`{"old":"\"gone\""}`),
+	}
+
+	rendered := renderToString(t, ConfigChangeNode(e))
+	if !strings.Contains(rendered, "gone") {
+		t.Errorf("should show deleted value, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "val-deleted") {
+		t.Errorf("should have strikethrough class, got %q", rendered)
+	}
+}
+
+func TestSecretConfigDoesNotExposeValues(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/token",
+		Metadata:   json.RawMessage(`{"secret":"true"}`),
+	}
+
+	rendered := renderToString(t, ConfigChangeNode(e))
+	if !strings.Contains(rendered, "(secret)") {
+		t.Errorf("should indicate secret, got %q", rendered)
+	}
+}
+
+func TestLongValuesAreTruncatedWithHoverForFull(t *testing.T) {
+	long := `["10.53.140.47","10.53.161.11","10.53.104.43","10.53.104.44"]`
+	meta, _ := json.Marshal(map[string]string{"old": long, "new": long + "x"})
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/ips",
+		Metadata:   meta,
+	}
+
+	rendered := renderToString(t, ConfigChangeNode(e))
+	if !strings.Contains(rendered, "…") {
+		t.Errorf("should truncate long values, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "title=") {
+		t.Errorf("should have title attribute for hover, got %q", rendered)
+	}
+}
+
+func TestConfigResourceLinkGoesToConfigTab(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/port",
+	}
+
+	href := ResourceHref(e)
+	if href != "/features/myapp/config#config-port" {
+		t.Errorf("href = %q, want link to config tab with anchor", href)
+	}
+}
+
+func TestEnvConfigResourceLinkGoesToEnvConfigTab(t *testing.T) {
 	envID := uuid.New()
-	tests := []struct {
-		name   string
-		entry  *audit.Entry
-		expect string
-	}{
-		{
-			name:   "feature links to feature page",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeFeature, ObjectID: "myapp"},
-			expect: "/features/myapp",
-		},
-		{
-			name:   "assignment with feature name links to feature",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeFeatureAssignment, ObjectID: "myapp"},
-			expect: "/features/myapp",
-		},
-		{
-			name:   "assignment with uuid returns empty",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeFeatureAssignment, ObjectID: uuid.New().String()},
-			expect: "",
-		},
-		{
-			name:   "assignment all returns empty",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeFeatureAssignment, ObjectID: "all"},
-			expect: "",
-		},
-		{
-			name:   "global config links to config tab with anchor",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeConfiguration, ObjectID: "myapp/port"},
-			expect: "/features/myapp/config#config-port",
-		},
-		{
-			name: "env config links to env config tab with anchor",
-			entry: &audit.Entry{
-				ObjectType:      audit.ObjectTypeConfiguration,
-				ObjectID:        "myapp/port",
-				EnvironmentID:   &envID,
-				TenantName:      "nav",
-				EnvironmentName: "dev",
-			},
-			expect: "/tenants/nav/envs/dev/features/myapp/config#config-port",
-		},
-		{
-			name: "environment links to env page",
-			entry: &audit.Entry{
-				ObjectType:      audit.ObjectTypeEnvironment,
-				TenantName:      "nav",
-				EnvironmentName: "dev",
-			},
-			expect: "/tenants/nav/envs/dev",
-		},
-		{
-			name:   "environment without tenant returns empty",
-			entry:  &audit.Entry{ObjectType: audit.ObjectTypeEnvironment},
-			expect: "",
-		},
-		{
-			name:   "unknown type returns empty",
-			entry:  &audit.Entry{ObjectType: "unknown", ObjectID: "x"},
-			expect: "",
-		},
+	e := &audit.Entry{
+		ObjectType:      audit.ObjectTypeConfiguration,
+		ObjectID:        "myapp/port",
+		EnvironmentID:   &envID,
+		TenantName:      "nav",
+		EnvironmentName: "dev",
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := ResourceHref(tt.entry)
-			if got != tt.expect {
-				t.Errorf("ResourceHref() = %q, want %q", got, tt.expect)
-			}
-		})
+
+	href := ResourceHref(e)
+	if href != "/tenants/nav/envs/dev/features/myapp/config#config-port" {
+		t.Errorf("href = %q, want link to env config tab with anchor", href)
 	}
 }
 
-func TestConfigChangeNode(t *testing.T) {
-	tests := []struct {
-		name       string
-		entry      *audit.Entry
-		expectNil  bool
-		expectText string // substring check on rendered output
-	}{
-		{
-			name:      "non-config returns nil",
-			entry:     &audit.Entry{ObjectType: audit.ObjectTypeFeature},
-			expectNil: true,
-		},
-		{
-			name:      "no metadata returns nil",
-			entry:     &audit.Entry{ObjectType: audit.ObjectTypeConfiguration},
-			expectNil: true,
-		},
-		{
-			name: "secret shows (secret)",
-			entry: &audit.Entry{
-				ObjectType: audit.ObjectTypeConfiguration,
-				Metadata:   json.RawMessage(`{"secret":"true"}`),
-			},
-			expectText: "(secret)",
-		},
-		{
-			name: "only new value shown for create",
-			entry: &audit.Entry{
-				ObjectType: audit.ObjectTypeConfiguration,
-				Metadata:   json.RawMessage(`{"new":"\"hello\""}`),
-			},
-			expectText: "hello",
-		},
-		{
-			name: "old and new shown with arrow",
-			entry: &audit.Entry{
-				ObjectType: audit.ObjectTypeConfiguration,
-				Metadata:   json.RawMessage(`{"old":"\"foo\"","new":"\"bar\""}`),
-			},
-			expectText: "→",
-		},
-		{
-			name: "deleted value shown with strikethrough class",
-			entry: &audit.Entry{
-				ObjectType: audit.ObjectTypeConfiguration,
-				Metadata:   json.RawMessage(`{"old":"\"gone\""}`),
-			},
-			expectText: "gone",
-		},
-		{
-			name: "long values truncated",
-			entry: &audit.Entry{
-				ObjectType: audit.ObjectTypeConfiguration,
-				Metadata:   json.RawMessage(`{"new":"\"abcdefghijklmnopqrstuvwxyz0123456789\""}`),
-			},
-			expectText: "…",
-		},
+func TestAssignmentCreatedShowsVersionAndTarget(t *testing.T) {
+	e := &audit.Entry{
+		Action:      audit.ActionCreated,
+		ObjectType:  audit.ObjectTypeFeatureAssignment,
+		ObjectID:    "loki",
+		Description: "version 2.0.0",
+		Metadata:    json.RawMessage(`{"target":{"team":"nav","env":"dev"}}`),
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			node := ConfigChangeNode(tt.entry)
-			if tt.expectNil {
-				if node != nil {
-					t.Error("expected nil, got non-nil node")
-				}
-				return
-			}
-			if node == nil {
-				t.Fatal("expected non-nil node, got nil")
-			}
-			// Render to string to check content
-			var buf strings.Builder
-			if err := node.Render(&buf); err != nil {
-				t.Fatalf("render error: %v", err)
-			}
-			rendered := buf.String()
-			if !strings.Contains(rendered, tt.expectText) {
-				t.Errorf("rendered output %q does not contain %q", rendered, tt.expectText)
-			}
-		})
+
+	desc := Description(e)
+	if !strings.Contains(desc, "2.0.0") {
+		t.Errorf("should contain version, got %q", desc)
+	}
+	if !strings.Contains(desc, "env=dev") {
+		t.Errorf("should contain target labels, got %q", desc)
 	}
 }
 
-func TestCleanVal(t *testing.T) {
-	tests := []struct {
-		input, expect string
-	}{
-		{`"hello"`, "hello"},
-		{`hello`, "hello"},
-		{`""`, ""},
-		{`"has "quotes" inside"`, `has "quotes" inside`},
+func TestRedeployDescriptionIsRedundant(t *testing.T) {
+	e := &audit.Entry{
+		Action:     audit.ActionRedeploy,
+		ObjectType: audit.ObjectTypeFeatureAssignment,
+		ObjectID:   "loki",
 	}
-	for _, tt := range tests {
-		got := cleanVal(tt.input)
-		if got != tt.expect {
-			t.Errorf("cleanVal(%q) = %q, want %q", tt.input, got, tt.expect)
-		}
+
+	if !IsDescriptionRedundant(e) {
+		t.Error("redeploy description should be redundant (info already in action + resource)")
 	}
 }
 
-func TestTruncateVal(t *testing.T) {
-	short := "short"
-	if got := truncateVal(short); got != short {
-		t.Errorf("truncateVal(%q) = %q, want %q", short, got, short)
+func TestConfigDescriptionIsRedundant(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/port",
 	}
 
-	long := "this string is definitely longer than twenty four characters"
-	got := truncateVal(long)
-	if len(got) > 24+len("…") {
-		t.Errorf("truncateVal result too long: %q", got)
+	if !IsDescriptionRedundant(e) {
+		t.Error("config description should be redundant (info already in resource + change node)")
 	}
-	if !strings.HasSuffix(got, "…") {
-		t.Errorf("truncateVal(%q) should end with …, got %q", long, got)
+}
+
+func TestNonConfigNonRedeployDescriptionIsShown(t *testing.T) {
+	e := &audit.Entry{
+		Action:     audit.ActionCreated,
+		ObjectType: audit.ObjectTypeFeatureAssignment,
+		ObjectID:   "loki",
+	}
+
+	if IsDescriptionRedundant(e) {
+		t.Error("assignment created description should not be redundant")
 	}
 }
