@@ -12,16 +12,16 @@ Fasit is a multi-tenant feature management platform. It deploys OCI Helm charts 
        └─── create assignment ──┐     │
                                 ▼     │
      ┌────── Fasit ─────────────────────────────┐
-     │                                           │
-     │  Desired state        Reconciler          │
+     │                                          │
+     │  Desired state        Reconciler         │
      │  ┌─────────────┐         │               │
-     │  │ assignment   │────► compare ◄─────┐   │
-     │  │ config       │         │          │   │
-     │  │ env values   │    deploy instr.   │   │
-     │  └─────────────┘         │          │   │
-     │                           │          │   │
-     └───────────────────────────┼──────────┼───┘
-                                 ▼          │
+     │  │ assignment  │────► compare ◄──────┐   │
+     │  │ config      │         │           │   │
+     │  │ env values  │    deploy instr.    │   │
+     │  └─────────────┘         │           │   │
+     │                          │           │   │
+     └──────────────────────────┼───────────┼───┘
+                                ▼           │
                       ┌──────────────────┐  │
                       │  Environment     │  │
                       │                  │  │
