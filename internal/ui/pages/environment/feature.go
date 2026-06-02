@@ -570,54 +570,26 @@ func envActivitySidebar(page *FeaturePage) g.Node {
 	if len(page.AuditEntries) == 0 {
 		return nil
 	}
-	return h.Aside(h.Class("right-sidebar"),
-		components.CardCompact(recentEnvironmentActivity(page)),
-	)
-}
-
-func recentEnvironmentActivity(page *FeaturePage) g.Node {
-	if len(page.AuditEntries) == 0 {
-		return nil
-	}
-
 	title := "Recent activity"
 	if page.ActiveTab == "config" {
 		title = "Config activity"
 	}
-
-	items := make([]g.Node, 0, len(page.AuditEntries))
-	for _, entry := range page.AuditEntries {
-		description := auditlog.Description(entry)
-		items = append(items, h.Li(
-			h.Div(h.Class("env-activity-meta"),
-				h.Span(
-					g.Text(string(entry.Action)),
-					g.If(entry.Actor != "", g.Group([]g.Node{g.Text(" by "), h.Span(h.Class("env-activity-actor"), view.ActorNode(entry.Actor))})),
-				),
-				h.Span(h.Title(view.FormatTime(entry.CreatedAt)), g.Text(view.RelativeTime(entry.CreatedAt))),
-			),
-			h.Div(h.Class("env-activity-resource"), envResourceNode(entry)),
-			auditlog.ConfigChangeNode(entry),
-			g.If(description != "", h.Div(h.Class("env-activity-description"), g.Text(description))),
-		))
-	}
-	return h.Section(h.Class("env-activity"),
-		h.Div(h.Class("env-activity-header"),
-			h.Div(
-				h.H3(g.Text(title)),
-				h.Span(h.Class("activity-filter-badge"), g.Text(page.Tenant.Name+"/"+page.Environment.Name)),
-			),
-			h.A(h.Href("/auditlog?q="+url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name)), h.Class("link-muted"), g.Text("All →")),
-		),
-		h.Ul(h.Class("env-activity-list"), g.Group(items)),
+	return h.Aside(h.Class("right-sidebar"),
+		components.CardCompact(components.ActivityList(components.ActivityListParams{
+			Title:         title,
+			FilterBadge:   page.Tenant.Name + "/" + page.Environment.Name,
+			AllHref:       "/auditlog?q=" + url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name),
+			Entries:       page.AuditEntries,
+			ResourceNode:  envResourceNode,
+			DescriptionFn: auditlog.Description,
+		})),
 	)
 }
 
 func envResourceNode(e *audit.Entry) g.Node {
 	if e.ObjectType == audit.ObjectTypeConfiguration {
 		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
-			key := e.ObjectID[i+1:]
-			return h.Code(g.Text(key))
+			return h.Code(g.Text(e.ObjectID[i+1:]))
 		}
 	}
 	return auditlog.ResourceLink(e)

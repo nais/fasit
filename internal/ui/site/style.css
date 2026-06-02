@@ -610,48 +610,55 @@ nav .user {
 .feature-index-filter:focus {
   border-color: var(--accent);
 }
-.feature-activity-header {
+.activity-section {
+  margin-bottom: 0;
+}
+.activity-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.55rem;
 }
-.feature-activity-header h3 {
+.activity-header h3 {
   margin: 0;
   font-size: 1rem;
 }
-.feature-activity-list {
+.activity-list {
   display: grid;
   gap: 0.65rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.feature-activity-list li {
+.activity-list li {
   padding-bottom: 0.65rem;
   border-bottom: 1px solid var(--border-subtle);
 }
-.feature-activity-meta {
+.activity-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.activity-meta {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
   color: var(--text-muted);
   font-size: 0.8rem;
 }
-.feature-activity-resource {
+.activity-resource {
   margin-top: 0.2rem;
   font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
-.feature-activity-description {
+.activity-description {
   margin-top: 0.15rem;
   color: var(--text-muted);
   font-size: 0.875rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
-.feature-activity-actor {
+.activity-actor {
   color: var(--text-secondary);
 }
 .val-old {
@@ -721,10 +728,6 @@ nav .user {
   overflow-x: auto;
   padding-bottom: 0.25rem;
 }
-.env-activity-header h3 {
-  margin: 0;
-  font-size: 1rem;
-}
 .activity-filter-badge {
   display: inline-block;
   font-size: 0.7rem;
@@ -775,53 +778,6 @@ nav .user {
   vertical-align: middle;
 }
 
-.env-activity {
-  margin-bottom: 0;
-}
-.env-activity-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.55rem;
-}
-.env-activity-list {
-  display: grid;
-  gap: 0.65rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.env-activity-list li {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-.env-activity-list li:not(:last-child) {
-  padding-bottom: 0.65rem;
-  border-bottom: 1px solid var(--border-subtle);
-}
-.env-activity-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-.env-activity-resource {
-  margin-top: 0.2rem;
-  font-size: 0.95rem;
-  overflow-wrap: anywhere;
-}
-.env-activity-description {
-  margin-top: 0.15rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-.env-activity-actor {
-  color: var(--text-secondary);
-}
 .card pre {
   background: var(--bg-inset);
   padding: 1rem;

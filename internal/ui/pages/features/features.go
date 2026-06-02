@@ -399,7 +399,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 
 	tableRows := make([]g.Node, 0, len(filtered))
 	for _, a := range filtered {
-		resource := resourceLinkNode(a)
+		resource := configKeyNode(a)
 		tableRows = append(tableRows, h.Tr(
 			h.Td(g.Text(string(a.Action))),
 			h.Td(resource),
@@ -504,7 +504,13 @@ func detailPage(data *DetailPage) g.Node {
 			title = "Config activity"
 		}
 		rightSidebar = h.Aside(h.Class("right-sidebar"),
-			components.CardCompact(featureRecentActivityCompact(data.CurrentFeature.Name, title, data.RecentActivity)),
+			components.CardCompact(components.ActivityList(components.ActivityListParams{
+				Title:         title,
+				AllHref:       "/auditlog?q=" + url.QueryEscape(data.CurrentFeature.Name),
+				Entries:       data.RecentActivity,
+				ResourceNode:  configKeyNode,
+				DescriptionFn: auditlog.Description,
+			})),
 		)
 	}
 	return h.Div(h.Class("container"),
@@ -521,31 +527,13 @@ func featureSidebar(data *DetailPage) g.Node {
 	return components.FeatureSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.FeatureEnvs)
 }
 
-func featureRecentActivityCompact(featureName string, title string, audits []*audit.Entry) g.Node {
-	items := make([]g.Node, 0, len(audits))
-	for _, a := range audits {
-		description := auditlog.Description(a)
-		items = append(items, h.Li(
-			h.Div(h.Class("feature-activity-meta"),
-				h.Span(
-					g.Text(string(a.Action)),
-					g.If(a.Actor != "", g.Group([]g.Node{g.Text(" by "), h.Span(h.Class("feature-activity-actor"), view.ActorNode(a.Actor))})),
-				),
-				h.Span(h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
-			),
-			h.Div(h.Class("feature-activity-resource"), resourceLinkNode(a)),
-			auditlog.ConfigChangeNode(a),
-			g.If(description != "", h.Div(h.Class("feature-activity-description"), g.Text(description))),
-		))
+func configKeyNode(e *audit.Entry) g.Node {
+	if e.ObjectType == audit.ObjectTypeConfiguration {
+		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
+			return h.Code(g.Text(e.ObjectID[i+1:]))
+		}
 	}
-
-	return g.Group([]g.Node{
-		h.Div(h.Class("feature-activity-header"),
-			h.H3(g.Text(title)),
-			h.A(h.Href("/auditlog?q="+url.QueryEscape(featureName)), h.Class("link-muted"), g.Text("All →")),
-		),
-		h.Ul(h.Class("feature-activity-list"), g.Group(items)),
-	})
+	return auditlog.ResourceLink(e)
 }
 
 func loadFeatureData(r *http.Request) (*DetailPage, error) {
@@ -609,14 +597,4 @@ func lastDeployedCell(t time.Time, class string) g.Node {
 	}
 	attrs = append(attrs, h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 	return h.Td(attrs...)
-}
-
-func resourceLinkNode(e *audit.Entry) g.Node {
-	if e.ObjectType == audit.ObjectTypeConfiguration {
-		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
-			key := e.ObjectID[i+1:]
-			return h.Code(g.Text(key))
-		}
-	}
-	return auditlog.ResourceLink(e)
 }
