@@ -340,7 +340,7 @@ func InvalidateLatestDeploy(ctx context.Context, envID uuid.UUID, featureName st
 	}
 
 	_ = audit.Create(ctx, audit.CreateParams{
-		Action:        audit.ActionTriggered,
+		Action:        audit.ActionRedeploy,
 		ObjectType:    audit.ObjectTypeFeatureAssignment,
 		ObjectID:      featureName,
 		Feature:       featureName,

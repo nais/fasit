@@ -76,7 +76,7 @@ func activityTable(entries []*audit.Entry) g.Node {
 	for _, e := range entries {
 		desc := Description(e)
 		action := string(e.Action)
-		if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.Action == audit.ActionTriggered {
+		if e.ObjectType == audit.ObjectTypeFeatureAssignment && (e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy) {
 			action = "redeploy"
 		}
 		showDesc := desc != "" && e.ObjectType != audit.ObjectTypeConfiguration && action != "redeploy"
@@ -161,7 +161,7 @@ func ResourceLink(e *audit.Entry) g.Node {
 				g.Text(" of "),
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)
-		} else if e.Action == audit.ActionTriggered {
+		} else if e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy {
 			nodes = append(nodes,
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)

@@ -402,7 +402,7 @@ func recentActivity(audits []*audit.Entry) g.Node {
 		resource := auditlog.ResourceLink(a)
 		description := auditlog.Description(a)
 		action := string(a.Action)
-		if a.ObjectType == audit.ObjectTypeFeatureAssignment && a.Action == audit.ActionTriggered {
+		if a.ObjectType == audit.ObjectTypeFeatureAssignment && (a.Action == audit.ActionTriggered || a.Action == audit.ActionRedeploy) {
 			action = "redeploy"
 		}
 		showDesc := description != "" && !descriptionRedundant(a)
@@ -546,7 +546,7 @@ func descriptionRedundant(e *audit.Entry) bool {
 	if e.ObjectType == audit.ObjectTypeConfiguration {
 		return true
 	}
-	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.Action == audit.ActionTriggered {
+	if e.ObjectType == audit.ObjectTypeFeatureAssignment && (e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy) {
 		return true
 	}
 	return false
