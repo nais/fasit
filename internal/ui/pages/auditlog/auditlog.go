@@ -75,11 +75,12 @@ func activityTable(entries []*audit.Entry) g.Node {
 	rows := make([]g.Node, 0, len(entries))
 	for _, e := range entries {
 		desc := Description(e)
+		showDesc := desc != "" && e.ObjectType != audit.ObjectTypeConfiguration
 		rows = append(rows, h.Tr(
 			h.Td(g.Text(string(e.Action))),
 			h.Td(ResourceLink(e)),
 			h.Td(EnvLink(e)),
-			h.Td(h.Class("text-muted"), components.ConfigChangeNode(e), g.If(desc != "", g.Text(desc))),
+			h.Td(h.Class("text-muted"), components.ConfigChangeNode(e), g.If(showDesc, h.Div(g.Text(desc)))),
 			h.Td(view.ActorNode(e.Actor)),
 			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
 		))

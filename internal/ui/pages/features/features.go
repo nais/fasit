@@ -401,10 +401,11 @@ func recentActivity(audits []*audit.Entry) g.Node {
 	for _, a := range filtered {
 		resource := auditlog.ResourceLink(a)
 		description := auditlog.Description(a)
+		showDesc := description != "" && a.ObjectType != audit.ObjectTypeConfiguration
 		tableRows = append(tableRows, h.Tr(
 			h.Td(g.Text(string(a.Action))),
 			h.Td(resource),
-			h.Td(h.Class("text-muted"), components.ConfigChangeNode(a), g.If(description != "", g.Text(description))),
+			h.Td(h.Class("text-muted"), components.ConfigChangeNode(a), g.If(showDesc, h.Div(g.Text(description)))),
 			h.Td(view.ActorNode(a.Actor)),
 			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
 		))
