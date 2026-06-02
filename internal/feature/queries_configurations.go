@@ -123,6 +123,21 @@ func ConfigEnvCreate(ctx context.Context, c model.NewConfiguration) (*model.Conf
 		hadExisting = false
 	}
 
+	// When creating a new env override, use the global value as the "old" value
+	// so the activity sidebar shows what the effective value was before.
+	var previousVal []byte
+	if hadExisting {
+		previousVal = existing.Value
+	} else {
+		global, err := querier(ctx).ConfigGlobalGetByKey(ctx, featuresql.ConfigGlobalGetByKeyParams{
+			Feature: c.Feature,
+			Key:     c.Key,
+		})
+		if err == nil {
+			previousVal = global.Value
+		}
+	}
+
 	if hadExisting && bytes.Equal(existing.Value, value) && stringPtrEqual(existing.Description, c.Description) && existing.Secret == c.Secret {
 		return environmentConfigurationFromSQL(existing), nil
 	}
@@ -144,7 +159,7 @@ func ConfigEnvCreate(ctx context.Context, c model.NewConfiguration) (*model.Conf
 		key:     config.Key,
 		envID:   &config.EnvironmentID,
 		secret:  c.Secret,
-		oldVal:  existingVal(hadExisting, existing.Value),
+		oldVal:  previousVal,
 		newVal:  value,
 	}); err != nil {
 		return nil, err
