@@ -263,7 +263,7 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 			http.Error(w, "Failed to toggle feature state: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
 	}
 }
 
@@ -309,7 +309,7 @@ func RedeployHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
 	}
 }
 
@@ -412,11 +412,11 @@ func pageKebab(page *FeaturePage) g.Node {
 }
 
 func redeployPopover(page *FeaturePage) g.Node {
-	return components.RedeployPopover("trigger-redeploy", featureBasePathForPage(page)+"/redeploy", page.Feature.Name, page.Environment.Name, page.Feature.Enabled)
+	return components.RedeployPopover("trigger-redeploy", featureBasePathForPage(page)+"/redeploy", page.Feature.Name, page.Environment.Name, page.Feature.Enabled, "")
 }
 
 func reconcilePopover(page *FeaturePage) g.Node {
-	return components.ReconcilePopover("toggle-reconcile", featureBasePathForPage(page)+"/toggle-reconcile", page.Feature.Name, page.Environment.Name, page.Feature.Enabled)
+	return components.ReconcilePopover("toggle-reconcile", featureBasePathForPage(page)+"/toggle-reconcile", page.Feature.Name, page.Environment.Name, page.Feature.Enabled, "")
 }
 
 func statusTab(page *FeaturePage) g.Node {
@@ -921,6 +921,13 @@ func featureBasePathForPage(page *FeaturePage) string {
 
 func featureBasePathValues(tenant, env, feature string) string {
 	return "/features/" + feature + "/envs/" + tenant + "/" + env
+}
+
+func redirectOrDefault(r *http.Request, defaultURL string) string {
+	if dest := r.FormValue("redirect"); dest != "" && len(dest) > 0 && dest[0] == '/' {
+		return dest
+	}
+	return defaultURL
 }
 
 func LokiExploreURL(tenant, env, feature string) string {

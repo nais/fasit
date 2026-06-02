@@ -469,8 +469,8 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 
 		cells = append(cells, h.Td(h.Class("action"),
 			components.KebabWrap(kebabID, menuItems,
-				components.RedeployPopover(redeployPopoverID, redeployAction, featureName, env.Name, env.Enabled),
-				components.ReconcilePopover(reconcilePopoverID, toggleReconcileAction, featureName, env.Name, env.Enabled),
+				components.RedeployPopover(redeployPopoverID, redeployAction, featureName, env.Name, env.Enabled, "/features/"+featureName),
+				components.ReconcilePopover(reconcilePopoverID, toggleReconcileAction, featureName, env.Name, env.Enabled, "/features/"+featureName),
 			),
 		))
 	}
