@@ -143,6 +143,9 @@ func ConfigEnvCreate(ctx context.Context, c model.NewConfiguration) (*model.Conf
 		feature: config.Feature,
 		key:     config.Key,
 		envID:   &config.EnvironmentID,
+		secret:  c.Secret,
+		oldVal:  existingVal(hadExisting, existing.Value),
+		newVal:  value,
 	}); err != nil {
 		return nil, err
 	}
@@ -187,6 +190,9 @@ func ConfigGlobalCreate(ctx context.Context, c model.NewConfiguration) (*model.C
 		feature: config.Feature,
 		key:     config.Key,
 		envID:   nil,
+		secret:  c.Secret,
+		oldVal:  existingVal(hadExisting, existing.Value),
+		newVal:  value,
 	}); err != nil {
 		return nil, err
 	}
@@ -207,6 +213,8 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 			return nil
 		}
 
+		oldVal := conf.Value
+
 		conf, err = querier(ctx).ConfigGlobalUpdate(ctx, featuresql.ConfigGlobalUpdateParams{
 			Description: c.Description,
 			Value:       c.Value,
@@ -221,6 +229,11 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration
 			ObjectType: audit.ObjectTypeConfiguration,
 			ObjectID:   conf.Feature + "/" + conf.Key,
 			Feature:    conf.Feature,
+			Metadata: configChangeMetadata(configAuditInfo{
+				secret: conf.Secret,
+				oldVal: oldVal,
+				newVal: conf.Value,
+			}),
 		})
 	})
 	if err != nil {
@@ -249,6 +262,10 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 			ObjectType: audit.ObjectTypeConfiguration,
 			ObjectID:   existing.Feature + "/" + existing.Key,
 			Feature:    existing.Feature,
+			Metadata: configChangeMetadata(configAuditInfo{
+				secret: existing.Secret,
+				oldVal: existing.Value,
+			}),
 		})
 	})
 }
@@ -265,6 +282,7 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 		ObjectID:      info.feature + "/" + info.key,
 		Feature:       info.feature,
 		EnvironmentID: info.envID,
+		Metadata:      configChangeMetadata(info),
 	})
 }
 
@@ -281,6 +299,8 @@ func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfigurat
 			return nil
 		}
 
+		oldVal := conf.Value
+
 		conf, err = querier(ctx).ConfigEnvUpdate(ctx, featuresql.ConfigEnvUpdateParams{
 			Description: c.Description,
 			Value:       c.Value,
@@ -296,6 +316,11 @@ func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfigurat
 			ObjectID:      conf.Feature + "/" + conf.Key,
 			Feature:       conf.Feature,
 			EnvironmentID: &conf.EnvironmentID,
+			Metadata: configChangeMetadata(configAuditInfo{
+				secret: conf.Secret,
+				oldVal: oldVal,
+				newVal: conf.Value,
+			}),
 		})
 	})
 	if err != nil {
@@ -325,6 +350,10 @@ func ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
 			ObjectID:      existing.Feature + "/" + existing.Key,
 			Feature:       existing.Feature,
 			EnvironmentID: &existing.EnvironmentID,
+			Metadata: configChangeMetadata(configAuditInfo{
+				secret: existing.Secret,
+				oldVal: existing.Value,
+			}),
 		})
 	})
 }
@@ -333,6 +362,33 @@ type configAuditInfo struct {
 	feature string
 	key     string
 	envID   *uuid.UUID
+	secret  bool
+	oldVal  []byte // JSON-encoded, nil if new
+	newVal  []byte // JSON-encoded, nil if deleted
+}
+
+func configChangeMetadata(info configAuditInfo) map[string]string {
+	if info.secret {
+		return map[string]string{"secret": "true"}
+	}
+	m := map[string]string{}
+	if info.oldVal != nil {
+		m["old"] = string(info.oldVal)
+	}
+	if info.newVal != nil {
+		m["new"] = string(info.newVal)
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+func existingVal(hadExisting bool, val []byte) []byte {
+	if !hadExisting {
+		return nil
+	}
+	return val
 }
 
 func stringPtrEqual(a, b *string) bool {

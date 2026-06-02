@@ -74,6 +74,8 @@ func (t ObjectType) Display() string {
 	switch t {
 	case ObjectTypeEnvironmentValue:
 		return "env value"
+	case ObjectTypeConfiguration:
+		return "config"
 	default:
 		return string(t)
 	}

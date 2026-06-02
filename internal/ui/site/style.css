@@ -654,6 +654,14 @@ nav .user {
 .feature-activity-actor {
   color: var(--text-secondary);
 }
+.val-old {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.val-deleted {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);

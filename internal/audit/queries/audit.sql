@@ -127,8 +127,7 @@ FROM
 WHERE
 	a.feature = @feature
 	AND a.object_type = 'configuration'
-	AND (a.environment_id = @env_id
-		OR a.environment_id IS NULL)
+	AND a.environment_id = @env_id
 ORDER BY
 	a.created_at DESC
 LIMIT @page_size;

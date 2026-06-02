@@ -164,8 +164,7 @@ FROM
 WHERE
 	a.feature = $1
 	AND a.object_type = 'configuration'
-	AND (a.environment_id = $2
-		OR a.environment_id IS NULL)
+	AND a.environment_id = $2
 ORDER BY
 	a.created_at DESC
 LIMIT $3

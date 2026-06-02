@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/dbtx"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -595,7 +596,8 @@ func recentEnvironmentActivity(page *FeaturePage) g.Node {
 				),
 				h.Span(h.Title(view.FormatTime(entry.CreatedAt)), g.Text(view.RelativeTime(entry.CreatedAt))),
 			),
-			h.Div(h.Class("env-activity-resource"), auditlog.ResourceLink(entry)),
+			h.Div(h.Class("env-activity-resource"), envResourceNode(entry)),
+			auditlog.ConfigChangeNode(entry),
 			g.If(description != "", h.Div(h.Class("env-activity-description"), g.Text(description))),
 		))
 	}
@@ -609,6 +611,16 @@ func recentEnvironmentActivity(page *FeaturePage) g.Node {
 		),
 		h.Ul(h.Class("env-activity-list"), g.Group(items)),
 	)
+}
+
+func envResourceNode(e *audit.Entry) g.Node {
+	if e.ObjectType == audit.ObjectTypeConfiguration {
+		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
+			key := e.ObjectID[i+1:]
+			return h.Code(g.Text(key))
+		}
+	}
+	return auditlog.ResourceLink(e)
 }
 
 func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {

@@ -534,6 +534,7 @@ func featureRecentActivityCompact(featureName string, title string, audits []*au
 				h.Span(h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
 			),
 			h.Div(h.Class("feature-activity-resource"), resourceLinkNode(a)),
+			auditlog.ConfigChangeNode(a),
 			g.If(description != "", h.Div(h.Class("feature-activity-description"), g.Text(description))),
 		))
 	}
@@ -611,5 +612,11 @@ func lastDeployedCell(t time.Time, class string) g.Node {
 }
 
 func resourceLinkNode(e *audit.Entry) g.Node {
+	if e.ObjectType == audit.ObjectTypeConfiguration {
+		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
+			key := e.ObjectID[i+1:]
+			return h.Code(g.Text(key))
+		}
+	}
 	return auditlog.ResourceLink(e)
 }
