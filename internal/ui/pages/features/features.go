@@ -134,6 +134,7 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		data.ActiveTab = "assignments"
+		data.RecentActivity, _ = audit.ListAssignmentsForFeature(r.Context(), data.CurrentFeature.Name, 10)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Deploy specs", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
@@ -510,11 +511,15 @@ func detailPage(data *DetailPage) g.Node {
 	default:
 		content = assignmentDetailContent(data)
 		breadcrumbActions = append(breadcrumbActions, overviewToolbar())
-		if len(data.RecentActivity) > 0 {
-			rightSidebar = h.Aside(h.Class("right-sidebar"),
-				components.CardCompact(featureRecentActivityCompact(data.CurrentFeature.Name, data.RecentActivity)),
-			)
+	}
+	if len(data.RecentActivity) > 0 {
+		title := "Recent activity"
+		if data.ActiveTab == "assignments" {
+			title = "Assignment activity"
 		}
+		rightSidebar = h.Aside(h.Class("right-sidebar"),
+			components.CardCompact(featureRecentActivityCompact(data.CurrentFeature.Name, title, data.RecentActivity)),
+		)
 	}
 	return h.Div(h.Class("container"),
 		featureSidebar(data),
@@ -530,7 +535,7 @@ func featureSidebar(data *DetailPage) g.Node {
 	return components.FeatureSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.FeatureEnvs)
 }
 
-func featureRecentActivityCompact(featureName string, audits []*audit.Entry) g.Node {
+func featureRecentActivityCompact(featureName string, title string, audits []*audit.Entry) g.Node {
 	items := make([]g.Node, 0, len(audits))
 	for _, a := range audits {
 		description := auditlog.Description(a)
@@ -549,7 +554,7 @@ func featureRecentActivityCompact(featureName string, audits []*audit.Entry) g.N
 
 	return g.Group([]g.Node{
 		h.Div(h.Class("feature-activity-header"),
-			h.H3(g.Text("Recent activity")),
+			h.H3(g.Text(title)),
 			h.A(h.Href("/auditlog?q="+url.QueryEscape(featureName)), h.Class("link-muted"), g.Text("All →")),
 		),
 		h.Ul(h.Class("feature-activity-list"), g.Group(items)),

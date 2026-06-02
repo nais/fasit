@@ -34,7 +34,15 @@ func (f *Querier) ListForFeature(_ context.Context, _ auditsql.ListForFeaturePar
 	return nil, nil
 }
 
+func (f *Querier) ListAssignmentsForFeature(_ context.Context, _ auditsql.ListAssignmentsForFeatureParams) ([]auditsql.ListAssignmentsForFeatureRow, error) {
+	return nil, nil
+}
+
 func (f *Querier) ListForFeatureInEnvironment(_ context.Context, _ auditsql.ListForFeatureInEnvironmentParams) ([]auditsql.ListForFeatureInEnvironmentRow, error) {
+	return nil, nil
+}
+
+func (f *Querier) ListConfigForFeatureInEnvironment(_ context.Context, _ auditsql.ListConfigForFeatureInEnvironmentParams) ([]auditsql.ListConfigForFeatureInEnvironmentRow, error) {
 	return nil, nil
 }
 

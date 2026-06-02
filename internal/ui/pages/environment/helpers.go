@@ -272,15 +272,24 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 			}
 		}
 	}
-	limit := int32(3)
-	if activeTab == "audit" {
-		limit = 50
+	switch activeTab {
+	case "config":
+		entries, err := audit.ListConfigForFeatureInEnvironment(ctx, featureName, env.ID, 10)
+		if err != nil {
+			return nil, fmt.Errorf("load audit entries: %w", err)
+		}
+		page.AuditEntries = entries
+	default:
+		limit := int32(3)
+		if activeTab == "audit" {
+			limit = 50
+		}
+		entries, err := audit.ListForFeatureInEnvironment(ctx, featureName, env.ID, limit)
+		if err != nil {
+			return nil, fmt.Errorf("load audit entries: %w", err)
+		}
+		page.AuditEntries = entries
 	}
-	entries, err := audit.ListForFeatureInEnvironment(ctx, featureName, env.ID, limit)
-	if err != nil {
-		return nil, fmt.Errorf("load audit entries: %w", err)
-	}
-	page.AuditEntries = entries
 
 	return page, nil
 }
