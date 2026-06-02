@@ -47,9 +47,9 @@ func TestEnvironmentPageRendersSideMenuAndBreadcrumbs(t *testing.T) {
 	}
 }
 
-func TestEnvironmentOverviewRendersNaisdHealthAsCallout(t *testing.T) {
+func TestEnvironmentDetailsRendersNaisdHealthAsCallout(t *testing.T) {
 	var buf bytes.Buffer
-	node := environmentOverviewCard(
+	node := environmentDetailsCard(
 		&Environment{Environment: &model.Environment{Name: "dev"}},
 		nil,
 		"",
@@ -75,7 +75,7 @@ func TestNaisdHealthBucket(t *testing.T) {
 	}{
 		{name: "no report", health: environmentHealth{}, class: "status-error", label: "no report"},
 		{name: "healthy", health: environmentHealth{ReportedAt: now.Add(-30 * time.Second), HasReport: true}, class: "status-success", label: "healthy"},
-		{name: "stale", health: environmentHealth{ReportedAt: now.Add(-2 * time.Minute), HasReport: true}, class: "status-pending", label: "stale"},
+		{name: "stale", health: environmentHealth{ReportedAt: now.Add(-2 * time.Minute), HasReport: true}, class: "status-error", label: "stale"},
 		{name: "dead", health: environmentHealth{ReportedAt: now.Add(-10 * time.Minute), HasReport: true}, class: "status-error", label: "dead"},
 	}
 

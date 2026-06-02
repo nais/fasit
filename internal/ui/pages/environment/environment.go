@@ -55,9 +55,9 @@ const (
 )
 
 const (
-	environmentTabOverview = "overview"
-	environmentTabValues   = "values"
+	environmentTabDetails  = "details"
 	environmentTabFeatures = "features"
+	environmentTabValues   = "values"
 	environmentTabHelm     = "helm"
 )
 
@@ -200,10 +200,10 @@ func loadEnvironmentFeatureRows(ctx context.Context, env *model.Environment) ([]
 
 func environmentTab(tab string) string {
 	switch tab {
-	case environmentTabValues, environmentTabFeatures, environmentTabHelm:
+	case environmentTabDetails, environmentTabValues, environmentTabFeatures, environmentTabHelm:
 		return tab
 	default:
-		return environmentTabOverview
+		return environmentTabFeatures
 	}
 }
 
@@ -219,9 +219,10 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 }
 
 func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
+	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, health)
 	return h.Div(h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab),
-		components.Breadcrumbs(breadcrumbs),
+		components.Breadcrumbs(breadcrumbs, summaryNodes...),
 		h.Main(h.Class("main-content"),
 			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, features, releases, health),
 		),
@@ -236,10 +237,10 @@ func environmentSidebar(tenantName, environmentName, activeTab string) g.Node {
 		),
 		h.Div(h.Class("nav"),
 			h.Ul(
-				environmentNavItem(base, "Overview", activeTab == environmentTabOverview),
-				environmentNavItem(base+"?tab=values", "Values", activeTab == environmentTabValues),
 				environmentNavItem(base+"?tab=features", "Features", activeTab == environmentTabFeatures),
-				environmentNavItem(base+"?tab=helm", "Helm releases", activeTab == environmentTabHelm),
+				environmentNavItem(base+"?tab=values", "Values", activeTab == environmentTabValues),
+				environmentNavItem(base+"?tab=helm", "Helm Releases", activeTab == environmentTabHelm),
+				environmentNavItem(base+"?tab=details", "Details", activeTab == environmentTabDetails),
 			),
 		),
 	)
@@ -253,6 +254,48 @@ func environmentNavItem(href, label string, active bool) g.Node {
 	return h.Li(h.A(append(attrs, g.Text(label))...))
 }
 
+func environmentSummaryNodes(environment *Environment, labels map[string]string, gcpProjectID string, health environmentHealth) []g.Node {
+	var items []g.Node
+
+	// Labels
+	if len(labels) > 0 {
+		labelPills := make([]g.Node, 0, len(labels))
+		for _, k := range sortedKeys(labels) {
+			labelPills = append(labelPills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+		}
+		items = append(items, h.Span(h.Class("env-header-item env-header-labels"), g.Group(labelPills)))
+	}
+
+	// GCP project
+	if gcpProjectID != "" {
+		items = append(items, h.A(
+			h.Class("env-header-item env-header-link"),
+			h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+			h.Target("_blank"),
+			g.Attr("rel", "noopener noreferrer"),
+			g.Attr("title", "Open GCP project"),
+			g.Text(gcpProjectID+" "),
+			components.ExternalLinkIcon(),
+		))
+	}
+
+	// Reconcile status
+	var reconcileLabel string
+	if environment.Reconcile {
+		reconcileLabel = "Reconcile: on"
+	} else {
+		reconcileLabel = "Reconcile: off"
+	}
+	items = append(items, h.Span(h.Class("env-header-item"), g.Text(reconcileLabel)))
+
+	// naisd health status
+	class, label := naisdHealthBucket(health, time.Now())
+	icon := naisdHealthIcon(label)
+	items = append(items, h.Span(h.Class("env-header-item status-badge "+class), h.Title(naisdHealthTitle(label)), g.Text(icon+" naisd")))
+
+	return []g.Node{h.Div(h.Class("env-header-actions"), g.Group(items))}
+}
+
 func environmentTabContent(activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
 	switch activeTab {
 	case environmentTabValues:
@@ -261,8 +304,10 @@ func environmentTabContent(activeTab string, tenant *model.Tenant, environment *
 		return environmentFeaturesCard(tenant.Name, environment.Name, features)
 	case environmentTabHelm:
 		return helmReleasesCard(releases)
+	case environmentTabDetails:
+		return environmentDetailsCard(environment, labels, gcpProjectID, health)
 	default:
-		return environmentOverviewCard(environment, labels, gcpProjectID, health)
+		return environmentFeaturesCard(tenant.Name, environment.Name, features)
 	}
 }
 
@@ -292,7 +337,7 @@ func naisdHealthIcon(label string) string {
 	case "healthy":
 		return "✓"
 	case "stale":
-		return "!"
+		return "×"
 	case "dead":
 		return "×"
 	default:
@@ -309,26 +354,26 @@ func naisdHealthBucket(health environmentHealth, now time.Time) (string, string)
 	case age < environmentHealthyThreshold:
 		return "status-success", "healthy"
 	case age < environmentStaleThreshold:
-		return "status-pending", "stale"
+		return "status-error", "stale"
 	default:
 		return "status-error", "dead"
 	}
 }
 
-func environmentOverviewCard(environment *Environment, labels map[string]string, gcpProjectID string, health environmentHealth) g.Node {
+func environmentDetailsCard(environment *Environment, labels map[string]string, gcpProjectID string, health environmentHealth) g.Node {
 	return h.Div(h.Class("card"),
 		h.Div(h.Class("card-body"),
-			h.Div(h.Class("environment-overview-list"),
+			h.Div(h.Class("environment-details-list"),
 				naisdHealthOverviewItem(health),
 				g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
-					return h.Div(h.Class("environment-overview-item"),
-						h.Div(h.Class("environment-overview-key"), g.Text(item.Key)),
-						h.Div(h.Class("environment-overview-value"), metadataValue(item)),
+					return h.Div(h.Class("environment-details-item"),
+						h.Div(h.Class("environment-details-key"), g.Text(item.Key)),
+						h.Div(h.Class("environment-details-value"), metadataValue(item)),
 					)
 				})),
-				g.If(gcpProjectID != "", h.Div(h.Class("environment-overview-item"),
-					h.Div(h.Class("environment-overview-key"), g.Text("GCP Project")),
-					h.Div(h.Class("environment-overview-value"),
+				g.If(gcpProjectID != "", h.Div(h.Class("environment-details-item"),
+					h.Div(h.Class("environment-details-key"), g.Text("GCP Project")),
+					h.Div(h.Class("environment-details-value"),
 						g.Text(gcpProjectID),
 						g.Text(" "),
 						h.A(
@@ -340,12 +385,17 @@ func environmentOverviewCard(environment *Environment, labels map[string]string,
 						),
 					),
 				)),
-				g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
-					return h.Div(h.Class("environment-overview-item"),
-						h.Div(h.Class("environment-overview-key"), g.Text(k)),
-						h.Div(h.Class("environment-overview-value"), g.Text(labels[k])),
-					)
-				})),
+				g.If(len(labels) > 0, h.Div(h.Class("environment-labels-section"),
+					h.H3(h.Class("environment-labels-heading"), g.Text("Labels")),
+					h.Div(h.Class("environment-labels-group"),
+						g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
+							return h.Div(h.Class("environment-details-item"),
+								h.Div(h.Class("environment-details-key"), g.Text(k)),
+								h.Div(h.Class("environment-details-value"), g.Text(labels[k])),
+							)
+						})),
+					),
+				)),
 			),
 		),
 	)

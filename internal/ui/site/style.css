@@ -133,7 +133,7 @@ h3 {
   font-weight: 650;
   color: var(--text-heading);
 }
-.card-section-heading {
+.card-body .card-section-heading {
   margin-top: 0;
 }
 .section-link-row {
@@ -419,7 +419,7 @@ nav .user {
     display: none;
   }
 }
-.environment-overview-list {
+.environment-details-list {
   display: grid;
   gap: 0.65rem;
 }
@@ -463,18 +463,69 @@ nav .user {
 .environment-health-item.status-error .environment-health-icon {
   color: var(--status-error);
 }
-.environment-overview-item {
+.environment-details-item {
   display: grid;
   grid-template-columns: minmax(8rem, 0.35fr) 1fr;
   gap: 0.75rem;
   align-items: baseline;
 }
-.environment-overview-key {
+.environment-details-key {
   color: var(--text-muted);
   font-size: 0.875rem;
 }
-.environment-overview-value {
+.environment-details-value {
   color: var(--text-primary);
+}
+.environment-labels-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.environment-labels-heading {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--text-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.environment-labels-group {
+  display: grid;
+  gap: 0.5rem;
+}
+.env-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.env-header-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.env-header-item.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.env-header-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.env-header-link:hover {
+  text-decoration: underline;
+}
+.env-header-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
 }
 .landing-page {
 }
@@ -625,6 +676,12 @@ nav .user {
 .card-body h2 {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+}
+.card-body h2:first-child {
+  margin-top: 0;
+}
+.card-body > :first-child > h2:first-child {
+  margin-top: 0;
 }
 .card-header-row {
   display: flex;
