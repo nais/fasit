@@ -191,9 +191,14 @@ func ResourceHref(e *audit.Entry) string {
 		}
 		return "/features/" + e.ObjectID
 	case audit.ObjectTypeConfiguration:
-		// ObjectID is "feature/key" — link to the feature
+		// ObjectID is "feature/key" — link to the config tab with anchor
 		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
-			return "/features/" + e.ObjectID[:i]
+			feature := e.ObjectID[:i]
+			key := e.ObjectID[i+1:]
+			if e.EnvironmentID != nil && e.TenantName != "" && e.EnvironmentName != "" {
+				return "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName + "/features/" + feature + "/config#config-" + key
+			}
+			return "/features/" + feature + "/config#config-" + key
 		}
 		return ""
 	case audit.ObjectTypeEnvironment, audit.ObjectTypeEnvironmentValue:

@@ -129,7 +129,7 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
-				return h.Tr(
+				return h.Tr(h.ID("config-"+item.Key),
 					components.ConfigKeyCell(item),
 					components.ConfigActionsCell(globalConfigActionsCell(featureName, item)),
 					components.ConfigValueCell(item),
@@ -154,7 +154,7 @@ func globalComputedTable(featureName string, items []components.ConfigItem) g.No
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
-				return h.Tr(
+				return h.Tr(h.ID("config-"+item.Key),
 					components.ConfigKeyCell(item),
 					components.TemplateCell(item),
 					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(featureName, item.Key)),
