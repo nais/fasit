@@ -20,9 +20,9 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
+	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
-	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -581,7 +581,7 @@ func envActivitySidebar(page *FeaturePage) g.Node {
 			AllHref:       "/auditlog?q=" + url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name),
 			Entries:       page.AuditEntries,
 			ResourceNode:  envResourceNode,
-			DescriptionFn: auditlog.Description,
+			DescriptionFn: auditview.Description,
 		})),
 	)
 }
@@ -592,7 +592,7 @@ func envResourceNode(e *audit.Entry) g.Node {
 			return h.Code(g.Text(e.ObjectID[i+1:]))
 		}
 	}
-	return auditlog.ResourceLink(e)
+	return auditview.ResourceLink(e)
 }
 
 func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {

@@ -1,13 +1,11 @@
 package auditlog
 
 import (
-	"encoding/json"
 	"net/http"
-	"sort"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -74,17 +72,11 @@ func activityTable(entries []*audit.Entry) g.Node {
 
 	rows := make([]g.Node, 0, len(entries))
 	for _, e := range entries {
-		desc := Description(e)
-		action := string(e.Action)
-		if e.ObjectType == audit.ObjectTypeFeatureAssignment && (e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy) {
-			action = "redeploy"
-		}
-		showDesc := desc != "" && e.ObjectType != audit.ObjectTypeConfiguration && action != "redeploy"
 		rows = append(rows, h.Tr(
-			h.Td(g.Text(action)),
-			h.Td(ResourceLink(e)),
-			h.Td(EnvLink(e)),
-			h.Td(h.Class("text-muted"), components.ConfigChangeNode(e), g.If(showDesc, h.Div(g.Text(desc)))),
+			h.Td(g.Text(auditview.DisplayAction(e))),
+			h.Td(auditview.ResourceLink(e)),
+			h.Td(auditview.EnvLink(e)),
+			h.Td(h.Class("text-muted"), auditview.DetailNode(e)),
 			h.Td(view.ActorNode(e.Actor)),
 			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
 		))
@@ -101,136 +93,4 @@ func activityTable(entries []*audit.Entry) g.Node {
 		)),
 		h.TBody(g.Group(rows)),
 	)
-}
-
-func Description(e *audit.Entry) string {
-	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.Action == audit.ActionCreated {
-		description := strings.TrimSpace(e.Description)
-		version := strings.TrimSpace(strings.TrimPrefix(strings.Split(description, "→")[0], "version"))
-		if version == "" {
-			return description
-		}
-		return "version " + version + " → " + auditTargetDescription(e)
-	}
-	if e.Description != "" {
-		return e.Description
-	}
-	return e.Summary()
-}
-
-func auditTargetDescription(e *audit.Entry) string {
-	var metadata struct {
-		Target map[string]string `json:"target"`
-	}
-	if len(e.Metadata) > 0 && json.Unmarshal(e.Metadata, &metadata) == nil && len(metadata.Target) > 0 {
-		return formatLabels(metadata.Target)
-	}
-	parts := strings.Split(e.Description, "→")
-	if len(parts) > 1 {
-		if target := strings.TrimSpace(parts[1]); target != "" {
-			return target
-		}
-	}
-	return "all environments"
-}
-
-func formatLabels(labels map[string]string) string {
-	if len(labels) == 0 {
-		return "all environments"
-	}
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, k := range keys {
-		parts = append(parts, k+"="+labels[k])
-	}
-	return strings.Join(parts, ", ")
-}
-
-func ResourceLink(e *audit.Entry) g.Node {
-	var nodes []g.Node
-
-	// Deployment with metadata deploymentId: "deployment of feature" with two links
-	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.ObjectID != "all" {
-		if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
-			nodes = append(nodes,
-				h.A(h.Href("/assignments/"+depID), g.Text("assignment")),
-				g.Text(" of "),
-				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
-			)
-		} else if e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy {
-			nodes = append(nodes,
-				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
-			)
-		}
-	}
-
-	if len(nodes) == 0 {
-		label := e.ObjectType.Display() + " " + e.ObjectID
-		href := ResourceHref(e)
-		if href == "" {
-			nodes = append(nodes, g.Text(label))
-		} else {
-			nodes = append(nodes, h.A(h.Href(href), g.Text(label)))
-		}
-	}
-
-	return g.Group(nodes)
-}
-
-func ResourceHref(e *audit.Entry) string {
-	switch e.ObjectType {
-	case audit.ObjectTypeFeature:
-		return "/features/" + e.ObjectID
-	case audit.ObjectTypeFeatureAssignment:
-		if e.ObjectID == "all" {
-			return ""
-		}
-		if _, err := uuid.Parse(e.ObjectID); err == nil {
-			return ""
-		}
-		return "/features/" + e.ObjectID
-	case audit.ObjectTypeConfiguration:
-		// ObjectID is "feature/key" — link to the config tab with anchor
-		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
-			feature := e.ObjectID[:i]
-			key := e.ObjectID[i+1:]
-			if e.EnvironmentID != nil && e.TenantName != "" && e.EnvironmentName != "" {
-				return "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName + "/features/" + feature + "/config#config-" + key
-			}
-			return "/features/" + feature + "/config#config-" + key
-		}
-		return ""
-	case audit.ObjectTypeEnvironment, audit.ObjectTypeEnvironmentValue:
-		if e.TenantName != "" && e.EnvironmentName != "" {
-			return "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
-		}
-		return ""
-	default:
-		return ""
-	}
-}
-
-func EnvLink(e *audit.Entry) g.Node {
-	if e.TenantName == "" || e.EnvironmentName == "" {
-		return g.Text("")
-	}
-	label := e.TenantName + "/" + e.EnvironmentName
-	href := "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName
-	return h.A(h.Href(href), g.Text(label))
-}
-
-func metadataString(meta []byte, key string) string {
-	if len(meta) == 0 {
-		return ""
-	}
-	var m map[string]any
-	if err := json.Unmarshal(meta, &m); err != nil {
-		return ""
-	}
-	v, _ := m[key].(string)
-	return v
 }

@@ -15,11 +15,11 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/layout"
-	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -399,17 +399,11 @@ func recentActivity(audits []*audit.Entry) g.Node {
 
 	tableRows := make([]g.Node, 0, len(filtered))
 	for _, a := range filtered {
-		resource := auditlog.ResourceLink(a)
-		description := auditlog.Description(a)
-		action := string(a.Action)
-		if a.ObjectType == audit.ObjectTypeFeatureAssignment && (a.Action == audit.ActionTriggered || a.Action == audit.ActionRedeploy) {
-			action = "redeploy"
-		}
-		showDesc := description != "" && !descriptionRedundant(a)
+		resource := auditview.ResourceLink(a)
 		tableRows = append(tableRows, h.Tr(
-			h.Td(g.Text(action)),
+			h.Td(g.Text(auditview.DisplayAction(a))),
 			h.Td(resource),
-			h.Td(h.Class("text-muted"), components.ConfigChangeNode(a), g.If(showDesc, h.Div(g.Text(description)))),
+			h.Td(h.Class("text-muted"), auditview.DetailNode(a)),
 			h.Td(view.ActorNode(a.Actor)),
 			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
 		))
@@ -515,7 +509,7 @@ func detailPage(data *DetailPage) g.Node {
 				AllHref:       "/auditlog?q=" + url.QueryEscape(data.CurrentFeature.Name),
 				Entries:       data.RecentActivity,
 				ResourceNode:  configKeyNode,
-				DescriptionFn: auditlog.Description,
+				DescriptionFn: auditview.Description,
 			})),
 		)
 	}
@@ -539,17 +533,7 @@ func configKeyNode(e *audit.Entry) g.Node {
 			return h.Code(g.Text(e.ObjectID[i+1:]))
 		}
 	}
-	return auditlog.ResourceLink(e)
-}
-
-func descriptionRedundant(e *audit.Entry) bool {
-	if e.ObjectType == audit.ObjectTypeConfiguration {
-		return true
-	}
-	if e.ObjectType == audit.ObjectTypeFeatureAssignment && (e.Action == audit.ActionTriggered || e.Action == audit.ActionRedeploy) {
-		return true
-	}
-	return false
+	return auditview.ResourceLink(e)
 }
 
 func loadFeatureData(r *http.Request) (*DetailPage, error) {
