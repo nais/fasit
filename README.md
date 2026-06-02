@@ -4,17 +4,8 @@ Fasit is a multi-tenant feature management platform. It deploys OCI Helm charts 
 
 ## How it works
 
-```mermaid
-graph LR
-    A[Feature author] -->|push chart| R[OCI Registry]
-    A -->|create assignment| F[Fasit]
-    F -->|deploy instruction| N[naisd]
-    N -->|pull chart| R
-    N -->|helm install| E[Environment]
-```
-
 1. A **feature** is an OCI Helm chart with a `Feature.yaml` that declares its configurable values and target environment kinds.
-2. An operator creates an **assignment** — handing a feature version to Fasit with a set of target **labels** (e.g. `tenant=nav`, `env=prod`).
+2. A feature author creates an **assignment** — handing a feature version to Fasit with a set of target **labels** (e.g. `tenant=nav`, `env=prod`).
 3. Fasit matches the assignment to all **environments** whose labels are a superset of the target.
 4. The **reconciler** renders helm values for each matched environment and sends **deploy instructions** to the **naisd** agent running there.
 5. naisd executes `helm install/upgrade` and reports status back.
