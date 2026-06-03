@@ -252,10 +252,13 @@ WHERE
 	AND active = TRUE;
 
 -- name: HasActiveAssignments :one
-SELECT EXISTS (
-	SELECT 1
-	FROM feature_assignments
-	WHERE feature_name = @feature_name
-		AND active = TRUE
-) AS has_active;
+SELECT
+	EXISTS (
+		SELECT
+			1
+		FROM
+			feature_assignments
+		WHERE
+			feature_name = @feature_name
+			AND active = TRUE) AS has_active;
 

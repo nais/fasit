@@ -77,9 +77,9 @@ FROM
 		AND d.version = fd.version
 WHERE
 	d.active = TRUE
-	ORDER BY
-		d.feature_name,
-		d.created DESC
+ORDER BY
+	d.feature_name,
+	d.created DESC
 `
 
 type FeatureIndexRowsRow struct {

@@ -188,12 +188,15 @@ func (q *Queries) GetReconcileStatus(ctx context.Context, arg GetReconcileStatus
 }
 
 const hasActiveAssignments = `-- name: HasActiveAssignments :one
-SELECT EXISTS (
-	SELECT 1
-	FROM feature_assignments
-	WHERE feature_name = $1
-		AND active = TRUE
-) AS has_active
+SELECT
+	EXISTS (
+		SELECT
+			1
+		FROM
+			feature_assignments
+		WHERE
+			feature_name = $1
+			AND active = TRUE) AS has_active
 `
 
 func (q *Queries) HasActiveAssignments(ctx context.Context, featureName string) (bool, error) {
