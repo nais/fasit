@@ -71,7 +71,7 @@ func main() {
 	}
 
 	if err := run(ctx, log); err != nil {
-		log.Error("fatal", "error", err)
+		log.With("err", err).Error("fatal")
 		os.Exit(1)
 	}
 
@@ -96,7 +96,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		mux.Handle("/metrics", promhttp.Handler())
 		srv := &http.Server{Addr: cfg.BindAddress, Handler: mux, ReadHeaderTimeout: 2 * time.Second}
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("metrics server", "error", err)
+			log.With("err", err).Error("metrics server")
 		}
 	}()
 
@@ -150,14 +150,14 @@ func upgrade(ctx context.Context, log *slog.Logger) {
 	log.Info("Upgrading naisd")
 	meter, err := newNaisdMetricsProvider()
 	if err != nil {
-		log.Error("creating metrics provider", "error", err)
+		log.With("err", err).Error("creating metrics provider")
 		os.Exit(1)
 	}
 	receiver, _, _ := sharedDependencies(ctx, log, meter)
 
 	err = naisd.Upgrade(ctx, receiver, log.With("subsystem", "self-upgrade"))
 	if err != nil {
-		log.Error("upgrading naisd", "error", err)
+		log.With("err", err).Error("upgrading naisd")
 		os.Exit(1)
 	}
 
@@ -170,7 +170,7 @@ func upgrade(ctx context.Context, log *slog.Logger) {
 func sharedDependencies(ctx context.Context, log *slog.Logger, meter metric.Meter) (*naisd.DeployManager, naisd.HelmClient, *message.Publisher[message.Status]) {
 	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
 	if err != nil {
-		log.Error("setting up new pub/sub client", "error", err)
+		log.With("err", err).Error("setting up new pub/sub client")
 		os.Exit(1)
 	}
 
@@ -199,18 +199,18 @@ func sharedDependencies(ctx context.Context, log *slog.Logger, meter metric.Mete
 
 		kubeConfig, err = rest.InClusterConfig()
 		if err != nil {
-			log.Error("failed to get kubeconfig", "error", err)
+			log.With("err", err).Error("failed to get kubeconfig")
 			os.Exit(1)
 		}
 		helmClient = helm.New(kubeConfig, "nais-system", log.With("subsystem", "helm"))
 		k8sClient, err = kubernetes.NewForConfig(kubeConfig)
 		if err != nil {
-			log.Error("setting up k8s client", "error", err)
+			log.With("err", err).Error("setting up k8s client")
 			os.Exit(1)
 		}
 		err := ensureAnnotation(ctx, k8sClient, cfg.EnvProjectID)
 		if err != nil {
-			log.Error("annotating namespace", "error", err)
+			log.With("err", err).Error("annotating namespace")
 		}
 	}
 	receiver, err := naisd.NewDeployManager(
@@ -226,7 +226,7 @@ func sharedDependencies(ctx context.Context, log *slog.Logger, meter metric.Mete
 		log.With("subsystem", "deploy"),
 	)
 	if err != nil {
-		log.Error("setting up worker", "error", err)
+		log.With("err", err).Error("setting up worker")
 		os.Exit(1)
 	}
 	receiver.SetMeter(meter)

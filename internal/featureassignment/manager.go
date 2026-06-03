@@ -70,7 +70,7 @@ func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {
 	di, err := GetDeployInstruction(ctx, status.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			m.log.Warn("unknown deploy instruction", "diid", status.DIID)
+			m.log.With("diid", status.DIID).Warn("unknown deploy instruction")
 			return nil
 		}
 		return err
@@ -88,13 +88,11 @@ func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {
 			Message:             msg,
 		})
 		if err != nil {
-			m.log.Error("create feature assignment status",
-				"error", err,
+			m.log.With("err", err,
 				"feature_assignment_id", di.FeatureAssignmentID,
 				"environment_id", di.EnvironmentID,
 				"status", status.RolloutStatus,
-				"msg", msg,
-			)
+				"msg", msg).Error("create feature assignment status")
 		}
 	}
 	return nil

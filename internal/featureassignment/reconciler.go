@@ -54,7 +54,7 @@ func (r *reconciler) Run(ctx context.Context, interval time.Duration) {
 		r.log.Info("reconciling")
 		err := r.Reconcile(ctx)
 		if err != nil {
-			r.log.Error("reconcile", "error", err)
+			r.log.With("err", err).Error("reconcile")
 		}
 
 		select {
@@ -81,7 +81,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("get tenant environments: %w", err)
 	}
 
-	r.log.Info("reconciling tenant environments", "num_envs", len(tenantEnvironments))
+	r.log.With("num_envs", len(tenantEnvironments)).Info("reconciling tenant environments")
 	for _, environment := range tenantEnvironments {
 		if err := r.reconcileEnvironment(ctx, environment); err != nil {
 			return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, environment.TenantName, err)
@@ -130,10 +130,9 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		return fmt.Errorf("get feature assignments for environment %q: %w", environment.Name, err)
 	}
 
-	r.log.Info("feature assignments to reconcile for environment",
-		"tenant", environment.TenantName,
+	r.log.With("tenant", environment.TenantName,
 		"env", environment.Name,
-		"num_assignments", len(assignments))
+		"num_assignments", len(assignments)).Info("feature assignments to reconcile for environment")
 	for _, assignment := range assignments {
 		if err := r.deployer.deployToEnvironment(ctx, assignment, environment, publisher); err != nil {
 			return err

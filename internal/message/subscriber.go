@@ -51,7 +51,7 @@ func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context,
 		default:
 		}
 		if err := s.receive(ctx, f); err != nil {
-			s.log.Error("subscriber error during receive", "error", err)
+			s.log.With("err", err).Error("subscriber error during receive")
 		}
 	}
 }
@@ -61,14 +61,14 @@ func (s *Subscriber[T]) receive(ctx context.Context, f func(ctx context.Context,
 		ctx = context.WithValue(ctx, ackContext, msg)
 		var t T
 		if err := json.Unmarshal(msg.Data, &t); err != nil {
-			s.log.Error("unmarshal message", "error", err)
+			s.log.With("err", err).Error("unmarshal message")
 			msg.Ack()
 			return
 		}
 
 		if err := f(ctx, t); err != nil {
 			if !errors.Is(err, ErrNack) {
-				s.log.Error("handle message", "error", err)
+				s.log.With("err", err).Error("handle message")
 			}
 			msg.Nack()
 			return

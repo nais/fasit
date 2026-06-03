@@ -18,7 +18,7 @@ func collectKeyRefs(assignments []*FeatureAssignment) map[string][]string {
 			Management []string `json:"Management"`
 		}
 		if err := json.Unmarshal(dep.TplDetails, &details); err != nil {
-			slog.Warn("failed to unmarshal tpl_details", "error", err, "feature", dep.Feature.Name)
+			slog.With("err", err, "feature", dep.Feature.Name).Warn("failed to unmarshal tpl_details")
 			continue
 		}
 		seen := make(map[string]bool)

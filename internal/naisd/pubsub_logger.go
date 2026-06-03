@@ -76,13 +76,13 @@ func (p *pubsubLogger) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			if err := p.Publish(context.Background()); err != nil {
-				p.log.Error("publishing logs", "error", err)
+				p.log.With("err", err).Error("publishing logs")
 			}
 		case <-ctx.Done():
 			return
 		case <-p.close:
 			if err := p.Publish(context.Background()); err != nil {
-				p.log.Error("publishing logs", "error", err)
+				p.log.With("err", err).Error("publishing logs")
 			}
 			return
 		}

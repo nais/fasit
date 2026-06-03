@@ -65,7 +65,7 @@ func (p *Publisher[T]) SetMeter(meter metric.Meter) {
 		metric.WithDescription("Total pub/sub messages published"),
 	)
 	if err != nil {
-		p.log.Warn("failed to create publish counter", "error", err)
+		p.log.With("err", err).Warn("failed to create publish counter")
 	}
 
 	p.publishDuration, err = meter.Float64Histogram("pubsub_publish_duration_seconds",
@@ -73,7 +73,7 @@ func (p *Publisher[T]) SetMeter(meter metric.Meter) {
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		p.log.Warn("failed to create publish duration histogram", "error", err)
+		p.log.With("err", err).Warn("failed to create publish duration histogram")
 	}
 }
 
@@ -85,7 +85,7 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 
 	start := time.Now()
 
-	p.log.Debug("Published message", "topic", p.topic.String())
+	p.log.With("topic", p.topic.String()).Debug("Published message")
 	res := p.topic.Publish(ctx, &pubsub.Message{
 		Data:       data,
 		Attributes: p.config.attributes,

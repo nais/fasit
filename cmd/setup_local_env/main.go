@@ -108,7 +108,7 @@ func main() {
 	}
 
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
-		log.Error("fatal", "error", err)
+		log.With("err", err).Error("fatal")
 		os.Exit(1)
 	}
 
@@ -133,14 +133,14 @@ func main() {
 		_, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
 		if err != nil {
 			if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-				log.Error("fatal", "error", err)
+				log.With("err", err).Error("fatal")
 				os.Exit(1)
 			}
 		}
 
 		tenant, err := environment.GetTenantByName(ctx, tenantName)
 		if err != nil {
-			log.Error("fatal", "error", err)
+			log.With("err", err).Error("fatal")
 			os.Exit(1)
 		}
 
@@ -159,19 +159,19 @@ func main() {
 					continue
 				}
 
-				log.Error("fatal", "error", err)
+				log.With("err", err).Error("fatal")
 				os.Exit(1)
 			}
 
 			err = environment.SetEnvironmentValue(ctx, e.ID, "project_id", json.RawMessage(fmt.Sprintf("%q", "nais-"+env)), false)
 			if err != nil {
-				log.Error("fatal", "error", err)
+				log.With("err", err).Error("fatal")
 				os.Exit(1)
 			}
 
 			err = environment.SetEnvironmentValue(ctx, e.ID, "updated_at", json.RawMessage(fmt.Sprintf("%q", time.Now().String())), false)
 			if err != nil {
-				log.Error("fatal", "error", err)
+				log.With("err", err).Error("fatal")
 				os.Exit(1)
 			}
 
@@ -185,7 +185,7 @@ func main() {
 			}
 			for k, v := range secretEnvValues {
 				if err := environment.SetEnvironmentValue(ctx, e.ID, k, json.RawMessage(fmt.Sprintf("%q", v)), true); err != nil {
-					log.Error("fatal", "error", err)
+					log.With("err", err).Error("fatal")
 					os.Exit(1)
 				}
 			}
@@ -195,12 +195,12 @@ func main() {
 	envID := func(tenantName, envName string) uuid.UUID {
 		t, err := environment.GetTenantByName(ctx, tenantName)
 		if err != nil {
-			log.Error("fatal", "error", err)
+			log.With("err", err).Error("fatal")
 			os.Exit(1)
 		}
 		env, err := environment.GetByName(ctx, t.ID, envName)
 		if err != nil {
-			log.Error("fatal", "error", err, "tenant", tenantName, "env", envName)
+			log.With("err", err, "tenant", tenantName, "env", envName).Error("fatal")
 			os.Exit(1)
 		}
 		return env.ID
@@ -432,7 +432,7 @@ func main() {
 
 	ctx = auth.SetEmail(ctx, "tronghn@nais/fasit/123456789")
 	if _, err := seeder.Seed(ctx); err != nil {
-		log.Error("fatal", "error", err)
+		log.With("err", err).Error("fatal")
 		os.Exit(1)
 	}
 
@@ -446,7 +446,7 @@ func main() {
 		for key, val := range defaults {
 			b, err := json.Marshal(val)
 			if err != nil {
-				log.Error("marshal default", "error", err, "feature", featureName, "key", key)
+				log.With("err", err, "feature", featureName, "key", key).Error("marshal default")
 				continue
 			}
 			// Skip empty values: they wouldn't satisfy required-field validation,
@@ -461,7 +461,7 @@ func main() {
 				Value:   json.RawMessage(b),
 			}); err != nil {
 				if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					log.Error("seed global default", "error", err, "feature", featureName, "key", key)
+					log.With("err", err, "feature", featureName, "key", key).Error("seed global default")
 				}
 			}
 		}
@@ -470,7 +470,7 @@ func main() {
 	// Features are enabled by default (absence from disabled_features = enabled).
 	// Disable one feature to get a DISABLED status row in the mix.
 	if err := feature.FeatureDisable(ctx, envID("dev-nais", "dev"), "dependencytrack", "seeded as disabled for local dev"); err != nil {
-		log.Error("disable dependencytrack in dev-nais/dev", "error", err)
+		log.With("err", err).Error("disable dependencytrack in dev-nais/dev")
 	}
 
 	// Sprinkle a couple of env-level config overrides on naiserator so the Config
@@ -494,7 +494,7 @@ func main() {
 			Key:           o.key,
 			Value:         json.RawMessage(o.value),
 		}); err != nil {
-			log.Error("seed override", "error", err, "feature", o.feature, "key", o.key, "tenant", o.tenant, "env", o.env)
+			log.With("err", err, "feature", o.feature, "key", o.key, "tenant", o.tenant, "env", o.env).Error("seed override")
 		}
 	}
 
@@ -557,7 +557,7 @@ func main() {
 	// Set up pubsub topics and subscriptions.
 	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {
-		log.Error("fatal", "error", err)
+		log.With("err", err).Error("fatal")
 		os.Exit(1)
 	}
 
@@ -565,14 +565,14 @@ func main() {
 		Name: "projects/" + naisProjectID + "/topics/" + statusTopic,
 	})
 	if err != nil {
-		log.Error("error", "error", err)
+		log.With("err", err).Error("error")
 	}
 	_, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 		Name:  "projects/" + naisProjectID + "/subscriptions/" + statusSubscription,
 		Topic: topicRes.GetName(),
 	})
 	if err != nil {
-		log.Error("error", "error", err)
+		log.With("err", err).Error("error")
 	}
 
 	for tenant, envs := range envs {
@@ -582,12 +582,12 @@ func main() {
 
 			_, err = client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{Name: topic})
 			if err != nil {
-				log.Error("error", "error", err)
+				log.With("err", err).Error("error")
 			}
 
 			envClient, err := pubsub.NewClient(ctx, "local-"+tenant+"-"+env)
 			if err != nil {
-				log.Error("fatal", "error", err)
+				log.With("err", err).Error("fatal")
 				os.Exit(1)
 			}
 			_, err = envClient.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
@@ -595,7 +595,7 @@ func main() {
 				Topic: topic,
 			})
 			if err != nil {
-				log.Error("error", "error", err)
+				log.With("err", err).Error("error")
 			}
 		}
 	}

@@ -162,7 +162,7 @@ func (d *DeployManager) SetMeter(meter metric.Meter) {
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		d.log.Warn("failed to create helm duration histogram", "error", err)
+		d.log.With("err", err).Warn("failed to create helm duration histogram")
 	}
 
 	d.handlerDuration, err = meter.Float64Histogram("deploy_handler_duration_seconds",
@@ -170,12 +170,12 @@ func (d *DeployManager) SetMeter(meter metric.Meter) {
 		metric.WithUnit("s"),
 	)
 	if err != nil {
-		d.log.Warn("failed to create handler duration histogram", "error", err)
+		d.log.With("err", err).Warn("failed to create handler duration histogram")
 	}
 }
 
 func (d *DeployManager) Run(ctx context.Context) {
-	d.log.Info("Starting deploy receiver", "subscription", d.deployments.Name())
+	d.log.With("subscription", d.deployments.Name()).Info("Starting deploy receiver")
 	d.deployments.Synchronous()
 
 	ctx, d.stop = context.WithCancel(ctx)
@@ -186,7 +186,7 @@ func (d *DeployManager) Run(ctx context.Context) {
 				d.log.Info("Restarting deploy receiver")
 				return
 			}
-			d.log.Error("receive status messages", "error", err)
+			d.log.With("err", err).Error("receive status messages")
 			// retry logic? This should only trigger when an upgrade is triggered.
 		}
 
@@ -224,11 +224,9 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		return d.uninstallHandler(ctx, msg)
 	}
 
-	d.log.Debug("Received instruction",
-		"name", msg.Name,
+	d.log.With("name", msg.Name,
 		"chart", msg.Chart,
-		"version", msg.Version,
-	)
+		"version", msg.Version).Debug("Received instruction")
 
 	pubsubLog := newPubsubLogger(msg.ID, d.statuses, d.log)
 
@@ -238,7 +236,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
 		if d.inProgress.Value() > 0 {
 			if d.lastChecked.Get().Add(15 * time.Second).Before(time.Now()) {
-				d.log.Debug("Postponing naisd upgrade", "inProgress", d.inProgress.Value())
+				d.log.With("inProgress", d.inProgress.Value()).Debug("Postponing naisd upgrade")
 				_, _ = fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
 				d.lastChecked.Set()
 			}
@@ -269,7 +267,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 	defer func() {
 		if err := os.Remove(valuesFile); err != nil {
-			d.log.Error("error removing values file", "error", err)
+			d.log.With("err", err).Error("error removing values file")
 		}
 	}()
 
@@ -296,7 +294,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStart := time.Now()
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args)
 	if err != nil {
-		d.log.Warn("failed to run helm", "error", err, "feature", msg.Name)
+		d.log.With("err", err, "feature", msg.Name).Warn("failed to run helm")
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
 		helmStatus.Error = err.Error()
 	} else {
@@ -326,7 +324,7 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 	watcher, err := d.k8sClient.CoreV1().Events(namespace).Watch(ctx, opts)
 	if err != nil {
 		_, _ = fmt.Fprintf(pubsubLog, "failed to watch events: %s\n", err)
-		d.log.Warn("failed to watch events", "error", err)
+		d.log.With("err", err).Warn("failed to watch events")
 		return
 	}
 
@@ -361,7 +359,7 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 			}
 
 			if strings.Contains(e.InvolvedObject.Name, msg.Name) {
-				d.log.Info("Add event", "event", e.Message)
+				d.log.With("event", e.Message).Info("Add event")
 				pubsubLog.AddEvent(e)
 			}
 		}

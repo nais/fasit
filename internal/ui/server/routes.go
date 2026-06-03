@@ -20,7 +20,7 @@ func (s *Server) Routes() http.Handler {
 
 	mm, err := NewMetricsMiddleware(s.meter)
 	if err != nil {
-		slog.Warn("failed to create HTTP metrics middleware", "error", err)
+		slog.With("err", err).Warn("failed to create HTTP metrics middleware")
 	} else {
 		r.Use(mm.Handler)
 	}

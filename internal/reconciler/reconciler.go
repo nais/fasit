@@ -54,13 +54,13 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher
 		r.log.Info("reconciling")
 		result, err := r.ComputeDesiredState(ctx)
 		if err != nil {
-			r.log.Error("reconcile", "error", err)
+			r.log.With("err", err).Error("reconcile")
 		} else {
 			ioStart := time.Now()
 			if err := dispatcher.Dispatch(ctx, result.Decisions); err != nil {
-				r.log.Error("dispatch", "error", err)
+				r.log.With("err", err).Error("dispatch")
 			}
-			r.log.Info("decisions dispatched", "io", time.Since(ioStart))
+			r.log.With("io", time.Since(ioStart)).Info("decisions dispatched")
 		}
 
 		select {
@@ -93,9 +93,8 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 	}
 	fetchDur := time.Since(fetchStart)
 
-	r.log.Info("reconciling tenant environments",
-		"num_envs", len(snap.environments),
-		"num_assignments", len(snap.assignments))
+	r.log.With("num_envs", len(snap.environments),
+		"num_assignments", len(snap.assignments)).Info("reconciling tenant environments")
 
 	computeStart := time.Now()
 	decisions := r.computeActions(snap)
@@ -107,15 +106,13 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 			deployCount++
 		}
 	}
-	r.log.Info("compute complete",
-		"total_decisions", len(decisions),
-		"deploy_count", deployCount)
+	r.log.With("total_decisions", len(decisions),
+		"deploy_count", deployCount).Info("compute complete")
 
 	totalDur := time.Since(loopStart)
-	r.log.Info("reconcile complete",
-		"fetch", fetchDur,
+	r.log.With("fetch", fetchDur,
 		"compute", computeDur,
-		"total", totalDur)
+		"total", totalDur).Info("reconcile complete")
 
 	r.reconcileLoopTime.Record(ctx, totalDur.Milliseconds())
 	return &DesiredState{

@@ -59,20 +59,20 @@ func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, props layout
 	props.AppVersion = s.appVersion
 	names, err := featurepkg.FeatureNames(r.Context())
 	if err != nil {
-		slog.Error("loading feature names for search", "error", err)
+		slog.With("err", err).Error("loading feature names for search")
 	} else {
 		props.FeatureNames = names
 	}
 	err = layout.Page(props).Render(w)
 	if err != nil {
-		slog.Error("error rendering page", "error", err)
+		slog.With("err", err).Error("error rendering page")
 	}
 }
 
 func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, file string) {
 	data, err := s.siteFS.Open("site/" + file)
 	if err != nil {
-		slog.Error("error opening file", "error", err, "file", file)
+		slog.With("err", err, "file", file).Error("error opening file")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +91,7 @@ func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, file string) 
 	}
 	_, err = io.Copy(w, data)
 	if err != nil {
-		slog.Error("error serving file", "error", err, "file", file)
+		slog.With("err", err, "file", file).Error("error serving file")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

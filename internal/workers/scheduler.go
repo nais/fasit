@@ -53,7 +53,7 @@ func (s *Scheduler) run(ctx context.Context, w *scheduledWorker) {
 	for {
 		log.Debug("running")
 		if err := w.v.Run(ctx); err != nil {
-			log.Error("error running scheduled worker", "error", err)
+			log.With("err", err).Error("error running scheduled worker")
 		}
 		select {
 		case <-ctx.Done():

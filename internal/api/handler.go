@@ -50,7 +50,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 	assignmentID, err := uuid.Parse(chi.URLParam(req, "id"))
 	if err != nil {
 		http.Error(w, "invalid assignment id", http.StatusBadRequest)
-		h.log.Error("convert assignment ID", "error", err)
+		h.log.With("err", err).Error("convert assignment ID")
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 		return
 	} else if err != nil {
 		http.Error(w, "unable to get assignment", http.StatusInternalServerError)
-		h.log.Error("get assignment", "error", err)
+		h.log.With("err", err).Error("get assignment")
 		return
 	}
 
@@ -67,7 +67,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 	states, err := h.listReconcileStatuses(ctx, assignmentID)
 	if err != nil {
 		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
-		h.log.Warn("list reconcile statuses; returning UNKNOWN", "error", err)
+		h.log.With("err", err).Warn("list reconcile statuses; returning UNKNOWN")
 	} else {
 		state, _ = states.Aggregate()
 	}
@@ -77,7 +77,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 		ID:    assignmentID,
 		State: state,
 	}); err != nil {
-		h.log.Error("encode assignment response", "error", err)
+		h.log.With("err", err).Error("encode assignment response")
 	}
 }
 
@@ -114,7 +114,7 @@ func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.R
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.log.Error("create assignment", "error", err)
+		h.log.With("err", err).Error("create assignment")
 		return
 	}
 

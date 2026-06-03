@@ -178,13 +178,13 @@ func (d *deployer) setFeatureReconcileStatus(ctx context.Context, featureAssignm
 		Message:             message,
 	})
 	if err != nil {
-		d.log.Error("create feature assignment status",
-			"error", err,
+		d.log.With(
+			"err", err,
 			"feature_assignment_id", featureAssignmentID,
 			"environment_id", environmentID,
 			"status", status,
 			"msg", message,
-		)
+		).Error("create feature assignment status")
 	}
 }
 

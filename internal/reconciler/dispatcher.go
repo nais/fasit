@@ -164,14 +164,14 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 	for _, item := range toPublish {
 		pub := w.publisher(item.topicID)
 		if err := pub.Publish(ctx, item.instruction); err != nil {
-			w.log.Error("publish deploy instruction", "error", err, "feature", item.featureName, "env", item.envName)
+			w.log.With("err", err, "feature", item.featureName, "env", item.envName).Error("publish deploy instruction")
 			continue
 		}
 		if err := w.querier.SetDeployInstructionStatus(ctx, reconcilersql.SetDeployInstructionStatusParams{
 			ID:     item.instruction.ID,
 			Status: model.RolloutStatusPending.String(),
 		}); err != nil {
-			w.log.Error("set instruction status to sent", "error", err, "id", item.instruction.ID)
+			w.log.With("err", err, "id", item.instruction.ID).Error("set instruction status to sent")
 		}
 		w.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(
 			attribute.String("tenant", item.tenantName),

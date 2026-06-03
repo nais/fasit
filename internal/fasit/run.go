@@ -125,7 +125,7 @@ func Run(ctx context.Context) error {
 
 	go func() {
 		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, log); err != nil {
-			log.Error("running GRPC server", "error", err)
+			log.With("err", err).Error("running GRPC server")
 		}
 	}()
 
@@ -138,9 +138,9 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		log.Info("listening", "addr", "http://"+cfg.HTTPBindAddress+"/")
+		log.With("addr", "http://"+cfg.HTTPBindAddress+"/").Info("listening")
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("running server", "error", err)
+			log.With("err", err).Error("running server")
 		}
 	}()
 
@@ -154,7 +154,7 @@ func Run(ctx context.Context) error {
 	defer cancel()
 
 	if err := httpServer.Shutdown(timeoutCtx); err != nil {
-		log.Error("shutting down server", "error", err)
+		log.With("err", err).Error("shutting down server")
 	}
 
 	return nil
@@ -176,7 +176,7 @@ func newLogger(level string) *slog.Logger {
 }
 
 func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, log *slog.Logger) error {
-	log.Info("GRPC serving", "addr", bindAddress)
+	log.With("addr", bindAddress).Info("GRPC serving")
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)

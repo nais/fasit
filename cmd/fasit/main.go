@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if err := fasit.Run(context.Background()); err != nil {
-		slog.Error("error occurred while running fasit", "error", err)
+		slog.With("err", err).Error("error occurred while running fasit")
 		os.Exit(1)
 	}
 }

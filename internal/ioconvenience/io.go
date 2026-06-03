@@ -7,6 +7,6 @@ import (
 
 func CloseWithLog(r io.Closer, log *slog.Logger) {
 	if err := r.Close(); err != nil {
-		log.Warn("unable to close reader", "error", err)
+		log.With("err", err).Warn("unable to close reader")
 	}
 }

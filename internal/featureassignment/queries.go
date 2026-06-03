@@ -406,7 +406,7 @@ func TimeoutDeployInstructions(ctx context.Context, log *slog.Logger) {
 	for {
 		err := querier(ctx).TimeoutDeployInstructions(ctx)
 		if err != nil {
-			log.Error("failed to timeout deploy instructions", "error", err)
+			log.With("err", err).Error("failed to timeout deploy instructions")
 		}
 
 		select {

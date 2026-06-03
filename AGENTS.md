@@ -69,7 +69,7 @@ PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). 
 
 ### Logging
 
-Use `log/slog` exclusively. No logrus, no third-party logging libraries. Pass `*slog.Logger` as an explicit dependency. Use structured key-value pairs: `log.Error("msg", "key", value, "error", err)`.
+Use `log/slog` exclusively. No logrus, no third-party logging libraries. Pass `*slog.Logger` as an explicit dependency. Keep the message separate from attributes; prefer `log.With(...)` for contextual fields, including one-off event fields when it keeps the call site clearer. When the same context is reused across multiple log lines, bind it once to a named logger. Use stable attribute names like `request_id`, `user_id`, and `err`.
 
 ### Comments
 
