@@ -16,7 +16,6 @@ func FeatureSidebar(featureName, activeTab, activeTenant, activeEnvironment stri
 				featureNavItem("/features/"+featureName, "Overview", activeTab == "overview"),
 				featureNavItem("/features/"+featureName+"/assignments", "Assignments", activeTab == "assignments"),
 				featureNavItem("/features/"+featureName+"/config", "Config", activeTab == "config"),
-				featureNavItem("/features/"+featureName+"/config-explorer", "Config explorer", activeTab == "config-explorer"),
 			),
 			h.Div(h.Class("sidebar-section-label"), g.Text("Environments")),
 			h.Ul(g.Group(g.Map(envs, func(env featureenvs.Environment) g.Node {

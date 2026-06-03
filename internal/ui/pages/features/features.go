@@ -36,7 +36,6 @@ type DetailPage struct {
 	RecentActivity []*audit.Entry
 	ActiveTab      string
 	ConfigItems    []components.ConfigItem
-	ExplorerData   *configExplorerData
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -154,25 +153,6 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 		data.RecentActivity, _ = audit.ListGlobalConfigForFeature(r.Context(), data.CurrentFeature.Name, 10)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config", CurrentPage: components.PageFeatures, Content: detailPage(data)})
-	}
-}
-
-func ConfigExplorerHandler(renderPage RenderPage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeatureData(r)
-		if err != nil {
-			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
-			return
-		}
-		data.ActiveTab = "config-explorer"
-		data.ExplorerData, err = loadConfigExplorerData(r.Context(), data.CurrentFeature)
-		if err != nil {
-			http.Error(w, "Failed to load config explorer", http.StatusInternalServerError)
-			return
-		}
-		data.ExplorerData.SelectedKeys = parseExplorerKeys(r, data.ExplorerData.AllKeys)
-		renderComputedCells(r.Context(), data.CurrentFeature, data.ExplorerData, data.ExplorerData.SelectedKeys)
-		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Config Explorer", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 
@@ -489,8 +469,6 @@ func detailPage(data *DetailPage) g.Node {
 		content = assignmentSpecsContent(data)
 	case "config":
 		content = globalConfigContent(data)
-	case "config-explorer":
-		content = configExplorerContent(data.CurrentFeature.Name, data.ExplorerData)
 	default:
 		content = assignmentDetailContent(data)
 		breadcrumbActions = append(breadcrumbActions, overviewToolbar())

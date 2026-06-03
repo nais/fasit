@@ -381,3 +381,62 @@ function dismissNavHint() {
   document.getElementById("nav-hotdog-hint")?.classList.add("visible");
   document.querySelector(".nav-hotdog")?.classList.add("highlighted");
 })();
+
+// Lazy modal: [data-lazy-modal="<url>"] fetches HTML and shows it in a modal.
+(() => {
+  const modal = document.createElement("div");
+  modal.className = "lazy-modal-backdrop";
+  modal.innerHTML = '<div class="lazy-modal"><button class="lazy-modal-close" type="button">&times;</button><div class="lazy-modal-content"></div></div>';
+  document.body.appendChild(modal);
+
+  const content = modal.querySelector(".lazy-modal-content");
+  const closeBtn = modal.querySelector(".lazy-modal-close");
+
+  function close() { modal.classList.remove("open"); }
+  closeBtn.addEventListener("click", close);
+  modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("open")) close(); });
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-lazy-modal]");
+    if (!btn) return;
+    e.preventDefault();
+    const url = btn.getAttribute("data-lazy-modal");
+    content.innerHTML = '<p class="text-muted">Loading…</p>';
+    modal.classList.add("open");
+    modal.dataset.url = url;
+    fetch(url)
+      .then((r) => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
+      .then((html) => { content.innerHTML = html; })
+      .catch((err) => { content.innerHTML = '<p class="text-error">Failed to load: ' + err.message + '</p>'; });
+  });
+
+  // Handle form submissions inside the modal (e.g. template tester)
+  document.addEventListener("submit", (e) => {
+    const form = e.target.closest(".lazy-modal-content [data-template-test]");
+    if (!form) return;
+    e.preventDefault();
+    const btn = form.querySelector("button[type=submit]");
+    if (btn) { btn.disabled = true; btn.textContent = "Rendering…"; }
+    const url = modal.dataset.url;
+    fetch(url, { method: "POST", body: new URLSearchParams(new FormData(form)) })
+      .then((r) => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
+      .then((html) => { content.innerHTML = html; })
+      .catch((err) => { content.innerHTML = '<p class="text-error">Failed: ' + err.message + '</p>'; });
+  });
+
+  // Help popover toggle
+  document.addEventListener("click", (e) => {
+    const toggle = e.target.closest("[data-help-toggle]");
+    if (toggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      const popover = toggle.nextElementSibling;
+      if (popover) popover.classList.toggle("open");
+      return;
+    }
+    if (!e.target.closest(".help-popover")) {
+      for (const p of document.querySelectorAll(".help-popover.open")) p.classList.remove("open");
+    }
+  });
+})();

@@ -1,7 +1,6 @@
 package environment
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -317,14 +316,10 @@ func RedeployHandler() http.HandlerFunc {
 func featurePageContent(page *FeaturePage) g.Node {
 	var tabContent g.Node
 	switch page.ActiveTab {
-	case "helm":
-		tabContent = helmTab(page)
 	case "assignments":
 		tabContent = assignmentsTab(page)
 	case "config":
 		tabContent = overviewTab(page)
-	case "playground":
-		tabContent = playgroundTab(page)
 	default:
 		tabContent = statusTab(page)
 	}
@@ -357,8 +352,6 @@ func envFeatureTabsNav(page *FeaturePage) g.Node {
 	tabs := []components.Tab{
 		{ID: "status", Href: base, Label: "Status"},
 		{ID: "config", Href: base + "/config", Label: "Config"},
-		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
-		{ID: "playground", Href: base + "/playground", Label: "Playground"},
 	}
 	activeTab := page.ActiveTab
 	if activeTab == "" {
@@ -560,9 +553,14 @@ func overviewTab(page *FeaturePage) g.Node {
 		}
 	}
 
+	helmURL := featureBasePathForPage(page) + "/helm-values"
+
 	return h.Div(h.Class("tab-content-wrapper env-feature-overview"),
 		configurableTable(page, configurable),
 		computedTable(page, computed),
+		h.Div(h.Class("config-toolbar"),
+			h.Button(h.Type("button"), h.Class("btn-secondary"), g.Attr("data-lazy-modal", helmURL), g.Text("Render Helm values")),
+		),
 	)
 }
 
@@ -637,12 +635,17 @@ func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
+				var extraKebab []g.Node
+				if item.Template != "" {
+					testURL := featureBasePathForPage(page) + "/template-test/" + item.Key
+					extraKebab = append(extraKebab, h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("data-lazy-modal", testURL), g.Text("Test template")))
+				}
 				return h.Tr(
 					components.ConfigKeyCell(item),
 					components.ConfigActionsCell(),
 					components.ComputedValueCell(item),
 					sourceLabelCell(item),
-					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key)),
+					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key, extraKebab...)),
 				)
 			})))),
 	)
@@ -679,135 +682,6 @@ func logBlock(lines []LogLine) g.Node {
 		}
 	}
 	return h.Pre(h.Class("code-block"), g.Group(nodes))
-}
-
-func helmTab(page *FeaturePage) g.Node {
-	if page.HelmValues == "" {
-		body := []g.Node{h.H2(g.Text("Computed Helm Values"))}
-		if page.HelmValuesError != "" {
-			body = append(body,
-				h.P(g.Text("Failed to render helm values:")),
-				h.Pre(h.Class("code-block"), g.Text(page.HelmValuesError)),
-			)
-		} else {
-			body = append(body, h.P(g.Text("No helm values available.")))
-		}
-		return h.Div(h.Class("tab-content-wrapper"), g.Group(body))
-	}
-	return h.Div(h.Class("tab-content-wrapper"),
-		h.Div(h.Class("code-block-header"),
-			h.H2(g.Text("Computed Helm Values")),
-			h.Button(h.Type("button"), h.Class("copy-btn"), g.Attr("data-copy-target", "helm-values"), g.Text("Copy")),
-		),
-		h.Pre(h.Class("code-block"), h.ID("helm-values"), g.Text(prettyJSON(page.HelmValues))),
-	)
-}
-
-func playgroundTab(page *FeaturePage) g.Node {
-	code := page.PlaygroundCode
-	if code == "" {
-		code = defaultPlaygroundCode
-	}
-
-	action := featureBasePathForPage(page) + "/playground"
-
-	return h.Div(h.Class("tab-content-wrapper"),
-		h.Form(
-			h.Method("POST"),
-			h.Action(action),
-			h.Div(h.Class("playground-controls"),
-				h.Label(
-					h.Input(h.Type("checkbox"), h.Name("includeUnset")),
-					g.Text(" Include unset config"),
-				),
-				h.Button(h.Type("submit"), g.Text("Generate")),
-			),
-			h.Div(h.Class("playground-split"),
-				h.Div(h.Class("playground-editor"),
-					h.Label(h.For("code"), g.Text("Feature.yaml")),
-					h.Textarea(h.Name("code"), h.ID("pg-code"),
-						g.Text(code),
-					),
-				),
-				h.Div(h.Class("playground-result"),
-					playgroundResultNode(page.PlaygroundResult, page.HelmValues),
-				),
-			),
-		),
-	)
-}
-
-func playgroundResultNode(result *PlaygroundResult, helmValues string) g.Node {
-	if result == nil && helmValues == "" {
-		return nil
-	}
-	if result == nil {
-		return h.Div(h.Class("playground-output"),
-			h.H2(g.Text("values.yaml")),
-			h.Pre(h.Class("code-block"), g.Text(prettyJSON(helmValues))),
-		)
-	}
-
-	var nodes []g.Node
-
-	if len(result.Errors) > 0 {
-		errorItems := make([]g.Node, 0, len(result.Errors))
-		for _, e := range result.Errors {
-			errorItems = append(errorItems, h.Li(g.Text(e)))
-		}
-		nodes = append(nodes,
-			h.Div(h.Class("playground-errors"),
-				h.H2(g.Text("Errors")),
-				h.Ul(errorItems...),
-			),
-		)
-	}
-
-	merged := result.Result
-	if merged != "" && helmValues != "" {
-		merged = mergeValuesJSON(merged, helmValues)
-	}
-
-	if merged != "" {
-		nodes = append(nodes,
-			h.Div(h.Class("playground-output"),
-				h.H2(g.Text("values.yaml")),
-				h.Pre(h.Class("code-block"), g.Text(strings.TrimSpace(merged))),
-			),
-		)
-	}
-
-	return g.Group(nodes)
-}
-
-func mergeValuesJSON(playgroundResult, helmValues string) string {
-	var resultMap, helmMap map[string]any
-	if err := json.Unmarshal([]byte(playgroundResult), &resultMap); err != nil {
-		return playgroundResult
-	}
-	if err := json.Unmarshal([]byte(helmValues), &helmMap); err != nil {
-		return playgroundResult
-	}
-	deepMerge(resultMap, helmMap)
-	b, err := json.MarshalIndent(resultMap, "", "  ")
-	if err != nil {
-		return playgroundResult
-	}
-	return string(b)
-}
-
-func deepMerge(dst, src map[string]any) {
-	for k, v := range src {
-		if srcMap, ok := v.(map[string]any); ok {
-			if dstMap, ok := dst[k].(map[string]any); ok {
-				deepMerge(dstMap, srcMap)
-				continue
-			}
-		}
-		if _, exists := dst[k]; !exists {
-			dst[k] = v
-		}
-	}
 }
 
 func assignmentsTab(page *FeaturePage) g.Node {
@@ -886,14 +760,6 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 	)
 }
 
-func prettyJSON(s string) string {
-	var buf bytes.Buffer
-	if err := json.Indent(&buf, []byte(s), "", "  "); err != nil {
-		return s
-	}
-	return buf.String()
-}
-
 func featureBasePath(r *http.Request) string {
 	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"))
 }
@@ -907,7 +773,7 @@ func featureBasePathValues(tenant, env, feature string) string {
 }
 
 func redirectOrDefault(r *http.Request, defaultURL string) string {
-	if dest := r.FormValue("redirect"); dest != "" && len(dest) > 0 && dest[0] == '/' {
+	if dest := r.FormValue("redirect"); dest != "" && dest[0] == '/' {
 		return dest
 	}
 	return defaultURL

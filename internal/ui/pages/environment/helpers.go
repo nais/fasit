@@ -19,7 +19,6 @@ import (
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
-	yaml "gopkg.in/yaml.v3"
 )
 
 type FeatureConfigItem = components.ConfigItem
@@ -31,15 +30,11 @@ type FeaturePage struct {
 	Environment             *Environment
 	Feature                 *FeatureDetail
 	FeatureEnvs             []featureenvs.Environment
-	HelmValues              string
-	HelmValuesError         string
 	Assignments             []EnvAssignmentItem
 	FeatureLog              *FeatureLog
 	Status                  string
 	StatusMessage           string
 	ActiveTab               string
-	PlaygroundCode          string
-	PlaygroundResult        *PlaygroundResult
 	AuditEntries            []*audit.Entry
 	WinningAssignment       *featureassignment.FeatureAssignment
 	RecentDeployHistory     []*model.DeployInstruction
@@ -76,11 +71,6 @@ type FeatureLog struct {
 type LogLine struct {
 	Timestamp string
 	Message   string
-}
-
-type PlaygroundResult struct {
-	Result string
-	Errors []string
 }
 
 func tenantCrumb(name string, allTenants []view.TenantNav) breadcrumb.Crumb {
@@ -228,13 +218,6 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 
 	page.FeatureLog = loadFeatureLog(ctx, env.ID, feat)
 
-	if activeTab == "helm" || activeTab == "playground" {
-		vals, herr := loadHelmValues(ctx, feat, env.ID)
-		page.HelmValues = vals
-		if herr != nil {
-			page.HelmValuesError = herr.Error()
-		}
-	}
 	if activeTab == "assignments" {
 		page.Assignments = loadEnvironmentAssignments(ctx, featureName, env.ID)
 	}
@@ -454,18 +437,6 @@ func lookupHelmValue(m map[string]any, key string) (string, bool) {
 	}
 }
 
-func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (string, error) {
-	vals, err := featurepkg.HelmValues(ctx, feat, envID)
-	if err != nil {
-		return "", err
-	}
-	b, err := json.MarshalIndent(vals, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
 func loadEnvironmentAssignments(ctx context.Context, featureName string, envID uuid.UUID) []EnvAssignmentItem {
 	envLabels, err := envpkg.GetLabels(ctx, envID)
 	if err != nil {
@@ -570,87 +541,4 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *
 	}
 	ret.HelmDiff, _ = featurepkg.HelmValueDiff(ctx, di, feat.SecretKeys())
 	return ret
-}
-
-func stripNoValue(m map[string]any) {
-	for k, v := range m {
-		switch val := v.(type) {
-		case map[string]any:
-			stripNoValue(val)
-			if len(val) == 0 {
-				delete(m, k)
-			}
-		case string:
-			if val == "<no value>" {
-				m[k] = nil
-			}
-		}
-	}
-}
-
-func yamlUnmarshalFeature(code string, out *model.FeatureYAML) error {
-	return yaml.Unmarshal([]byte(code), out)
-}
-
-func runPlayground(ctx context.Context, tenantSlug, envSlug, featureName, code string, includeUnset bool) (*PlaygroundResult, error) {
-	t, err := envpkg.GetTenantByName(ctx, tenantSlug)
-	if err != nil {
-		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
-	}
-	env, err := envpkg.GetByName(ctx, t.ID, envSlug)
-	if err != nil {
-		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
-	}
-
-	featureYAML := model.FeatureYAML{}
-	if err := yamlUnmarshalFeature(code, &featureYAML); err != nil {
-		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
-	}
-
-	for key, value := range featureYAML.Values {
-		value.Required = false
-		featureYAML.Values[key] = value
-	}
-
-	feat := &model.Feature{FeatureYAML: featureYAML, Name: featureName}
-	vals, err := featurepkg.HelmValues(ctx, feat, env.ID)
-	if err != nil {
-		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
-	}
-
-	stripNoValue(vals)
-	if includeUnset {
-		for key, value := range feat.Values {
-			if value.Config == nil || value.Computed != nil {
-				continue
-			}
-			parts, err := featureutil.SmartDotSplit(key)
-			if err != nil {
-				return &PlaygroundResult{Errors: []string{err.Error()}}, nil
-			}
-			outer := vals
-			for i, part := range parts {
-				if i == len(parts)-1 {
-					if _, ok := outer[part]; !ok {
-						outer[part] = nil
-					}
-					break
-				}
-				if _, ok := outer[part]; !ok {
-					outer[part] = map[string]any{}
-				}
-				next, ok := outer[part].(map[string]any)
-				if !ok {
-					break
-				}
-				outer = next
-			}
-		}
-	}
-
-	b, err := json.MarshalIndent(vals, "", "  ")
-	if err != nil {
-		return &PlaygroundResult{Errors: []string{err.Error()}}, nil
-	}
-	return &PlaygroundResult{Result: string(b)}, nil
 }

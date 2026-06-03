@@ -76,12 +76,12 @@ func ConfigActionsCell(children ...g.Node) g.Node {
 	return h.Td(h.Class("config-actions-col"), g.Group(children))
 }
 
-// ConfigKebab renders a kebab menu for a config row with a link to the config explorer.
+// ConfigKebab renders a kebab menu for a config row with a compare-across-environments action.
 func ConfigKebab(featureName, configKey string, extraItems ...g.Node) g.Node {
 	kebabID := "config-kebab-" + strings.ReplaceAll(configKey, ".", "-")
-	explorerHref := "/features/" + featureName + "/config-explorer?keys=" + url.QueryEscape(configKey)
+	compareURL := "/features/" + featureName + "/config-compare/" + url.QueryEscape(configKey)
 	items := []g.Node{
-		h.A(h.Href(explorerHref), h.Class("kebab-item"), g.Text("Compare across environments")),
+		h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("data-lazy-modal", compareURL), g.Text("Compare across environments")),
 	}
 	items = append(items, extraItems...)
 	return KebabWrap(kebabID, items)
