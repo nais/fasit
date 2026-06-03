@@ -156,12 +156,33 @@ nav {
   z-index: 100;
 }
 nav .logo {
+  position: relative;
+  display: inline-block;
   font-weight: bold;
   font-size: 1.1rem;
   color: var(--text-heading);
   text-decoration: none;
   letter-spacing: 0.02em;
   margin-right: 1rem;
+  padding-bottom: 0.35rem;
+}
+nav .logo::before,
+nav .logo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--accent);
+  border-radius: 999px;
+}
+nav .logo::before {
+  bottom: 0.28rem;
+  height: 1px;
+  opacity: 0.75;
+}
+nav .logo::after {
+  bottom: 0;
+  height: 1px;
 }
 nav .menu {
   display: flex;
