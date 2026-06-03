@@ -2,6 +2,7 @@ package features
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/audit"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
@@ -116,7 +118,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := loadFeatureData(r)
 		if err != nil {
-			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
+			handleFeatureLoadError(w, r, err)
 			return
 		}
 		data.ActiveTab = "overview"
@@ -129,7 +131,7 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := loadFeatureData(r)
 		if err != nil {
-			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
+			handleFeatureLoadError(w, r, err)
 			return
 		}
 		data.ActiveTab = "assignments"
@@ -142,7 +144,7 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := loadFeatureData(r)
 		if err != nil {
-			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
+			handleFeatureLoadError(w, r, err)
 			return
 		}
 		data.ActiveTab = "config"
@@ -511,6 +513,14 @@ func configKeyNode(e *audit.Entry) g.Node {
 		}
 	}
 	return auditview.ResourceLink(e)
+}
+
+func handleFeatureLoadError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, pgx.ErrNoRows) {
+		http.Redirect(w, r, "/features", http.StatusSeeOther)
+		return
+	}
+	http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 }
 
 func loadFeatureData(r *http.Request) (*DetailPage, error) {

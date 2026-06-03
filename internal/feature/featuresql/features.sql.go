@@ -75,6 +75,8 @@ FROM
 	feature_assignments d
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
+WHERE
+	d.active = TRUE
 	ORDER BY
 		d.feature_name,
 		d.created DESC
@@ -111,6 +113,8 @@ SELECT DISTINCT
 	feature_name
 FROM
 	feature_assignments
+WHERE
+	active = TRUE
 ORDER BY
 	feature_name
 `
@@ -144,6 +148,7 @@ FROM
 		AND d.version = fd.version
 WHERE
 	d.feature_name = $1
+	AND d.active = TRUE
 ORDER BY
 	d.created DESC
 LIMIT 1

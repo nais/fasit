@@ -20,14 +20,15 @@ func DeactivateHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := featureassignment.Deactivate(r.Context(), id); err != nil {
+		featureName, err := featureassignment.Deactivate(r.Context(), id)
+		if err != nil {
 			http.Error(w, "Failed to deactivate assignment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, deactivateRedirect(r), http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirectForFeature(r, featureName), http.StatusSeeOther)
 	}
 }
 
@@ -52,8 +53,16 @@ func DeactivateByFeatureAndTargetHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, deactivateRedirect(r), http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirectForFeature(r, fa.Feature.Name), http.StatusSeeOther)
 	}
+}
+
+func deactivateRedirectForFeature(r *http.Request, featureName string) string {
+	hasActive, err := featureassignment.HasActiveAssignments(r.Context(), featureName)
+	if err == nil && !hasActive {
+		return "/features"
+	}
+	return deactivateRedirect(r)
 }
 
 func deactivateRedirect(r *http.Request) string {

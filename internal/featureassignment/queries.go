@@ -259,10 +259,10 @@ func ListAllByFeature(ctx context.Context, featureName string) ([]*FeatureAssign
 	return ret, nil
 }
 
-func Deactivate(ctx context.Context, featureAssignmentID uuid.UUID) error {
-	return dbtx.WithTx(ctx, func(ctx context.Context) error {
+func Deactivate(ctx context.Context, featureAssignmentID uuid.UUID) (string, error) {
+	var featureName string
+	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		objectID := featureAssignmentID.String()
-		featureName := ""
 		if row, err := querier(ctx).GetFeatureAssignment(ctx, featureAssignmentID); err == nil {
 			objectID = row.FeatureAssignment.FeatureName
 			featureName = row.FeatureAssignment.FeatureName
@@ -284,6 +284,7 @@ func Deactivate(ctx context.Context, featureAssignmentID uuid.UUID) error {
 			},
 		})
 	})
+	return featureName, err
 }
 
 func DeactivateByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
@@ -482,4 +483,8 @@ func formatLabels(labels map[string]string) string {
 		parts = append(parts, k+"="+labels[k])
 	}
 	return strings.Join(parts, ", ")
+}
+
+func HasActiveAssignments(ctx context.Context, featureName string) (bool, error) {
+	return querier(ctx).HasActiveAssignments(ctx, featureName)
 }

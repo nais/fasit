@@ -19,6 +19,7 @@ type Querier interface {
 	GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams) (GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow, error)
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
 	GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (FeatureReconcileStatus, error)
+	HasActiveAssignments(ctx context.Context, featureName string) (bool, error)
 	InvalidateDeployInstruction(ctx context.Context, arg InvalidateDeployInstructionParams) error
 	LatestReconcileStatusForEnvironment(ctx context.Context, arg LatestReconcileStatusForEnvironmentParams) (string, error)
 	ListAllFeatureAssignments(ctx context.Context) ([]ListAllFeatureAssignmentsRow, error)
