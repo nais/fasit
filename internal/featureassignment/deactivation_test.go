@@ -102,7 +102,7 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("seed: %v", err)
 		}
 
-		if err := featureassignment.Deactivate(ctx, ids[0]); err != nil {
+		if _, err := featureassignment.Deactivate(ctx, ids[0]); err != nil {
 			t.Fatalf("deactivate: %v", err)
 		}
 
@@ -194,7 +194,7 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("seed: %v", err)
 		}
 
-		if err := featureassignment.Deactivate(tCtx, ids[0]); err != nil {
+		if _, err := featureassignment.Deactivate(tCtx, ids[0]); err != nil {
 			t.Fatalf("deactivate: %v", err)
 		}
 
@@ -230,7 +230,7 @@ func TestDeactivation(t *testing.T) {
 		}
 
 		// Deactivate otherapp so it has no active deployment
-		if err := featureassignment.Deactivate(ctx, ids[3]); err != nil {
+		if _, err := featureassignment.Deactivate(ctx, ids[3]); err != nil {
 			t.Fatalf("deactivate: %v", err)
 		}
 

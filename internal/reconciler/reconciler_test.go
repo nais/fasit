@@ -62,7 +62,7 @@ func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 
 	// v1 is inactive (deactivated by v2 create), v2 is active
 	// Now deactivate v2 — simulates "remove override"
-	if err := featureassignment.Deactivate(ctx, ids[1]); err != nil {
+	if _, err := featureassignment.Deactivate(ctx, ids[1]); err != nil {
 		t.Fatalf("deactivate: %v", err)
 	}
 
@@ -118,7 +118,7 @@ func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T
 	}
 
 	// Both are active (different targets). Now deactivate the specific override.
-	if err := featureassignment.Deactivate(ctx, ids[1]); err != nil {
+	if _, err := featureassignment.Deactivate(ctx, ids[1]); err != nil {
 		t.Fatalf("deactivate: %v", err)
 	}
 
