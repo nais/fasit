@@ -143,7 +143,7 @@ func envTable(rows []envRow, now time.Time) g.Node {
 func healthCell(row envRow, now time.Time) g.Node {
 	class, label := agentHealth(row, now)
 	title := lastReportedText(row, now)
-	return h.Span(h.Class("status-badge "+class), g.Attr("title", title), g.Text(label))
+	return h.Span(h.Class("status-badge "+class), h.Title(title), g.Text(label))
 }
 
 func agentHealth(row envRow, now time.Time) (string, string) {
