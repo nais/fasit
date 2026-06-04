@@ -167,7 +167,9 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 			w.log.With("err", err, "feature", item.featureName, "env", item.envName).Error("publish deploy instruction")
 			continue
 		}
-		if err := w.querier.SetDeployInstructionStatus(ctx, reconcilersql.SetDeployInstructionStatusParams{
+
+		// TODO: make it more obvious (remove the conditional from the query, it currently only updates statuses that is "created")
+		if err := w.querier.SetDeployInstructionStatusForCreated(ctx, reconcilersql.SetDeployInstructionStatusForCreatedParams{
 			ID:     item.instruction.ID,
 			Status: model.RolloutStatusPending.String(),
 		}); err != nil {

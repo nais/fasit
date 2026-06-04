@@ -16,13 +16,11 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/slack"
-	"github.com/nais/fasit/internal/workers"
 	"github.com/sethvargo/go-envconfig"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
@@ -97,13 +95,15 @@ func Run(ctx context.Context) error {
 	}
 
 	ctx = loadContext(ctx)
-	go featureassignment.TimeoutDeployInstructions(ctx, log)
 
 	rec, err := reconciler.New(pool, meter, log.With("component", "reconciler"))
 	if err != nil {
 		return fmt.Errorf("creating reconciler: %w", err)
 	}
 	ctx = reconciler.WithContext(ctx, rec)
+
+	go rec.TimeoutDeployInstructions(ctx, log)
+
 	dispatcher, err := reconciler.NewPubSubDispatcher(pool, assignmentPublisher, meter, log)
 	if err != nil {
 		return err
@@ -113,13 +113,13 @@ func Run(ctx context.Context) error {
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 
-	receiver := workers.NewReceiver(
+	receiver := reconciler.NewReceiver(
+		pool,
 		statusMgr,
 		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
 		meter,
-		featureassignment.GetManager(ctx),
 	)
 	go receiver.Run(ctx)
 

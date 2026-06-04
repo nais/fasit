@@ -4,10 +4,14 @@ package reconcilersql
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	CreateDeployInstruction(ctx context.Context, arg []CreateDeployInstructionParams) *CreateDeployInstructionBatchResults
+	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
+	GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error)
 	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
@@ -18,6 +22,10 @@ type Querier interface {
 	ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error)
 	ListLatestFeatureAssignments(ctx context.Context) ([]ListLatestFeatureAssignmentsRow, error)
 	SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error
+	SetDeployInstructionStatusForCreated(ctx context.Context, arg SetDeployInstructionStatusForCreatedParams) error
+	SetReconcileStatus(ctx context.Context, arg SetReconcileStatusParams) error
+	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error
+	TimeoutDeployInstructions(ctx context.Context) error
 	UpsertReconcileStatus(ctx context.Context, arg []UpsertReconcileStatusParams) *UpsertReconcileStatusBatchResults
 }
 

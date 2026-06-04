@@ -166,7 +166,7 @@ ON CONFLICT (
 		status = EXCLUDED.status,
 		message = EXCLUDED.message;
 
--- name: SetDeployInstructionStatus :exec
+-- name: SetDeployInstructionStatusForCreated :exec
 UPDATE
 	deploy_instructions
 SET
@@ -174,4 +174,75 @@ SET
 WHERE
 	id = @id
 	AND status = 'created';
+
+-- name: SetDeployInstructionStatus :exec
+UPDATE
+	deploy_instructions
+SET
+	status = @status
+WHERE
+	id = @id;
+
+-- name: GetDeployInstruction :one
+SELECT
+	*
+FROM
+	deploy_instructions
+WHERE
+	id = @id;
+
+-- name: DeleteReleaseStatusesInEnvironment :exec
+DELETE FROM release_statuses
+WHERE environment_id = @environment_id;
+
+-- name: SetReleaseStatus :exec
+INSERT INTO release_statuses(
+	environment_id,
+	feature,
+	version,
+	status,
+	revision,
+	last_deployed)
+VALUES (
+	@environment_id,
+	@feature,
+	@version,
+	@status,
+	@revision,
+	@last_deployed)
+ON CONFLICT (
+	environment_id,
+	feature)
+	DO UPDATE SET
+		version = EXCLUDED.version,
+		status = EXCLUDED.status,
+		revision = EXCLUDED.revision,
+		last_deployed = EXCLUDED.last_deployed;
+
+-- name: SetReconcileStatus :exec
+INSERT INTO feature_reconcile_statuses(
+	feature_assignment_id,
+	environment_id,
+	status,
+	message)
+VALUES (
+	@feature_assignment_id,
+	@environment_id,
+	@status,
+	@message)
+ON CONFLICT (
+	feature_assignment_id,
+	environment_id)
+	DO UPDATE SET
+		status = EXCLUDED.status,
+		message = EXCLUDED.message;
+
+-- name: TimeoutDeployInstructions :exec
+UPDATE
+	deploy_instructions
+SET
+	status = 'failed'
+WHERE
+	status = 'pending'
+	AND last_modified < NOW() - INTERVAL '1 hour';
 

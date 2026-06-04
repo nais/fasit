@@ -7,6 +7,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type DeployInstruction struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             pgtype.Timestamptz
+	LastModified        pgtype.Timestamptz
+	Values              []byte
+	FeatureAssignmentID *uuid.UUID
+}
+
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
 	ReportedAt    pgtype.Timestamptz

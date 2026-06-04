@@ -11,6 +11,43 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
+const deleteReleaseStatusesInEnvironment = `-- name: DeleteReleaseStatusesInEnvironment :exec
+DELETE FROM release_statuses
+WHERE environment_id = $1
+`
+
+func (q *Queries) DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteReleaseStatusesInEnvironment, environmentID)
+	return err
+}
+
+const getDeployInstruction = `-- name: GetDeployInstruction :one
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
+FROM
+	deploy_instructions
+WHERE
+	id = $1
+`
+
+func (q *Queries) GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, getDeployInstruction, id)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+		&i.FeatureAssignmentID,
+	)
+	return i, err
+}
+
 const listAllEnvConfigs = `-- name: ListAllEnvConfigs :many
 SELECT
 	id,
@@ -459,7 +496,6 @@ SET
 	status = $1
 WHERE
 	id = $2
-	AND status = 'created'
 `
 
 type SetDeployInstructionStatusParams struct {
@@ -469,5 +505,122 @@ type SetDeployInstructionStatusParams struct {
 
 func (q *Queries) SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error {
 	_, err := q.db.Exec(ctx, setDeployInstructionStatus, arg.Status, arg.ID)
+	return err
+}
+
+const setDeployInstructionStatusForCreated = `-- name: SetDeployInstructionStatusForCreated :exec
+UPDATE
+	deploy_instructions
+SET
+	status = $1
+WHERE
+	id = $2
+	AND status = 'created'
+`
+
+type SetDeployInstructionStatusForCreatedParams struct {
+	Status string
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetDeployInstructionStatusForCreated(ctx context.Context, arg SetDeployInstructionStatusForCreatedParams) error {
+	_, err := q.db.Exec(ctx, setDeployInstructionStatusForCreated, arg.Status, arg.ID)
+	return err
+}
+
+const setReconcileStatus = `-- name: SetReconcileStatus :exec
+INSERT INTO feature_reconcile_statuses(
+	feature_assignment_id,
+	environment_id,
+	status,
+	message)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+ON CONFLICT (
+	feature_assignment_id,
+	environment_id)
+	DO UPDATE SET
+		status = EXCLUDED.status,
+		message = EXCLUDED.message
+`
+
+type SetReconcileStatusParams struct {
+	FeatureAssignmentID uuid.UUID
+	EnvironmentID       uuid.UUID
+	Status              string
+	Message             string
+}
+
+func (q *Queries) SetReconcileStatus(ctx context.Context, arg SetReconcileStatusParams) error {
+	_, err := q.db.Exec(ctx, setReconcileStatus,
+		arg.FeatureAssignmentID,
+		arg.EnvironmentID,
+		arg.Status,
+		arg.Message,
+	)
+	return err
+}
+
+const setReleaseStatus = `-- name: SetReleaseStatus :exec
+INSERT INTO release_statuses(
+	environment_id,
+	feature,
+	version,
+	status,
+	revision,
+	last_deployed)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6)
+ON CONFLICT (
+	environment_id,
+	feature)
+	DO UPDATE SET
+		version = EXCLUDED.version,
+		status = EXCLUDED.status,
+		revision = EXCLUDED.revision,
+		last_deployed = EXCLUDED.last_deployed
+`
+
+type SetReleaseStatusParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Version       string
+	Status        string
+	Revision      int32
+	LastDeployed  pgtype.Timestamptz
+}
+
+func (q *Queries) SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error {
+	_, err := q.db.Exec(ctx, setReleaseStatus,
+		arg.EnvironmentID,
+		arg.Feature,
+		arg.Version,
+		arg.Status,
+		arg.Revision,
+		arg.LastDeployed,
+	)
+	return err
+}
+
+const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
+UPDATE
+	deploy_instructions
+SET
+	status = 'failed'
+WHERE
+	status = 'pending'
+	AND last_modified < NOW() - INTERVAL '1 hour'
+`
+
+func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, timeoutDeployInstructions)
 	return err
 }

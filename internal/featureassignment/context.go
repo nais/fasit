@@ -32,8 +32,3 @@ func querier(ctx context.Context) featureassignmentsql.Querier {
 	}
 	return q
 }
-
-// TODO: remove this when looking at the workers package
-func GetManager(ctx context.Context) *Manager {
-	return fromContext(ctx)
-}

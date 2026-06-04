@@ -1,6 +1,6 @@
 //go:build integration_test
 
-package workers_test
+package reconciler_test
 
 import (
 	"context"
@@ -14,10 +14,9 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/testinfra"
-	"github.com/nais/fasit/internal/workers"
-
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
@@ -45,15 +44,9 @@ func TestReceiverIntegration(t *testing.T) {
 		}
 		data, _ := json.Marshal(releases)
 
-		rec := workers.NewReceiver(
-			&fakeClient{messages: []message.Status{
-				{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
-			}},
-			slog.Default(),
-			fake.NewFakeSlackClient(),
-			"test",
-			noop.Meter{},
-		)
+		rec := reconciler.NewReceiver(pool, &fakeClient{messages: []message.Status{
+			{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
+		}}, slog.Default(), fake.NewFakeSlackClient(), "test", noop.Meter{})
 		rec.Run(ctx)
 
 		got, err := featureassignment.ListReleaseStatuses(ctx, envID)
@@ -72,15 +65,9 @@ func TestReceiverIntegration(t *testing.T) {
 
 		send := func(releases []message.Release) {
 			data, _ := json.Marshal(message.HelmRelease{Releases: releases})
-			rec := workers.NewReceiver(
-				&fakeClient{messages: []message.Status{
-					{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
-				}},
-				slog.Default(),
-				fake.NewFakeSlackClient(),
-				"test",
-				noop.Meter{},
-			)
+			rec := reconciler.NewReceiver(pool, &fakeClient{messages: []message.Status{
+				{Type: message.StatusTypeHelmReleases, Tenant: "mytenant", Environment: "dev", Data: data},
+			}}, slog.Default(), fake.NewFakeSlackClient(), "test", noop.Meter{})
 			rec.Run(ctx)
 		}
 
@@ -111,15 +98,9 @@ func TestReceiverIntegration(t *testing.T) {
 		reportedAt := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 
 		data, _ := json.Marshal(message.Health{ReportedAt: reportedAt})
-		rec := workers.NewReceiver(
-			&fakeClient{messages: []message.Status{
-				{Type: message.StatusTypeHealth, Tenant: "mytenant", Environment: "dev", Data: data},
-			}},
-			slog.Default(),
-			fake.NewFakeSlackClient(),
-			"test",
-			noop.Meter{},
-		)
+		rec := reconciler.NewReceiver(pool, &fakeClient{messages: []message.Status{
+			{Type: message.StatusTypeHealth, Tenant: "mytenant", Environment: "dev", Data: data},
+		}}, slog.Default(), fake.NewFakeSlackClient(), "test", noop.Meter{})
 		rec.Run(ctx)
 
 		got, err := naisdstatus.Get(ctx, envID)
@@ -136,9 +117,12 @@ func TestReceiverIntegration(t *testing.T) {
 		ctx := testinfra.Context(ctx, pool)
 		testinfra.Exec(ctx, t, pool, fixtures...)
 
+		faID := uuid.New()
 		diID := uuid.New()
 		testinfra.Exec(ctx, t, pool,
-			fmt.Sprintf("INSERT INTO deploy_instructions (id, environment_id, feature_name, feature_version, hash) VALUES ('%s', '%s', 'myfeature', '1.0.0', 'abc')", diID, envID),
+			fmt.Sprintf("INSERT INTO feature_data (name, version, values, chart, source, description, kinds, default_values, dependencies) VALUES ('myfeature', '1.0.0', '{}', 'oci://chart', 'source', 'description', '{tenant}', '{}', '{}')"),
+			fmt.Sprintf("INSERT INTO feature_assignments (id, feature_name, version) VALUES ('%s', 'myfeature', '1.0.0')", faID),
+			fmt.Sprintf("INSERT INTO deploy_instructions (id, environment_id, feature_name, feature_version, hash, feature_assignment_id) VALUES ('%s', '%s', 'myfeature', '1.0.0', 'abc', '%s')", diID, envID, faID),
 		)
 
 		helm := map[string]any{
@@ -149,15 +133,9 @@ func TestReceiverIntegration(t *testing.T) {
 		}
 		data, _ := json.Marshal(helm)
 
-		rec := workers.NewReceiver(
-			&fakeClient{messages: []message.Status{
-				{Type: message.StatusTypeHelm, Tenant: "mytenant", Environment: "dev", Data: data},
-			}},
-			slog.Default(),
-			fake.NewFakeSlackClient(),
-			"test",
-			noop.Meter{},
-		)
+		rec := reconciler.NewReceiver(pool, &fakeClient{messages: []message.Status{
+			{Type: message.StatusTypeHelm, Tenant: "mytenant", Environment: "dev", Data: data},
+		}}, slog.Default(), fake.NewFakeSlackClient(), "test", noop.Meter{})
 		rec.Run(ctx)
 
 		// Verify the deploy instruction status was updated.

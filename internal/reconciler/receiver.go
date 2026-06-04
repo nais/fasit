@@ -1,4 +1,4 @@
-package workers
+package reconciler
 
 import (
 	"context"
@@ -10,13 +10,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/nais/fasit/internal/environment"
+	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"github.com/nais/fasit/internal/slack"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -26,28 +28,17 @@ type ReceiverClient interface {
 	Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error
 }
 
-type HelmListener interface {
-	Receive(ctx context.Context, message *message.Helm) error
-}
-
 type Receiver struct {
 	manager        ReceiverClient
 	log            *slog.Logger
 	slack          slack.SlackClient
 	slackChannel   string
-	listeners      []HelmListener
 	messagesRecv   metric.Int64Counter
 	deployDuration metric.Float64Histogram
+	querier        reconcilersql.Querier
 }
 
-func NewReceiver(
-	mgr ReceiverClient,
-	log *slog.Logger,
-	slackClient slack.SlackClient,
-	slackChannel string,
-	meter metric.Meter,
-	listeners ...HelmListener,
-) *Receiver {
+func NewReceiver(pool *pgxpool.Pool, mgr ReceiverClient, log *slog.Logger, slackClient slack.SlackClient, slackChannel string, meter metric.Meter) *Receiver {
 	messagesRecv, err := meter.Int64Counter("status_messages_received_total",
 		metric.WithDescription("Total status messages received from naisd, by type"),
 	)
@@ -68,9 +59,9 @@ func NewReceiver(
 		log:            log.With("subsystem", "status-receiver"),
 		slack:          slackClient,
 		slackChannel:   slackChannel,
-		listeners:      listeners,
 		messagesRecv:   messagesRecv,
 		deployDuration: deployDuration,
+		querier:        reconcilersql.New(pool),
 	}
 	return receiver
 }
@@ -107,21 +98,15 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 	return nil
 }
 
-func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
+func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error {
 	helmStatus := &message.Helm{}
-	err := json.Unmarshal(msg.Data, helmStatus)
+	err := json.Unmarshal(status.Data, helmStatus)
 	if err != nil {
 		r.log.With("err", err).Error("invalid json")
 		return nil
 	}
 
-	for _, l := range r.listeners {
-		if err := l.Receive(ctx, helmStatus); err != nil {
-			r.log.With("err", err).Error("notifying helm listener")
-		}
-	}
-
-	di, err := featureassignment.GetDeployInstruction(ctx, helmStatus.DIID)
+	di, err := r.querier.GetDeployInstruction(ctx, helmStatus.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.With("diid", helmStatus.DIID).Warn("unknown deploy instruction")
@@ -130,7 +115,21 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return err
 	}
 
-	env, err := environment.Get(ctx, di.EnvironmentID)
+	msg := "received status from naisd."
+	if helmStatus.Error != "" {
+		msg += " error: " + helmStatus.Error
+	}
+	err = r.querier.SetReconcileStatus(ctx, reconcilersql.SetReconcileStatusParams{
+		FeatureAssignmentID: *di.FeatureAssignmentID,
+		EnvironmentID:       di.EnvironmentID,
+		Status:              helmStatus.RolloutStatus.String(),
+		Message:             msg,
+	})
+	if err != nil {
+		return err
+	}
+
+	env, err := envpkg.Get(ctx, di.EnvironmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.With("deploy_instruction", helmStatus.DIID).Warn("unknown deploy instruction")
@@ -140,7 +139,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	}
 
 	if helmStatus.RolloutStatus == model.RolloutStatusFailed {
-		tenant, err := environment.GetTenant(ctx, env.TenantID)
+		tenant, err := envpkg.GetTenant(ctx, env.TenantID)
 		if err != nil {
 			return fmt.Errorf("getting tenant: %w", err)
 		}
@@ -151,12 +150,15 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	if err := featureassignment.UpdateDeployInstructionStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
+	if err := r.querier.SetDeployInstructionStatus(ctx, reconcilersql.SetDeployInstructionStatusParams{
+		Status: helmStatus.RolloutStatus.String(),
+		ID:     helmStatus.DIID,
+	}); err != nil {
 		return fmt.Errorf("updating deploy instruction status: %w", err)
 	}
 
 	if r.deployDuration != nil {
-		duration := time.Since(di.Created).Seconds()
+		duration := time.Since(di.Created.Time).Seconds()
 		r.deployDuration.Record(ctx, duration, metric.WithAttributes(
 			attribute.String("feature", di.FeatureName),
 			attribute.String("status", helmStatus.RolloutStatus.String()),
@@ -174,14 +176,14 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 		return nil
 	}
 
-	t, err := environment.GetTenantByName(ctx, msg.Tenant)
+	t, err := envpkg.GetTenantByName(ctx, msg.Tenant)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.With("tenant", msg.Tenant).Warn("unknown tenant")
 		}
 		return nil
 	}
-	env, err := environment.GetByName(ctx, t.ID, msg.Environment)
+	env, err := envpkg.GetByName(ctx, t.ID, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			r.log.With("tenant", msg.Tenant, "environment", msg.Environment).Warn("unknown tenant and/or environment")
@@ -191,13 +193,23 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 	}
 
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		err = featureassignment.DeleteReleaseStatus(ctx, env.ID)
+		err = r.querier.DeleteReleaseStatusesInEnvironment(ctx, env.ID)
 		if err != nil {
 			return fmt.Errorf("deleting release status: %w", err)
 		}
 
 		for _, rel := range status.Releases {
-			err = featureassignment.SetReleaseStatus(ctx, env.ID, &rel)
+			err = r.querier.SetReleaseStatus(ctx, reconcilersql.SetReleaseStatusParams{
+				EnvironmentID: env.ID,
+				Feature:       rel.Name,
+				Version:       rel.Version,
+				Status:        rel.Status,
+				Revision:      int32(rel.Revision), // #nosec G115
+				LastDeployed: pgtype.Timestamptz{
+					Time:  rel.LastDeployed,
+					Valid: true,
+				},
+			})
 			if err != nil {
 				return fmt.Errorf("creating release status: %w", err)
 			}
@@ -213,14 +225,14 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		r.log.With("err", err).Error("invalid json")
 		return nil
 	}
-	t, err := environment.GetTenantByName(ctx, msg.Tenant)
+	t, err := envpkg.GetTenantByName(ctx, msg.Tenant)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.With("tenant", msg.Tenant).Warn("unknown tenant")
 		}
 		return nil
 	}
-	env, err := environment.GetByName(ctx, t.ID, msg.Environment)
+	env, err := envpkg.GetByName(ctx, t.ID, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			r.log.With("tenant", msg.Tenant, "environment", msg.Environment).Warn("unknown tenant and/or environment")

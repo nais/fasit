@@ -73,6 +73,23 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher
 	}
 }
 
+// TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
+// more than one hour and mark them as failed
+func (r *Reconciler) TimeoutDeployInstructions(ctx context.Context, log *slog.Logger) {
+	for {
+		err := r.querier.TimeoutDeployInstructions(ctx)
+		if err != nil {
+			log.With("err", err).Error("failed to timeout deploy instructions")
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(1 * time.Minute):
+		}
+	}
+}
+
 func TriggerReconcile() {
 	select {
 	case trigger <- struct{}{}:

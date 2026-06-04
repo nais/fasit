@@ -176,7 +176,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 
 		// Verify seed counts.
 		var depCount, globalCfgCount, envCfgCount int
-		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deployments`).Scan(&depCount)
+		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM feature_assignments`).Scan(&depCount)
 		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_global`).Scan(&globalCfgCount)
 		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_environment`).Scan(&envCfgCount)
 		t.Logf("seeded: %d deployments, %d environments, %d global configs, %d env configs",
