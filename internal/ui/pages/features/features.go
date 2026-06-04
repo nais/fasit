@@ -42,12 +42,6 @@ type DetailPage struct {
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		features, err := featurepkg.FeatureNames(r.Context())
-		if err != nil {
-			http.Error(w, "Failed to load features", http.StatusInternalServerError)
-			return
-		}
-
 		fas, _ := featureassignment.ListRecent(r.Context())
 		audits, _ := audit.ListRecent(r.Context(), 200)
 		assignmentActors := assignmentActorsByID(audits)
@@ -82,7 +76,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return assignmentRows[i].Created.After(assignmentRows[j].Created)
 		})
 
-		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(toFeatureNavs(features), assignmentRows, audits), HideHeaderSearch: true})
+		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(assignmentRows, audits), HideHeaderSearch: true})
 	}
 }
 
@@ -158,10 +152,10 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func listPage(features []view.FeatureNav, fas []assignmentRow, audits []*audit.Entry) g.Node {
+func listPage(fas []assignmentRow, audits []*audit.Entry) g.Node {
 	return h.Div(h.Class("container"),
 		h.Main(h.Class("main-content landing-page"),
-			landingSearch(features),
+			landingSearch(),
 			components.CardCompact(
 				recentAssignments(fas),
 			),
@@ -172,7 +166,7 @@ func listPage(features []view.FeatureNav, fas []assignmentRow, audits []*audit.E
 	)
 }
 
-func landingSearch(features []view.FeatureNav) g.Node {
+func landingSearch() g.Node {
 	return h.Section(h.Class("landing-search"),
 		h.Form(h.Method("get"), h.Action("/features"), h.Class("feature-search-form landing-search-form"), g.Attr("data-feature-search", ""),
 			h.Input(

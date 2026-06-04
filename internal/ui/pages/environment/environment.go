@@ -103,7 +103,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 
 		environment := &Environment{
 			Environment: env,
-			Metadata:    getEnvironmentMetadata(r.Context(), env),
+			Metadata:    getEnvironmentMetadata(env),
 		}
 		envValues, err := envpkg.ListEnvironmentValuesForEnvironment(r.Context(), env.ID, true)
 		if err != nil {

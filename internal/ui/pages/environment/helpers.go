@@ -95,7 +95,7 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func getEnvironmentMetadata(ctx context.Context, env *model.Environment) []MetadataItem {
+func getEnvironmentMetadata(env *model.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
 	addMetadata(&metadata, "ID", env.ID.String())
 	addMetadata(&metadata, "Name", env.Name)
@@ -193,7 +193,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		Breadcrumbs:   breadcrumbs,
 		Tenant:        tenant,
 		TenantSlug:    tenantSlug,
-		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, env)},
+		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(env)},
 		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
 		FeatureEnvs:   featureenvs.LoadEnvironments(ctx, feat),
 		ActiveTab:     activeTab,
