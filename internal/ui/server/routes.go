@@ -46,6 +46,14 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/assignments/{id}/deactivate", assignments.DeactivateHandler())
 	r.Post("/assignments/{id}/deactivate-matching", assignments.DeactivateByFeatureAndTargetHandler())
 
+	// Legacy redirects, needed until fasit-deploy is updated.
+	r.Get("/deployments", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/assignments", http.StatusMovedPermanently)
+	})
+	r.Get("/deployments/{id}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/assignments/"+chi.URLParam(r, "id"), http.StatusMovedPermanently)
+	})
+
 	r.Get("/features", features.IndexHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
 	r.Get("/features/{feature}/assignments", features.DeploySpecsHandler(s.renderPage))
