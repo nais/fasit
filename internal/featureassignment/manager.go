@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,11 +14,10 @@ import (
 )
 
 type Manager struct {
-	deployer   *deployer
-	reconciler *reconciler
-	querier    featureassignmentsql.Querier
-	log        *slog.Logger
-	pool       *pgxpool.Pool
+	deployer *deployer
+	querier  featureassignmentsql.Querier
+	log      *slog.Logger
+	pool     *pgxpool.Pool
 }
 
 type ChartDownloaderFunc func(chartURL, version string) (*model.Feature, error)
@@ -38,32 +36,17 @@ func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log 
 		return nil, err
 	}
 
-	r, err := newReconciler(querier, d, m, log.With("subsystem", "featureassignment-reconciler"))
-	if err != nil {
-		return nil, err
-	}
-
 	mgr := &Manager{
-		deployer:   d,
-		reconciler: r,
-		pool:       pool,
-		querier:    querier,
-		log:        log.With("subsystem", "featureassignment-manager"),
+		deployer: d,
+		pool:     pool,
+		querier:  querier,
+		log:      log.With("subsystem", "featureassignment-manager"),
 	}
 	for _, opt := range opts {
 		opt(mgr)
 	}
 
 	return mgr, nil
-}
-
-func (m *Manager) Run(ctx context.Context, interval time.Duration) {
-	m.reconciler.Run(ctx, interval)
-}
-
-// Reconcile performs a reconciliation of feature assignments and will block until complete.
-func (m *Manager) Reconcile(ctx context.Context) error {
-	return m.reconciler.Reconcile(ctx)
 }
 
 func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {

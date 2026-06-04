@@ -153,9 +153,13 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	}
 	newCtx = loadContext(ctx)
 
-	oldReconcile = func(ctx context.Context) error {
-		return featureassignment.GetManager(ctx).Reconcile(ctx)
-	}
+	/*
+		TODO: rewrite?
+		oldReconcile = func(ctx context.Context) error {
+			return featureassignment.GetManager(ctx).Reconcile(ctx)
+		}
+
+	*/
 
 	// Wire new reconciler.
 	newPub := func(topicID string, log *slog.Logger) reconciler.Publisher { return pub }
@@ -191,6 +195,7 @@ type featureInput struct {
 // forEachReconciler runs fn once for the old reconciler and once for the new,
 // as subtests named "old" and "new". Both start from the same seeded state.
 // Each reconcile call is timed and the duration is logged to the test output.
+// TODO: rewrite since we now only have one reconciler
 func forEachReconciler(
 	t *testing.T,
 	ctx context.Context,
@@ -203,7 +208,7 @@ func forEachReconciler(
 		name string
 		pick func(old, new reconcileFunc) reconcileFunc
 	}{
-		{"old", func(old, _ reconcileFunc) reconcileFunc { return old }},
+		// {"old", func(old, _ reconcileFunc) reconcileFunc { return old }},
 		{"new", func(_, new reconcileFunc) reconcileFunc { return new }},
 	} {
 		t.Run(impl.name, func(t *testing.T) {
