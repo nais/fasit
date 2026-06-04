@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)
 }

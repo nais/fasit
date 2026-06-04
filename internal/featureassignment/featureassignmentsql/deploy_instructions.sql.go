@@ -51,33 +51,6 @@ func (q *Queries) CreateDeployInstruction(ctx context.Context, arg CreateDeployI
 	return id, err
 }
 
-const getDeployInstruction = `-- name: GetDeployInstruction :one
-SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
-FROM
-	deploy_instructions
-WHERE
-	id = $1
-`
-
-func (q *Queries) GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
-	row := q.db.QueryRow(ctx, getDeployInstruction, id)
-	var i DeployInstruction
-	err := row.Scan(
-		&i.ID,
-		&i.EnvironmentID,
-		&i.FeatureName,
-		&i.FeatureVersion,
-		&i.Status,
-		&i.Hash,
-		&i.Created,
-		&i.LastModified,
-		&i.Values,
-		&i.FeatureAssignmentID,
-	)
-	return i, err
-}
-
 const getDeployInstructionByFeatureAssignmentAndEnvironmentID = `-- name: GetDeployInstructionByFeatureAssignmentAndEnvironmentID :one
 SELECT
 	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.feature_assignment_id,
@@ -205,21 +178,6 @@ func (q *Queries) ListDeployInstructions(ctx context.Context, featureAssignmentI
 		return nil, err
 	}
 	return items, nil
-}
-
-const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
-UPDATE
-	deploy_instructions
-SET
-	status = 'failed'
-WHERE
-	status = 'pending'
-	AND last_modified < NOW() - INTERVAL '1 hour'
-`
-
-func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, timeoutDeployInstructions)
-	return err
 }
 
 const updateDeployInstructionStatus = `-- name: UpdateDeployInstructionStatus :exec

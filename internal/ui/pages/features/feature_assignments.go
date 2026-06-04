@@ -683,7 +683,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *model.Feature) [
 				es.DeployInstructionID = di.ID.String()
 			}
 
-			releases, err := featureassignment.ListReleaseStatuses(ctx, env.env.ID)
+			releases, err := uidata.ListReleaseStatuses(ctx, env.env.ID)
 			if err == nil {
 				for _, release := range releases {
 					if release.Name == feature.Name {

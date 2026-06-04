@@ -115,7 +115,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load environment value references: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		releases, err := featureassignment.ListReleaseStatuses(r.Context(), env.ID)
+		releases, err := uidata.ListReleaseStatuses(r.Context(), env.ID)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return

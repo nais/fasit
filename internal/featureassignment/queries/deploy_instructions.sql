@@ -1,11 +1,3 @@
--- name: GetDeployInstruction :one
-SELECT
-	*
-FROM
-	deploy_instructions
-WHERE
-	id = @id;
-
 -- name: CreateDeployInstruction :one
 INSERT INTO deploy_instructions(
 	environment_id,
@@ -23,15 +15,6 @@ VALUES (
 	@feature_assignment_id)
 RETURNING
 	id;
-
--- name: TimeoutDeployInstructions :exec
-UPDATE
-	deploy_instructions
-SET
-	status = 'failed'
-WHERE
-	status = 'pending'
-	AND last_modified < NOW() - INTERVAL '1 hour';
 
 -- name: GetDeployInstructionByFeatureAssignmentAndEnvironmentID :one
 SELECT

@@ -54,14 +54,3 @@ type FeatureReconcileStatus struct {
 	LastModified        pgtype.Timestamptz
 	Created             pgtype.Timestamptz
 }
-
-type ReleaseStatus struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Version       string
-	Status        string
-	Revision      int32
-	LastDeployed  pgtype.Timestamptz
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
-}

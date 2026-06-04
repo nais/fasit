@@ -14,8 +14,6 @@ type Querier interface {
 	DeactivateActiveFeatureAssignmentForTarget(ctx context.Context, arg DeactivateActiveFeatureAssignmentForTargetParams) error
 	DeactivateFeatureAssignment(ctx context.Context, id uuid.UUID) error
 	DeactivateFeatureAssignmentsByFeatureAndTarget(ctx context.Context, arg DeactivateFeatureAssignmentsByFeatureAndTargetParams) error
-	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
-	GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams) (GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow, error)
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
 	GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (FeatureReconcileStatus, error)
@@ -31,10 +29,7 @@ type Querier interface {
 	ListFeatureAssignmentsForFeatureInEnvironment(ctx context.Context, arg ListFeatureAssignmentsForFeatureInEnvironmentParams) ([]ListFeatureAssignmentsForFeatureInEnvironmentRow, error)
 	ListRecentFeatureAssignments(ctx context.Context) ([]ListRecentFeatureAssignmentsRow, error)
 	ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error)
-	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	SetReconcileStatus(ctx context.Context, arg SetReconcileStatusParams) error
-	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) (ReleaseStatus, error)
-	TimeoutDeployInstructions(ctx context.Context) error
 	UpdateDeployInstructionStatus(ctx context.Context, arg UpdateDeployInstructionStatusParams) error
 }
 

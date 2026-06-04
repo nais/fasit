@@ -4,21 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/message"
 )
 
 var ErrFeatureNotFound = fmt.Errorf("feature not found")
@@ -82,25 +78,6 @@ func Get(ctx context.Context, featureAssignmentID uuid.UUID) (*FeatureAssignment
 	}
 
 	return ret, nil
-}
-
-func GetDeployInstruction(ctx context.Context, deployInstructionID uuid.UUID) (*model.DeployInstruction, error) {
-	di, err := querier(ctx).GetDeployInstruction(ctx, deployInstructionID)
-	if err != nil {
-		return nil, err
-	}
-	return &model.DeployInstruction{
-		ID:                  di.ID,
-		EnvironmentID:       di.EnvironmentID,
-		FeatureAssignmentID: di.FeatureAssignmentID,
-		FeatureName:         di.FeatureName,
-		FeatureVersion:      di.FeatureVersion,
-		Status:              model.RolloutStatus(di.Status),
-		Hash:                di.Hash,
-		Created:             di.Created.Time,
-		LastModified:        di.LastModified.Time,
-		Values:              di.Values,
-	}, nil
 }
 
 func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) ([]featureassignmentsql.ListDeployInstructionsRow, error) {
@@ -399,64 +376,6 @@ func mostSpecificAssignment(ctx context.Context, envID uuid.UUID, featureName st
 		return nil, fmt.Errorf("%w: %q in environment after filtering", ErrFeatureNotFound, featureName)
 	}
 	return winner[0], nil
-}
-
-// TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
-// more than one hour and mark them as failed
-func TimeoutDeployInstructions(ctx context.Context, log *slog.Logger) {
-	for {
-		err := querier(ctx).TimeoutDeployInstructions(ctx)
-		if err != nil {
-			log.With("err", err).Error("failed to timeout deploy instructions")
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(1 * time.Minute):
-		}
-	}
-}
-
-func SetReleaseStatus(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
-	_, err := querier(ctx).SetReleaseStatus(ctx, featureassignmentsql.SetReleaseStatusParams{
-		EnvironmentID: environmentID,
-		Feature:       h.Name,
-		Version:       h.Version,
-		Status:        h.Status,
-		Revision:      int32(h.Revision), // #nosec G115
-		LastDeployed: pgtype.Timestamptz{
-			Time:  h.LastDeployed,
-			Valid: true,
-		},
-	})
-
-	return err
-}
-
-func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error) {
-	res, err := querier(ctx).ListReleaseStatuses(ctx, environmentID)
-	if err != nil {
-		return nil, err
-	}
-	releases := make([]*model.Release, len(res))
-	for i, r := range res {
-		releases[i] = &model.Release{
-			Name:         r.Feature,
-			Version:      r.Version,
-			Status:       r.Status,
-			Revision:     int(r.Revision),
-			LastDeployed: r.LastDeployed.Time,
-			Created:      r.Created.Time,
-			LastModified: r.LastModified.Time,
-		}
-	}
-
-	return releases, nil
-}
-
-func DeleteReleaseStatus(ctx context.Context, environmentID uuid.UUID) error {
-	return querier(ctx).DeleteReleaseStatusesInEnvironment(ctx, environmentID)
 }
 
 func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
