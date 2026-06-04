@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	GetNaisdHealthStatus(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
+	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	SetNaisdHealthStatus(ctx context.Context, arg SetNaisdHealthStatusParams) (HealthStatus, error)
 }
 

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/reconciler"
@@ -49,7 +48,7 @@ func TestReceiverIntegration(t *testing.T) {
 		}}, slog.Default(), fake.NewFakeSlackClient(), "test", noop.Meter{})
 		rec.Run(ctx)
 
-		got, err := featureassignment.ListReleaseStatuses(ctx, envID)
+		got, err := naisdstatus.ListReleaseStatuses(ctx, envID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +77,7 @@ func TestReceiverIntegration(t *testing.T) {
 			{Name: "new-app", Status: "deployed", Version: "2.0.0"},
 		})
 
-		got, err := featureassignment.ListReleaseStatuses(ctx, envID)
+		got, err := naisdstatus.ListReleaseStatuses(ctx, envID)
 		if err != nil {
 			t.Fatal(err)
 		}

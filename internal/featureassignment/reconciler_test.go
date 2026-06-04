@@ -145,8 +145,7 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	seeder = featureassignmenttest.NewSeeder()
 
 	// Wire old reconciler via context loader.
-	oldPub := func(topicID string, log *slog.Logger) featureassignment.Publisher { return pub }
-	loadContext, err := contextloader.NewLoaderFunc(pool, oldPub, meter, logger)
+	loadContext, err := contextloader.NewLoaderFunc(pool, logger)
 	if err != nil {
 		t.Fatalf("failed to create loader: %v", err)
 	}

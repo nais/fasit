@@ -28,10 +28,8 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
-
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
 // TODO: simplify test setup and generalize across tests
@@ -44,20 +42,13 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		t.Fatalf("failed to start postgres container: %v", err)
 	}
 
-	meterProvider := metricsdk.NewMeterProvider()
-	httpMeter := meterProvider.Meter("handler-test-meter")
-
 	mgr := setupTestMgr(ctx, t, container, dsn, logger)
 
 	seeder := featureassignmenttest.NewSeeder()
 	seeder.AddAssignment("my-feature", "1.0.0", environment.Labels{"kind": "tenant"})
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
-	pub := &publisher{}
-	newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
-		return pub
-	}
-	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, httpMeter, logger)
+	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, logger)
 	if err != nil {
 		t.Fatalf("failed to get setup context: %v", err)
 	}
@@ -222,15 +213,10 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 }
 
 type TestMgr struct {
-	t         *testing.T
-	db        Db
-	seeder    *featureassignmenttest.Seeder
-	publisher *publisher
-	log       *slog.Logger
-}
-
-type publisher struct {
-	msg []message.DeployInstruction
+	t      *testing.T
+	db     Db
+	seeder *featureassignmenttest.Seeder
+	log    *slog.Logger
 }
 
 func setupTestMgr(
@@ -243,13 +229,11 @@ func setupTestMgr(
 	t.Helper()
 	db := getDb(ctx, t, container, dsn, log)
 	seeder := featureassignmenttest.NewSeeder()
-	pub := &publisher{}
 	return &TestMgr{
-		t:         t,
-		db:        db,
-		seeder:    seeder,
-		publisher: pub,
-		log:       log,
+		t:      t,
+		db:     db,
+		seeder: seeder,
+		log:    log,
 	}
 }
 
@@ -279,18 +263,6 @@ type Db struct {
 	t    *testing.T
 	pool *pgxpool.Pool
 }
-
-func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
-	p.msg = append(p.msg, msg)
-
-	status := model.RolloutStatusDeployed
-	if strings.HasSuffix(msg.Name, "-pending") {
-		status = model.RolloutStatusPending
-	}
-	return featureassignment.UpdateDeployInstructionStatus(ctx, msg.ID, status)
-}
-
-func (p *publisher) Stop() {}
 
 func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, labels environment.Labels) {
 	d.t.Helper()

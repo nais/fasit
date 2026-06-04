@@ -23,7 +23,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/reconciler"
-	"go.opentelemetry.io/otel/metric/noop"
 )
 
 type (
@@ -119,7 +118,7 @@ func main() {
 	}
 	defer ioconvenience.CloseWithLog(cancel, log)
 
-	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, noop.NewMeterProvider().Meter(""), slog.Default())
+	loadContext, err := contextloader.NewLoaderFunc(dbConn, slog.Default())
 	if err != nil {
 		panic(err)
 	}

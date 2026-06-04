@@ -40,3 +40,24 @@ func Set(ctx context.Context, environmentID uuid.UUID, h *message.Health) error 
 
 	return err
 }
+
+func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error) {
+	res, err := querier(ctx).ListReleaseStatuses(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	releases := make([]*model.Release, len(res))
+	for i, r := range res {
+		releases[i] = &model.Release{
+			Name:         r.Feature,
+			Version:      r.Version,
+			Status:       r.Status,
+			Revision:     int(r.Revision),
+			LastDeployed: r.LastDeployed.Time,
+			Created:      r.Created.Time,
+			LastModified: r.LastModified.Time,
+		}
+	}
+
+	return releases, nil
+}

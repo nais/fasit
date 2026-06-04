@@ -2,34 +2,28 @@ package featureassignment
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
+	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/graph/model"
+	commonmodel "github.com/nais/fasit/internal/model"
 )
 
 var ErrFeatureNotFound = fmt.Errorf("feature not found")
-
-func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][]string, error) {
-	rows, err := querier(ctx).ListFeatureAssignmentsForEnvironment(ctx, envID)
-	if err != nil {
-		return nil, fmt.Errorf("list feature assignments for environment: %w", err)
-	}
-	deps, err := featureAssignmentsFromRows(rows)
-	if err != nil {
-		return nil, err
-	}
-	return collectKeyRefs(mostSpecificPerFeature(deps)), nil
-}
 
 func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) {
 	feat, err := ChartDownloader(in.Chart, in.Version)
@@ -45,7 +39,7 @@ func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) 
 		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
 	}
 
-	id, err := fromContext(ctx).deployer.CreateFeatureAssignment(ctx, feat, in.Description, in.Commit, in.Target)
+	id, err := createFeatureAssignment(ctx, feat, in.Description, in.Commit, in.Target)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -64,6 +58,18 @@ func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) 
 	})
 
 	return id, nil
+}
+
+func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][]string, error) {
+	rows, err := querier(ctx).ListFeatureAssignmentsForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, fmt.Errorf("list feature assignments for environment: %w", err)
+	}
+	deps, err := featureAssignmentsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	return collectKeyRefs(mostSpecificPerFeature(deps)), nil
 }
 
 func Get(ctx context.Context, featureAssignmentID uuid.UUID) (*FeatureAssignment, error) {
@@ -352,6 +358,113 @@ func WinningAssignment(ctx context.Context, envID uuid.UUID, featureName string)
 	return mostSpecificAssignment(ctx, envID, featureName)
 }
 
+func HasActiveAssignments(ctx context.Context, featureName string) (bool, error) {
+	return querier(ctx).HasActiveAssignments(ctx, featureName)
+}
+
+// IsMoreSpecific reports whether a deployment with candidateLabels (created at
+// candidateCreated) should replace one with existingLabels (created at
+// existingCreated). More target labels means more specific. Equal count: latest wins.
+func IsMoreSpecific(candidateLabels, existingLabels map[string]string, candidateCreated, existingCreated time.Time) bool {
+	if len(candidateLabels) > len(existingLabels) {
+		return true
+	}
+	return len(candidateLabels) == len(existingLabels) && candidateCreated.After(existingCreated)
+}
+
+// mostSpecificPerFeature picks one feature assignment per feature name: the one with
+// the most specific target labels (most labels wins), breaking ties by latest
+// created timestamp.
+func mostSpecificPerFeature(deps []*FeatureAssignment) []*FeatureAssignment {
+	assignments := map[string]*FeatureAssignment{}
+	for _, dep := range deps {
+		existing, ok := assignments[dep.Feature.Name]
+		if !ok || IsMoreSpecific(dep.TargetLabels, existing.TargetLabels, dep.Created, existing.Created) {
+			assignments[dep.Feature.Name] = dep
+		}
+	}
+
+	ret := make([]*FeatureAssignment, 0)
+	for _, d := range assignments {
+		ret = append(ret, d)
+	}
+
+	slices.SortStableFunc(ret, func(a, b *FeatureAssignment) int {
+		return a.Created.Compare(b.Created)
+	})
+
+	return ret
+}
+
+func createFeatureAssignment(ctx context.Context, feat *model.Feature, description *string, githubRef *commonmodel.GitHubCommit, target environment.Labels) (uuid.UUID, error) {
+	details, err := featurepkg.ParseTemplateDetails(feat.Values)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
+	}
+
+	if err := featurepkg.FeatureDataCreate(ctx, *feat, details); err != nil {
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+			return uuid.Nil, fmt.Errorf("unable to create feature data: %w", pgErr)
+		}
+	}
+
+	var ghRef []byte
+	if githubRef != nil {
+		b, err := json.Marshal(githubRef.Ref)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("marshal gh ref: %w", err)
+		}
+
+		ghRef = b
+	}
+
+	var assignment featureassignmentsql.FeatureAssignment
+	err = dbtx.WithTx(ctx, func(ctx context.Context) error {
+		err = querier(ctx).DeactivateActiveFeatureAssignmentForTarget(ctx, featureassignmentsql.DeactivateActiveFeatureAssignmentForTargetParams{
+			FeatureName: feat.Name,
+			Target:      types.EnvironmentLabels(target),
+		})
+		if err != nil {
+			return fmt.Errorf("deactivate previous assignment: %w", err)
+		}
+
+		assignment, err = querier(ctx).CreateFeatureAssignment(ctx, featureassignmentsql.CreateFeatureAssignmentParams{
+			FeatureName: feat.Name,
+			Version:     feat.Version,
+			GhRef:       ghRef,
+			Target:      types.EnvironmentLabels(target),
+			Description: description,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to create feature assignment: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return assignment.ID, nil
+}
+
+func formatLabels(labels map[string]string) string {
+	if len(labels) == 0 {
+		return "all environments"
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+"="+labels[k])
+	}
+	return strings.Join(parts, ", ")
+}
+
 func mostSpecificAssignment(ctx context.Context, envID uuid.UUID, featureName string) (*FeatureAssignment, error) {
 	rows, err := querier(ctx).ListFeatureAssignmentsForFeatureInEnvironment(ctx, featureassignmentsql.ListFeatureAssignmentsForFeatureInEnvironmentParams{
 		EnvironmentID: envID,
@@ -376,34 +489,4 @@ func mostSpecificAssignment(ctx context.Context, envID uuid.UUID, featureName st
 		return nil, fmt.Errorf("%w: %q in environment after filtering", ErrFeatureNotFound, featureName)
 	}
 	return winner[0], nil
-}
-
-func UpdateDeployInstructionStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
-	if !status.IsValid() {
-		return fmt.Errorf("invalid status: %q", status)
-	}
-	return querier(ctx).UpdateDeployInstructionStatus(ctx, featureassignmentsql.UpdateDeployInstructionStatusParams{
-		ID:     id,
-		Status: status.String(),
-	})
-}
-
-func formatLabels(labels map[string]string) string {
-	if len(labels) == 0 {
-		return "all environments"
-	}
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, k := range keys {
-		parts = append(parts, k+"="+labels[k])
-	}
-	return strings.Join(parts, ", ")
-}
-
-func HasActiveAssignments(ctx context.Context, featureName string) (bool, error) {
-	return querier(ctx).HasActiveAssignments(ctx, featureName)
 }

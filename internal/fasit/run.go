@@ -89,7 +89,7 @@ func Run(ctx context.Context) error {
 		return p
 	}
 
-	loadContext, err := contextloader.NewLoaderFunc(pool, nil, meter, log)
+	loadContext, err := contextloader.NewLoaderFunc(pool, log)
 	if err != nil {
 		return fmt.Errorf("creating setup context: %w", err)
 	}

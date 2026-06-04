@@ -15,7 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -110,11 +109,10 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 }
 
 type TestMgr struct {
-	t         *testing.T
-	db        Db
-	seeder    *featureassignmenttest.Seeder
-	publisher *oldPublisher
-	log       *slog.Logger
+	t      *testing.T
+	db     Db
+	seeder *featureassignmenttest.Seeder
+	log    *slog.Logger
 }
 
 func setupTestMgr(
@@ -127,13 +125,11 @@ func setupTestMgr(
 	t.Helper()
 	db := getDb(ctx, t, container, dsn, log)
 	seeder := featureassignmenttest.NewSeeder()
-	pub := &oldPublisher{}
 	return &TestMgr{
-		t:         t,
-		db:        db,
-		seeder:    seeder,
-		publisher: pub,
-		log:       log,
+		t:      t,
+		db:     db,
+		seeder: seeder,
+		log:    log,
 	}
 }
 
@@ -151,19 +147,3 @@ func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContai
 	})
 	return Db{t: t, pool: pool}
 }
-
-// oldPublisher uses deployment.UpdateDeployInstructionStatus via context.
-type oldPublisher struct {
-	msg []message.DeployInstruction
-}
-
-func (p *oldPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
-	p.msg = append(p.msg, msg)
-	status := model.RolloutStatusDeployed
-	if strings.HasSuffix(msg.Name, "-pending") {
-		status = model.RolloutStatusPending
-	}
-	return featureassignment.UpdateDeployInstructionStatus(ctx, msg.ID, status)
-}
-
-func (p *oldPublisher) Stop() {}

@@ -12,6 +12,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/uidata"
@@ -683,7 +684,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *model.Feature) [
 				es.DeployInstructionID = di.ID.String()
 			}
 
-			releases, err := uidata.ListReleaseStatuses(ctx, env.env.ID)
+			releases, err := naisdstatus.ListReleaseStatuses(ctx, env.env.ID)
 			if err == nil {
 				for _, release := range releases {
 					if release.Name == feature.Name {

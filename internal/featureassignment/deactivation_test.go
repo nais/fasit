@@ -29,10 +29,7 @@ func TestDeactivation(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
-			return mgr.publisher
-		}
-		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
+		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, logger)
 		if err != nil {
 			t.Fatalf("create loader: %v", err)
 		}
@@ -175,10 +172,7 @@ func TestDeactivation(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
-		newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
-			return mgr.publisher
-		}
-		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
+		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, logger)
 		if err != nil {
 			t.Fatalf("create loader: %v", err)
 		}

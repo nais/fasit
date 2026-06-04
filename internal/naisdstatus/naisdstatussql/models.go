@@ -11,3 +11,14 @@ type HealthStatus struct {
 	EnvironmentID uuid.UUID
 	ReportedAt    pgtype.Timestamptz
 }
+
+type ReleaseStatus struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Version       string
+	Status        string
+	Revision      int32
+	LastDeployed  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+}

@@ -13,7 +13,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
-	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -42,11 +41,7 @@ func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 	seeder := featureassignmenttest.NewSeeder()
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
-	pub := &noopPublisher{}
-	newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
-		return pub
-	}
-	loadContext, err := contextloader.NewLoaderFunc(pool, newPublisher, meter, logger)
+	loadContext, err := contextloader.NewLoaderFunc(pool, logger)
 	if err != nil {
 		t.Fatalf("create loader: %v", err)
 	}
@@ -98,11 +93,7 @@ func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T
 	seeder := featureassignmenttest.NewSeeder()
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
-	pub := &noopPublisher{}
-	newPublisher := func(topicID string, log *slog.Logger) featureassignment.Publisher {
-		return pub
-	}
-	loadContext, err := contextloader.NewLoaderFunc(pool, newPublisher, meter, logger)
+	loadContext, err := contextloader.NewLoaderFunc(pool, logger)
 	if err != nil {
 		t.Fatalf("create loader: %v", err)
 	}
@@ -167,10 +158,3 @@ func startPostgres(ctx context.Context, t *testing.T) (*postgres.PostgresContain
 
 	return container, dsn
 }
-
-type noopPublisher struct{}
-
-func (p *noopPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
-	return nil
-}
-func (p *noopPublisher) Stop() {}

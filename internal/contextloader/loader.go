@@ -12,18 +12,12 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/uidata"
-	"go.opentelemetry.io/otel/metric"
 )
 
 type LoaderFunc func(context.Context) context.Context
 
-func NewLoaderFunc(
-	pool *pgxpool.Pool,
-	publisher featureassignment.NewPublisher,
-	meter metric.Meter,
-	log *slog.Logger,
-) (LoaderFunc, error) {
-	manager, err := featureassignment.NewManager(pool, publisher, meter, log)
+func NewLoaderFunc(pool *pgxpool.Pool, log *slog.Logger) (LoaderFunc, error) {
+	manager, err := featureassignment.NewManager(pool, log)
 	if err != nil {
 		return nil, err
 	}
