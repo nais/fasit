@@ -411,32 +411,27 @@ function dismissNavHint() {
       .catch((err) => { content.innerHTML = '<p class="text-error">Failed to load: ' + err.message + '</p>'; });
   });
 
-  // Handle form submissions inside the modal (e.g. template tester)
-  document.addEventListener("submit", (e) => {
-    const form = e.target.closest(".lazy-modal-content [data-template-test]");
-    if (!form) return;
-    e.preventDefault();
-    const btn = form.querySelector("button[type=submit]");
-    if (btn) { btn.disabled = true; btn.textContent = "Rendering…"; }
-    const url = modal.dataset.url;
-    fetch(url, { method: "POST", body: new URLSearchParams(new FormData(form)) })
-      .then((r) => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
-      .then((html) => { content.innerHTML = html; })
-      .catch((err) => { content.innerHTML = '<p class="text-error">Failed: ' + err.message + '</p>'; });
+  // Shift+Enter submits the template tester form
+  document.addEventListener("keydown", (e) => {
+    if (e.shiftKey && e.key === "Enter" && e.target.id === "template-input") {
+      e.preventDefault();
+      e.target.closest("form").requestSubmit();
+    }
   });
 
-  // Help popover toggle
-  document.addEventListener("click", (e) => {
-    const toggle = e.target.closest("[data-help-toggle]");
-    if (toggle) {
-      e.preventDefault();
-      e.stopPropagation();
-      const popover = toggle.nextElementSibling;
-      if (popover) popover.classList.toggle("open");
-      return;
-    }
-    if (!e.target.closest(".help-popover")) {
-      for (const p of document.querySelectorAll(".help-popover.open")) p.classList.remove("open");
-    }
-  });
+  // Keep URL in sync with template tester form state
+  const envSelect = document.getElementById("env-select");
+  const templateInput = document.getElementById("template-input");
+  if (envSelect && templateInput) {
+    const syncURL = () => {
+      const url = new URL(window.location);
+      const env = envSelect.value;
+      if (env) { url.searchParams.set("env", env); } else { url.searchParams.delete("env"); }
+      const tpl = templateInput.value;
+      if (tpl) { url.searchParams.set("template", tpl); } else { url.searchParams.delete("template"); }
+      history.replaceState(null, "", url);
+    };
+    envSelect.addEventListener("change", syncURL);
+    templateInput.addEventListener("input", syncURL);
+  }
 })();

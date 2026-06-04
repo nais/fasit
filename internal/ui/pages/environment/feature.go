@@ -637,8 +637,11 @@ func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				var extraKebab []g.Node
 				if item.Template != "" {
-					testURL := featureBasePathForPage(page) + "/template-test/" + item.Key
-					extraKebab = append(extraKebab, h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("data-lazy-modal", testURL), g.Text("Test template")))
+					testURL := "/template-test?feature=" + url.QueryEscape(page.Feature.Name) +
+						"&tenant=" + url.QueryEscape(page.TenantSlug) +
+						"&env=" + url.QueryEscape(page.Environment.Name) +
+						"&key=" + url.QueryEscape(item.Key)
+					extraKebab = append(extraKebab, h.A(h.Href(testURL), h.Class("kebab-item"), g.Text("Test template ↗")))
 				}
 				return h.Tr(
 					components.ConfigKeyCell(item),

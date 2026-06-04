@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/naisd"
 	reconcilerpage "github.com/nais/fasit/internal/ui/pages/reconciler"
+	"github.com/nais/fasit/internal/ui/pages/templatetest"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
 )
 
@@ -55,8 +56,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features/{feature}/envs/{tenant}/{env}/config", environment.FeatureContextTabHandler(s.renderPage, "config"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/logs", environment.FeatureLogsRedirectHandler())
 	r.Get("/features/{feature}/envs/{tenant}/{env}/helm-values", environment.HelmValuesFragmentHandler())
-	r.Get("/features/{feature}/envs/{tenant}/{env}/template-test/{key}", environment.TemplateTestHandler())
-	r.Post("/features/{feature}/envs/{tenant}/{env}/template-test/{key}", environment.TemplateTestHandler())
 	r.Get("/features/{feature}/envs/{tenant}/{env}/helm", environment.LegacyFeatureRedirectHandler("/config"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/assignments", environment.FeatureContextTabHandler(s.renderPage, "assignments"))
 	r.Get("/features/{feature}/envs/{tenant}/{env}/audit", environment.AuditRedirectHandler())
@@ -74,6 +73,8 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/features/{feature}/config/set", features.SetGlobalConfigHandler())
 
 	r.Get("/auditlog", auditlog.Handler(s.renderPage))
+
+	r.Get("/template-test", templatetest.Handler(s.renderPage))
 
 	r.Get("/labels", labels.Handler(s.renderPage))
 	r.Get("/naisd", naisd.Handler(s.renderPage))

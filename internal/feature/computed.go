@@ -121,6 +121,12 @@ func renderTemplate(values *ComputedValues, tpl string, funcs template.FuncMap) 
 	return v, nil
 }
 
+// RenderSingleTemplate renders a single Go template string against the given
+// ComputedValues, returning the result as a string.
+func RenderSingleTemplate(values *ComputedValues, tpl string) (string, error) {
+	return renderString(values, tpl, TemplateFuncs)
+}
+
 // templateCache caches parsed templates keyed by (template string, func map pointer).
 // The same feature version always produces the same template strings, so this
 // avoids re-parsing+compiling on every render call.

@@ -2159,12 +2159,34 @@ a:hover .status-badge {
   right: 0;
   border-radius: 0 0 0 4px;
 }
-.template-test-form {
+.template-test-layout {
+  display: grid;
+  grid-template-columns: 1fr 16rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+.template-test-main {
+  min-width: 0;
+}
+.template-test-page-form {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
-.template-test-form textarea {
+.template-test-page-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.template-test-page-form select {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem;
+  color: var(--text-primary);
+  font: inherit;
+}
+.template-test-page-form textarea {
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 0.85rem;
   background: var(--bg-inset);
@@ -2176,7 +2198,8 @@ a:hover .status-badge {
 }
 .template-test-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
 }
 .template-test-result-section {
   margin-top: 0.75rem;
@@ -2191,71 +2214,78 @@ a:hover .status-badge {
 .template-test-error {
   color: var(--status-error);
 }
-.template-test-label-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.template-test-empty {
+  opacity: 0.4;
+  font-style: italic;
 }
-.help-popover-wrap {
-  position: relative;
-}
-.help-toggle {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
+.template-test-reference {
+  position: sticky;
+  top: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 1rem;
+  background: var(--bg-inset);
+  border-radius: 6px;
   border: 1px solid var(--border);
-  background: none;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
-.help-toggle:hover {
+.template-test-reference h3 {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+.template-test-reference h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0.75rem 0 0.25rem;
+  color: var(--text-secondary);
+}
+.template-test-reference h4:first-of-type {
+  margin-top: 0;
+}
+.ref-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.ref-item {
+  position: relative;
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: default;
+  white-space: nowrap;
+}
+.ref-item:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
-.help-popover {
-  display: none;
+.ref-item[data-tip]:hover::after {
+  content: attr(data-tip);
   position: absolute;
   left: 0;
-  top: 1.75rem;
-  z-index: 100;
+  top: 100%;
+  margin-top: 4px;
+  padding: 0.35rem 0.5rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  width: 22rem;
-  max-height: 20rem;
-  overflow-y: auto;
+  border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  z-index: 10;
+  color: var(--text-primary);
 }
-.help-popover.open {
-  display: block;
-}
-.help-popover h4 {
-  margin: 0 0 0.25rem;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-.help-popover h4:not(:first-child) {
-  margin-top: 0.75rem;
-}
-.help-popover dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.1rem 0.75rem;
-  font-size: 0.75rem;
-}
-.help-popover dt {
-  font-family: ui-monospace, monospace;
-  color: var(--accent);
-}
-.help-popover dd {
-  margin: 0;
-  color: var(--text-secondary);
+@media (max-width: 768px) {
+  .template-test-layout {
+    grid-template-columns: 1fr;
+  }
+  .template-test-reference {
+    position: static;
+  }
 }
 .modal-title {
   text-align: center;
