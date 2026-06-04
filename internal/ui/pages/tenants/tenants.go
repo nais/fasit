@@ -142,7 +142,12 @@ func envTable(rows []envRow, now time.Time) g.Node {
 
 func healthCell(row envRow, now time.Time) g.Node {
 	class, label := agentHealth(row, now)
-	title := lastReportedText(row, now)
+
+	title := "Never reported"
+	if row.HasReport {
+		title = "Last reported: " + view.FormatTime(row.ReportedAt)
+	}
+
 	return h.Span(h.Class("status-badge "+class), h.Title(title), g.Text(label))
 }
 
@@ -159,13 +164,6 @@ func agentHealth(row envRow, now time.Time) (string, string) {
 	default:
 		return "status-error", "dead"
 	}
-}
-
-func lastReportedText(row envRow, now time.Time) string {
-	if !row.HasReport {
-		return "Never reported"
-	}
-	return "Last reported: " + view.FormatTime(row.ReportedAt)
 }
 
 func matchesAll(text string, terms []string) bool {
