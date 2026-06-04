@@ -7,6 +7,8 @@ import (
 	"io"
 	"log/slog"
 	"maps"
+	"slices"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -24,9 +26,6 @@ import (
 
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
-
-// reconcileFunc abstracts the reconciler behind one call.
-type reconcileFunc func(ctx context.Context) error
 
 // sqlPublisher records published messages and simulates naisd status updates
 // via raw SQL so it works independently of the deployment context loader.
@@ -47,114 +46,24 @@ func (p *sqlPublisher) Publish(ctx context.Context, msg message.DeployInstructio
 
 func (p *sqlPublisher) Stop() {}
 
-type reconcileDB struct {
-	t    *testing.T
-	pool *pgxpool.Pool
+// tenantEnv describes one environment to create under a tenant.
+type tenantEnv struct {
+	tenant string
+	name   string
+	labels environment.Labels
 }
 
-func (d *reconcileDB) createEnv(ctx context.Context, tenant *model.Tenant, name string, labels environment.Labels) {
-	d.t.Helper()
-	if labels["kind"] == "" {
-		labels["kind"] = "tenant"
-	}
-	env, err := environment.Create(ctx, &model.EnvironmentCreate{
-		Name:     name,
-		TenantID: tenant.ID,
-		Kind:     model.EnvironmentKind(labels["kind"]),
-	})
-	if err != nil {
-		d.t.Fatalf("create environment: %v", err)
-	}
-	lbls := environment.Labels{}
-	maps.Copy(lbls, labels)
-	lbls["tenant"] = tenant.Name
-	lbls["environment"] = env.Name
-	if err := environment.SetLabels(ctx, env.ID, lbls); err != nil {
-		d.t.Fatalf("set environment labels: %v", err)
-	}
-	if err := naisdstatus.Set(ctx, env.ID, &message.Health{ReportedAt: time.Now()}); err != nil {
-		d.t.Fatalf("create health status: %v", err)
-	}
-}
-
-func (d *reconcileDB) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs map[string]environment.Labels) {
-	d.t.Helper()
-	tenants := make(map[string]*model.Tenant)
-	for te, lbls := range tenantsAndEnvs {
-		p := strings.Split(te, ":")
-		tenantName, envName := p[0], p[1]
-		if _, exists := tenants[tenantName]; !exists {
-			tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
-			if err != nil {
-				d.t.Fatalf("create tenant: %v", err)
-			}
-			tenants[tenantName] = tenant
-		}
-		d.createEnv(ctx, tenants[tenantName], envName, lbls)
-	}
-}
-
-func (d *reconcileDB) queryDeployedInstructions(ctx context.Context, t *testing.T) []string {
-	t.Helper()
-	rows, err := d.pool.Query(ctx, `
-		SELECT t.name || ':' || e.name || ':' || di.feature_name || ':' || di.feature_version
-		FROM deploy_instructions di
-		JOIN environments e ON e.id = di.environment_id
-		JOIN tenants t ON t.id = e.tenant_id
-		WHERE di.status = 'deployed'
-		ORDER BY 1
-	`)
-	if err != nil {
-		t.Fatalf("query deployed instructions: %v", err)
-	}
-	defer rows.Close()
-	var result []string
-	for rows.Next() {
-		var s string
-		if err := rows.Scan(&s); err != nil {
-			t.Fatalf("scan: %v", err)
-		}
-		result = append(result, s)
-	}
-	return result
-}
-
-func (d *reconcileDB) queryDeployedFeatures(ctx context.Context, t *testing.T, featureName string) []string {
-	t.Helper()
-	rows, err := d.pool.Query(ctx, `
-		SELECT t.name || ':' || e.name
-		FROM deploy_instructions di
-		JOIN environments e ON e.id = di.environment_id
-		JOIN tenants t ON t.id = e.tenant_id
-		WHERE di.status = 'deployed' AND di.feature_name = $1
-		ORDER BY 1
-	`, featureName)
-	if err != nil {
-		t.Fatalf("query deployed features: %v", err)
-	}
-	defer rows.Close()
-	var result []string
-	for rows.Next() {
-		var s string
-		if err := rows.Scan(&s); err != nil {
-			t.Fatalf("scan: %v", err)
-		}
-		result = append(result, s)
-	}
-	return result
-}
-
-func (d *reconcileDB) countInstructions(ctx context.Context, t *testing.T, featureName, version string) int {
-	t.Helper()
-	var count int
-	err := d.pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM deploy_instructions
-		WHERE feature_name = $1 AND feature_version = $2
-	`, featureName, version).Scan(&count)
-	if err != nil {
-		t.Fatalf("count instructions: %v", err)
-	}
-	return count
+// reconcileTest is a self-contained harness for a single reconciler test:
+// a fresh database, a wired reconciler + dispatcher, a recording publisher,
+// and a seeder. All methods fail the test directly on error.
+type reconcileTest struct {
+	t          *testing.T
+	ctx        context.Context
+	pool       *pgxpool.Pool
+	pub        *sqlPublisher
+	seeder     *featureassignmenttest.Seeder
+	reconciler *reconciler.Reconciler
+	dispatcher reconciler.Dispatcher
 }
 
 // startPostgresWithSnapshot starts a postgres container and takes a snapshot
@@ -168,16 +77,10 @@ func startPostgresWithSnapshot(ctx context.Context, t *testing.T) (container *po
 	return container, dsn
 }
 
-// setupReconcileTest creates a fresh DB, wires the reconciler, and returns
-// everything needed to run a test case.
-func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string) (
-	newCtx context.Context,
-	db *reconcileDB,
-	pub *sqlPublisher,
-	reconcileFn reconcileFunc,
-	seeder *featureassignmenttest.Seeder,
-	lastResult **reconciler.DesiredState,
-) {
+// newReconcileTest opens a fresh connection to the snapshotted database, wires
+// the reconciler, dispatcher, publisher and seeder, and registers cleanup that
+// restores the snapshot for the next case.
+func newReconcileTest(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string) *reconcileTest {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
@@ -192,17 +95,12 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 		}
 	})
 
-	pub = &sqlPublisher{pool: pool}
-	seeder = featureassignmenttest.NewSeeder()
-
-	// Wire context loader for seeding.
 	loadContext, err := contextloader.NewLoaderFunc(pool, logger)
 	if err != nil {
 		t.Fatalf("failed to create loader: %v", err)
 	}
-	newCtx = loadContext(ctx)
 
-	// Wire reconciler.
+	pub := &sqlPublisher{pool: pool}
 	newPub := func(topicID string, log *slog.Logger) reconciler.Publisher { return pub }
 	dispatcher, err := reconciler.NewPubSubDispatcher(pool, newPub, meter, logger)
 	if err != nil {
@@ -212,51 +110,167 @@ func setupReconcileTest(ctx context.Context, t *testing.T, container *postgres.P
 	if err != nil {
 		t.Fatalf("failed to create reconciler: %v", err)
 	}
-	var lr *reconciler.DesiredState
-	lastResult = &lr
-	reconcileFn = func(ctx context.Context) error {
-		result, err := rec.ComputeDesiredState(ctx)
-		if err != nil {
-			return err
-		}
-		lr = result
-		return dispatcher.Dispatch(ctx, result.Decisions)
-	}
 
-	db = &reconcileDB{t: t, pool: pool}
-	return
-}
-
-type featureInput struct {
-	name, version string
-	dependencies  []string
-	target        environment.Labels
-}
-
-// timedReconcileTest runs fn with the reconciler. Each reconcile call is timed and the duration is logged.
-func timedReconcileTest(
-	t *testing.T,
-	ctx context.Context,
-	container *postgres.PostgresContainer,
-	dsn string,
-	fn func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder),
-) {
-	t.Helper()
-	ctx, db, pub, reconcileFn, seeder, lastResultPtr := setupReconcileTest(ctx, t, container, dsn)
+	seeder := featureassignmenttest.NewSeeder()
 	featureassignment.ChartDownloader = seeder.ChartDownloader()
 
-	timed := func(ctx context.Context) error {
-		start := time.Now()
-		err := reconcileFn(ctx)
-		elapsed := time.Since(start)
-		t.Logf("reconcile took %s", elapsed)
-		if *lastResultPtr != nil {
-			lr := *lastResultPtr
-			ioDur := elapsed - lr.FetchDur - lr.ComputeDur
-			t.Logf("  phases: fetch=%s compute=%s io=%s", lr.FetchDur, lr.ComputeDur, ioDur)
-		}
-		return err
+	return &reconcileTest{
+		t:          t,
+		ctx:        loadContext(ctx),
+		pool:       pool,
+		pub:        pub,
+		seeder:     seeder,
+		reconciler: rec,
+		dispatcher: dispatcher,
 	}
+}
 
-	fn(t, ctx, db, pub, timed, seeder)
+// createAssignment registers a fake chart and creates the assignment immediately.
+func (h *reconcileTest) createAssignment(name, version string, target environment.Labels, deps ...string) {
+	h.t.Helper()
+	if _, err := h.seeder.CreateAssignment(h.ctx, name, version, target, deps...); err != nil {
+		h.t.Fatalf("create assignment %s@%s: %v", name, version, err)
+	}
+}
+
+// createAssignmentWithValues is createAssignment with configurable values and
+// fake chart defaults.
+func (h *reconcileTest) createAssignmentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, description string, deps ...string) {
+	h.t.Helper()
+	if _, err := h.seeder.CreateAssignmentWithValues(h.ctx, name, version, target, kinds, values, defaults, description, deps...); err != nil {
+		h.t.Fatalf("create assignment %s@%s: %v", name, version, err)
+	}
+}
+
+// reconcile computes the desired state and dispatches the resulting decisions.
+func (h *reconcileTest) reconcile() {
+	h.t.Helper()
+	result, err := h.reconciler.ComputeDesiredState(h.ctx)
+	if err != nil {
+		h.t.Fatalf("reconcile: %v", err)
+	}
+	if err := h.dispatcher.Dispatch(h.ctx, result.Decisions); err != nil {
+		h.t.Fatalf("dispatch: %v", err)
+	}
+}
+
+func (h *reconcileTest) createEnvs(envs ...tenantEnv) {
+	h.t.Helper()
+	tenants := make(map[string]*model.Tenant)
+	for _, e := range envs {
+		tenant, exists := tenants[e.tenant]
+		if !exists {
+			var err error
+			tenant, err = environment.CreateTenant(h.ctx, &model.TenantCreate{Name: e.tenant})
+			if err != nil {
+				h.t.Fatalf("create tenant: %v", err)
+			}
+			tenants[e.tenant] = tenant
+		}
+		h.createEnv(tenant, e.name, e.labels)
+	}
+}
+
+func (h *reconcileTest) createEnv(tenant *model.Tenant, name string, labels environment.Labels) {
+	h.t.Helper()
+	if labels["kind"] == "" {
+		labels["kind"] = "tenant"
+	}
+	env, err := environment.Create(h.ctx, &model.EnvironmentCreate{
+		Name:     name,
+		TenantID: tenant.ID,
+		Kind:     model.EnvironmentKind(labels["kind"]),
+	})
+	if err != nil {
+		h.t.Fatalf("create environment: %v", err)
+	}
+	lbls := environment.Labels{}
+	maps.Copy(lbls, labels)
+	lbls["tenant"] = tenant.Name
+	lbls["environment"] = env.Name
+	if err := environment.SetLabels(h.ctx, env.ID, lbls); err != nil {
+		h.t.Fatalf("set environment labels: %v", err)
+	}
+	if err := naisdstatus.Set(h.ctx, env.ID, &message.Health{ReportedAt: time.Now()}); err != nil {
+		h.t.Fatalf("create health status: %v", err)
+	}
+}
+
+// deployedInstructions returns "tenant:env:feature:version" for every deployed
+// instruction, sorted.
+func (h *reconcileTest) deployedInstructions() []string {
+	h.t.Helper()
+	return h.queryStrings(`
+		SELECT t.name || ':' || e.name || ':' || di.feature_name || ':' || di.feature_version
+		FROM deploy_instructions di
+		JOIN environments e ON e.id = di.environment_id
+		JOIN tenants t ON t.id = e.tenant_id
+		WHERE di.status = 'deployed'
+		ORDER BY 1
+	`)
+}
+
+// deployedFeatures returns "tenant:env" for every deployed instruction of the
+// given feature, sorted.
+func (h *reconcileTest) deployedFeatures(featureName string) []string {
+	h.t.Helper()
+	return h.queryStrings(`
+		SELECT t.name || ':' || e.name
+		FROM deploy_instructions di
+		JOIN environments e ON e.id = di.environment_id
+		JOIN tenants t ON t.id = e.tenant_id
+		WHERE di.status = 'deployed' AND di.feature_name = $1
+		ORDER BY 1
+	`, featureName)
+}
+
+func (h *reconcileTest) countInstructions(featureName, version string) int {
+	h.t.Helper()
+	var count int
+	err := h.pool.QueryRow(h.ctx, `
+		SELECT COUNT(*) FROM deploy_instructions
+		WHERE feature_name = $1 AND feature_version = $2
+	`, featureName, version).Scan(&count)
+	if err != nil {
+		h.t.Fatalf("count instructions: %v", err)
+	}
+	return count
+}
+
+func (h *reconcileTest) queryStrings(sql string, args ...any) []string {
+	h.t.Helper()
+	rows, err := h.pool.Query(h.ctx, sql, args...)
+	if err != nil {
+		h.t.Fatalf("query: %v", err)
+	}
+	defer rows.Close()
+	var result []string
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			h.t.Fatalf("scan: %v", err)
+		}
+		result = append(result, s)
+	}
+	return result
+}
+
+// requireDeployed asserts that the set of deployed instructions
+// ("tenant:env:feature:version") is exactly want.
+func (h *reconcileTest) requireDeployed(want ...string) {
+	h.t.Helper()
+	sorted := slices.Clone(want)
+	sort.Strings(sorted)
+	got := h.deployedInstructions()
+	if !slices.Equal(got, sorted) {
+		h.t.Errorf("deployed instructions mismatch:\ngot:  %v\nwant: %v", got, sorted)
+	}
+}
+
+// requirePublished asserts the number of messages published since the last reset.
+func (h *reconcileTest) requirePublished(n int) {
+	h.t.Helper()
+	if len(h.pub.msg) != n {
+		h.t.Fatalf("published messages = %d, want %d", len(h.pub.msg), n)
+	}
 }

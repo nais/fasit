@@ -6,16 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"slices"
-	"sort"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
@@ -23,11 +18,17 @@ func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresWithSnapshot(ctx, t)
 
-	envsToCreate := map[string]environment.Labels{
-		"test-partner:dev":  {},
-		"test-partner:prod": {"featuretoggle": "enabled"},
-		"nav:dev":           {"aiven": "enabled"},
-		"nav:management":    {"kind": "management"},
+	envs := []tenantEnv{
+		{"test-partner", "dev", environment.Labels{}},
+		{"test-partner", "prod", environment.Labels{"featuretoggle": "enabled"}},
+		{"nav", "dev", environment.Labels{"aiven": "enabled"}},
+		{"nav", "management", environment.Labels{"kind": "management"}},
+	}
+
+	type featureInput struct {
+		name, version string
+		dependencies  []string
+		target        environment.Labels
 	}
 
 	tt := []struct {
@@ -91,47 +92,17 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-				db.createTenantsAndEnvironments(ctx, envsToCreate)
-				for _, input := range tc.deploymentsToCreate {
-					seeder.AddAssignment(input.name, input.version, input.target, input.dependencies...)
-				}
-				if _, err := seeder.Seed(ctx); err != nil {
-					t.Fatalf("seeding: %v", err)
-				}
+			h := newReconcileTest(ctx, t, container, dsn)
+			h.createEnvs(envs...)
+			for _, input := range tc.deploymentsToCreate {
+				h.createAssignment(input.name, input.version, input.target, input.dependencies...)
+			}
 
-				for _, expected := range tc.reconcileResults {
-					if err := reconcile(ctx); err != nil {
-						t.Fatalf("reconcile: %v", err)
-					}
-
-					instructions := db.queryDeployedInstructions(ctx, t)
-					sorted := make([]string, len(expected))
-					copy(sorted, expected)
-					sort.Strings(sorted)
-
-					if !slices.Equal(sorted, instructions) {
-						t.Errorf("instructions mismatch:\ngot:  %v\nwant: %v", instructions, sorted)
-					}
-					if len(pub.msg) != len(expected) {
-						t.Fatalf("pub.msg len = %d, want %d", len(pub.msg), len(expected))
-					}
-
-					for _, exp := range expected {
-						found := false
-						for _, msg := range pub.msg {
-							parts := strings.Split(exp, ":")
-							if fmt.Sprintf("%s:%s", msg.Name, msg.Version) == strings.Join(parts[2:], ":") {
-								found = true
-								break
-							}
-						}
-						if !found {
-							t.Errorf("expected instruction %q not found in published messages", exp)
-						}
-					}
-				}
-			})
+			for _, expected := range tc.reconcileResults {
+				h.reconcile()
+				h.requireDeployed(expected...)
+				h.requirePublished(len(expected))
+			}
 		})
 	}
 }
@@ -140,156 +111,98 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresWithSnapshot(ctx, t)
 
-	timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-		db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
-			"nav:dev": {"aiven": "enabled"},
-		})
+	h := newReconcileTest(ctx, t, container, dsn)
+	h.createEnvs(tenantEnv{"nav", "dev", environment.Labels{"aiven": "enabled"}})
 
-		seeder.AddAssignment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
-		if _, err := seeder.Seed(ctx); err != nil {
-			t.Fatalf("seeding: %v", err)
-		}
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile: %v", err)
-		}
+	h.createAssignment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
+	h.reconcile()
 
-		seeder.Reset()
-		seeder.AddAssignment("feature-pending", "2.0.0", environment.Labels{})
-		featureassignment.ChartDownloader = seeder.ChartDownloader()
-		if _, err := seeder.Seed(ctx); err != nil {
-			t.Fatalf("seeding: %v", err)
-		}
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile: %v", err)
-		}
+	h.createAssignment("feature-pending", "2.0.0", environment.Labels{})
+	h.reconcile()
 
-		count := db.countInstructions(ctx, t, "feature-pending", "2.0.0")
-		if count != 0 {
-			t.Errorf("count = %d; should not deploy v2 while v1 is in progress", count)
-		}
-	})
+	if count := h.countInstructions("feature-pending", "2.0.0"); count != 0 {
+		t.Errorf("count = %d; should not deploy v2 while v1 is in progress", count)
+	}
 }
 
 func TestReconcileWhenPreviousIsFailed(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresWithSnapshot(ctx, t)
 
-	timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-		db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
-			"nav:dev": {"aiven": "enabled"},
-		})
+	h := newReconcileTest(ctx, t, container, dsn)
+	h.createEnvs(tenantEnv{"nav", "dev", environment.Labels{"aiven": "enabled"}})
 
-		seeder.AddAssignment("feature-failed", "1.0.0", environment.Labels{"aiven": "enabled"})
-		if _, err := seeder.Seed(ctx); err != nil {
-			t.Fatalf("seeding: %v", err)
-		}
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile #1: %v", err)
-		}
+	h.createAssignment("feature-failed", "1.0.0", environment.Labels{"aiven": "enabled"})
+	h.reconcile()
 
-		_, err := db.pool.Exec(ctx, `
-			UPDATE deploy_instructions SET status = 'failed'
-			WHERE feature_name = 'feature-failed' AND feature_version = '1.0.0'
-		`)
-		if err != nil {
-			t.Fatalf("mark failed: %v", err)
-		}
+	_, err := h.pool.Exec(ctx, `
+		UPDATE deploy_instructions SET status = 'failed'
+		WHERE feature_name = 'feature-failed' AND feature_version = '1.0.0'
+	`)
+	if err != nil {
+		t.Fatalf("mark failed: %v", err)
+	}
 
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile #2: %v", err)
-		}
+	h.reconcile()
 
-		count := db.countInstructions(ctx, t, "feature-failed", "1.0.0")
-		if count != 1 {
-			t.Errorf("count = %d; should not redeploy when previous failed and hash unchanged", count)
-		}
-	})
+	if count := h.countInstructions("feature-failed", "1.0.0"); count != 1 {
+		t.Errorf("count = %d; should not redeploy when previous failed and hash unchanged", count)
+	}
 }
 
 func TestReconcileDisabledFeature(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresWithSnapshot(ctx, t)
 
+	disableFeature := func(h *reconcileTest, tenant, env, feature string) {
+		t.Helper()
+		var envID uuid.UUID
+		err := h.pool.QueryRow(ctx, `SELECT e.id FROM environments e JOIN tenants t ON t.id = e.tenant_id WHERE t.name = $1 AND e.name = $2`, tenant, env).Scan(&envID)
+		if err != nil {
+			t.Fatalf("get env id: %v", err)
+		}
+		if _, err := h.pool.Exec(ctx, `INSERT INTO disabled_features (environment_id, feature) VALUES ($1, $2)`, envID, feature); err != nil {
+			t.Fatalf("disable feature: %v", err)
+		}
+	}
+
 	t.Run("disabled feature is not deployed", func(t *testing.T) {
-		timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-			db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
-				"tenant1:dev":  {"kind": "tenant"},
-				"tenant1:prod": {"kind": "tenant"},
-			})
+		h := newReconcileTest(ctx, t, container, dsn)
+		h.createEnvs(
+			tenantEnv{"tenant1", "dev", environment.Labels{"kind": "tenant"}},
+			tenantEnv{"tenant1", "prod", environment.Labels{"kind": "tenant"}},
+		)
+		disableFeature(h, "tenant1", "prod", "clamav")
 
-			var prodEnvID uuid.UUID
-			err := db.pool.QueryRow(ctx, `SELECT e.id FROM environments e JOIN tenants t ON t.id = e.tenant_id WHERE t.name = 'tenant1' AND e.name = 'prod'`).Scan(&prodEnvID)
-			if err != nil {
-				t.Fatalf("get prod env id: %v", err)
-			}
-			_, err = db.pool.Exec(ctx, `INSERT INTO disabled_features (environment_id, feature) VALUES ($1, 'clamav')`, prodEnvID)
-			if err != nil {
-				t.Fatalf("disable feature: %v", err)
-			}
+		h.createAssignment("clamav", "0.1.0", environment.Labels{"kind": "tenant"})
+		h.reconcile()
 
-			seeder.AddAssignment("clamav", "0.1.0", environment.Labels{"kind": "tenant"})
-			if _, err := seeder.Seed(ctx); err != nil {
-				t.Fatalf("seeding: %v", err)
-			}
-
-			if err := reconcile(ctx); err != nil {
-				t.Fatalf("reconcile: %v", err)
-			}
-
-			if len(pub.msg) != 1 {
-				t.Fatalf("pub.msg len = %d, want 1", len(pub.msg))
-			}
-			if pub.msg[0].Name != "clamav" {
-				t.Errorf("msg name = %q, want clamav", pub.msg[0].Name)
-			}
-		})
+		h.requirePublished(1)
+		if h.pub.msg[0].Name != "clamav" {
+			t.Errorf("msg name = %q, want clamav", h.pub.msg[0].Name)
+		}
 	})
 
 	t.Run("re-enabling allows future deploys", func(t *testing.T) {
-		timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-			db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
-				"tenant1:dev":  {"kind": "tenant"},
-				"tenant1:prod": {"kind": "tenant"},
-			})
+		h := newReconcileTest(ctx, t, container, dsn)
+		h.createEnvs(
+			tenantEnv{"tenant1", "dev", environment.Labels{"kind": "tenant"}},
+			tenantEnv{"tenant1", "prod", environment.Labels{"kind": "tenant"}},
+		)
+		disableFeature(h, "tenant1", "prod", "clamav")
 
-			var prodEnvID uuid.UUID
-			err := db.pool.QueryRow(ctx, `SELECT e.id FROM environments e JOIN tenants t ON t.id = e.tenant_id WHERE t.name = 'tenant1' AND e.name = 'prod'`).Scan(&prodEnvID)
-			if err != nil {
-				t.Fatalf("get prod env id: %v", err)
-			}
-			_, err = db.pool.Exec(ctx, `INSERT INTO disabled_features (environment_id, feature) VALUES ($1, 'clamav')`, prodEnvID)
-			if err != nil {
-				t.Fatalf("disable feature: %v", err)
-			}
+		h.createAssignment("clamav", "0.1.0", environment.Labels{"kind": "tenant"})
+		h.reconcile()
 
-			seeder.AddAssignment("clamav", "0.1.0", environment.Labels{"kind": "tenant"})
-			if _, err := seeder.Seed(ctx); err != nil {
-				t.Fatalf("seeding: %v", err)
-			}
-			if err := reconcile(ctx); err != nil {
-				t.Fatalf("reconcile: %v", err)
-			}
+		if _, err := h.pool.Exec(ctx, `DELETE FROM disabled_features WHERE feature = 'clamav'`); err != nil {
+			t.Fatalf("delete disabled feature: %v", err)
+		}
 
-			_, err = db.pool.Exec(ctx, `DELETE FROM disabled_features WHERE environment_id = $1 AND feature = 'clamav'`, prodEnvID)
-			if err != nil {
-				t.Fatalf("delete disabled feature: %v", err)
-			}
+		h.pub.msg = nil
+		h.createAssignment("clamav", "0.2.0", environment.Labels{"kind": "tenant"})
+		h.reconcile()
 
-			seeder.Reset()
-			pub.msg = nil
-			seeder.AddAssignment("clamav", "0.2.0", environment.Labels{"kind": "tenant"})
-			featureassignment.ChartDownloader = seeder.ChartDownloader()
-			if _, err := seeder.Seed(ctx); err != nil {
-				t.Fatalf("seeding: %v", err)
-			}
-			if err := reconcile(ctx); err != nil {
-				t.Fatalf("reconcile: %v", err)
-			}
-
-			if len(pub.msg) != 2 {
-				t.Fatalf("pub.msg len = %d, want 2 (both environments should receive deploy instructions)", len(pub.msg))
-			}
-		})
+		h.requirePublished(2)
 	})
 }
 
@@ -297,43 +210,38 @@ func TestReconcileGlobalDeployment(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresWithSnapshot(ctx, t)
 
-	timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-		db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
-			"tenant1:dev":        {"kind": "tenant"},
-			"tenant1:prod":       {"kind": "tenant"},
-			"tenant1:management": {"kind": "management"},
-		})
+	h := newReconcileTest(ctx, t, container, dsn)
+	h.createEnvs(
+		tenantEnv{"tenant1", "dev", environment.Labels{"kind": "tenant"}},
+		tenantEnv{"tenant1", "prod", environment.Labels{"kind": "tenant"}},
+		tenantEnv{"tenant1", "management", environment.Labels{"kind": "management"}},
+	)
 
-		seeder.AddAssignment("global-tool", "1.0.0", environment.Labels{})
-		if _, err := seeder.Seed(ctx); err != nil {
-			t.Fatalf("seeding: %v", err)
-		}
+	h.createAssignment("global-tool", "1.0.0", environment.Labels{})
+	h.reconcile()
 
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile: %v", err)
-		}
+	h.requirePublished(3)
+	deployed := h.deployedFeatures("global-tool")
+	want := []string{"tenant1:dev", "tenant1:management", "tenant1:prod"}
+	if !equalStringSet(deployed, want) {
+		t.Errorf("deployed = %v, want %v", deployed, want)
+	}
+}
 
-		if len(pub.msg) != 3 {
-			t.Fatalf("pub.msg len = %d, want 3", len(pub.msg))
+func equalStringSet(got, want []string) bool {
+	set := map[string]bool{}
+	for _, g := range got {
+		set[g] = true
+	}
+	if len(set) != len(want) {
+		return false
+	}
+	for _, w := range want {
+		if !set[w] {
+			return false
 		}
-		deployed := db.queryDeployedFeatures(ctx, t, "global-tool")
-		if len(deployed) != 3 {
-			t.Fatalf("deployed len = %d, want 3", len(deployed))
-		}
-		deployedSet := map[string]bool{}
-		for _, d := range deployed {
-			deployedSet[d] = true
-		}
-		if !deployedSet["tenant1:dev"] {
-			t.Error("missing tenant1:dev in deployed")
-		}
-		if !deployedSet["tenant1:prod"] {
-			t.Error("missing tenant1:prod in deployed")
-		}
-		if !deployedSet["tenant1:management"] {
-			t.Error("missing tenant1:management in deployed")
-		}
-	})
+	}
+	return true
 }
 
 // TestReconcileRealisticScale seeds 100 features × 2 deployments each across
@@ -349,175 +257,38 @@ func TestReconcileRealisticScale(t *testing.T) {
 	)
 	envKinds := []string{"dev", "staging", "prod"}
 
-	timedReconcileTest(t, ctx, container, dsn, func(t *testing.T, ctx context.Context, db *reconcileDB, pub *sqlPublisher, reconcile reconcileFunc, seeder *featureassignmenttest.Seeder) {
-		// Create 10 tenants × 3 environments = 30 environments.
-		envsToCreate := map[string]environment.Labels{}
-		for ti := range numTenants {
-			tenant := fmt.Sprintf("tenant-%02d", ti)
-			for _, kind := range envKinds {
-				key := fmt.Sprintf("%s:%s", tenant, kind)
-				envsToCreate[key] = environment.Labels{"kind": "tenant"}
-			}
-		}
-		db.createTenantsAndEnvironments(ctx, envsToCreate)
+	h := newReconcileTest(ctx, t, container, dsn)
 
-		type envInfo struct {
-			id   uuid.UUID
-			name string
+	// Create 10 tenants × 3 environments = 30 environments.
+	var envs []tenantEnv
+	for ti := range numTenants {
+		tenant := fmt.Sprintf("tenant-%02d", ti)
+		for _, kind := range envKinds {
+			envs = append(envs, tenantEnv{tenant, kind, environment.Labels{"kind": "tenant"}})
 		}
-		var allEnvs []envInfo
-		rows, err := db.pool.Query(ctx, `SELECT id, name FROM environments ORDER BY name`)
-		if err != nil {
-			t.Fatalf("list envs: %v", err)
+	}
+	h.createEnvs(envs...)
+
+	type envInfo struct {
+		id   uuid.UUID
+		name string
+	}
+	var allEnvs []envInfo
+	rows, err := h.pool.Query(ctx, `SELECT id, name FROM environments ORDER BY name`)
+	if err != nil {
+		t.Fatalf("list envs: %v", err)
+	}
+	for rows.Next() {
+		var e envInfo
+		if err := rows.Scan(&e.id, &e.name); err != nil {
+			t.Fatalf("scan env: %v", err)
 		}
-		for rows.Next() {
-			var e envInfo
-			if err := rows.Scan(&e.id, &e.name); err != nil {
-				t.Fatalf("scan env: %v", err)
-			}
-			allEnvs = append(allEnvs, e)
-		}
-		rows.Close()
+		allEnvs = append(allEnvs, e)
+	}
+	rows.Close()
 
-		for fi := range numFeatures {
-			name := fmt.Sprintf("feature-%03d", fi)
-			values := model.Values{
-				"setting_a":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting A"},
-				"setting_b":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting B"},
-				"setting_c":     {Config: &model.Config{Type: model.ConfigTypeInt}, DisplayName: "Setting C"},
-				"toggle":        {Config: &model.Config{Type: model.ConfigTypeBool}, DisplayName: "Toggle"},
-				"secret_key":    {Config: &model.Config{Type: model.ConfigTypeString, Secret: true}, DisplayName: "Secret Key"},
-				"computed_name": {Computed: &model.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
-				"computed_full": {Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.example.com"`}},
-				"computed_cfg":  {Computed: &model.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
-			}
-			defaults := map[string]any{
-				"setting_a":  fmt.Sprintf("default-a-%d", fi),
-				"setting_b":  fmt.Sprintf("default-b-%d", fi),
-				"setting_c":  fi * 10,
-				"toggle":     fi%2 == 0,
-				"secret_key": fmt.Sprintf("secret-%d", fi),
-			}
-			seeder.AddAssignmentWithValues(name, fmt.Sprintf("1.%d.0", fi), environment.Labels{"kind": "tenant"}, nil, values, defaults, fmt.Sprintf("Feature %d", fi))
-			targetTenant := fmt.Sprintf("tenant-%02d", fi%numTenants)
-			seeder.AddAssignmentWithValues(name, fmt.Sprintf("2.%d.0", fi), environment.Labels{"kind": "tenant", "tenant": targetTenant}, nil, values, defaults, fmt.Sprintf("Feature %d targeted", fi))
-		}
-
-		if _, err := seeder.Seed(ctx); err != nil {
-			t.Fatalf("seeding: %v", err)
-		}
-
-		for fi := range numFeatures {
-			name := fmt.Sprintf("feature-%03d", fi)
-			for _, key := range []string{"setting_a", "setting_b", "setting_c", "toggle", "secret_key"} {
-				var val any
-				switch key {
-				case "setting_a":
-					val = fmt.Sprintf("global-a-%d", fi)
-				case "setting_b":
-					val = fmt.Sprintf("global-b-%d", fi)
-				case "setting_c":
-					val = fi * 100
-				case "toggle":
-					val = fi%3 == 0
-				case "secret_key":
-					val = fmt.Sprintf("global-secret-%d", fi)
-				}
-				b, _ := json.Marshal(val)
-				if _, err := feature.ConfigGlobalCreate(ctx, model.NewConfiguration{
-					Feature: name,
-					Key:     key,
-					Value:   b,
-				}); err != nil {
-					t.Fatalf("create global config %s/%s: %v", name, key, err)
-				}
-			}
-		}
-
-		for _, env := range allEnvs {
-			for fi := range numFeatures {
-				name := fmt.Sprintf("feature-%03d", fi)
-				envID := env.id
-
-				if env.name == "prod" {
-					for _, key := range []string{"setting_a", "toggle"} {
-						var val any
-						if key == "setting_a" {
-							val = fmt.Sprintf("prod-a-%d-%s", fi, envID)
-						} else {
-							val = false
-						}
-						b, _ := json.Marshal(val)
-						if _, err := feature.ConfigEnvCreate(ctx, model.NewConfiguration{
-							EnvironmentID: &envID,
-							Feature:       name,
-							Key:           key,
-							Value:         b,
-						}); err != nil {
-							t.Fatalf("create env config %s/%s/%s: %v", env.name, name, key, err)
-						}
-					}
-				}
-
-				if env.name == "staging" {
-					b, _ := json.Marshal(fmt.Sprintf("staging-b-%d-%s", fi, envID))
-					if _, err := feature.ConfigEnvCreate(ctx, model.NewConfiguration{
-						EnvironmentID: &envID,
-						Feature:       name,
-						Key:           "setting_b",
-						Value:         b,
-					}); err != nil {
-						t.Fatalf("create env config %s/%s/setting_b: %v", env.name, name, err)
-					}
-				}
-			}
-		}
-
-		var depCount, globalCfgCount, envCfgCount int
-		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM feature_assignments`).Scan(&depCount)
-		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_global`).Scan(&globalCfgCount)
-		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_environment`).Scan(&envCfgCount)
-		t.Logf("seeded: %d deployments, %d environments, %d global configs, %d env configs",
-			depCount, len(allEnvs), globalCfgCount, envCfgCount)
-
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile: %v", err)
-		}
-
-		var totalInstructions int
-		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed'`).Scan(&totalInstructions)
-		t.Logf("deployed instructions: %d", totalInstructions)
-		if totalInstructions != numFeatures*len(allEnvs) {
-			t.Errorf("deployed instructions = %d, want %d", totalInstructions, numFeatures*len(allEnvs))
-		}
-
-		// --- Second pass: deploy a new version of ONE feature only. ---
-		changedFeature := "feature-042"
-		seeder.Reset()
-		for fi := range numFeatures {
-			name := fmt.Sprintf("feature-%03d", fi)
-			values := model.Values{
-				"setting_a":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting A"},
-				"setting_b":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting B"},
-				"setting_c":     {Config: &model.Config{Type: model.ConfigTypeInt}, DisplayName: "Setting C"},
-				"toggle":        {Config: &model.Config{Type: model.ConfigTypeBool}, DisplayName: "Toggle"},
-				"secret_key":    {Config: &model.Config{Type: model.ConfigTypeString, Secret: true}, DisplayName: "Secret Key"},
-				"computed_name": {Computed: &model.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
-				"computed_full": {Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.example.com"`}},
-				"computed_cfg":  {Computed: &model.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
-			}
-			defaults := map[string]any{
-				"setting_a":  fmt.Sprintf("default-a-%d", fi),
-				"setting_b":  fmt.Sprintf("default-b-%d", fi),
-				"setting_c":  fi * 10,
-				"toggle":     fi%2 == 0,
-				"secret_key": fmt.Sprintf("secret-%d", fi),
-			}
-			seeder.AddAssignmentWithValues(name, fmt.Sprintf("1.%d.0", fi), environment.Labels{"kind": "tenant"}, nil, values, defaults, fmt.Sprintf("Feature %d", fi))
-			targetTenant := fmt.Sprintf("tenant-%02d", fi%numTenants)
-			seeder.AddAssignmentWithValues(name, fmt.Sprintf("2.%d.0", fi), environment.Labels{"kind": "tenant", "tenant": targetTenant}, nil, values, defaults, fmt.Sprintf("Feature %d targeted", fi))
-		}
-		changedValues := model.Values{
+	standardValues := func() model.Values {
+		return model.Values{
 			"setting_a":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting A"},
 			"setting_b":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting B"},
 			"setting_c":     {Config: &model.Config{Type: model.ConfigTypeInt}, DisplayName: "Setting C"},
@@ -527,40 +298,127 @@ func TestReconcileRealisticScale(t *testing.T) {
 			"computed_full": {Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.example.com"`}},
 			"computed_cfg":  {Computed: &model.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
 		}
-		changedDefaults := map[string]any{
-			"setting_a":  "changed-default-a",
-			"setting_b":  "changed-default-b",
-			"setting_c":  9999,
-			"toggle":     true,
-			"secret_key": "changed-secret",
-		}
-		seeder.AddAssignmentWithValues(changedFeature, "3.0.0", environment.Labels{"kind": "tenant"}, nil, changedValues, changedDefaults, "Feature 42 updated")
-		featureassignment.ChartDownloader = seeder.ChartDownloader()
+	}
 
-		if _, err := featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
-			Chart:   "oci://" + changedFeature,
-			Version: "3.0.0",
-			Target:  environment.Labels{"kind": "tenant"},
-		}); err != nil {
-			t.Fatalf("create changed deployment: %v", err)
+	for fi := range numFeatures {
+		name := fmt.Sprintf("feature-%03d", fi)
+		defaults := map[string]any{
+			"setting_a":  fmt.Sprintf("default-a-%d", fi),
+			"setting_b":  fmt.Sprintf("default-b-%d", fi),
+			"setting_c":  fi * 10,
+			"toggle":     fi%2 == 0,
+			"secret_key": fmt.Sprintf("secret-%d", fi),
 		}
+		h.createAssignmentWithValues(name, fmt.Sprintf("1.%d.0", fi), environment.Labels{"kind": "tenant"}, nil, standardValues(), defaults, fmt.Sprintf("Feature %d", fi))
+		targetTenant := fmt.Sprintf("tenant-%02d", fi%numTenants)
+		h.createAssignmentWithValues(name, fmt.Sprintf("2.%d.0", fi), environment.Labels{"kind": "tenant", "tenant": targetTenant}, nil, standardValues(), defaults, fmt.Sprintf("Feature %d targeted", fi))
+	}
 
-		pub.msg = nil
-		t.Logf("--- second pass: 1 feature changed (%s v3.0.0) ---", changedFeature)
-		if err := reconcile(ctx); err != nil {
-			t.Fatalf("reconcile (pass 2): %v", err)
+	for fi := range numFeatures {
+		name := fmt.Sprintf("feature-%03d", fi)
+		for _, key := range []string{"setting_a", "setting_b", "setting_c", "toggle", "secret_key"} {
+			var val any
+			switch key {
+			case "setting_a":
+				val = fmt.Sprintf("global-a-%d", fi)
+			case "setting_b":
+				val = fmt.Sprintf("global-b-%d", fi)
+			case "setting_c":
+				val = fi * 100
+			case "toggle":
+				val = fi%3 == 0
+			case "secret_key":
+				val = fmt.Sprintf("global-secret-%d", fi)
+			}
+			b, _ := json.Marshal(val)
+			if _, err := feature.ConfigGlobalCreate(h.ctx, model.NewConfiguration{
+				Feature: name,
+				Key:     key,
+				Value:   b,
+			}); err != nil {
+				t.Fatalf("create global config %s/%s: %v", name, key, err)
+			}
 		}
-		t.Logf("published %d messages in pass 2", len(pub.msg))
+	}
 
-		expectedChanged := len(allEnvs) - len(envKinds) // 30 - 3 = 27
-		var newInstructions int
-		db.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed' AND feature_name = $1 AND feature_version = '3.0.0'`, changedFeature).Scan(&newInstructions)
-		t.Logf("new deployed instructions for %s v3.0.0: %d", changedFeature, newInstructions)
-		if newInstructions != expectedChanged {
-			t.Errorf("new instructions = %d, want %d", newInstructions, expectedChanged)
+	for _, env := range allEnvs {
+		for fi := range numFeatures {
+			name := fmt.Sprintf("feature-%03d", fi)
+			envID := env.id
+
+			if env.name == "prod" {
+				for _, key := range []string{"setting_a", "toggle"} {
+					var val any
+					if key == "setting_a" {
+						val = fmt.Sprintf("prod-a-%d-%s", fi, envID)
+					} else {
+						val = false
+					}
+					b, _ := json.Marshal(val)
+					if _, err := feature.ConfigEnvCreate(h.ctx, model.NewConfiguration{
+						EnvironmentID: &envID,
+						Feature:       name,
+						Key:           key,
+						Value:         b,
+					}); err != nil {
+						t.Fatalf("create env config %s/%s/%s: %v", env.name, name, key, err)
+					}
+				}
+			}
+
+			if env.name == "staging" {
+				b, _ := json.Marshal(fmt.Sprintf("staging-b-%d-%s", fi, envID))
+				if _, err := feature.ConfigEnvCreate(h.ctx, model.NewConfiguration{
+					EnvironmentID: &envID,
+					Feature:       name,
+					Key:           "setting_b",
+					Value:         b,
+				}); err != nil {
+					t.Fatalf("create env config %s/%s/setting_b: %v", env.name, name, err)
+				}
+			}
 		}
-		if len(pub.msg) != expectedChanged {
-			t.Errorf("published messages = %d, want %d (only the changed feature should produce new messages)", len(pub.msg), expectedChanged)
-		}
-	})
+	}
+
+	var depCount, globalCfgCount, envCfgCount int
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM feature_assignments`).Scan(&depCount)
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_global`).Scan(&globalCfgCount)
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_environment`).Scan(&envCfgCount)
+	t.Logf("seeded: %d deployments, %d environments, %d global configs, %d env configs",
+		depCount, len(allEnvs), globalCfgCount, envCfgCount)
+
+	h.reconcile()
+
+	var totalInstructions int
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed'`).Scan(&totalInstructions)
+	t.Logf("deployed instructions: %d", totalInstructions)
+	if totalInstructions != numFeatures*len(allEnvs) {
+		t.Errorf("deployed instructions = %d, want %d", totalInstructions, numFeatures*len(allEnvs))
+	}
+
+	// --- Second pass: deploy a new version of ONE feature only. ---
+	changedFeature := "feature-042"
+	changedDefaults := map[string]any{
+		"setting_a":  "changed-default-a",
+		"setting_b":  "changed-default-b",
+		"setting_c":  9999,
+		"toggle":     true,
+		"secret_key": "changed-secret",
+	}
+	h.pub.msg = nil
+	t.Logf("--- second pass: 1 feature changed (%s v3.0.0) ---", changedFeature)
+	h.createAssignmentWithValues(changedFeature, "3.0.0", environment.Labels{"kind": "tenant"}, nil, standardValues(), changedDefaults, "Feature 42 updated")
+	h.reconcile()
+	t.Logf("published %d messages in pass 2", len(h.pub.msg))
+
+	expectedChanged := len(allEnvs) - len(envKinds) // 30 - 3 = 27
+	var newInstructions int
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed' AND feature_name = $1 AND feature_version = '3.0.0'`, changedFeature).Scan(&newInstructions)
+	t.Logf("new deployed instructions for %s v3.0.0: %d", changedFeature, newInstructions)
+	if newInstructions != expectedChanged {
+		t.Errorf("new instructions = %d, want %d", newInstructions, expectedChanged)
+	}
+	if len(h.pub.msg) != expectedChanged {
+		t.Errorf("published messages = %d, want %d (only the changed feature should produce new messages)", len(h.pub.msg), expectedChanged)
+	}
 }

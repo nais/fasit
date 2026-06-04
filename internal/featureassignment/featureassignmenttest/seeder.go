@@ -73,19 +73,38 @@ func (s *Seeder) AddAssignmentWithValues(name, version string, target environmen
 func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, 0, len(s.assignments))
 	for _, d := range s.assignments {
-		id, err := featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
-			Chart:       "oci://" + d.FeatureName,
-			Version:     d.Version,
-			Description: new("Setup local environment assignment"),
-			Commit:      fakeGitHubCommit(d.FeatureName, d.Version),
-			Target:      d.Target,
-		})
+		id, err := s.create(ctx, d)
 		if err != nil {
 			return nil, err
 		}
 		ids = append(ids, id)
 	}
 	return ids, nil
+}
+
+// CreateAssignment registers the fake chart and creates the assignment in one
+// step, returning its id. Unlike Add + Seed, it persists immediately, so tests
+// can read as a linear sequence of actions.
+func (s *Seeder) CreateAssignment(ctx context.Context, name, version string, target environment.Labels, deps ...string) (uuid.UUID, error) {
+	s.AddAssignment(name, version, target, deps...)
+	return s.create(ctx, s.assignments[len(s.assignments)-1])
+}
+
+// CreateAssignmentWithValues is CreateAssignment with configurable values and
+// fake chart defaults; see AddAssignmentWithValues.
+func (s *Seeder) CreateAssignmentWithValues(ctx context.Context, name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, description string, deps ...string) (uuid.UUID, error) {
+	s.AddAssignmentWithValues(name, version, target, kinds, values, defaults, description, deps...)
+	return s.create(ctx, s.assignments[len(s.assignments)-1])
+}
+
+func (s *Seeder) create(ctx context.Context, d assignmentInput) (uuid.UUID, error) {
+	return featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
+		Chart:       "oci://" + d.FeatureName,
+		Version:     d.Version,
+		Description: new("Setup local environment assignment"),
+		Commit:      fakeGitHubCommit(d.FeatureName, d.Version),
+		Target:      d.Target,
+	})
 }
 
 func (s *Seeder) Reset() {

@@ -6,17 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
 )
@@ -25,7 +19,6 @@ import (
 func TestReconcileWorkerPoolScaling(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresWithSnapshot(ctx, t)
-	_ = container
 
 	const (
 		numFeatures = 100
@@ -33,31 +26,16 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 	)
 	envKinds := []string{"dev", "staging", "prod"}
 
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	pool, _, err := database.NewConnPool(ctx, dsn, logger)
-	if err != nil {
-		t.Fatalf("connect: %v", err)
-	}
-	defer pool.Close()
+	h := newReconcileTest(ctx, t, container, dsn)
 
-	loadContext, err := contextloader.NewLoaderFunc(pool, logger)
-	if err != nil {
-		t.Fatalf("loader: %v", err)
-	}
-	ctx = loadContext(ctx)
-
-	seeder := featureassignmenttest.NewSeeder()
-
-	db := &reconcileDB{t: t, pool: pool}
-	envsToCreate := map[string]environment.Labels{}
+	var envs []tenantEnv
 	for ti := range numTenants {
 		tenant := fmt.Sprintf("tenant-%02d", ti)
 		for _, kind := range envKinds {
-			key := fmt.Sprintf("%s:%s", tenant, kind)
-			envsToCreate[key] = environment.Labels{"kind": "tenant"}
+			envs = append(envs, tenantEnv{tenant, kind, environment.Labels{"kind": "tenant"}})
 		}
 	}
-	db.createTenantsAndEnvironments(ctx, envsToCreate)
+	h.createEnvs(envs...)
 
 	for fi := range numFeatures {
 		name := fmt.Sprintf("feature-%03d", fi)
@@ -71,18 +49,14 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 			"setting_a": fmt.Sprintf("default-a-%d", fi),
 			"setting_b": fmt.Sprintf("default-b-%d", fi),
 		}
-		seeder.AddAssignmentWithValues(name, fmt.Sprintf("1.%d.0", fi), environment.Labels{"kind": "tenant"}, nil, values, defaults, fmt.Sprintf("Feature %d", fi))
-	}
-	featureassignment.ChartDownloader = seeder.ChartDownloader()
-	if _, err := seeder.Seed(ctx); err != nil {
-		t.Fatalf("seeding: %v", err)
+		h.createAssignmentWithValues(name, fmt.Sprintf("1.%d.0", fi), environment.Labels{"kind": "tenant"}, nil, values, defaults, fmt.Sprintf("Feature %d", fi))
 	}
 
 	for fi := range numFeatures {
 		name := fmt.Sprintf("feature-%03d", fi)
 		for _, key := range []string{"setting_a", "setting_b"} {
 			b, _ := json.Marshal(fmt.Sprintf("global-%s-%d", key, fi))
-			if _, err := feature.ConfigGlobalCreate(ctx, model.NewConfiguration{
+			if _, err := feature.ConfigGlobalCreate(h.ctx, model.NewConfiguration{
 				Feature: name, Key: key, Value: b,
 			}); err != nil {
 				t.Fatalf("create config: %v", err)
@@ -90,12 +64,7 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 		}
 	}
 
-	rec, err := reconciler.New(pool, meter, logger)
-	if err != nil {
-		t.Fatalf("create reconciler: %v", err)
-	}
-
-	result, err := rec.ComputeDesiredState(ctx)
+	result, err := h.reconciler.ComputeDesiredState(h.ctx)
 	if err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
@@ -110,7 +79,7 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 	t.Logf("fetch=%-10s  compute=%-10s  total=%-10s  decisions=%d  deploys=%d",
 		result.FetchDur.Round(time.Millisecond),
 		result.ComputeDur.Round(time.Millisecond),
-		(result.FetchDur+result.ComputeDur).Round(time.Millisecond),
+		(result.FetchDur + result.ComputeDur).Round(time.Millisecond),
 		len(result.Decisions),
 		deployCount,
 	)
