@@ -15,7 +15,7 @@ type Config struct {
 	GCPProjectID              string `env:"GCP_PROJECT_ID,default=nais-local-dev"`
 	StatusSubscriptionID      string `env:"PUBSUB_STATUS_SUBSCRIPTION_ID,default=fasit-subscription"`
 	InsecureSkipProxy         bool   `env:"INSECURE_SKIP_PROXY,default=false"`
-	IAPAudience               string `env:"IAP_AUDIENCE"`
+	IAPAudience               string `env:"FASIT_IAP_AUDIENCE"`
 	SlackAPIToken             string `env:"SLACK_API_TOKEN"`
 	SlackChannelFeatureAlerts string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
 }

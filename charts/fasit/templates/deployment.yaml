@@ -47,13 +47,11 @@ spec:
           env:
             - name: GCP_PROJECT_ID
               value: nais-io
-            - name: IAP_AUDIENCE
-              value: {{ .Values.iapAudience }}
           envFrom:
             - secretRef:
                 name: {{ include "fasit.fullname" . }}
             - secretRef:
-                name: fasit-backend-db
+                name: fasit-env-vars-from-terraform
       volumes:
       - name: tmp
         emptyDir: {}
