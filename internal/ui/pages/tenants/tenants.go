@@ -118,11 +118,11 @@ func envTable(rows []envRow, now time.Time) g.Node {
 	for _, row := range rows {
 		hasLogo := components.HasTenantLogo(row.TenantName)
 		tableRows = append(tableRows, h.Tr(
-			h.Td(
+			h.Td(h.Span(
 				h.Class("tenant-cell"),
 				components.TenantAvatar(row.TenantName, hasLogo, "20px"),
 				g.Text(row.TenantName),
-			),
+			)),
 			h.Td(h.A(h.Href("/tenants/"+row.TenantName+"/envs/"+row.EnvName), g.Text(row.EnvName))),
 			h.Td(healthCell(row, now)),
 			h.Td(g.Text(lastReportedText(row, now))),
