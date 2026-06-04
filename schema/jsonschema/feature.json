@@ -29,8 +29,7 @@
 				"enum": [
 					"management",
 					"tenant",
-					"onprem",
-					"legacy"
+					"onprem"
 				],
 				"type": "string"
 			},

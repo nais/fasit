@@ -10,7 +10,6 @@ const (
 	EnvironmentKindTenant     EnvironmentKind = "tenant"
 	EnvironmentKindManagement EnvironmentKind = "management"
 	EnvironmentKindOnprem     EnvironmentKind = "onprem"
-	EnvironmentKindLegacy     EnvironmentKind = "legacy"
 )
 
 func (e *EnvironmentKind) Scan(src any) error {

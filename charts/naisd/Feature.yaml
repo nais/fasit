@@ -2,7 +2,6 @@ environmentKinds:
   - tenant
   - management
   - onprem
-  - legacy
 values:
   env:
     displayName: Env
@@ -31,7 +30,6 @@ values:
     ignoreKind:
       - tenant
       - management
-      - legacy
   image.tag:
     displayName: Image tag
     config:
@@ -47,7 +45,6 @@ values:
     ignoreKind:
       - tenant
       - management
-      - legacy
   tenantName:
     displayName: Tenant name
     computed:

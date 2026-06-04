@@ -44,16 +44,6 @@ func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.Hand
 	}
 }
 
-func LegacyFeatureRedirectHandler(suffix string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		feature := chi.URLParam(r, "feature")
-		tenant := chi.URLParam(r, "tenant")
-		env := chi.URLParam(r, "env")
-		redirectSuffix := strings.ReplaceAll(suffix, "{id}", chi.URLParam(r, "id"))
-		http.Redirect(w, r, "/features/"+feature+"/envs/"+tenant+"/"+env+redirectSuffix, http.StatusSeeOther)
-	}
-}
-
 func AuditRedirectHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		feature := chi.URLParam(r, "feature")

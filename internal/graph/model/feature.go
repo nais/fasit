@@ -33,7 +33,7 @@ type Feature struct {
 
 type FeatureYAML struct {
 	Dependencies     Dependencies      `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
-	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
+	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,required"`
 	Target           map[string]string `json:"target,omitempty" yaml:"target,omitempty" jsonschema:"omitempty,description=Target is a set of key-value label selectors; the feature applies only to environments whose labels include all specified pairs (logical AND)."`
 	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 	Values           Values            `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
@@ -66,7 +66,7 @@ type Value struct {
 	Required    bool              `yaml:"required,omitempty" json:"required,omitempty"`
 	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=computed"`
 	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
-	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy"`
+	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem"`
 }
 
 func FromChart(chartURL, version string) (*Feature, error) {

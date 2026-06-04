@@ -1,4 +1,4 @@
-package tenants
+package environments
 
 import (
 	"io/fs"

@@ -25,19 +25,17 @@ const (
 	EnvironmentKindTenant     EnvironmentKind = "tenant"
 	EnvironmentKindManagement EnvironmentKind = "management"
 	EnvironmentKindOnprem     EnvironmentKind = "onprem"
-	EnvironmentKindLegacy     EnvironmentKind = "legacy"
 )
 
 var AllEnvironmentKind = []EnvironmentKind{
 	EnvironmentKindTenant,
 	EnvironmentKindManagement,
 	EnvironmentKindOnprem,
-	EnvironmentKindLegacy,
 }
 
 func (e EnvironmentKind) IsValid() bool {
 	switch e {
-	case EnvironmentKindTenant, EnvironmentKindManagement, EnvironmentKindOnprem, EnvironmentKindLegacy:
+	case EnvironmentKindTenant, EnvironmentKindManagement, EnvironmentKindOnprem:
 		return true
 	}
 	return false
