@@ -206,13 +206,13 @@ func templateTestPage(tenantEnvs []*model.TenantEnvironment, template, selectedT
 						),
 					),
 				),
-				templateReference(),
+				templateReference(featureName != ""),
 			),
 		),
 	)
 }
 
-func templateReference() g.Node {
+func templateReference(hasFeature bool) g.Node {
 	type refItem struct {
 		Name    string
 		Example string
@@ -224,9 +224,11 @@ func templateReference() g.Node {
 		{".Env.labels", ""},
 		{".Tenant.Name", ""},
 		{".Envs", ""},
-		{".Configs", ""},
 		{".Kind", ""},
 		{".Management", ""},
+	}
+	if hasFeature {
+		variables = append(variables, refItem{".Configs", ""})
 	}
 
 	customFuncs := []refItem{
