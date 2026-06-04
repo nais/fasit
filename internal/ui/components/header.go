@@ -8,11 +8,11 @@ import (
 type Page string
 
 const (
-	PageHome         Page = "home"
-	PageEnvironments Page = "environments"
-	PageFeatures     Page = "features"
-	PageAssignments  Page = "assignments"
-	PageLabels       Page = "labels"
+	PageHome           Page = "home"
+	PageEnvironments   Page = "environments"
+	PageFeatures       Page = "features"
+	PageAssignments    Page = "assignments"
+	PageLabels         Page = "labels"
 	PageNaisd          Page = "naisd"
 	PageReconciler     Page = "reconciler"
 	PageTemplateTester Page = "template-tester"

@@ -71,7 +71,3 @@ const (
 	HelmValueDifferenceNoMatch       HelmValueDifference = "NO_MATCH"
 	HelmValueDifferenceInvalidJSON   HelmValueDifference = "INVALID_JSON"
 )
-
-func (e HelmValueDifference) String() string {
-	return string(e)
-}
