@@ -125,7 +125,6 @@ func envTable(rows []envRow, now time.Time) g.Node {
 			)),
 			h.Td(h.A(h.Href("/tenants/"+row.TenantName+"/envs/"+row.EnvName), g.Text(row.EnvName))),
 			h.Td(healthCell(row, now)),
-			h.Td(g.Text(lastReportedText(row, now))),
 		))
 	}
 
@@ -136,18 +135,18 @@ func envTable(rows []envRow, now time.Time) g.Node {
 			h.Th(g.Text("Tenant")),
 			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Agent health")),
-			h.Th(g.Text("Last reported")),
 		)),
 		h.TBody(g.Group(tableRows)),
 	)
 }
 
 func healthCell(row envRow, now time.Time) g.Node {
-	class, label := healthBucket(row, now)
-	return h.Span(h.Class("status-badge "+class), g.Text(label))
+	class, label := agentHealth(row, now)
+	title := lastReportedText(row, now)
+	return h.Span(h.Class("status-badge "+class), g.Attr("title", title), g.Text(label))
 }
 
-func healthBucket(row envRow, now time.Time) (string, string) {
+func agentHealth(row envRow, now time.Time) (string, string) {
 	if !row.HasReport {
 		return "status-error", "no report"
 	}
@@ -164,9 +163,9 @@ func healthBucket(row envRow, now time.Time) (string, string) {
 
 func lastReportedText(row envRow, now time.Time) string {
 	if !row.HasReport {
-		return "never"
+		return "Never reported"
 	}
-	return view.RelativeTime(row.ReportedAt)
+	return "Last reported: " + view.FormatTime(row.ReportedAt)
 }
 
 func matchesAll(text string, terms []string) bool {
