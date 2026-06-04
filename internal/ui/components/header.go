@@ -71,13 +71,6 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 					g.Attr("title", "Toggle light/dark mode"),
 					g.Text("Toggle theme"),
 				),
-				h.Button(
-					h.Type("button"),
-					h.Class("kebab-item"),
-					g.Attr("title", "Trigger a full reconcile of all features"),
-					g.Attr("popovertarget", "reconcile-confirm"),
-					g.Text("Reconcile all features"),
-				),
 				g.If(appVersion != "",
 					g.Group([]g.Node{
 						h.Div(h.Class("kebab-divider")),
@@ -87,13 +80,6 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 			),
 		),
 		h.Span(h.Class("user"), g.Text(userEmail)),
-		h.Div(g.Attr("popover", ""), h.ID("reconcile-confirm"),
-			h.H3(g.Text("Confirm reconcile")),
-			h.P(g.Text("Trigger a full reconcile of all assignments?")),
-			h.Form(h.Method("post"), h.Action("/reconcile"),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Reconcile")), h.Button(h.Type("button"), g.Attr("popovertarget", "reconcile-confirm"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
-			),
-		),
 	)
 }
 

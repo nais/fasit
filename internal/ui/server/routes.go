@@ -45,7 +45,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/assignments/{id}/logs/{envID}", assignments.LogsHandler(s.renderPage))
 	r.Post("/assignments/{id}/deactivate", assignments.DeactivateHandler())
 	r.Post("/assignments/{id}/deactivate-matching", assignments.DeactivateByFeatureAndTargetHandler())
-	r.Post("/reconcile", assignments.ReconcileHandler())
 
 	r.Get("/features", features.IndexHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
