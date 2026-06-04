@@ -197,16 +197,25 @@ type featureIndexRow struct {
 
 func featureIndexPage(features []featureIndexRow, query string) g.Node {
 	return h.Div(h.Class("container"),
-		h.Main(h.Class("main-content landing-page"),
-			components.CardCompact(
-				h.Div(h.Class("feature-index-header"),
-					h.H1(g.Text("Features")),
-				),
-				h.Div(h.Class("feature-index-toolbar"),
-					h.Input(h.Type("search"), h.Name("q"), h.Value(query), h.Class("feature-index-filter"), h.Placeholder("Filter features…"), g.Attr("data-url-filter", "q"), g.Attr("aria-label", "Filter features")),
+		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()}),
+		h.Main(h.Class("main-content"),
+			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
+				h.Div(h.Class("assignments-header"),
+					h.Div(h.Class("assignments-toolbar"),
+						h.Input(
+							h.Type("search"),
+							h.Class("table-filter"),
+							h.Name("q"),
+							h.Placeholder("Filter features…"),
+							g.Attr("aria-label", "Filter features"),
+							g.Attr("autocomplete", "off"),
+							g.Attr("data-url-filter", "q"),
+							g.If(query != "", h.Value(query)),
+						),
+					),
 				),
 				featureIndexTable(features),
-			),
+			)),
 		),
 	)
 }
@@ -238,7 +247,7 @@ func featureIndexTable(features []featureIndexRow) g.Node {
 			h.Td(h.Class("table-kebab-cell"), featureRowKebab(feature, i)),
 		))
 	}
-	return h.Table(h.ID("feature-index-table"), h.Class("table table-compact sortable"),
+	return h.Table(h.ID("feature-index-table"), h.Class("table sortable"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Feature")),
 			h.Th(g.Attr("data-no-sort", ""), g.Text("Description")),

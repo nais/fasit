@@ -10,7 +10,6 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
-	"github.com/nais/fasit/internal/ui/pages/naisd"
 	reconcilerpage "github.com/nais/fasit/internal/ui/pages/reconciler"
 	"github.com/nais/fasit/internal/ui/pages/templatetest"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
@@ -77,7 +76,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/template-test", templatetest.Handler(s.renderPage))
 
 	r.Get("/labels", labels.Handler(s.renderPage))
-	r.Get("/naisd", naisd.Handler(s.renderPage))
 
 	r.Get("/reconciler", reconcilerpage.Handler(s.renderPage))
 	r.Get("/reconciler/stream", reconcilerpage.StreamHandler())

@@ -13,7 +13,6 @@ const (
 	PageFeatures       Page = "features"
 	PageAssignments    Page = "assignments"
 	PageLabels         Page = "labels"
-	PageNaisd          Page = "naisd"
 	PageReconciler     Page = "reconciler"
 	PageTemplateTester Page = "template-tester"
 )
@@ -54,7 +53,6 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 				h.A(h.Href("/assignments"), h.Class("kebab-item"), g.Text("Assignments")),
 				h.A(h.Href("/auditlog"), h.Class("kebab-item"), g.Text("Audit log")),
 				h.A(h.Href("/labels"), h.Class("kebab-item"), g.Text("Labels")),
-				h.A(h.Href("/naisd"), h.Class("kebab-item"), g.Text("Naisd")),
 				h.A(h.Href("/reconciler"), h.Class("kebab-item"), g.Text("Reconciler")),
 				h.A(h.Href("/template-test"), h.Class("kebab-item"), g.Text("Template tester")),
 				h.A(

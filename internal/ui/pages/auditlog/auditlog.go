@@ -32,7 +32,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:       "Activity Log",
+			Title:       "Audit log",
 			CurrentPage: components.PageAssignments,
 			Content:     listPage(entries, query),
 		})
@@ -42,12 +42,12 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 func listPage(entries []*audit.Entry, query string) g.Node {
 	return h.Div(
 		h.Class("container"),
-		components.Breadcrumbs([]breadcrumb.Crumb{{Label: "Activity Log", URL: "/auditlog"}}),
+		components.Breadcrumbs([]breadcrumb.Crumb{{Label: "Audit log", URL: "/auditlog"}}),
 		h.Main(
 			h.Class("main-content"),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
 				h.Div(h.Class("assignments-header"),
-					h.Form(h.Method("get"), h.Action("/auditlog"), h.Class("assignments-toolbar"),
+					h.Div(h.Class("assignments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),
@@ -55,6 +55,7 @@ func listPage(entries []*audit.Entry, query string) g.Node {
 							h.Placeholder("Filter by action, resource, environment, actor…"),
 							g.Attr("aria-label", "Filter activity log"),
 							g.Attr("autocomplete", "off"),
+							g.Attr("data-url-filter", "q"),
 							g.If(query != "", h.Value(query)),
 						),
 					),
