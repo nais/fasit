@@ -126,60 +126,6 @@ func (q *Queries) InvalidateDeployInstruction(ctx context.Context, arg Invalidat
 	return err
 }
 
-const listDeployInstructions = `-- name: ListDeployInstructions :many
-SELECT
-	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.feature_assignment_id,
-	e.name AS environment_name,
-	t.name AS tenant_name
-FROM
-	deploy_instructions di
-	JOIN environments e ON e.id = di.environment_id
-	JOIN tenants t ON t.id = e.tenant_id
-WHERE
-	di.feature_assignment_id = $1
-ORDER BY
-	di.created DESC
-`
-
-type ListDeployInstructionsRow struct {
-	DeployInstruction DeployInstruction
-	EnvironmentName   string
-	TenantName        string
-}
-
-func (q *Queries) ListDeployInstructions(ctx context.Context, featureAssignmentID *uuid.UUID) ([]ListDeployInstructionsRow, error) {
-	rows, err := q.db.Query(ctx, listDeployInstructions, featureAssignmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListDeployInstructionsRow{}
-	for rows.Next() {
-		var i ListDeployInstructionsRow
-		if err := rows.Scan(
-			&i.DeployInstruction.ID,
-			&i.DeployInstruction.EnvironmentID,
-			&i.DeployInstruction.FeatureName,
-			&i.DeployInstruction.FeatureVersion,
-			&i.DeployInstruction.Status,
-			&i.DeployInstruction.Hash,
-			&i.DeployInstruction.Created,
-			&i.DeployInstruction.LastModified,
-			&i.DeployInstruction.Values,
-			&i.DeployInstruction.FeatureAssignmentID,
-			&i.EnvironmentName,
-			&i.TenantName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateDeployInstructionStatus = `-- name: UpdateDeployInstructionStatus :exec
 UPDATE
 	deploy_instructions

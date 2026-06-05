@@ -12,11 +12,11 @@ import (
 	"github.com/google/uuid"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	commonmodel "github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -70,7 +70,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			})
 		}
 
-		allDeployInstructions, err := featureassignment.ListDeployInstructions(r.Context(), id)
+		allDeployInstructions, err := uidata.ListDeployInstructions(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deploy instructions: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -78,10 +78,10 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 
 		// Deduplicate to latest instruction per environment (query is ordered by created DESC).
 		seen := make(map[string]bool)
-		var deployInstructions []featureassignmentsql.ListDeployInstructionsRow
+		var deployInstructions []*uidata.DeployInstruction
 		for _, di := range allDeployInstructions {
 
-			envID := di.DeployInstruction.EnvironmentID.String()
+			envID := di.EnvironmentID.String()
 			if !seen[envID] {
 				seen[envID] = true
 				deployInstructions = append(deployInstructions, di)
@@ -118,7 +118,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStatusRow, deployInstructions []featureassignmentsql.ListDeployInstructionsRow, matching []matchingAssignment, supersededBy *matchingAssignment) g.Node {
+func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStatusRow, deployInstructions []*uidata.DeployInstruction, matching []matchingAssignment, supersededBy *matchingAssignment) g.Node {
 	meta := []g.Node{
 		metaRow("Chart", g.Text(d.Feature.Chart)),
 		metaRow("Target", targetPills(assignmentTargetLabels(d))),
@@ -187,13 +187,13 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 		}
 	}
 	for _, di := range deployInstructions {
-		envID := di.DeployInstruction.EnvironmentID.String()
+		envID := di.EnvironmentID.String()
 		if _, ok := envRows[envID]; !ok {
 			envRows[envID] = &envRow{
 				TenantName:      di.TenantName,
 				EnvironmentName: di.EnvironmentName,
 				EnvironmentID:   envID,
-				LastModified:    di.DeployInstruction.LastModified.Time,
+				LastModified:    di.LastModified,
 			}
 		}
 	}

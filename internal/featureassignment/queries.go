@@ -86,10 +86,6 @@ func Get(ctx context.Context, featureAssignmentID uuid.UUID) (*FeatureAssignment
 	return ret, nil
 }
 
-func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) ([]featureassignmentsql.ListDeployInstructionsRow, error) {
-	return querier(ctx).ListDeployInstructions(ctx, &featureAssignmentID)
-}
-
 func GetFeatureReconcileStatusLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
 	di, err := querier(ctx).GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx, featureassignmentsql.GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams{
 		FeatureAssignmentID: &featureAssignmentID,

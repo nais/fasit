@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	ListDeployInstructions(ctx context.Context, featureAssignmentID *uuid.UUID) ([]ListDeployInstructionsRow, error)
 	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)
 }

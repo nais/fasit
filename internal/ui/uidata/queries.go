@@ -40,6 +40,32 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 	return features, nil
 }
 
+func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) ([]*DeployInstruction, error) {
+	rows, err := querier(ctx).ListDeployInstructions(ctx, &featureAssignmentID)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*DeployInstruction, len(rows))
+	for i, row := range rows {
+		ret[i] = &DeployInstruction{
+			ID:                  row.ID,
+			EnvironmentID:       row.EnvironmentID,
+			FeatureAssignmentID: row.FeatureAssignmentID,
+			FeatureName:         row.FeatureName,
+			FeatureVersion:      row.FeatureVersion,
+			Status:              row.Status,
+			Hash:                row.Hash,
+			Created:             row.Created.Time,
+			LastModified:        row.LastModified.Time,
+			Values:              row.Values,
+			TenantName:          row.TenantName,
+			EnvironmentName:     row.EnvironmentName,
+		}
+	}
+
+	return ret, nil
+}
+
 func GetEnvironmentValueReferences(ctx context.Context, envID uuid.UUID) (EnvironmentValueReferences, error) {
 	assignments, err := featureassignment.ListForEnvironment(ctx, envID)
 	if err != nil {

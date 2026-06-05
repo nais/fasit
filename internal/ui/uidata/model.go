@@ -37,6 +37,21 @@ type Tenant struct {
 	envs []*Environment
 }
 
+type DeployInstruction struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
+	Values              []byte
+	FeatureAssignmentID *uuid.UUID
+	EnvironmentName     string
+	TenantName          string
+}
+
 func (t *Tenant) Environments(ctx context.Context) ([]*Environment, error) {
 	if len(t.envs) > 0 {
 		return t.envs, nil

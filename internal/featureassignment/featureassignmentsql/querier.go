@@ -22,7 +22,6 @@ type Querier interface {
 	LatestReconcileStatusForEnvironment(ctx context.Context, arg LatestReconcileStatusForEnvironmentParams) (string, error)
 	ListAllFeatureAssignments(ctx context.Context) ([]ListAllFeatureAssignmentsRow, error)
 	ListAllFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListAllFeatureAssignmentsByFeatureRow, error)
-	ListDeployInstructions(ctx context.Context, featureAssignmentID *uuid.UUID) ([]ListDeployInstructionsRow, error)
 	ListDeployedFeaturesInEnvironment(ctx context.Context, arg ListDeployedFeaturesInEnvironmentParams) ([]string, error)
 	ListFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListFeatureAssignmentsByFeatureRow, error)
 	ListFeatureAssignmentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureAssignmentsForEnvironmentRow, error)
