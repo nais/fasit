@@ -86,31 +86,6 @@ func Get(ctx context.Context, featureAssignmentID uuid.UUID) (*FeatureAssignment
 	return ret, nil
 }
 
-func GetFeatureReconcileStatusLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
-	di, err := querier(ctx).GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx, featureassignmentsql.GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams{
-		FeatureAssignmentID: &featureAssignmentID,
-		EnvironmentID:       environmentID,
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("get deploy instruction: %w", err)
-	}
-
-	lines, err := featurepkg.LogsGet(ctx, di.DeployInstruction.ID)
-	if err != nil {
-		return nil, fmt.Errorf("get logs: %w", err)
-	}
-
-	return &model.RolloutLog{
-		ID:          di.DeployInstruction.ID,
-		TenantName:  di.TenantName,
-		Environment: di.EnvironmentName,
-		Lines:       lines,
-	}, nil
-}
-
 func ListAll(ctx context.Context) ([]*FeatureAssignment, error) {
 	rows, err := querier(ctx).ListAllFeatureAssignments(ctx)
 	if err != nil {

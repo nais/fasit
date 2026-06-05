@@ -3,12 +3,17 @@ package uidata
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sort"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/uidata/sqlgen"
 )
 
 func ListTenants(ctx context.Context) ([]*Tenant, error) {
@@ -64,6 +69,31 @@ func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) 
 	}
 
 	return ret, nil
+}
+
+func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
+	di, err := querier(ctx).GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx, sqlgen.GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams{
+		FeatureAssignmentID: &featureAssignmentID,
+		EnvironmentID:       environmentID,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get deploy instruction: %w", err)
+	}
+
+	lines, err := featurepkg.LogsGet(ctx, di.DeployInstruction.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get logs: %w", err)
+	}
+
+	return &model.RolloutLog{
+		ID:          di.DeployInstruction.ID,
+		TenantName:  di.TenantName,
+		Environment: di.EnvironmentName,
+		Lines:       lines,
+	}, nil
 }
 
 func GetEnvironmentValueReferences(ctx context.Context, envID uuid.UUID) (EnvironmentValueReferences, error) {

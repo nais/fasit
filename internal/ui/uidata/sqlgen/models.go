@@ -8,6 +8,19 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
+type DeployInstruction struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             pgtype.Timestamptz
+	LastModified        pgtype.Timestamptz
+	Values              []byte
+	FeatureAssignmentID *uuid.UUID
+}
+
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID

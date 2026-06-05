@@ -10,6 +10,51 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getDeployInstructionByFeatureAssignmentAndEnvironmentID = `-- name: GetDeployInstructionByFeatureAssignmentAndEnvironmentID :one
+SELECT
+	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.feature_assignment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name
+FROM
+	deploy_instructions di
+	JOIN environments e ON e.id = di.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	di.feature_assignment_id = $1
+	AND di.environment_id = $2
+`
+
+type GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams struct {
+	FeatureAssignmentID *uuid.UUID
+	EnvironmentID       uuid.UUID
+}
+
+type GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow struct {
+	DeployInstruction DeployInstruction
+	EnvironmentName   string
+	TenantName        string
+}
+
+func (q *Queries) GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams) (GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow, error) {
+	row := q.db.QueryRow(ctx, getDeployInstructionByFeatureAssignmentAndEnvironmentID, arg.FeatureAssignmentID, arg.EnvironmentID)
+	var i GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow
+	err := row.Scan(
+		&i.DeployInstruction.ID,
+		&i.DeployInstruction.EnvironmentID,
+		&i.DeployInstruction.FeatureName,
+		&i.DeployInstruction.FeatureVersion,
+		&i.DeployInstruction.Status,
+		&i.DeployInstruction.Hash,
+		&i.DeployInstruction.Created,
+		&i.DeployInstruction.LastModified,
+		&i.DeployInstruction.Values,
+		&i.DeployInstruction.FeatureAssignmentID,
+		&i.EnvironmentName,
+		&i.TenantName,
+	)
+	return i, err
+}
+
 const listDeployInstructions = `-- name: ListDeployInstructions :many
 SELECT
 	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.feature_assignment_id,

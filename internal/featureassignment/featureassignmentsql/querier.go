@@ -14,7 +14,6 @@ type Querier interface {
 	DeactivateActiveFeatureAssignmentForTarget(ctx context.Context, arg DeactivateActiveFeatureAssignmentForTargetParams) error
 	DeactivateFeatureAssignment(ctx context.Context, id uuid.UUID) error
 	DeactivateFeatureAssignmentsByFeatureAndTarget(ctx context.Context, arg DeactivateFeatureAssignmentsByFeatureAndTargetParams) error
-	GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams) (GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow, error)
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
 	GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (FeatureReconcileStatus, error)
 	HasActiveAssignments(ctx context.Context, featureName string) (bool, error)

@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -37,7 +38,7 @@ func LogsHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		log, err := featureassignment.GetFeatureReconcileStatusLog(r.Context(), id, envID)
+		log, err := uidata.GetFeatureLog(r.Context(), id, envID)
 		if err != nil {
 			http.Error(w, "Failed to load logs: "+err.Error(), http.StatusInternalServerError)
 			return
