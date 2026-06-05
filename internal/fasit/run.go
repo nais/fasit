@@ -104,12 +104,12 @@ func Run(ctx context.Context) error {
 
 	go rec.TimeoutDeployInstructions(ctx, log)
 
-	dispatcher, err := reconciler.NewPubSubDispatcher(pool, assignmentPublisher, meter, log)
+	deployer, err := reconciler.NewPubSubDeployer(pool, assignmentPublisher, meter, log)
 	if err != nil {
 		return err
 	}
 
-	go rec.Run(ctx, 1*time.Minute, dispatcher)
+	go rec.Run(ctx, 1*time.Minute, deployer)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 

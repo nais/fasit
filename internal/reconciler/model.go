@@ -56,8 +56,8 @@ func (a Action) IsFailure() bool {
 	return a == ActionFailMissingDeps || a == ActionFailMissingConfig || a == ActionFailRender
 }
 
-// DeployDecision is the output of the compute phase for one deployment×environment pair.
-type DeployDecision struct {
+// ComputeResult is the output of the compute phase for one deployment×environment pair.
+type ComputeResult struct {
 	EnvironmentID       uuid.UUID
 	EnvironmentName     string
 	TenantName          string
@@ -66,17 +66,17 @@ type DeployDecision struct {
 	Values              map[string]any
 	Hash                string
 	Action              Action
+	Details             string
 	Message             string
-	Status              string
 }
 
 // ErrReconcileInProgress is returned when a streaming reconcile is already running.
 var ErrReconcileInProgress = errors.New("reconcile already in progress")
 
-// Dispatcher receives the full set of deploy decisions and performs
+// Deployer receives the full set of deploy decisions and performs
 // side-effects (DB writes, message publishing, UI updates, etc.).
-type Dispatcher interface {
-	Dispatch(ctx context.Context, decisions []DeployDecision) error
+type Deployer interface {
+	Deploy(ctx context.Context, decisions []ComputeResult) error
 }
 
 func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reconcileAssignment, error) {

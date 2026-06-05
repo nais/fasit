@@ -55,7 +55,7 @@ type tenantEnv struct {
 }
 
 // reconcileTest is a self-contained harness for a single reconciler test:
-// a fresh database, a wired reconciler + dispatcher, a recording publisher,
+// a fresh database, a wired reconciler + deployer, a recording publisher,
 // and a seeder. All methods fail the test directly on error.
 type reconcileTest struct {
 	t          *testing.T
@@ -64,7 +64,7 @@ type reconcileTest struct {
 	pub        *sqlPublisher
 	seeder     *featureassignmenttest.Seeder
 	reconciler *reconciler.Reconciler
-	dispatcher reconciler.Dispatcher
+	deployer   reconciler.Deployer
 }
 
 // startPostgresWithSnapshot starts a postgres container and takes a snapshot
@@ -79,7 +79,7 @@ func startPostgresWithSnapshot(ctx context.Context, t *testing.T) (container *po
 }
 
 // newReconcileTest opens a fresh connection to the snapshotted database, wires
-// the reconciler, dispatcher, publisher and seeder, and registers cleanup that
+// the reconciler, deployer, publisher and seeder, and registers cleanup that
 // restores the snapshot for the next case.
 func newReconcileTest(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string) *reconcileTest {
 	t.Helper()
@@ -103,9 +103,9 @@ func newReconcileTest(ctx context.Context, t *testing.T, container *postgres.Pos
 
 	pub := &sqlPublisher{pool: pool}
 	newPub := func(topicID string, log *slog.Logger) reconciler.Publisher { return pub }
-	dispatcher, err := reconciler.NewPubSubDispatcher(pool, newPub, meter, logger)
+	deployer, err := reconciler.NewPubSubDeployer(pool, newPub, meter, logger)
 	if err != nil {
-		t.Fatalf("failed to create dispatcher: %v", err)
+		t.Fatalf("failed to create deployer: %v", err)
 	}
 	rec, err := reconciler.New(pool, meter, logger)
 	if err != nil {
@@ -122,7 +122,7 @@ func newReconcileTest(ctx context.Context, t *testing.T, container *postgres.Pos
 		pub:        pub,
 		seeder:     seeder,
 		reconciler: rec,
-		dispatcher: dispatcher,
+		deployer:   deployer,
 	}
 }
 
@@ -143,15 +143,15 @@ func (h *reconcileTest) createAssignmentWithValues(name, version string, target 
 	}
 }
 
-// reconcile computes the desired state and dispatches the resulting decisions.
+// reconcile computes the desired state and deploys the resulting decisions.
 func (h *reconcileTest) reconcile() {
 	h.t.Helper()
 	result, err := h.reconciler.ComputeDesiredState(h.ctx)
 	if err != nil {
 		h.t.Fatalf("reconcile: %v", err)
 	}
-	if err := h.dispatcher.Dispatch(h.ctx, result.Decisions); err != nil {
-		h.t.Fatalf("dispatch: %v", err)
+	if err := h.deployer.Deploy(h.ctx, result.Results); err != nil {
+		h.t.Fatalf("deploy: %v", err)
 	}
 }
 

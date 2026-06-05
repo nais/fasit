@@ -30,7 +30,7 @@ type Reconciler struct {
 
 // DesiredState holds the results and phase durations of a reconcile run.
 type DesiredState struct {
-	Decisions  []DeployDecision
+	Results    []ComputeResult
 	FetchDur   time.Duration
 	ComputeDur time.Duration
 }
@@ -49,18 +49,20 @@ func New(pool *pgxpool.Pool, meter metric.Meter, log *slog.Logger) (*Reconciler,
 }
 
 // Run starts the reconcile loop, writing results via the given writer.
-func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher Dispatcher) {
+func (r *Reconciler) Run(ctx context.Context, interval time.Duration, deployer Deployer) {
 	for {
 		r.log.Info("reconciling")
-		result, err := r.ComputeDesiredState(ctx)
+		desiredState, err := r.ComputeDesiredState(ctx)
 		if err != nil {
 			r.log.With("err", err).Error("reconcile")
 		} else {
 			ioStart := time.Now()
-			if err := dispatcher.Dispatch(ctx, result.Decisions); err != nil {
-				r.log.With("err", err).Error("dispatch")
+			if err := r.writeResultLogs(desiredState.Results); err != nil {
+				r.log.With("err", err).Error("log compute results")
+			} else if err := deployer.Deploy(ctx, desiredState.Results); err != nil {
+				r.log.With("err", err).Error("deploy")
 			}
-			r.log.With("io", time.Since(ioStart)).Info("decisions dispatched")
+			r.log.With("io", time.Since(ioStart)).Info("decisions deployed")
 		}
 
 		select {
@@ -71,6 +73,10 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, dispatcher
 			r.log.Info("manual reconcile triggered")
 		}
 	}
+}
+
+func (r *Reconciler) writeResultLogs(_ []ComputeResult) any {
+	return nil
 }
 
 // TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
@@ -133,7 +139,7 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 
 	r.reconcileLoopTime.Record(ctx, totalDur.Milliseconds())
 	return &DesiredState{
-		Decisions:  decisions,
+		Results:    decisions,
 		FetchDur:   fetchDur,
 		ComputeDur: computeDur,
 	}, nil
@@ -149,7 +155,7 @@ type StreamSummary struct {
 // out, closing it when done. The caller must consume out (e.g. range over it).
 // Returns a summary after all decisions are sent.
 // Returns ErrReconcileInProgress if another stream is running.
-func (r *Reconciler) StreamDecisions(ctx context.Context, out chan<- DeployDecision) (*StreamSummary, error) {
+func (r *Reconciler) StreamDecisions(ctx context.Context, out chan<- ComputeResult) (*StreamSummary, error) {
 	if !r.streamMu.TryLock() {
 		return nil, ErrReconcileInProgress
 	}

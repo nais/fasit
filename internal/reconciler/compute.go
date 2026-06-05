@@ -21,10 +21,10 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
-	out := make(chan DeployDecision, 2048)
+func (r *Reconciler) computeActions(snap *snapshot) []ComputeResult {
+	out := make(chan ComputeResult, 2048)
 	go r.computeActionsStream(snap, out)
-	var results []DeployDecision
+	var results []ComputeResult
 	for d := range out {
 		results = append(results, d)
 	}
@@ -40,7 +40,7 @@ type workItem struct {
 // computeActionsStream dispatches deploy decisions to out and closes it when
 // done. Skips (unhealthy/disabled) go directly to out; compute work is
 // processed by a pool of GOMAXPROCS workers. Caller must consume out.
-func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecision) {
+func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- ComputeResult) {
 	numWorkers := runtime.GOMAXPROCS(0)
 	work := make(chan workItem, numWorkers)
 
@@ -64,7 +64,7 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecis
 
 		for _, dep := range winners {
 			if !healthy {
-				out <- DeployDecision{
+				out <- ComputeResult{
 					EnvironmentID:       env.ID,
 					EnvironmentName:     env.Name,
 					TenantName:          env.TenantName,
@@ -77,7 +77,7 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecis
 			}
 
 			if snap.disabledByEnv[env.ID][dep.Feature.Name] {
-				out <- DeployDecision{
+				out <- ComputeResult{
 					EnvironmentID:       env.ID,
 					EnvironmentName:     env.Name,
 					TenantName:          env.TenantName,
@@ -98,8 +98,8 @@ func (r *Reconciler) computeActionsStream(snap *snapshot, out chan<- DeployDecis
 	close(out)  // signal consumer we're done
 }
 
-func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileAssignment) DeployDecision {
-	base := DeployDecision{
+func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconcileAssignment) ComputeResult {
+	base := ComputeResult{
 		EnvironmentID:       env.ID,
 		EnvironmentName:     env.Name,
 		TenantName:          env.TenantName,
@@ -177,13 +177,11 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 	if instr, ok := snap.latestInstr[env.ID][dep.Feature.Name]; ok {
 		if instr.Status == model.RolloutStatusPending.String() {
 			base.Action = ActionSkipInProgress
-			base.Status = instr.Status
 			base.Message = "deployment is already in progress"
 			return base
 		}
 		if instr.Hash == hash {
 			base.Action = ActionSkipUnchanged
-			base.Status = instr.Status
 			base.Message = "no changes in feature"
 			return base
 		}

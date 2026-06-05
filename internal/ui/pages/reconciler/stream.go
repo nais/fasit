@@ -37,7 +37,7 @@ func StreamHandler() http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.Header().Set("X-Accel-Buffering", "no")
 
-		ch := make(chan reconciler.DeployDecision, 2048)
+		ch := make(chan reconciler.ComputeResult, 2048)
 
 		// Forward decisions from channel to SSE as they arrive.
 		total := 0
