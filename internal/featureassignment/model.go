@@ -12,11 +12,6 @@ import (
 	commonmodel "github.com/nais/fasit/internal/model"
 )
 
-type EnvironmentFeature struct {
-	Name            string
-	FeatureDisabled bool
-}
-
 type CreateFeatureAssignment struct {
 	Chart       string
 	Version     string

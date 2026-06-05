@@ -110,7 +110,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			http.Error(w, "Failed to load environment values: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		valueRefs, err := featureassignment.ValueRefsForEnvironment(r.Context(), env.ID)
+		valueRefs, err := uidata.GetEnvironmentValueReferences(r.Context(), env.ID)
 		if err != nil {
 			http.Error(w, "Failed to load environment value references: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -174,7 +174,7 @@ func sortedKeys(m map[string]string) []string {
 }
 
 func loadEnvironmentFeatureRows(ctx context.Context, env *model.Environment) ([]environmentFeatureRow, error) {
-	features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
+	features, err := uidata.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -60,7 +60,7 @@ func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) 
 	return id, nil
 }
 
-func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][]string, error) {
+func ListForEnvironment(ctx context.Context, envID uuid.UUID) ([]*FeatureAssignment, error) {
 	rows, err := querier(ctx).ListFeatureAssignmentsForEnvironment(ctx, envID)
 	if err != nil {
 		return nil, fmt.Errorf("list feature assignments for environment: %w", err)
@@ -69,7 +69,7 @@ func ValueRefsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string][
 	if err != nil {
 		return nil, err
 	}
-	return collectKeyRefs(mostSpecificPerFeature(deps)), nil
+	return mostSpecificPerFeature(deps), nil
 }
 
 func Get(ctx context.Context, featureAssignmentID uuid.UUID) (*FeatureAssignment, error) {
@@ -317,31 +317,6 @@ func InvalidateLatestDeploy(ctx context.Context, envID uuid.UUID, featureName st
 	})
 
 	return nil
-}
-
-func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentFeature, error) {
-	rows, err := querier(ctx).ListFeatureAssignmentsForEnvironment(ctx, environmentID)
-	if err != nil {
-		return nil, fmt.Errorf("list feature assignments for environment: %w", err)
-	}
-	deps, err := featureAssignmentsFromRows(rows)
-	if err != nil {
-		return nil, err
-	}
-	filtered := mostSpecificPerFeature(deps)
-	seen := make(map[string]bool, len(filtered))
-	features := make([]EnvironmentFeature, 0, len(filtered))
-	for _, dep := range filtered {
-		if !seen[dep.Feature.Name] {
-			seen[dep.Feature.Name] = true
-			features = append(features, EnvironmentFeature{
-				Name:            dep.Feature.Name,
-				FeatureDisabled: dep.FeatureDisabled,
-			})
-		}
-	}
-	sort.Slice(features, func(i, j int) bool { return features[i].Name < features[j].Name })
-	return features, nil
 }
 
 func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {

@@ -9,6 +9,8 @@ import (
 	"github.com/nais/fasit/internal/ui/uidata/sqlgen"
 )
 
+type EnvironmentValueReferences = map[string][]string
+
 type Environment struct {
 	ID           uuid.UUID
 	Name         string
@@ -18,6 +20,11 @@ type Environment struct {
 	Kind         types.EnvironmentKind
 	Reconcile    bool
 	Labels       types.EnvironmentLabels
+}
+
+type EnvironmentFeature struct {
+	Name            string
+	FeatureDisabled bool
 }
 
 type Tenant struct {
