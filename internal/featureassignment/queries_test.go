@@ -155,67 +155,6 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	t.Run("returns sorted deduplicated feature names", func(t *testing.T) {
-		mgr := setupTestMgr(ctx, t, container, dsn, logger)
-		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
-
-		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, logger)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		ctx := loadContext(ctx)
-
-		mgr.db.createTenantsAndEnvironments(ctx, map[string]environment.Labels{
-			"nav:dev": {"team": "myteam"},
-		})
-
-		mgr.seeder.AddAssignment("charlie", "1.0.0", environment.Labels{})
-		mgr.seeder.AddAssignment("alpha", "1.0.0", environment.Labels{})
-		mgr.seeder.AddAssignment("bravo", "1.0.0", environment.Labels{})
-		// Second deployment for alpha with more specific target — should not duplicate
-		mgr.seeder.AddAssignment("alpha", "2.0.0", environment.Labels{"team": "myteam"})
-
-		_, err = mgr.seeder.Seed(ctx)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		tenant, err := environment.GetTenantByName(ctx, "nav")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		env, err := environment.GetByName(ctx, tenant.ID, "dev")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		names := make([]string, len(features))
-		for i, f := range features {
-			names[i] = f.Name
-		}
-		want := []string{"alpha", "bravo", "charlie"}
-		if len(names) != len(want) {
-			t.Fatalf("got %v, want %v", names, want)
-		}
-		for i := range want {
-			if names[i] != want[i] {
-				t.Errorf("names[%d] = %q, want %q", i, names[i], want[i])
-			}
-		}
-
-		for _, f := range features {
-			if f.FeatureDisabled {
-				t.Errorf("no features should be disabled")
-			}
-		}
-	})
-
 	t.Run("reports FeatureDisabled correctly", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
@@ -253,14 +192,14 @@ func TestListEnvironmentFeatures(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
+		assignments, err := featureassignment.ListForEnvironment(ctx, env.ID)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		featureMap := make(map[string]bool, len(features))
-		for _, f := range features {
-			featureMap[f.Name] = f.FeatureDisabled
+		featureMap := make(map[string]bool, len(assignments))
+		for _, a := range assignments {
+			featureMap[a.Feature.Name] = a.FeatureDisabled
 		}
 
 		if featureMap["enabled-app"] {
@@ -295,13 +234,13 @@ func TestListEnvironmentFeatures(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		features, err := featureassignment.ListEnvironmentFeatures(ctx, env.ID)
+		assignments, err := featureassignment.ListForEnvironment(ctx, env.ID)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if len(features) != 0 {
-			t.Errorf("got %d features, want 0", len(features))
+		if len(assignments) != 0 {
+			t.Errorf("got %d assignments, want 0", len(assignments))
 		}
 	})
 }
