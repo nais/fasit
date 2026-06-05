@@ -24,9 +24,9 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log *slog.Logger) Publisher
 
-// pubSubDispatcher writes deploy decisions to the database and publishes
+// pubSubDeployer writes deploy decisions to the database and publishes
 // deploy instructions to naisd via Pub/Sub.
-type pubSubDispatcher struct {
+type pubSubDeployer struct {
 	querier      reconcilersql.Querier
 	newPublisher NewPublisher
 	log          *slog.Logger
@@ -37,12 +37,12 @@ type pubSubDispatcher struct {
 	deployMessages metric.Int64Counter
 }
 
-func NewPubSubDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log *slog.Logger) (Dispatcher, error) {
+func NewPubSubDeployer(pool *pgxpool.Pool, publisher NewPublisher, meter metric.Meter, log *slog.Logger) (Deployer, error) {
 	deployMessages, err := meter.Int64Counter("reconciler_deploy_messages", metric.WithDescription("Deploy messages sent by reconciler"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
-	return &pubSubDispatcher{
+	return &pubSubDeployer{
 		querier:        reconcilersql.New(pool),
 		newPublisher:   publisher,
 		log:            log,
@@ -51,7 +51,7 @@ func NewPubSubDispatcher(pool *pgxpool.Pool, publisher NewPublisher, meter metri
 	}, nil
 }
 
-func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecision) error {
+func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []ComputeResult) error {
 	var instructions []reconcilersql.CreateDeployInstructionParams
 	var statuses []reconcilersql.UpsertReconcileStatusParams
 
@@ -110,7 +110,6 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
 				FeatureAssignmentID: res.FeatureAssignmentID,
 				EnvironmentID:       res.EnvironmentID,
-				Status:              res.Status,
 				Message:             res.Message,
 			})
 
@@ -185,7 +184,7 @@ func (w *pubSubDispatcher) Dispatch(ctx context.Context, decisions []DeployDecis
 	return nil
 }
 
-func (w *pubSubDispatcher) publisher(topicID string) Publisher {
+func (w *pubSubDeployer) publisher(topicID string) Publisher {
 	w.publishersMu.Lock()
 	defer w.publishersMu.Unlock()
 	if p, ok := w.publishers[topicID]; ok {
