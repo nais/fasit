@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -17,12 +16,9 @@ func LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []messa
 	for i, line := range lines {
 		params[i] = featuresql.LogsCreateParams{
 			DeployInstruction: deployInstructionID,
-			Time: pgtype.Timestamptz{
-				Time:  line.Time,
-				Valid: true,
-			},
-			Message: line.Msg,
-			Kind:    string(line.Kind),
+			Time:              line.Time,
+			Message:           line.Msg,
+			Kind:              string(line.Kind),
 		}
 	}
 
@@ -55,7 +51,7 @@ func LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLi
 func logLineFromSQL(log featuresql.Log) *model.LogLine {
 	return &model.LogLine{
 		ID:                  fmt.Sprintf("%s-%d", log.DeployInstruction, log.ID),
-		Timestamp:           log.Time.Time,
+		Timestamp:           log.Time,
 		Message:             log.Message,
 		IntID:               int(log.ID),
 		DeployInstructionID: log.DeployInstruction,

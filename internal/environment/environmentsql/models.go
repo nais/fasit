@@ -3,8 +3,9 @@
 package environmentsql
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
@@ -14,8 +15,8 @@ type Environment struct {
 	Name         string
 	Kind         types.EnvironmentKind
 	Description  *string
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
+	Created      time.Time
+	LastModified time.Time
 	Reconcile    bool
 	Labels       types.EnvironmentLabels
 }
@@ -24,7 +25,7 @@ type Tenant struct {
 	ID           uuid.UUID
 	Name         string
 	Description  *string
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
+	Created      time.Time
+	LastModified time.Time
 	Ci           bool
 }

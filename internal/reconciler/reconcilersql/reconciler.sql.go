@@ -5,9 +5,9 @@ package reconcilersql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
@@ -72,7 +72,7 @@ type ListAllEnvConfigsRow struct {
 	Key           string
 	Value         []byte
 	Secret        bool
-	Created       pgtype.Timestamptz
+	Created       time.Time
 }
 
 func (q *Queries) ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error) {
@@ -162,7 +162,7 @@ type ListAllGlobalConfigsRow struct {
 	Key     string
 	Value   []byte
 	Secret  bool
-	Created pgtype.Timestamptz
+	Created time.Time
 }
 
 func (q *Queries) ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error) {
@@ -438,7 +438,7 @@ type ListLatestFeatureAssignmentsRow struct {
 	FeatureName   string
 	Version       string
 	Target        types.EnvironmentLabels
-	Created       pgtype.Timestamptz
+	Created       time.Time
 	FdName        string
 	FdVersion     string
 	Chart         string
@@ -595,7 +595,7 @@ type SetReleaseStatusParams struct {
 	Version       string
 	Status        string
 	Revision      int32
-	LastDeployed  pgtype.Timestamptz
+	LastDeployed  time.Time
 }
 
 func (q *Queries) SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error {

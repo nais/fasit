@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
@@ -23,7 +22,7 @@ type MergedConfigRow struct {
 	Key           string
 	Value         []byte
 	Secret        bool
-	Created       pgtype.Timestamptz
+	Created       time.Time
 	EnvironmentID *uuid.UUID
 }
 

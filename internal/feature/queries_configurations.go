@@ -19,7 +19,7 @@ func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *mo
 		ID:      c.ID,
 		Key:     c.Key,
 		Content: c.Value,
-		Created: c.Created.Time,
+		Created: c.Created,
 		Source:  model.ConfigSourceEnv,
 	}
 }
@@ -29,7 +29,7 @@ func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *model.Configuration
 		ID:      c.ID,
 		Key:     c.Key,
 		Content: c.Value,
-		Created: c.Created.Time,
+		Created: c.Created,
 		Source:  model.ConfigSourceGlobal,
 	}
 }
@@ -59,7 +59,7 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 			ID:      conf.ID,
 			Key:     conf.Key,
 			Content: conf.Value,
-			Created: conf.Created.Time,
+			Created: conf.Created,
 			Source:  source,
 		})
 	}

@@ -50,7 +50,7 @@ func ListForFeature(ctx context.Context, feature string, limit int32) ([]*Entry,
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -70,7 +70,7 @@ func ListAssignmentsForFeature(ctx context.Context, feature string, limit int32)
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -91,7 +91,7 @@ func ListForFeatureInEnvironment(ctx context.Context, feature string, envID uuid
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -112,7 +112,7 @@ func ListConfigForFeatureInEnvironment(ctx context.Context, feature string, envI
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -132,7 +132,7 @@ func ListGlobalConfigForFeature(ctx context.Context, feature string, limit int32
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -149,7 +149,7 @@ func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil
@@ -169,7 +169,7 @@ func SearchRecent(ctx context.Context, terms []string, limit int32) ([]*Entry, e
 			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
 			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
 			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt.Time, Metadata: r.Metadata,
+			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
 		})
 	}
 	return ret, nil

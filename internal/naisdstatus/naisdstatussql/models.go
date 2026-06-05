@@ -3,13 +3,14 @@
 package naisdstatussql
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
-	ReportedAt    pgtype.Timestamptz
+	ReportedAt    time.Time
 }
 
 type ReleaseStatus struct {
@@ -18,7 +19,7 @@ type ReleaseStatus struct {
 	Version       string
 	Status        string
 	Revision      int32
-	LastDeployed  pgtype.Timestamptz
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
+	LastDeployed  time.Time
+	Created       time.Time
+	LastModified  time.Time
 }

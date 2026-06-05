@@ -3,8 +3,9 @@
 package featuresql
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
@@ -15,7 +16,7 @@ type ConfigurationsEnvironment struct {
 	Value         []byte
 	Description   *string
 	Secret        bool
-	Created       pgtype.Timestamptz
+	Created       time.Time
 	EnvironmentID uuid.UUID
 }
 
@@ -26,7 +27,7 @@ type ConfigurationsGlobal struct {
 	Value       []byte
 	Description *string
 	Secret      bool
-	Created     pgtype.Timestamptz
+	Created     time.Time
 }
 
 type DeployInstruction struct {
@@ -36,8 +37,8 @@ type DeployInstruction struct {
 	FeatureVersion      string
 	Status              string
 	Hash                string
-	Created             pgtype.Timestamptz
-	LastModified        pgtype.Timestamptz
+	Created             time.Time
+	LastModified        time.Time
 	Values              []byte
 	FeatureAssignmentID *uuid.UUID
 }
@@ -45,7 +46,7 @@ type DeployInstruction struct {
 type DisabledFeature struct {
 	EnvironmentID uuid.UUID
 	Feature       string
-	DisabledAt    pgtype.Timestamptz
+	DisabledAt    time.Time
 }
 
 type FeatureDatum struct {
@@ -65,7 +66,7 @@ type FeatureDatum struct {
 type Log struct {
 	ID                int64
 	DeployInstruction uuid.UUID
-	Time              pgtype.Timestamptz
+	Time              time.Time
 	Message           string
 	Kind              string
 }

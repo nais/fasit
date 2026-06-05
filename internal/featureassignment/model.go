@@ -119,7 +119,7 @@ func featureAssignmentFromSQL(d featureassignmentsql.FeatureAssignment, fd featu
 		Feature:      feature,
 		Description:  d.Description,
 		GHRef:        d.GhRef,
-		Created:      d.Created.Time,
+		Created:      d.Created,
 		Active:       d.Active,
 		TargetLabels: environment.Labels(d.Target),
 	}, nil

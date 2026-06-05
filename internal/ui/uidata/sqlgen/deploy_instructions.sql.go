@@ -5,9 +5,9 @@ package sqlgen
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getDeployInstructionByFeatureAssignmentAndEnvironmentID = `-- name: GetDeployInstructionByFeatureAssignmentAndEnvironmentID :one
@@ -77,8 +77,8 @@ type ListDeployInstructionsRow struct {
 	FeatureVersion      string
 	Status              string
 	Hash                string
-	Created             pgtype.Timestamptz
-	LastModified        pgtype.Timestamptz
+	Created             time.Time
+	LastModified        time.Time
 	Values              []byte
 	FeatureAssignmentID *uuid.UUID
 	EnvironmentName     string

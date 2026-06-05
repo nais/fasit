@@ -82,5 +82,5 @@ func FeatureDisabledAt(ctx context.Context, envID uuid.UUID, featureName string)
 		}
 		return time.Time{}, false, err
 	}
-	return row.DisabledAt.Time, true, nil
+	return row.DisabledAt, true, nil
 }

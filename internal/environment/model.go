@@ -12,8 +12,8 @@ func environmentFromSQL(e environmentsql.Environment) *model.Environment {
 		ID:           e.ID,
 		Name:         e.Name,
 		Description:  e.Description,
-		Created:      e.Created.Time,
-		LastModified: e.LastModified.Time,
+		Created:      e.Created,
+		LastModified: e.LastModified,
 		Kind:         model.EnvironmentKind(e.Kind),
 		TenantID:     e.TenantID,
 		Reconcile:    e.Reconcile,
@@ -26,7 +26,7 @@ func tenantFromSQL(t environmentsql.Tenant) *model.Tenant {
 		ID:           t.ID,
 		Name:         t.Name,
 		Description:  t.Description,
-		Created:      t.Created.Time,
-		LastModified: t.LastModified.Time,
+		Created:      t.Created,
+		LastModified: t.LastModified,
 	}
 }

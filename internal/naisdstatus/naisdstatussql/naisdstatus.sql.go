@@ -5,9 +5,9 @@ package naisdstatussql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getNaisdHealthStatus = `-- name: GetNaisdHealthStatus :one
@@ -43,7 +43,7 @@ ON CONFLICT (
 
 type SetNaisdHealthStatusParams struct {
 	EnvironmentID uuid.UUID
-	ReportedAt    pgtype.Timestamptz
+	ReportedAt    time.Time
 }
 
 func (q *Queries) SetNaisdHealthStatus(ctx context.Context, arg SetNaisdHealthStatusParams) (HealthStatus, error) {

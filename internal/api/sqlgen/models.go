@@ -3,8 +3,9 @@
 package sqlgen
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
@@ -13,7 +14,7 @@ type FeatureAssignment struct {
 	FeatureName string
 	Version     string
 	Target      types.EnvironmentLabels
-	Created     pgtype.Timestamptz
+	Created     time.Time
 	GhRef       []byte
 	Description *string
 	Active      bool

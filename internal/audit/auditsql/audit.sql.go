@@ -5,9 +5,9 @@ package auditsql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const create = `-- name: Create :exec
@@ -110,7 +110,7 @@ type ListAssignmentsForFeatureRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -182,7 +182,7 @@ type ListConfigForFeatureInEnvironmentRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -251,7 +251,7 @@ type ListForEnvironmentRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -320,7 +320,7 @@ type ListForFeatureRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -391,7 +391,7 @@ type ListForFeatureInEnvironmentRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -462,7 +462,7 @@ type ListGlobalConfigForFeatureRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -524,7 +524,7 @@ type ListRecentRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID
@@ -600,7 +600,7 @@ type SearchRecentRow struct {
 	Description     string
 	ObjectType      string
 	ObjectID        string
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 	Metadata        []byte
 	Action          string
 	EnvironmentID   *uuid.UUID

@@ -544,8 +544,8 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 		FeatureVersion:      di.FeatureVersion,
 		Status:              model.RolloutStatus(di.Status),
 		Hash:                di.Hash,
-		Created:             di.Created.Time,
-		LastModified:        di.LastModified.Time,
+		Created:             di.Created,
+		LastModified:        di.LastModified,
 		Values:              di.Values,
 	}, nil
 }
@@ -570,8 +570,8 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 		FeatureVersion:      di.FeatureVersion,
 		Status:              model.RolloutStatus(di.Status),
 		Hash:                di.Hash,
-		Created:             di.Created.Time,
-		LastModified:        di.LastModified.Time,
+		Created:             di.Created,
+		LastModified:        di.LastModified,
 		Values:              di.Values,
 	}, nil
 }
@@ -595,8 +595,8 @@ func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureN
 			FeatureVersion:      di.FeatureVersion,
 			Status:              model.RolloutStatus(di.Status),
 			Hash:                di.Hash,
-			Created:             di.Created.Time,
-			LastModified:        di.LastModified.Time,
+			Created:             di.Created,
+			LastModified:        di.LastModified,
 			Values:              di.Values,
 		})
 	}

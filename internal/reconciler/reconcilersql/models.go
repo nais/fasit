@@ -3,8 +3,9 @@
 package reconcilersql
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DeployInstruction struct {
@@ -14,13 +15,13 @@ type DeployInstruction struct {
 	FeatureVersion      string
 	Status              string
 	Hash                string
-	Created             pgtype.Timestamptz
-	LastModified        pgtype.Timestamptz
+	Created             time.Time
+	LastModified        time.Time
 	Values              []byte
 	FeatureAssignmentID *uuid.UUID
 }
 
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
-	ReportedAt    pgtype.Timestamptz
+	ReportedAt    time.Time
 }

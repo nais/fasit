@@ -133,8 +133,8 @@ func ListFeatureReconcileStatuses(ctx context.Context, featureAssignmentID uuid.
 		models[i] = &FeatureReconcileStatus{
 			State:               FeatureReconcileStatusState(strings.ToUpper(status.Status)),
 			Message:             status.Message,
-			LastModified:        status.LastModified.Time,
-			Created:             status.Created.Time,
+			LastModified:        status.LastModified,
+			Created:             status.Created,
 			FeatureAssignmentID: status.FeatureAssignmentID,
 			EnvironmentID:       status.EnvironmentID,
 		}

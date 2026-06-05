@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/dbtx"
 	envpkg "github.com/nais/fasit/internal/environment"
@@ -158,7 +157,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 	}
 
 	if r.deployDuration != nil {
-		duration := time.Since(di.Created.Time).Seconds()
+		duration := time.Since(di.Created).Seconds()
 		r.deployDuration.Record(ctx, duration, metric.WithAttributes(
 			attribute.String("feature", di.FeatureName),
 			attribute.String("status", helmStatus.RolloutStatus.String()),
@@ -205,10 +204,7 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 				Version:       rel.Version,
 				Status:        rel.Status,
 				Revision:      int32(rel.Revision), // #nosec G115
-				LastDeployed: pgtype.Timestamptz{
-					Time:  rel.LastDeployed,
-					Valid: true,
-				},
+				LastDeployed:  rel.LastDeployed,
 			})
 			if err != nil {
 				return fmt.Errorf("creating release status: %w", err)

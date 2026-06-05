@@ -75,8 +75,8 @@ func environmentFromSQL(e sqlgen.Environment) *Environment {
 		ID:           e.ID,
 		Name:         e.Name,
 		Description:  e.Description,
-		Created:      e.Created.Time,
-		LastModified: e.LastModified.Time,
+		Created:      e.Created,
+		LastModified: e.LastModified,
 		Kind:         e.Kind,
 		Reconcile:    e.Reconcile,
 		Labels:       e.Labels,
@@ -88,7 +88,7 @@ func tenantFromSQL(t sqlgen.Tenant) *Tenant {
 		ID:           t.ID,
 		Name:         t.Name,
 		Description:  t.Description,
-		Created:      t.Created.Time,
-		LastModified: t.LastModified.Time,
+		Created:      t.Created,
+		LastModified: t.LastModified,
 	}
 }

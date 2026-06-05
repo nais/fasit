@@ -67,7 +67,7 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 		}
 		m := make(map[uuid.UUID]time.Time, len(rows))
 		for _, h := range rows {
-			m[h.EnvironmentID] = h.ReportedAt.Time
+			m[h.EnvironmentID] = h.ReportedAt
 		}
 		snap.healthByEnv = m
 		return nil

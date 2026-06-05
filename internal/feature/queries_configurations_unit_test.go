@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -242,12 +241,12 @@ func TestEnvConfig_PreservesIDAndCreated(t *testing.T) {
 
 	fq.configGlobalListByFeatureFunc = func(_ context.Context, _ string) ([]featuresql.ConfigurationsGlobal, error) {
 		return []featuresql.ConfigurationsGlobal{
-			{ID: globalID, Feature: "f", Key: "g-only", Value: []byte(`"g"`), Created: pgtype.Timestamptz{Time: globalCreated, Valid: true}},
+			{ID: globalID, Feature: "f", Key: "g-only", Value: []byte(`"g"`), Created: globalCreated},
 		}, nil
 	}
 	fq.configEnvListByFeatureFunc = func(_ context.Context, _ featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error) {
 		return []featuresql.ConfigurationsEnvironment{
-			{ID: envRowID, Feature: "f", Key: "e-only", Value: []byte(`"e"`), Created: pgtype.Timestamptz{Time: envCreated, Valid: true}, EnvironmentID: environmentID},
+			{ID: envRowID, Feature: "f", Key: "e-only", Value: []byte(`"e"`), Created: envCreated, EnvironmentID: environmentID},
 		}, nil
 	}
 

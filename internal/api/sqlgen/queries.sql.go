@@ -5,9 +5,9 @@ package sqlgen
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getFeatureAssignment = `-- name: GetFeatureAssignment :one
@@ -109,8 +109,8 @@ type ListReconcileStatusesRow struct {
 	EnvironmentID       uuid.UUID
 	Status              string
 	Message             string
-	LastModified        pgtype.Timestamptz
-	Created             pgtype.Timestamptz
+	LastModified        time.Time
+	Created             time.Time
 }
 
 func (q *Queries) ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error) {

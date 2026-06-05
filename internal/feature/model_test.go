@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/feature/featuresql"
 )
 
@@ -14,8 +13,8 @@ func TestMergeConfigs_PreservesIDAndCreated(t *testing.T) {
 	globalID := uuid.New()
 	envID := uuid.New()
 	environmentID := uuid.New()
-	globalCreated := pgtype.Timestamptz{Time: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), Valid: true}
-	envCreated := pgtype.Timestamptz{Time: time.Date(2025, 2, 2, 0, 0, 0, 0, time.UTC), Valid: true}
+	globalCreated := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	envCreated := time.Date(2025, 2, 2, 0, 0, 0, 0, time.UTC)
 
 	globals := []featuresql.ConfigurationsGlobal{
 		{ID: globalID, Feature: "f", Key: "only-global", Value: []byte(`"g"`), Created: globalCreated},
@@ -35,11 +34,11 @@ func TestMergeConfigs_PreservesIDAndCreated(t *testing.T) {
 		byKey[r.Key] = r
 	}
 
-	if g := byKey["only-global"]; g.ID != globalID || !g.Created.Time.Equal(globalCreated.Time) || g.EnvironmentID != nil {
-		t.Errorf("global row = %+v, want ID=%v Created=%v EnvironmentID=nil", g, globalID, globalCreated.Time)
+	if g := byKey["only-global"]; g.ID != globalID || !g.Created.Equal(globalCreated) || g.EnvironmentID != nil {
+		t.Errorf("global row = %+v, want ID=%v Created=%v EnvironmentID=nil", g, globalID, globalCreated)
 	}
-	if e := byKey["only-env"]; e.ID != envID || !e.Created.Time.Equal(envCreated.Time) || e.EnvironmentID == nil || *e.EnvironmentID != environmentID {
-		t.Errorf("env row = %+v, want ID=%v Created=%v EnvironmentID=%v", e, envID, envCreated.Time, environmentID)
+	if e := byKey["only-env"]; e.ID != envID || !e.Created.Equal(envCreated) || e.EnvironmentID == nil || *e.EnvironmentID != environmentID {
+		t.Errorf("env row = %+v, want ID=%v Created=%v EnvironmentID=%v", e, envID, envCreated, environmentID)
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
@@ -25,17 +24,14 @@ func Get(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
 	}
 	return &model.Health{
 		EnvironmentID: res.EnvironmentID,
-		ReportedAt:    res.ReportedAt.Time,
+		ReportedAt:    res.ReportedAt,
 	}, nil
 }
 
 func Set(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
 	_, err := querier(ctx).SetNaisdHealthStatus(ctx, naisdstatussql.SetNaisdHealthStatusParams{
 		EnvironmentID: environmentID,
-		ReportedAt: pgtype.Timestamptz{
-			Time:  h.ReportedAt,
-			Valid: true,
-		},
+		ReportedAt:    h.ReportedAt,
 	})
 
 	return err
@@ -53,9 +49,9 @@ func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*model
 			Version:      r.Version,
 			Status:       r.Status,
 			Revision:     int(r.Revision),
-			LastDeployed: r.LastDeployed.Time,
-			Created:      r.Created.Time,
-			LastModified: r.LastModified.Time,
+			LastDeployed: r.LastDeployed,
+			Created:      r.Created,
+			LastModified: r.LastModified,
 		}
 	}
 

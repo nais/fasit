@@ -118,7 +118,7 @@ func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reco
 			TplDetails:  row.TplDetails,
 		},
 		TargetLabels: row.Target,
-		Created:      row.Created.Time,
+		Created:      row.Created,
 	}, nil
 }
 
