@@ -90,6 +90,41 @@ values:
 
 > Values should only be defined in the `Feature.yaml` file if they either are helpful for us to debug etc, or they differ between environments/tenants.
 
+## Dependencies
+
+Features may declare runtime dependencies using a top-level `dependencies:` field in `Feature.yaml`. The field is an array of objects; each object may contain one or both of:
+
+- `allOf` — a list of feature names that must all be deployed in the target environment before this feature can be deployed.
+- `anyOf` — a list of feature names where at least one must be deployed in the target environment.
+
+Dependency names are the feature (chart) names as declared in `Chart.yaml`. Dependencies are evaluated at reconcile time and will prevent deployment with a "missing dependencies" error if the requirements are not met.
+
+Examples
+
+Simple `allOf`:
+
+```yaml
+environmentKinds:
+  - tenant
+dependencies:
+  - allOf: ["monitoring-crds"]
+```
+
+`anyOf` (one of these must be present):
+
+```yaml
+dependencies:
+  - anyOf: ["db-postgres", "db-mysql"]
+```
+
+Combined (array items are ANDed; `anyOf`/`allOf` are evaluated per item):
+
+```yaml
+dependencies:
+  - anyOf: ["db-postgres", "db-mysql"]
+  - allOf: ["network-policy", "service-account"]
+```
+
 ## Template funcs
 
 The following template funcs are available:
