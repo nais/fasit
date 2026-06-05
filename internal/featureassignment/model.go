@@ -34,7 +34,6 @@ type FeatureAssignment struct {
 	Active      bool           `json:"active"`
 
 	TargetLabels    environment.Labels `json:"-"`
-	TplDetails      []byte             `json:"-"`
 	FeatureDisabled bool               `json:"-"`
 }
 
@@ -110,6 +109,7 @@ func featureFromSQL(f featureassignmentsql.FeatureDatum) (*model.Feature, error)
 		Source:      f.Source,
 		ValuesYAML:  defaultValues,
 		SpecVersion: "v2",
+		TplDetails:  f.TplDetails,
 	}, nil
 }
 
@@ -127,7 +127,6 @@ func featureAssignmentFromSQL(d featureassignmentsql.FeatureAssignment, fd featu
 		Created:      d.Created.Time,
 		Active:       d.Active,
 		TargetLabels: environment.Labels(d.Target),
-		TplDetails:   fd.TplDetails,
 	}, nil
 }
 

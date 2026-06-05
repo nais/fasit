@@ -166,6 +166,7 @@ func featureFromSQL(f featuresql.FeatureDatum) (*model.Feature, error) {
 		Source:      f.Source,
 		ValuesYAML:  defaultValues,
 		SpecVersion: "v2",
+		TplDetails:  f.TplDetails,
 	}, nil
 }
 

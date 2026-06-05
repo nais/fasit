@@ -9,7 +9,7 @@ func collectKeyRefs(assignments []*FeatureAssignment) map[string][]string {
 	// key → set of feature names
 	refSets := make(map[string]map[string]bool)
 	for _, dep := range assignments {
-		if len(dep.TplDetails) == 0 {
+		if len(dep.Feature.TplDetails) == 0 {
 			continue
 		}
 		var details struct {
@@ -17,7 +17,7 @@ func collectKeyRefs(assignments []*FeatureAssignment) map[string][]string {
 			Envs       []string `json:"Envs"`
 			Management []string `json:"Management"`
 		}
-		if err := json.Unmarshal(dep.TplDetails, &details); err != nil {
+		if err := json.Unmarshal(dep.Feature.TplDetails, &details); err != nil {
 			slog.With("err", err, "feature", dep.Feature.Name).Warn("failed to unmarshal tpl_details")
 			continue
 		}

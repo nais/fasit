@@ -115,8 +115,9 @@ func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reco
 			Source:      row.Source,
 			ValuesYAML:  defaultValues,
 			SpecVersion: "v2",
+			TplDetails:  row.TplDetails,
 		},
-		TargetLabels: map[string]string(row.Target),
+		TargetLabels: row.Target,
 		Created:      row.Created.Time,
 	}, nil
 }

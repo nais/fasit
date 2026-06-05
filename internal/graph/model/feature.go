@@ -29,6 +29,7 @@ type Feature struct {
 
 	// SpecVersion is used to determine which version of the feature spec is used.
 	SpecVersion string `json:"specVersion"`
+	TplDetails  []byte
 }
 
 type FeatureYAML struct {
