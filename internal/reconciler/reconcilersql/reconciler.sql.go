@@ -677,7 +677,7 @@ SELECT
 FROM
 	deploy_status
 WHERE
-	status = 'pending'
+	status IN ('sent', 'installing')
 	AND created < NOW() - INTERVAL '1 hour'
 `
 

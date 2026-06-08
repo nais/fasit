@@ -42,9 +42,9 @@ ORDER BY
 	created DESC;
 
 -- Append-only deploy lifecycle log. The Deployer appends a row at publish
--- (status created/pending) carrying the diid sent to naisd, the hash, and the
--- rendered values; the naisd Receiver appends a new row with the same diid for
--- the terminal status (deployed/failed). diid repeats across a deploy's
+-- (status sent) carrying the diid sent to naisd, the hash, and the rendered
+-- values; the naisd Receiver appends new rows with the same diid for the
+-- installing and terminal (deployed/failed) statuses. diid repeats across a deploy's
 -- transition rows, so it is a correlation key, not unique. values lands on the
 -- publish row; transition rows leave it at the default.
 CREATE TABLE deploy_log(

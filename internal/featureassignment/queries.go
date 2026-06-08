@@ -157,10 +157,10 @@ type ReconcileSignals struct {
 }
 
 // DeriveReconcileState selects the effective display status from the raw
-// signals: disabled-feature membership wins, then the deploy rollout state,
-// then the latest reconciler decision action mapped onto the rollout vocabulary
-// (pending/deployed/failed/DISABLED). The action strings mirror
-// reconciler.Action and are duplicated here to avoid an import cycle.
+// signals: disabled-feature membership wins, then the deploy rollout state
+// (sent/installing/deployed/failed), then the latest reconciler decision action
+// mapped onto a display status. The action strings mirror reconciler.Action and
+// are duplicated here to avoid an import cycle.
 func DeriveReconcileState(s ReconcileSignals) string {
 	switch {
 	case s.Disabled:

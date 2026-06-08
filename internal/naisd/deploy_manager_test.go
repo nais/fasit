@@ -54,7 +54,7 @@ func TestDeployReceiver(t *testing.T) {
 					Tenant:      "tenant1",
 					Environment: "prod",
 					Type:        2,
-					Data:        []uint8(`{"DIID":"` + diid.String() + `","Name":"","Version":"","RolloutStatus":"pending","ConfigHash":"hash1","Log":""}`),
+					Data:        []uint8(`{"DIID":"` + diid.String() + `","Name":"","Version":"","RolloutStatus":"installing","ConfigHash":"hash1","Log":""}`),
 				},
 				{
 					Tenant:      "tenant1",

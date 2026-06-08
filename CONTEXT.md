@@ -40,7 +40,7 @@ An immutable record sent to a naisd agent telling it to install or upgrade a spe
 The compute stage's verdict for one (assignment, environment) in a cycle: an action (deploy, skip-unchanged, skip-disabled, skip-unhealthy, fail-missing-deps, fail-missing-config, fail-render) plus a human-readable message. Recorded in `decision_log` only when it changes from the previous cycle.
 
 **Rollout status**:
-The lifecycle state of a deploy instruction: created → pending → deployed/failed. `created`/`pending` are set by the Deployer at publish; `deployed`/`failed` are reported back by naisd. Recorded in `deploy_log`; the latest entry per feature×environment is the current rollout state.
+The lifecycle state of a deploy instruction: sent → installing → deployed/failed. `sent` is set by the Deployer when it publishes to naisd; `installing` is reported by naisd as it starts Helm; `deployed`/`failed` are the terminal states reported back by naisd. Recorded in `deploy_log`; the latest entry per feature×environment is the current rollout state.
 _Avoid_: deploy status, reconcile status (the legacy merged field)
 
 **Reconciler**:

@@ -106,7 +106,7 @@ func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []DeployDecision)
 			FeatureAssignmentID: item.res.FeatureAssignmentID,
 			FeatureName:         item.res.Feature.Name,
 			FeatureVersion:      item.res.Feature.Version,
-			Status:              model.RolloutStatusPending.String(),
+			Status:              model.RolloutStatusSent.String(),
 			Hash:                item.res.Hash,
 			Vals:                item.vals,
 		})
