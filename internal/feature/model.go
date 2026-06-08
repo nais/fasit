@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"bytes"
 	"cmp"
 	"encoding/json"
 	"fmt"
@@ -9,9 +10,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/helm"
+	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // MergedConfigRow is a config key-value pair produced by overlaying
@@ -105,7 +112,7 @@ func MakeHelmConfigMap(vals []MergedConfigRow) (map[string]any, error) {
 	return val, nil
 }
 
-func ValidateFields(f *model.Feature, envKind model.EnvironmentKind, values []MergedConfigRow, mp map[string]any) []string {
+func ValidateFields(f *Feature, envKind environment.EnvironmentKind, values []MergedConfigRow, mp map[string]any) []string {
 	requiredFields := f.RequiredFields(envKind)
 
 	fields := map[string]bool{}
@@ -141,7 +148,7 @@ func ValidateFields(f *model.Feature, envKind model.EnvironmentKind, values []Me
 	return missing
 }
 
-func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
+func environmentKindToSQL(kinds []environment.EnvironmentKind) []string {
 	ret := []string{}
 	for _, kind := range kinds {
 		ret = append(ret, kind.String())
@@ -150,13 +157,13 @@ func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
 	return ret
 }
 
-func featureFromSQL(f featuresql.FeatureDatum) (*model.Feature, error) {
+func featureFromSQL(f featuresql.FeatureDatum) (*Feature, error) {
 	fyaml, defaultValues, err := makeFeatureYAML(f)
 	if err != nil {
 		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}
 
-	return &model.Feature{
+	return &Feature{
 		FeatureYAML: fyaml,
 		Name:        f.Name,
 		Chart:       f.Chart,
@@ -169,8 +176,8 @@ func featureFromSQL(f featuresql.FeatureDatum) (*model.Feature, error) {
 	}, nil
 }
 
-func makeFeatureYAML(fd featuresql.FeatureDatum) (model.FeatureYAML, map[string]json.RawMessage, error) {
-	ret := model.FeatureYAML{
+func makeFeatureYAML(fd featuresql.FeatureDatum) (FeatureYAML, map[string]json.RawMessage, error) {
+	ret := FeatureYAML{
 		Timeout: time.Duration(fd.Timeout) * time.Millisecond,
 	}
 	if err := json.Unmarshal(fd.Dependencies, &ret.Dependencies); err != nil {
@@ -182,9 +189,9 @@ func makeFeatureYAML(fd featuresql.FeatureDatum) (model.FeatureYAML, map[string]
 		return ret, nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 
-	ret.EnvironmentKinds = make([]model.EnvironmentKind, len(fd.Kinds))
+	ret.EnvironmentKinds = make([]environment.EnvironmentKind, len(fd.Kinds))
 	for i, k := range fd.Kinds {
-		ret.EnvironmentKinds[i] = model.EnvironmentKind(k)
+		ret.EnvironmentKinds[i] = environment.EnvironmentKind(k)
 	}
 
 	if err := json.Unmarshal(fd.Values, &ret.Values); err != nil {
@@ -192,4 +199,266 @@ func makeFeatureYAML(fd featuresql.FeatureDatum) (model.FeatureYAML, map[string]
 	}
 
 	return ret, retDefaultVals, nil
+}
+
+type Feature struct {
+	FeatureYAML
+	Name        string                     `json:"name"`
+	Chart       string                     `json:"chart"`
+	Version     string                     `json:"version"`
+	Description string                     `json:"description"`
+	Source      string                     `json:"source"`
+	ValuesYAML  map[string]json.RawMessage `json:"-"`
+
+	// SpecVersion is used to determine which version of the feature spec is used.
+	SpecVersion string `json:"specVersion"`
+	TplDetails  []byte
+}
+
+type FeatureYAML struct {
+	Dependencies     Dependencies                  `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
+	EnvironmentKinds []environment.EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,required"`
+	Target           map[string]string             `json:"target,omitempty" yaml:"target,omitempty" jsonschema:"omitempty,description=Target is a set of key-value label selectors; the feature applies only to environments whose labels include all specified pairs (logical AND)."`
+	Timeout          time.Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
+	Values           Values                        `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
+}
+
+type Values map[string]Value
+
+type Value struct {
+	Description string                        `yaml:"description,omitempty" json:"description,omitempty"`
+	DisplayName string                        `yaml:"displayName,omitempty" json:"displayName,omitempty"`
+	Required    bool                          `yaml:"required,omitempty" json:"required,omitempty"`
+	Computed    *Computed                     `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=computed"`
+	Config      *Config                       `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
+	IgnoreKind  []environment.EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem"`
+}
+
+func (v *Values) Computed() map[string]Value {
+	ret := map[string]Value{}
+	for k, v := range *v {
+		if v.Computed != nil {
+			ret[k] = v
+		}
+	}
+	return ret
+}
+
+func (f *Feature) parseChartYAML(meta *chart.Metadata) error {
+	f.Name = meta.Name
+	f.Version = meta.Version
+	f.Description = meta.Description
+	if len(meta.Sources) > 0 {
+		f.Source = meta.Sources[0]
+	}
+
+	return nil
+}
+
+func (f *Feature) RequiredFields(envKind environment.EnvironmentKind) []string {
+	var requiredFields []string
+	for k, v := range f.Values {
+		if contains(v.IgnoreKind, envKind) {
+			continue
+		}
+		if v.Required {
+			requiredFields = append(requiredFields, k)
+		}
+	}
+	return requiredFields
+}
+
+func (f *Feature) normalizedYAML(valuesYAML map[string]any) {
+	if len(f.Values) == 0 || valuesYAML == nil {
+		return
+	}
+
+	f.ValuesYAML = map[string]json.RawMessage{}
+	for k, v := range f.Values {
+		if v.Config == nil {
+			continue
+		}
+
+		f.ValuesYAML[k] = pluckFromMap(k, valuesYAML)
+	}
+}
+
+func pluckFromMap(key string, mp map[string]any) json.RawMessage {
+	kp, _ := featureutil.SmartDotSplit(key)
+
+	for _, k := range kp {
+		v, ok := mp[k]
+		if !ok {
+			return nil
+		}
+
+		switch v := v.(type) {
+		case map[string]any:
+			mp = v
+		default:
+			b, _ := json.Marshal(v)
+			return b
+		}
+	}
+	return nil
+}
+
+func contains[T comparable](s []T, e T) bool {
+	return slices.Contains(s, e)
+}
+
+// SecretKeys returns the dotted key names of all secret values in the feature.
+func (f *Feature) SecretKeys() []string {
+	var keys []string
+	for key, val := range f.Values {
+		if val.Config != nil && val.Config.Secret {
+			keys = append(keys, key)
+		}
+	}
+	return keys
+}
+
+func FromChart(chartURL, version string) (*Feature, error) {
+	resp, err := DownloadChartFunc(chartURL, version, "")
+	if err != nil {
+		return nil, err
+	}
+
+	chart, err := loader.LoadArchive(resp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load chart: %w", err)
+	}
+
+	feat := &Feature{
+		Chart: chartURL,
+	}
+
+	var hasFeatureYAML bool
+	for _, f := range chart.Files {
+		if f.Name == "Feature.yaml" {
+			hasFeatureYAML = true
+			if err := yaml.NewDecoder(bytes.NewReader(f.Data)).Decode(&feat.FeatureYAML); err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+	if !hasFeatureYAML {
+		return nil, fmt.Errorf("file Feature.yaml not found")
+	}
+
+	if err := feat.parseChartYAML(chart.Metadata); err != nil {
+		return nil, err
+	}
+	if err := chartutil.ProcessDependencies(chart, chart.Values); err != nil {
+		return nil, fmt.Errorf("unable to process dependencies: %w", err)
+	}
+
+	feat.normalizedYAML(chart.Values)
+
+	return feat, nil
+}
+
+// DownloadChartFunc is used to download a chart from a given source. It is a variable so that it can be mocked in tests.
+var DownloadChartFunc = helm.DownloadChart
+
+type Config struct {
+	Type   ConfigType `yaml:"type,omitempty" json:"type"  jsonschema:"enum=string,enum=int,enum=bool,enum=string_array,required"`
+	Secret bool       `json:"secret,omitempty" yaml:"secret,omitempty"`
+}
+
+type Computed struct {
+	Template string `yaml:"template,omitempty" json:"template,omitempty"`
+}
+
+type Dependency struct {
+	AnyOf []string `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
+	AllOf []string `json:"allOf,omitempty" yaml:"allOf,omitempty"`
+}
+
+type Dependencies []*Dependency
+
+func (d Dependencies) FindMissing(features []string) []string {
+	ret := []string{}
+	for _, dep := range d {
+		ret = append(ret, dep.FindMissing(features)...)
+	}
+	return ret
+}
+
+func (d *Dependency) FindMissing(features []string) []string {
+	contains := func(s []string, e string) bool {
+		return slices.Contains(s, e)
+	}
+
+	missing := []string{}
+	if len(d.AllOf) > 0 {
+		for _, f := range d.AllOf {
+			if !contains(features, f) {
+				missing = append(missing, f)
+			}
+		}
+	}
+
+	anyOfMissing := []string{}
+	for _, f := range d.AnyOf {
+		if contains(features, f) {
+			anyOfMissing = []string{}
+			break
+		}
+		anyOfMissing = append(anyOfMissing, f)
+	}
+	return append(missing, anyOfMissing...)
+}
+
+type NewConfiguration struct {
+	EnvironmentID *uuid.UUID      `json:"environmentID"`
+	Feature       string          `json:"feature"`
+	Description   *string         `json:"description"`
+	Key           string          `json:"key"`
+	Value         json.RawMessage `json:"value"`
+	Secret        bool
+}
+
+type ConfigType string
+
+const (
+	ConfigTypeString      ConfigType = "string"
+	ConfigTypeInt         ConfigType = "int"
+	ConfigTypeBool        ConfigType = "bool"
+	ConfigTypeStringArray ConfigType = "string_array"
+)
+
+func (e ConfigType) IsValid() bool {
+	switch e {
+	case ConfigTypeString, ConfigTypeInt, ConfigTypeBool, ConfigTypeStringArray:
+		return true
+	}
+	return false
+}
+
+func (e ConfigType) String() string {
+	return string(e)
+}
+
+func (e ConfigType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToUpper(string(e)))
+}
+
+func (e *ConfigType) UnmarshalJSON(b []byte) error {
+	s := ""
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	*e = ConfigType(strings.ToLower(s))
+	return nil
+}
+
+type Configuration struct {
+	ID      uuid.UUID          `json:"id"`
+	Value   *Value             `json:"value"`
+	Content json.RawMessage    `json:"content"`
+	Created time.Time          `json:"created"`
+	Source  model.ConfigSource `json:"source"`
+	Key     string             `json:"key"`
 }

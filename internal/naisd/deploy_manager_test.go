@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/message"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -228,9 +228,9 @@ func TestDeployReceiver_naisd_if_none_in_progress(t *testing.T) {
 		ConfigHash: "hash1",
 	}
 
-	oldFunc := model.DownloadChartFunc
-	defer func() { model.DownloadChartFunc = oldFunc }()
-	model.DownloadChartFunc = func(chart, version, repo string) (*bytes.Buffer, error) {
+	oldFunc := feature.DownloadChartFunc
+	defer func() { feature.DownloadChartFunc = oldFunc }()
+	feature.DownloadChartFunc = func(chart, version, repo string) (*bytes.Buffer, error) {
 		b, err := os.ReadFile("./selfupgrade/testdata/naisd.tgz")
 		if err != nil {
 			t.Fatal(err)

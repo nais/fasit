@@ -15,7 +15,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/environmentmanagement/protogen"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -57,15 +56,15 @@ func TestProvider(t *testing.T) {
 	t.Run("create environment sets name and tenant labels", func(t *testing.T) {
 		ctx := loadContext(ctx)
 
-		tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: "label-test-tenant"})
+		tenant, err := environment.CreateTenant(ctx, &environment.TenantCreate{Name: "label-test-tenant"})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		env, err := environment.Create(ctx, &model.EnvironmentCreate{
+		env, err := environment.Create(ctx, &environment.EnvironmentCreate{
 			Name:     "my-env",
 			TenantID: tenant.ID,
-			Kind:     model.EnvironmentKindTenant,
+			Kind:     environment.EnvironmentKindTenant,
 			Labels:   map[string]string{"kind": "tenant"},
 		})
 		if err != nil {

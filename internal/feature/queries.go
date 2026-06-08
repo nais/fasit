@@ -45,7 +45,7 @@ func querier(ctx context.Context) featuresql.Querier {
 	return q
 }
 
-func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+func helmValues(ctx context.Context, f *Feature, envID uuid.UUID) (map[string]any, error) {
 	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err
@@ -98,13 +98,13 @@ const probeSecretSentinel = "__FASIT_PROBE_a9f4e1c8d7b2__" // #nosec G101 -- pla
 // taint detection.
 type HelmRenderData struct {
 	MV            *ComputedValues
-	EnvKind       model.EnvironmentKind
+	EnvKind       environment.EnvironmentKind
 	ConfigVals    []MergedConfigRow
 	ConfigMap     map[string]any
 	SecretEnvKeys map[string]bool
 }
 
-func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID) (*HelmRenderData, error) {
+func fetchHelmRenderData(ctx context.Context, f *Feature, envID uuid.UUID) (*HelmRenderData, error) {
 	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 
 // RenderHelmValues renders the helm config map from pre-fetched data.
 // When validate is true, missing required fields cause an error.
-func RenderHelmValues(data *HelmRenderData, f *model.Feature, funcs template.FuncMap, validate bool) (map[string]any, error) {
+func RenderHelmValues(data *HelmRenderData, f *Feature, funcs template.FuncMap, validate bool) (map[string]any, error) {
 	mp := data.ConfigMap
 	mv := data.MV
 
@@ -279,7 +279,7 @@ func cloneStringAnyMap(m map[string]any) map[string]any {
 // string sentinel which may cause a type mismatch in the probe template
 // render. In that case probeOK will be false and the caller falls back
 // to pessimistically masking all computed values.
-func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid.UUID) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
+func HelmValuesWithSecretTaint(ctx context.Context, f *Feature, envID uuid.UUID) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
 	data, err := fetchHelmRenderData(ctx, f, envID)
 	if err != nil {
 		return nil, nil, false, err
@@ -287,7 +287,7 @@ func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid
 	return renderHelmValuesWithSecretTaint(data, f)
 }
 
-func renderHelmValuesWithSecretTaint(data *HelmRenderData, f *model.Feature) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
+func renderHelmValuesWithSecretTaint(data *HelmRenderData, f *Feature) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
 	// Snapshot the pre-render configMap so control/probe start from the same
 	// state as the real render. addToMap is write-once: if the real render's
 	// computed values leaked into control/probe, they'd skip re-rendering and
@@ -330,7 +330,7 @@ func renderHelmValuesWithSecretTaint(data *HelmRenderData, f *model.Feature) (re
 // computedSecretTaint reports which computed value keys in values render to
 // different output between the control and probe maps. A computed value with a
 // differing rendered value depends on at least one secret input.
-func computedSecretTaint(values model.Values, control, probe map[string]any) map[string]bool {
+func computedSecretTaint(values Values, control, probe map[string]any) map[string]bool {
 	taint := map[string]bool{}
 	for key, val := range values {
 		if val.Computed == nil {
@@ -364,11 +364,11 @@ func lookupNested(m map[string]any, dottedKey string) (any, bool) {
 	return cur, true
 }
 
-func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+func HelmValues(ctx context.Context, f *Feature, envID uuid.UUID) (map[string]any, error) {
 	return helmValues(ctx, f, envID)
 }
 
-func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*ComputedValues, model.EnvironmentKind, error) {
+func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*ComputedValues, environment.EnvironmentKind, error) {
 	env, err := environment.Get(ctx, envID)
 	if err != nil {
 		return nil, "", fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
@@ -399,7 +399,7 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 	for _, env := range values {
 		val := map[string]any{}
 		if err := json.Unmarshal(env.Values, &val); err != nil {
-			return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
+			return nil, environment.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
 		}
 		val["name"] = env.Name
 		val["kind"] = string(env.Kind)
@@ -407,7 +407,7 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 		if env.ID == envID {
 			mv.Env = val
 		}
-		if env.Kind == types.EnvironmentKind(model.EnvironmentKindManagement) {
+		if env.Kind == types.EnvironmentKind(environment.EnvironmentKindManagement) {
 			mv.Management = val
 		} else {
 			mv.Envs = append(mv.Envs, val)
@@ -417,7 +417,7 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 	return mv, env.Kind, nil
 }
 
-func FeatureDataCreate(ctx context.Context, feat model.Feature, details *FeatureTemplateDetails) error {
+func FeatureDataCreate(ctx context.Context, feat Feature, details *FeatureTemplateDetails) error {
 	// TODO: Use pgx v5 instead of []byte
 	dep, err := json.Marshal(feat.Dependencies)
 	if err != nil {
@@ -457,7 +457,7 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 	return nil
 }
 
-func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
+func FeatureByName(ctx context.Context, name string) (*Feature, error) {
 	f, err := querier(ctx).LatestFeatureData(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("get latest feature data for %q: %w", name, err)

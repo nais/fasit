@@ -11,7 +11,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
@@ -75,7 +74,7 @@ type card struct {
 	Environments        []AssignmentEnvStatus
 }
 
-func loadAssignmentData(ctx context.Context, feature *model.Feature, data *DetailPage) {
+func loadAssignmentData(ctx context.Context, feature *featurepkg.Feature, data *DetailPage) {
 	data.AssignmentEnvs = featureAssignmentEnvStatuses(ctx, feature)
 }
 
@@ -589,7 +588,7 @@ func labelPills(labels map[string]string) g.Node {
 	return g.Group(pills)
 }
 
-func featureAssignmentEnvStatuses(ctx context.Context, feature *model.Feature) []AssignmentEnvStatus {
+func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Feature) []AssignmentEnvStatus {
 	fas, err := featureassignment.ListByFeature(ctx, feature.Name)
 	if err != nil || len(fas) == 0 {
 		return []AssignmentEnvStatus{}
@@ -602,7 +601,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *model.Feature) [
 	}
 
 	type envInfo struct {
-		env        *model.Environment
+		env        *envpkg.Environment
 		tenantName string
 		labels     map[string]string
 	}

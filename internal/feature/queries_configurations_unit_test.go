@@ -14,7 +14,7 @@ import (
 func TestConfigCreate(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       model.NewConfiguration
+		input       NewConfiguration
 		existingErr error
 		existing    featuresql.ConfigurationsGlobal
 		wantWrite   bool
@@ -22,7 +22,7 @@ func TestConfigCreate(t *testing.T) {
 	}{
 		{
 			name: "ConfigCreate(global, new): creates and audits",
-			input: model.NewConfiguration{
+			input: NewConfiguration{
 				Feature: "f1", Key: "my.key", Value: []byte(`"v"`),
 			},
 			existingErr: pgx.ErrNoRows,
@@ -31,7 +31,7 @@ func TestConfigCreate(t *testing.T) {
 		},
 		{
 			name: "ConfigCreate(global, same value): no-op",
-			input: model.NewConfiguration{
+			input: NewConfiguration{
 				Feature: "f1", Key: "k", Value: []byte(`"v"`),
 			},
 			existing: featuresql.ConfigurationsGlobal{
@@ -101,7 +101,7 @@ func TestConfigCreate_Env(t *testing.T) {
 		}, nil
 	}
 
-	_, err := ConfigEnvCreate(ctx, model.NewConfiguration{
+	_, err := ConfigEnvCreate(ctx, NewConfiguration{
 		EnvironmentID: &envID,
 		Feature:       "f1",
 		Key:           "k",
@@ -250,7 +250,7 @@ func TestEnvConfig_PreservesIDAndCreated(t *testing.T) {
 		}, nil
 	}
 
-	got, err := EnvConfig(ctx, &model.Feature{Name: "f"}, environmentID)
+	got, err := EnvConfig(ctx, &Feature{Name: "f"}, environmentID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestEnvConfig_PreservesIDAndCreated(t *testing.T) {
 		t.Fatalf("len(got) = %d, want 2", len(got))
 	}
 
-	byKey := map[string]*model.Configuration{}
+	byKey := map[string]*Configuration{}
 	for _, c := range got {
 		byKey[c.Key] = c
 	}

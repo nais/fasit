@@ -3,7 +3,7 @@ package feature
 import (
 	"testing"
 
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/environment"
 )
 
 func TestGenerate_MissingMappingValues(t *testing.T) {
@@ -23,9 +23,9 @@ func TestGenerate_MissingMappingValues(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			vals := model.Values{
-				"mykey": model.Value{
-					Computed: &model.Computed{
+			vals := Values{
+				"mykey": Value{
+					Computed: &Computed{
 						Template: tc.template,
 					},
 				},
@@ -35,7 +35,7 @@ func TestGenerate_MissingMappingValues(t *testing.T) {
 			}
 			target := map[string]any{}
 
-			if err := Generate(vals, model.EnvironmentKindTenant, cv, target); err != nil {
+			if err := Generate(vals, environment.EnvironmentKindTenant, cv, target); err != nil {
 				t.Fatalf("Generate returned error: %v", err)
 			}
 
@@ -50,9 +50,9 @@ func TestGenerate_MissingMappingValues(t *testing.T) {
 func TestGenerate_EmptyParentMapCreated(t *testing.T) {
 	// In production, parent maps are created even when children resolve to nil.
 	// Stripping of empty maps is handled by the playground resolver, not here.
-	vals := model.Values{
-		"parent.child": model.Value{
-			Computed: &model.Computed{
+	vals := Values{
+		"parent.child": Value{
+			Computed: &Computed{
 				Template: "{{ .Env.missing_key }}",
 			},
 		},
@@ -62,7 +62,7 @@ func TestGenerate_EmptyParentMapCreated(t *testing.T) {
 	}
 	target := map[string]any{}
 
-	if err := Generate(vals, model.EnvironmentKindTenant, cv, target); err != nil {
+	if err := Generate(vals, environment.EnvironmentKindTenant, cv, target); err != nil {
 		t.Fatalf("Generate returned error: %v", err)
 	}
 
@@ -72,9 +72,9 @@ func TestGenerate_EmptyParentMapCreated(t *testing.T) {
 }
 
 func TestGenerate_PresentValueNotOmitted(t *testing.T) {
-	vals := model.Values{
-		"org": model.Value{
-			Computed: &model.Computed{
+	vals := Values{
+		"org": Value{
+			Computed: &Computed{
 				Template: `{{ .Env.github_org | quote }}`,
 			},
 		},
@@ -86,7 +86,7 @@ func TestGenerate_PresentValueNotOmitted(t *testing.T) {
 	}
 	target := map[string]any{}
 
-	if err := Generate(vals, model.EnvironmentKindTenant, cv, target); err != nil {
+	if err := Generate(vals, environment.EnvironmentKindTenant, cv, target); err != nil {
 		t.Fatalf("Generate returned error: %v", err)
 	}
 

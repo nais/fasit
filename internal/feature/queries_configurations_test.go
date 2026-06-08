@@ -131,7 +131,7 @@ func TestConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := []*model.Configuration{
+		want := []*Configuration{
 			{
 				ID:      id,
 				Key:     "my.key",
@@ -156,7 +156,7 @@ func TestConfig(t *testing.T) {
 
 		execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       "feature5",
 			Description:   new("description"),
@@ -169,13 +169,13 @@ func TestConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := &model.Configuration{
+		want := &Configuration{
 			Key:     config.Key,
 			Content: config.Value,
 			Source:  model.ConfigSourceEnv,
 		}
 
-		opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
+		opts := cmpopts.IgnoreFields(Configuration{}, "ID", "Created")
 		if !cmp.Equal(want, got, opts) {
 			t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 		}
@@ -184,7 +184,7 @@ func TestConfig(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			Feature:     "feature5",
 			Description: new("description"),
 			Key:         "my.key",
@@ -196,13 +196,13 @@ func TestConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := &model.Configuration{
+		want := &Configuration{
 			Key:     config.Key,
 			Content: config.Value,
 			Source:  model.ConfigSourceGlobal,
 		}
 
-		opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
+		opts := cmpopts.IgnoreFields(Configuration{}, "ID", "Created")
 		if !cmp.Equal(want, got, opts) {
 			t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 		}
@@ -211,7 +211,7 @@ func TestConfig(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			Feature:     "feature5",
 			Description: new("description"),
 			Key:         "my.key",
@@ -231,13 +231,13 @@ func TestConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := &model.Configuration{
+		want := &Configuration{
 			Key:     config.Key,
 			Content: []byte(`"newval"`),
 			Source:  model.ConfigSourceGlobal,
 		}
 
-		opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
+		opts := cmpopts.IgnoreFields(Configuration{}, "ID", "Created")
 		if !cmp.Equal(want, got, opts) {
 			t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 		}
@@ -246,7 +246,7 @@ func TestConfig(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			Feature: "feature9",
 			Key:     "my.key",
 			Value:   []byte(`"stringval"`),
@@ -287,13 +287,13 @@ func TestConfig(t *testing.T) {
 
 		execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
-		feature := model.Feature{
+		feature := Feature{
 			Name: "feature5",
-			FeatureYAML: model.FeatureYAML{
-				Values: model.Values{
-					"my.key": model.Value{
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+			FeatureYAML: FeatureYAML{
+				Values: Values{
+					"my.key": Value{
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 					},
@@ -301,7 +301,7 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       feature.Name,
 			Key:           "my.key",
@@ -343,19 +343,19 @@ func TestConfig(t *testing.T) {
 		q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
 		execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
-		feature := model.Feature{
+		feature := Feature{
 			Name: "feature5",
-			FeatureYAML: model.FeatureYAML{
-				Values: model.Values{
-					"my.key": model.Value{
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+			FeatureYAML: FeatureYAML{
+				Values: Values{
+					"my.key": Value{
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 					},
-					"no.key": model.Value{
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+					"no.key": Value{
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 						Required: true,
@@ -364,7 +364,7 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       "feature5",
 			Key:           "my.key",
@@ -392,13 +392,13 @@ func TestConfig(t *testing.T) {
 		q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
 		execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			Feature: "feature5",
 			Key:     "my.key",
 			Value:   []byte(`"stringval"`),
 			Secret:  true,
 		}
-		config2 := model.NewConfiguration{
+		config2 := NewConfiguration{
 			Feature: "feature5",
 			Key:     "my",
 			Value:   []byte(`15`),
@@ -414,18 +414,18 @@ func TestConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		feature := &model.Feature{
+		feature := &Feature{
 			Name: "feature5",
-			FeatureYAML: model.FeatureYAML{
-				Values: model.Values{
-					"my.key": model.Value{
-						Config: &model.Config{
-							Type: model.ConfigTypeString,
+			FeatureYAML: FeatureYAML{
+				Values: Values{
+					"my.key": Value{
+						Config: &Config{
+							Type: ConfigTypeString,
 						},
 					},
-					"my": model.Value{
-						Config: &model.Config{
-							Type: model.ConfigTypeString,
+					"my": Value{
+						Config: &Config{
+							Type: ConfigTypeString,
 						},
 					},
 				},
@@ -459,32 +459,32 @@ func TestConfig(t *testing.T) {
 			{envid, "some_secret", json.RawMessage(`"hideme"`), true},
 		}
 
-		f := model.Feature{
+		f := Feature{
 			Name: "feature5",
-			FeatureYAML: model.FeatureYAML{
-				Values: model.Values{
-					"names.tenant": model.Value{
-						Computed: &model.Computed{
+			FeatureYAML: FeatureYAML{
+				Values: Values{
+					"names.tenant": Value{
+						Computed: &Computed{
 							Template: "{{ .Tenant.Name }}",
 						},
 					},
-					"names.environment": model.Value{
-						Computed: &model.Computed{
+					"names.environment": Value{
+						Computed: &Computed{
 							Template: "{{ .Env.name }}",
 						},
 					},
-					"kind": model.Value{
-						Computed: &model.Computed{
+					"kind": Value{
+						Computed: &Computed{
 							Template: "{{ .Kind }}",
 						},
 					},
-					"projects.env": model.Value{
-						Computed: &model.Computed{
+					"projects.env": Value{
+						Computed: &Computed{
 							Template: "{{ .Env.project_id }}",
 						},
 					},
-					"projects.mgmt": model.Value{
-						Computed: &model.Computed{
+					"projects.mgmt": Value{
+						Computed: &Computed{
 							Template: "{{ .Management.project_id }}",
 						},
 					},
@@ -542,23 +542,23 @@ ON CONFLICT (
 		q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'onprem')`
 		execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
-		feature := model.Feature{
+		feature := Feature{
 			Name: "feature6",
-			FeatureYAML: model.FeatureYAML{
-				Values: model.Values{
-					"my.key": model.Value{
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+			FeatureYAML: FeatureYAML{
+				Values: Values{
+					"my.key": Value{
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 					},
-					"ignore.key": model.Value{
+					"ignore.key": Value{
 						Required: true,
-						IgnoreKind: []model.EnvironmentKind{
-							model.EnvironmentKindOnprem,
+						IgnoreKind: []environment.EnvironmentKind{
+							environment.EnvironmentKindOnprem,
 						},
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 					},
@@ -566,7 +566,7 @@ ON CONFLICT (
 			},
 		}
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       feature.Name,
 			Key:           "my.key",
@@ -578,7 +578,7 @@ ON CONFLICT (
 			t.Fatal(err)
 		}
 
-		globConfig := model.NewConfiguration{
+		globConfig := NewConfiguration{
 			Feature: feature.Name,
 			Key:     "ignore.key",
 			Value:   []byte(`"ignore"`),
@@ -618,23 +618,23 @@ ON CONFLICT (
 		q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
 		execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
-		feature := model.Feature{
+		feature := Feature{
 			Name: "feature6",
-			FeatureYAML: model.FeatureYAML{
-				Values: model.Values{
-					"my.key": model.Value{
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+			FeatureYAML: FeatureYAML{
+				Values: Values{
+					"my.key": Value{
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 					},
-					"ignore.key": model.Value{
+					"ignore.key": Value{
 						Required: true,
-						IgnoreKind: []model.EnvironmentKind{
-							model.EnvironmentKindOnprem,
+						IgnoreKind: []environment.EnvironmentKind{
+							environment.EnvironmentKindOnprem,
 						},
-						Config: &model.Config{
-							Type:   model.ConfigTypeString,
+						Config: &Config{
+							Type:   ConfigTypeString,
 							Secret: true,
 						},
 					},
@@ -642,7 +642,7 @@ ON CONFLICT (
 			},
 		}
 
-		config := model.NewConfiguration{
+		config := NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       feature.Name,
 			Key:           "my.key",
@@ -654,7 +654,7 @@ ON CONFLICT (
 			t.Fatal(err)
 		}
 
-		globConfig := model.NewConfiguration{
+		globConfig := NewConfiguration{
 			Feature: feature.Name,
 			Key:     "ignore.key",
 			Value:   []byte(`"ignore"`),

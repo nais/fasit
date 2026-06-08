@@ -25,7 +25,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/testcontainers/testcontainers-go"
@@ -264,16 +263,16 @@ type Db struct {
 	pool *pgxpool.Pool
 }
 
-func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, labels environment.Labels) {
+func (d *Db) createEnv(ctx context.Context, tenant *environment.Tenant, name string, labels environment.Labels) {
 	d.t.Helper()
 
 	if labels["kind"] == "" {
 		labels["kind"] = "tenant"
 	}
-	env, err := environment.Create(ctx, &model.EnvironmentCreate{
+	env, err := environment.Create(ctx, &environment.EnvironmentCreate{
 		Name:     name,
 		TenantID: tenant.ID,
-		Kind:     model.EnvironmentKind(labels["kind"]),
+		Kind:     environment.EnvironmentKind(labels["kind"]),
 	})
 	if err != nil {
 		d.t.Fatalf("create environment: %v", err)
@@ -298,7 +297,7 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs map[string]environment.Labels) {
 	d.t.Helper()
 
-	tenants := make(map[string]*model.Tenant)
+	tenants := make(map[string]*environment.Tenant)
 	for te, lbls := range tenantsAndEnvs {
 		p := strings.Split(te, ":")
 		tenantName, envName := p[0], p[1]
@@ -306,7 +305,7 @@ func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs ma
 		_, exists := tenants[tenantName]
 		if !exists {
 			var err error
-			tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
+			tenant, err := environment.CreateTenant(ctx, &environment.TenantCreate{
 				Name: tenantName,
 			})
 			if err != nil {

@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 func TestReconcile(t *testing.T) {
@@ -287,16 +286,16 @@ func TestReconcileRealisticScale(t *testing.T) {
 	}
 	rows.Close()
 
-	standardValues := func() model.Values {
-		return model.Values{
-			"setting_a":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting A"},
-			"setting_b":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting B"},
-			"setting_c":     {Config: &model.Config{Type: model.ConfigTypeInt}, DisplayName: "Setting C"},
-			"toggle":        {Config: &model.Config{Type: model.ConfigTypeBool}, DisplayName: "Toggle"},
-			"secret_key":    {Config: &model.Config{Type: model.ConfigTypeString, Secret: true}, DisplayName: "Secret Key"},
-			"computed_name": {Computed: &model.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
-			"computed_full": {Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.example.com"`}},
-			"computed_cfg":  {Computed: &model.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
+	standardValues := func() feature.Values {
+		return feature.Values{
+			"setting_a":     {Config: &feature.Config{Type: feature.ConfigTypeString}, DisplayName: "Setting A"},
+			"setting_b":     {Config: &feature.Config{Type: feature.ConfigTypeString}, DisplayName: "Setting B"},
+			"setting_c":     {Config: &feature.Config{Type: feature.ConfigTypeInt}, DisplayName: "Setting C"},
+			"toggle":        {Config: &feature.Config{Type: feature.ConfigTypeBool}, DisplayName: "Toggle"},
+			"secret_key":    {Config: &feature.Config{Type: feature.ConfigTypeString, Secret: true}, DisplayName: "Secret Key"},
+			"computed_name": {Computed: &feature.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
+			"computed_full": {Computed: &feature.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.example.com"`}},
+			"computed_cfg":  {Computed: &feature.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
 		}
 	}
 
@@ -331,7 +330,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 				val = fmt.Sprintf("global-secret-%d", fi)
 			}
 			b, _ := json.Marshal(val)
-			if _, err := feature.ConfigGlobalCreate(h.ctx, model.NewConfiguration{
+			if _, err := feature.ConfigGlobalCreate(h.ctx, feature.NewConfiguration{
 				Feature: name,
 				Key:     key,
 				Value:   b,
@@ -355,7 +354,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 						val = false
 					}
 					b, _ := json.Marshal(val)
-					if _, err := feature.ConfigEnvCreate(h.ctx, model.NewConfiguration{
+					if _, err := feature.ConfigEnvCreate(h.ctx, feature.NewConfiguration{
 						EnvironmentID: &envID,
 						Feature:       name,
 						Key:           key,
@@ -368,7 +367,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 
 			if env.name == "staging" {
 				b, _ := json.Marshal(fmt.Sprintf("staging-b-%d-%s", fi, envID))
-				if _, err := feature.ConfigEnvCreate(h.ctx, model.NewConfiguration{
+				if _, err := feature.ConfigEnvCreate(h.ctx, feature.NewConfiguration{
 					EnvironmentID: &envID,
 					Feature:       name,
 					Key:           "setting_b",

@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,7 +26,7 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 2 characters long")
 	}
 
-	tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
+	tenant, err := environment.CreateTenant(ctx, &environment.TenantCreate{
 		Name: in.Name,
 	})
 	if err != nil {
@@ -79,7 +78,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		labels[l.Key] = l.Value
 	}
 
-	env, err := environment.Create(ctx, &model.EnvironmentCreate{
+	env, err := environment.Create(ctx, &environment.EnvironmentCreate{
 		Name:     in.Name,
 		TenantID: tenant.ID,
 		Kind:     kind,
@@ -230,14 +229,14 @@ func (s *server) DeleteEnvironmentValue(ctx context.Context, req *protogen.Delet
 	return &protogen.DeleteEnvironmentValueResponse{Success: true}, nil
 }
 
-func toEnvironmentKind(kind protogen.EnvironmentKind) (model.EnvironmentKind, error) {
+func toEnvironmentKind(kind protogen.EnvironmentKind) (environment.EnvironmentKind, error) {
 	switch kind {
 	case protogen.EnvironmentKind_MANAGEMENT:
-		return model.EnvironmentKindManagement, nil
+		return environment.EnvironmentKindManagement, nil
 	case protogen.EnvironmentKind_TENANT:
-		return model.EnvironmentKindTenant, nil
+		return environment.EnvironmentKindTenant, nil
 	case protogen.EnvironmentKind_ONPREM:
-		return model.EnvironmentKindOnprem, nil
+		return environment.EnvironmentKindOnprem, nil
 	}
 
 	return "", status.Error(codes.InvalidArgument, "Invalid Environment kind")

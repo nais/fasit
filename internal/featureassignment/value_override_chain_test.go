@@ -16,7 +16,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 )
 
@@ -81,22 +80,22 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 	setEnvVal(devEnv.ID, "env_only", "from-env", false)
 	setEnvVal(devEnv.ID, "secret_token", "s3cr3t", true)
 
-	featureValues := model.Values{
-		"computedOnly":                {Computed: &model.Computed{Template: "computed-result"}},
-		"globalConfigOnly":            {Config: &model.Config{Type: model.ConfigTypeString}},
-		"envConfigOnly":               {Config: &model.Config{Type: model.ConfigTypeString}},
-		"globalBeatsChartDefault":     {Config: &model.Config{Type: model.ConfigTypeString}},
-		"envBeatsGlobal":              {Config: &model.Config{Type: model.ConfigTypeString}},
-		"configBeatsComputed":         {Config: &model.Config{Type: model.ConfigTypeString}, Computed: &model.Computed{Template: "computed-value"}},
-		"envConfigBeatsComputed":      {Config: &model.Config{Type: model.ConfigTypeString}, Computed: &model.Computed{Template: "computed-value"}},
-		"computedWinsWhenNoConfigSet": {Config: &model.Config{Type: model.ConfigTypeString}, Computed: &model.Computed{Template: "computed-wins"}},
-		"computedFromEnv":             {Computed: &model.Computed{Template: `{{ .Env.env_only }}`}},
-		"computedFromMgmt":            {Computed: &model.Computed{Template: `{{ .Management.mgmt_only }}`}},
-		"computedFromConfig":          {Computed: &model.Computed{Template: `{{ .Configs.globalConfigOnly }}-suffix`}},
-		"intConfig":                   {Config: &model.Config{Type: model.ConfigTypeInt}},
-		"boolConfig":                  {Config: &model.Config{Type: model.ConfigTypeBool}},
-		"computedFromSecretEnv":       {Computed: &model.Computed{Template: `{{ .Env.secret_token }}`}},
-		"ignoredForMgmt":              {Config: &model.Config{Type: model.ConfigTypeString}, IgnoreKind: []model.EnvironmentKind{model.EnvironmentKindManagement}},
+	featureValues := feature.Values{
+		"computedOnly":                {Computed: &feature.Computed{Template: "computed-result"}},
+		"globalConfigOnly":            {Config: &feature.Config{Type: feature.ConfigTypeString}},
+		"envConfigOnly":               {Config: &feature.Config{Type: feature.ConfigTypeString}},
+		"globalBeatsChartDefault":     {Config: &feature.Config{Type: feature.ConfigTypeString}},
+		"envBeatsGlobal":              {Config: &feature.Config{Type: feature.ConfigTypeString}},
+		"configBeatsComputed":         {Config: &feature.Config{Type: feature.ConfigTypeString}, Computed: &feature.Computed{Template: "computed-value"}},
+		"envConfigBeatsComputed":      {Config: &feature.Config{Type: feature.ConfigTypeString}, Computed: &feature.Computed{Template: "computed-value"}},
+		"computedWinsWhenNoConfigSet": {Config: &feature.Config{Type: feature.ConfigTypeString}, Computed: &feature.Computed{Template: "computed-wins"}},
+		"computedFromEnv":             {Computed: &feature.Computed{Template: `{{ .Env.env_only }}`}},
+		"computedFromMgmt":            {Computed: &feature.Computed{Template: `{{ .Management.mgmt_only }}`}},
+		"computedFromConfig":          {Computed: &feature.Computed{Template: `{{ .Configs.globalConfigOnly }}-suffix`}},
+		"intConfig":                   {Config: &feature.Config{Type: feature.ConfigTypeInt}},
+		"boolConfig":                  {Config: &feature.Config{Type: feature.ConfigTypeBool}},
+		"computedFromSecretEnv":       {Computed: &feature.Computed{Template: `{{ .Env.secret_token }}`}},
+		"ignoredForMgmt":              {Config: &feature.Config{Type: feature.ConfigTypeString}, IgnoreKind: []environment.EnvironmentKind{environment.EnvironmentKindManagement}},
 	}
 
 	chartDefaults := map[string]any{
@@ -106,7 +105,7 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 	mgr.seeder.AddAssignmentWithValues(
 		"kitchen-sink", "1.0.0",
 		environment.Labels{},
-		[]model.EnvironmentKind{model.EnvironmentKindTenant, model.EnvironmentKindManagement},
+		[]environment.EnvironmentKind{environment.EnvironmentKindTenant, environment.EnvironmentKindManagement},
 		featureValues,
 		chartDefaults,
 		"kitchen sink feature",
@@ -123,7 +122,7 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		c := model.NewConfiguration{
+		c := feature.NewConfiguration{
 			Feature:       "kitchen-sink",
 			Key:           key,
 			Value:         b,

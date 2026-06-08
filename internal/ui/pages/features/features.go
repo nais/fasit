@@ -14,9 +14,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -32,7 +32,7 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 type DetailPage struct {
 	Breadcrumbs    []breadcrumb.Crumb
 	Features       []view.FeatureNav
-	CurrentFeature *model.Feature
+	CurrentFeature *featurepkg.Feature
 	FeatureEnvs    []featureenvs.Environment
 	AssignmentEnvs []AssignmentEnvStatus
 	RecentActivity []*audit.Entry
@@ -569,7 +569,7 @@ func toFeatureNavs(names []string) []view.FeatureNav {
 	return ret
 }
 
-func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.EnvironmentKind) bool {
+func featureTargetsKind(kinds []environment.EnvironmentKind, envKind environment.EnvironmentKind) bool {
 	if len(kinds) == 0 {
 		return true
 	}

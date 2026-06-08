@@ -6,8 +6,6 @@ import (
 	"strings"
 	"text/template"
 	"text/template/parse"
-
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 type FeatureTemplateDetails struct {
@@ -76,7 +74,7 @@ func (e *FeatureTemplateDetails) clean() *FeatureTemplateDetails {
 	}
 }
 
-func ParseTemplateDetails(content model.Values) (*FeatureTemplateDetails, error) {
+func ParseTemplateDetails(content Values) (*FeatureTemplateDetails, error) {
 	eviu := &FeatureTemplateDetails{}
 
 	for _, cv := range content {
@@ -90,7 +88,7 @@ func ParseTemplateDetails(content model.Values) (*FeatureTemplateDetails, error)
 	return eviu.clean(), nil
 }
 
-func parseComputedDetails(eviu *FeatureTemplateDetails, cv *model.Computed) error {
+func parseComputedDetails(eviu *FeatureTemplateDetails, cv *Computed) error {
 	t, err := template.New("tpl").Funcs(TemplateFuncs).Parse(cv.Template)
 	if err != nil {
 		return fmt.Errorf("parse: %w", err)

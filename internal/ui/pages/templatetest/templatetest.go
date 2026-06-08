@@ -11,7 +11,6 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	g "maragu.dev/gomponents"
@@ -96,12 +95,12 @@ func renderWithFeature(ctx context.Context, featureName string, envID uuid.UUID,
 		return "", err
 	}
 
-	modifiedValues := make(model.Values, len(feat.Values))
+	modifiedValues := make(featurepkg.Values, len(feat.Values))
 	for k, v := range feat.Values {
 		modifiedValues[k] = v
 	}
 	modifiedVal := modifiedValues[key]
-	modifiedVal.Computed = &model.Computed{Template: template}
+	modifiedVal.Computed = &featurepkg.Computed{Template: template}
 	modifiedValues[key] = modifiedVal
 
 	modifiedFeat := *feat
@@ -147,7 +146,7 @@ func lookupHelmValue(m map[string]any, key string) (string, bool) {
 	}
 }
 
-func templateTestPage(tenantEnvs []*model.TenantEnvironment, template, selectedTenant, selectedEnv, featureName, key, result string, renderErr error) g.Node {
+func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, template, selectedTenant, selectedEnv, featureName, key, result string, renderErr error) g.Node {
 	envOpts := make([]g.Node, 0, len(tenantEnvs)+1)
 	envOpts = append(envOpts, h.Option(h.Value(""), g.Text("Select environment…")))
 	for _, te := range tenantEnvs {

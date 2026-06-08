@@ -6,7 +6,7 @@ import (
 	"text/template"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/environment"
 )
 
 func Test_mapOf(t *testing.T) {
@@ -227,7 +227,7 @@ func Test_subdomain(t *testing.T) {
 		"management": {
 			args: args{
 				m: &ComputedValues{
-					Kind: model.EnvironmentKindManagement,
+					Kind: environment.EnvironmentKindManagement,
 					Tenant: ComputedTenant{
 						Name: "tenant",
 					},
@@ -239,7 +239,7 @@ func Test_subdomain(t *testing.T) {
 		"non-management": {
 			args: args{
 				m: &ComputedValues{
-					Kind: model.EnvironmentKindTenant,
+					Kind: environment.EnvironmentKindTenant,
 					Env: map[string]any{
 						"name": "bar",
 					},

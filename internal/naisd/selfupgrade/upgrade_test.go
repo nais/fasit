@@ -8,21 +8,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nais/fasit/internal/feature"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestFullRun(t *testing.T) {
-	oldFunc := model.DownloadChartFunc
-	defer func() { model.DownloadChartFunc = oldFunc }()
-	model.DownloadChartFunc = func(chart, version, repo string) (*bytes.Buffer, error) {
+	oldFunc := feature.DownloadChartFunc
+	defer func() { feature.DownloadChartFunc = oldFunc }()
+	feature.DownloadChartFunc = func(chart, version, repo string) (*bytes.Buffer, error) {
 		b, err := os.ReadFile("./testdata/naisd.tgz")
 		if err != nil {
 			t.Fatal(err)

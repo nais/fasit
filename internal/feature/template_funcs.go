@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/environment"
 	"gopkg.in/yaml.v3"
 )
 
@@ -101,7 +101,7 @@ func prefixedValues(m any, prefix string) []any {
 // subdomain returns the subdomain for the active environment.
 func subdomain(m *ComputedValues, subdomain string) string {
 	domain := m.Tenant.Name + ".cloud.nais.io"
-	if m.Kind != model.EnvironmentKindManagement {
+	if m.Kind != environment.EnvironmentKindManagement {
 		domain = m.Env["name"].(string) + "." + domain
 	}
 	return subdomain + "." + domain

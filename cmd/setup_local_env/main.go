@@ -29,7 +29,7 @@ type (
 	tenant          = string
 	environmentName = string
 	envSpec         struct {
-		kind   model.EnvironmentKind
+		kind   environment.EnvironmentKind
 		labels environment.Labels
 	}
 )
@@ -42,41 +42,41 @@ var (
 	envs = map[tenant]map[environmentName]envSpec{
 		"test-partner": {
 			"management": {
-				kind: model.EnvironmentKindManagement,
+				kind: environment.EnvironmentKindManagement,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
 			"dev": {
-				kind: model.EnvironmentKindTenant,
+				kind: environment.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
 			"prod": {
-				kind: model.EnvironmentKindTenant,
+				kind: environment.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
 			"staging": {
-				kind:   model.EnvironmentKindTenant,
+				kind:   environment.EnvironmentKindTenant,
 				labels: environment.Labels{},
 			},
 		},
 		"nav": {
 			"management": {
-				kind:   model.EnvironmentKindManagement,
+				kind:   environment.EnvironmentKindManagement,
 				labels: environment.Labels{},
 			},
 			"dev": {
-				kind: model.EnvironmentKindTenant,
+				kind: environment.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
 			"prod": {
-				kind: model.EnvironmentKindTenant,
+				kind: environment.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
@@ -84,11 +84,11 @@ var (
 		},
 		"dev-nais": {
 			"management": {
-				kind:   model.EnvironmentKindManagement,
+				kind:   environment.EnvironmentKindManagement,
 				labels: environment.Labels{},
 			},
 			"dev": {
-				kind:   model.EnvironmentKindTenant,
+				kind:   environment.EnvironmentKindTenant,
 				labels: environment.Labels{},
 			},
 		},
@@ -129,7 +129,7 @@ func main() {
 
 	// Create tenants and environments first (needed for deployment status FKs).
 	for tenantName, environments := range envs {
-		_, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
+		_, err := environment.CreateTenant(ctx, &environment.TenantCreate{Name: tenantName})
 		if err != nil {
 			if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 				log.With("err", err).Error("fatal")
@@ -147,7 +147,7 @@ func main() {
 			lbls := spec.labels
 			lbls["kind"] = strings.ToLower(spec.kind.String())
 
-			e, err := environment.Create(ctx, &model.EnvironmentCreate{
+			e, err := environment.Create(ctx, &environment.EnvironmentCreate{
 				Name:     env,
 				TenantID: tenant.ID,
 				Kind:     spec.kind,
@@ -215,16 +215,16 @@ func main() {
 	//   - 2 features FAILED (touching test-partner/prod)
 	//   - 2 features PENDING (touching test-partner/staging, which never
 	//     receives a status because no naisd is listening there)
-	tenantOnly := []model.EnvironmentKind{"tenant"}
-	managementOnly := []model.EnvironmentKind{"management"}
-	onpremOnly := []model.EnvironmentKind{"onprem"}
+	tenantOnly := []environment.EnvironmentKind{"tenant"}
+	managementOnly := []environment.EnvironmentKind{"management"}
+	onpremOnly := []environment.EnvironmentKind{"onprem"}
 	all := append(append(tenantOnly, managementOnly...), onpremOnly...)
 
-	str := &model.Config{Type: model.ConfigTypeString}
-	intCfg := &model.Config{Type: model.ConfigTypeInt}
-	boolCfg := &model.Config{Type: model.ConfigTypeBool}
-	secret := &model.Config{Type: model.ConfigTypeString, Secret: true}
-	strArr := &model.Config{Type: model.ConfigTypeStringArray}
+	str := &feature.Config{Type: feature.ConfigTypeString}
+	intCfg := &feature.Config{Type: feature.ConfigTypeInt}
+	boolCfg := &feature.Config{Type: feature.ConfigTypeBool}
+	secret := &feature.Config{Type: feature.ConfigTypeString, Secret: true}
+	strArr := &feature.Config{Type: feature.ConfigTypeStringArray}
 
 	// Feature catalog. Each feature has 5–10 values mixing:
 	//   - plain configs (some Required)
@@ -232,20 +232,20 @@ func main() {
 	//   - computed values that reference non-secret data
 	//   - computed values that reference secret env values or secret configs
 	//     (these are the *computed secrets* the env-config view masks)
-	featureValues := map[string]model.Values{
+	featureValues := map[string]feature.Values{
 		"naiserator": {
 			"replicas":      {DisplayName: "Replicas", Description: "Number of replicas", Required: true, Config: intCfg},
 			"logLevel":      {DisplayName: "Log Level", Config: str},
 			"apiKey":        {DisplayName: "API Key", Description: "External API key", Required: true, Config: secret},
-			"clusterDomain": {DisplayName: "Cluster Domain", Description: "Derived from environment name", Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"`}},
-			"projectRef":    {DisplayName: "GCP Project Ref", Computed: &model.Computed{Template: `"projects/{{ .Env.project_id }}"`}},
-			"imageTag":      {DisplayName: "Image Tag", Description: "Override image tag; falls back to a computed default", Config: str, Computed: &model.Computed{Template: `"{{ .Env.name }}-latest"`}},
+			"clusterDomain": {DisplayName: "Cluster Domain", Description: "Derived from environment name", Computed: &feature.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"`}},
+			"projectRef":    {DisplayName: "GCP Project Ref", Computed: &feature.Computed{Template: `"projects/{{ .Env.project_id }}"`}},
+			"imageTag":      {DisplayName: "Image Tag", Description: "Override image tag; falls back to a computed default", Config: str, Computed: &feature.Computed{Template: `"{{ .Env.name }}-latest"`}},
 			"featureFlags":  {DisplayName: "Feature Flags", Description: "JSON blob of toggles", Config: str},
 			"extraEnv":      {DisplayName: "Extra Env", Description: "Additional KEY=VALUE pairs", Config: strArr},
 			"motd":          {DisplayName: "Message of the Day", Description: "Multi-line banner shown in the UI", Config: str},
 			"allowedHosts":  {DisplayName: "Allowed Hosts", Description: "Required list; chart default is empty so warns until set", Required: true, Config: strArr},
 			// Computed secret: reads the secret env value db_password.
-			"dbDsn": {DisplayName: "DB DSN", Description: "Derived from secret env db_password", Computed: &model.Computed{Template: `"postgres://naiserator:{{ .Env.db_password }}@db.{{ .Env.name }}.local/naiserator"`}},
+			"dbDsn": {DisplayName: "DB DSN", Description: "Derived from secret env db_password", Computed: &feature.Computed{Template: `"postgres://naiserator:{{ .Env.db_password }}@db.{{ .Env.name }}.local/naiserator"`}},
 		},
 		"console": {
 			"adminEmail":       {DisplayName: "Admin Email", Required: true, Config: str},
@@ -253,10 +253,10 @@ func main() {
 			"debugMode":        {DisplayName: "Debug Mode", Config: boolCfg},
 			"port":             {DisplayName: "Port", Config: intCfg},
 			"oauthClientId":    {DisplayName: "OAuth Client ID", Config: str},
-			"baseUrl":          {DisplayName: "Base URL", Computed: &model.Computed{Template: `"https://console.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io"`}},
-			"oauthRedirectUri": {DisplayName: "OAuth Redirect URI", Computed: &model.Computed{Template: `"https://console.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io/oauth/callback"`}},
+			"baseUrl":          {DisplayName: "Base URL", Computed: &feature.Computed{Template: `"https://console.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io"`}},
+			"oauthRedirectUri": {DisplayName: "OAuth Redirect URI", Computed: &feature.Computed{Template: `"https://console.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io/oauth/callback"`}},
 			// Computed secret: reads the secret env value slack_token.
-			"slackWebhook": {DisplayName: "Slack Webhook URL", Description: "Derived from secret env slack_token", Computed: &model.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}"`}},
+			"slackWebhook": {DisplayName: "Slack Webhook URL", Description: "Derived from secret env slack_token", Computed: &feature.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}"`}},
 		},
 		"unleash": {
 			"instanceCount": {DisplayName: "Instance Count", Config: intCfg},
@@ -266,16 +266,16 @@ func main() {
 			"adminToken":    {DisplayName: "Admin Token", Config: secret},
 			"metricsPath":   {DisplayName: "Metrics Path", Config: str},
 			// Computed secret: reads secret config dbPassword.
-			"dbUrl": {DisplayName: "Database URL", Description: "Derived from secret config dbPassword", Computed: &model.Computed{Template: `"postgres://unleash:{{ .Configs.dbPassword }}@{{ .Configs.dbHost }}/{{ .Configs.dbName }}"`}},
+			"dbUrl": {DisplayName: "Database URL", Description: "Derived from secret config dbPassword", Computed: &feature.Computed{Template: `"postgres://unleash:{{ .Configs.dbPassword }}@{{ .Configs.dbHost }}/{{ .Configs.dbName }}"`}},
 		},
 		"replicator": {
 			"syncInterval":  {DisplayName: "Sync Interval", Description: "Seconds between syncs", Config: str},
 			"maxRetries":    {DisplayName: "Max Retries", Config: intCfg},
 			"concurrency":   {DisplayName: "Concurrency", Required: true, Config: intCfg},
 			"logLevel":      {DisplayName: "Log Level", Config: str},
-			"targetCluster": {DisplayName: "Target Cluster", Computed: &model.Computed{Template: `"{{ .Env.name }}-replica"`}},
+			"targetCluster": {DisplayName: "Target Cluster", Computed: &feature.Computed{Template: `"{{ .Env.name }}-replica"`}},
 			// Computed secret: reads secret env api_key.
-			"apiAuthHeader": {DisplayName: "API Auth Header", Description: "Derived from secret env api_key", Computed: &model.Computed{Template: `"Bearer {{ .Env.api_key }}"`}},
+			"apiAuthHeader": {DisplayName: "API Auth Header", Description: "Derived from secret env api_key", Computed: &feature.Computed{Template: `"Bearer {{ .Env.api_key }}"`}},
 		},
 		"v13s": {
 			"clusterName":   {DisplayName: "Cluster Name", Required: true, Config: str},
@@ -283,37 +283,37 @@ func main() {
 			"scanInterval":  {DisplayName: "Scan Interval", Config: intCfg},
 			"imageRegistry": {DisplayName: "Image Registry", Required: true, Config: str},
 			"dbPassword":    {DisplayName: "Database Password", Config: secret},
-			"apiEndpoint":   {DisplayName: "API Endpoint", Computed: &model.Computed{Template: `"https://v13s.{{ .Env.name }}.nais.io"`}},
+			"apiEndpoint":   {DisplayName: "API Endpoint", Computed: &feature.Computed{Template: `"https://v13s.{{ .Env.name }}.nais.io"`}},
 			// Computed secret: reads secret config dbPassword.
-			"dbUrl": {DisplayName: "Database URL", Description: "Derived from secret config dbPassword", Computed: &model.Computed{Template: `"postgres://v13s:{{ .Configs.dbPassword }}@db.{{ .Env.name }}/v13s"`}},
+			"dbUrl": {DisplayName: "Database URL", Description: "Derived from secret config dbPassword", Computed: &feature.Computed{Template: `"postgres://v13s:{{ .Configs.dbPassword }}@db.{{ .Env.name }}/v13s"`}},
 		},
 		"dependencytrack": {
 			"apiUrl":          {DisplayName: "API URL", Required: true, Config: str},
 			"apiToken":        {DisplayName: "API Token", Config: secret},
 			"adminEmail":      {DisplayName: "Admin Email", Config: str},
 			"pollInterval":    {DisplayName: "Poll Interval", Config: intCfg},
-			"notificationUrl": {DisplayName: "Notification URL", Computed: &model.Computed{Template: `"https://dt.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io/notify"`}},
+			"notificationUrl": {DisplayName: "Notification URL", Computed: &feature.Computed{Template: `"https://dt.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io/notify"`}},
 			// Computed secret: reads secret env slack_token.
-			"slackAlertUrl": {DisplayName: "Slack Alert URL", Description: "Derived from secret env slack_token", Computed: &model.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}/alerts"`}},
+			"slackAlertUrl": {DisplayName: "Slack Alert URL", Description: "Derived from secret env slack_token", Computed: &feature.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}/alerts"`}},
 		},
 		"kyverno": {
 			"webhookTimeout":    {DisplayName: "Webhook Timeout", Description: "Timeout in seconds", Config: intCfg},
 			"replicaCount":      {DisplayName: "Replica Count", Required: true, Config: intCfg},
 			"webhookSigningKey": {DisplayName: "Webhook Signing Key", Config: secret},
-			"webhookURL":        {DisplayName: "Webhook URL", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno"`}},
-			"envKind":           {DisplayName: "Environment Kind", Computed: &model.Computed{Template: `"{{ .Env.kind }}"`}},
+			"webhookURL":        {DisplayName: "Webhook URL", Computed: &feature.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno"`}},
+			"envKind":           {DisplayName: "Environment Kind", Computed: &feature.Computed{Template: `"{{ .Env.kind }}"`}},
 			// Computed secret: reads secret config webhookSigningKey.
-			"signedWebhookURL": {DisplayName: "Signed Webhook URL", Description: "Derived from secret config webhookSigningKey", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno?sig={{ .Configs.webhookSigningKey }}"`}},
+			"signedWebhookURL": {DisplayName: "Signed Webhook URL", Description: "Derived from secret config webhookSigningKey", Computed: &feature.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno?sig={{ .Configs.webhookSigningKey }}"`}},
 		},
 		"aivenator": {
 			"aivenToken":   {DisplayName: "Aiven Token", Required: true, Config: secret},
 			"projectName":  {DisplayName: "Project Name", Required: true, Config: str},
 			"region":       {DisplayName: "Region", Config: str},
 			"adminEmail":   {DisplayName: "Admin Email", Config: str},
-			"serviceUrl":   {DisplayName: "Service URL", Computed: &model.Computed{Template: `"https://aiven.{{ .Env.name }}.nais.io"`}},
-			"dashboardUrl": {DisplayName: "Dashboard URL", Computed: &model.Computed{Template: `"https://aiven.{{ .Env.name }}.nais.io/dashboard"`}},
+			"serviceUrl":   {DisplayName: "Service URL", Computed: &feature.Computed{Template: `"https://aiven.{{ .Env.name }}.nais.io"`}},
+			"dashboardUrl": {DisplayName: "Dashboard URL", Computed: &feature.Computed{Template: `"https://aiven.{{ .Env.name }}.nais.io/dashboard"`}},
 			// Computed secret: reads secret env api_key.
-			"apiAuthHeader": {DisplayName: "API Auth Header", Description: "Derived from secret env api_key", Computed: &model.Computed{Template: `"Bearer {{ .Env.api_key }}"`}},
+			"apiAuthHeader": {DisplayName: "API Auth Header", Description: "Derived from secret env api_key", Computed: &feature.Computed{Template: `"Bearer {{ .Env.api_key }}"`}},
 		},
 		"hookd": {
 			"webhookUrl":    {DisplayName: "Webhook URL", Required: true, Config: str},
@@ -322,7 +322,7 @@ func main() {
 			"githubAppId":   {DisplayName: "GitHub App ID", Required: true, Config: str},
 			"slackChannel":  {DisplayName: "Slack Channel", Config: str},
 			// Computed secret: reads secret config webhookSecret.
-			"signedCallback": {DisplayName: "Signed Callback URL", Description: "Derived from secret config webhookSecret", Computed: &model.Computed{Template: `"{{ .Configs.webhookUrl }}?sig={{ .Configs.webhookSecret }}"`}},
+			"signedCallback": {DisplayName: "Signed Callback URL", Description: "Derived from secret config webhookSecret", Computed: &feature.Computed{Template: `"{{ .Configs.webhookUrl }}?sig={{ .Configs.webhookSecret }}"`}},
 		},
 	}
 
@@ -392,7 +392,7 @@ func main() {
 		"hookd":           "GitHub deployment webhook handler",
 	}
 
-	addAssignment := func(name, version string, target environment.Labels, kinds []model.EnvironmentKind) {
+	addAssignment := func(name, version string, target environment.Labels, kinds []environment.EnvironmentKind) {
 		seeder.AddAssignmentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name], featureDescriptions[name])
 	}
 
@@ -454,7 +454,7 @@ func main() {
 			if isEmptyJSONValue(b) {
 				continue
 			}
-			if _, err := feature.ConfigGlobalCreate(ctx, model.NewConfiguration{
+			if _, err := feature.ConfigGlobalCreate(ctx, feature.NewConfiguration{
 				Feature: featureName,
 				Key:     key,
 				Value:   json.RawMessage(b),
@@ -487,7 +487,7 @@ func main() {
 	}
 	for _, o := range overrides {
 		id := envID(o.tenant, o.env)
-		if _, err := feature.ConfigEnvCreate(ctx, model.NewConfiguration{
+		if _, err := feature.ConfigEnvCreate(ctx, feature.NewConfiguration{
 			EnvironmentID: &id,
 			Feature:       o.feature,
 			Key:           o.key,
