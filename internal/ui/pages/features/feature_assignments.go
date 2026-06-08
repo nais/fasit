@@ -12,6 +12,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/uidata"
@@ -625,9 +626,9 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 		}
 	}
 
-	statusByAssignmentEnv := map[string]*featureassignment.FeatureReconcileStatus{}
+	statusByAssignmentEnv := map[string]*reconciler.FeatureReconcileStatus{}
 	for _, fa := range fas {
-		statuses, err := featureassignment.ReconcileStatuses(ctx, fa.ID)
+		statuses, err := reconciler.ReconcileStatuses(ctx, fa.ID)
 		if err != nil {
 			continue
 		}
@@ -696,7 +697,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 			} else {
 				es.StatusText = "UNKNOWN"
 				if status := statusByAssignmentEnv[fa.ID.String()+":"+env.env.ID.String()]; status != nil {
-					es.StatusText = featureassignment.NormalizeStatus(string(status.State))
+					es.StatusText = reconciler.NormalizeStatus(string(status.State))
 					es.LastModified = status.LastModified
 				}
 			}

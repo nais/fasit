@@ -13,6 +13,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/featureenvs"
@@ -202,7 +203,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		page.Status = "DISABLED"
 	} else if disabled {
 		page.Status = "DISABLED"
-	} else if status, msg, err := featureassignment.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
+	} else if status, msg, err := reconciler.FeatureStatusForEnvironment(ctx, env.ID, featureName); err == nil && status != "" {
 		page.Status = status
 		page.StatusMessage = msg
 	}
@@ -464,10 +465,10 @@ func loadEnvironmentAssignments(ctx context.Context, featureName string, envID u
 		}
 
 		fallbackState := "UNKNOWN"
-		if statuses, err := featureassignment.ReconcileStatuses(ctx, dep.ID); err == nil {
+		if statuses, err := reconciler.ReconcileStatuses(ctx, dep.ID); err == nil {
 			for _, s := range statuses {
 				if s.EnvironmentID == envID {
-					fallbackState = featureassignment.NormalizeStatus(string(s.State))
+					fallbackState = reconciler.NormalizeStatus(string(s.State))
 					break
 				}
 			}

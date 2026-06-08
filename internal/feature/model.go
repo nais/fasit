@@ -469,7 +469,7 @@ type DeployInstruction struct {
 	FeatureAssignmentID *uuid.UUID
 	FeatureName         string
 	FeatureVersion      string
-	Status              model.RolloutStatus
+	Status              model.DeployStatus
 	Hash                string
 	Created             time.Time
 	LastModified        time.Time

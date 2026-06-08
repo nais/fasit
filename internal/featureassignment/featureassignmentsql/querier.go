@@ -17,14 +17,6 @@ type Querier interface {
 	HasActiveAssignments(ctx context.Context, featureName string) (bool, error)
 	ListAllFeatureAssignments(ctx context.Context) ([]ListAllFeatureAssignmentsRow, error)
 	ListAllFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListAllFeatureAssignmentsByFeatureRow, error)
-	// Latest reconciler decision per environment for a feature assignment. The
-	// deploy rollout state and disabled-feature membership are joined in Go
-	// (ReconcileStatuses).
-	ListDecisionStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDecisionStatusesRow, error)
-	// Latest deploy rollout state per environment for a feature assignment.
-	ListDeployStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDeployStatusesRow, error)
-	// Environments the assignment targets where the feature is disabled.
-	ListDisabledEnvironments(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDisabledEnvironmentsRow, error)
 	ListFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListFeatureAssignmentsByFeatureRow, error)
 	ListFeatureAssignmentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureAssignmentsForEnvironmentRow, error)
 	ListFeatureAssignmentsForFeatureInEnvironment(ctx context.Context, arg ListFeatureAssignmentsForFeatureInEnvironmentParams) ([]ListFeatureAssignmentsForFeatureInEnvironmentRow, error)

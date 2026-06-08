@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -182,8 +182,8 @@ func loadEnvironmentFeatureRows(ctx context.Context, env *envpkg.Environment) ([
 		row := environmentFeatureRow{Name: feature.Name, Status: "UNKNOWN"}
 		if !env.Reconcile || feature.FeatureDisabled {
 			row.Status = "DISABLED"
-		} else if status, _, err := featureassignment.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
-			row.Status = featureassignment.NormalizeStatus(status)
+		} else if status, _, err := reconciler.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
+			row.Status = reconciler.NormalizeStatus(status)
 		}
 		if latest, err := featurepkg.GetLatestDeployInstruction(ctx, env.ID, feature.Name); err == nil && latest != nil {
 			row.Version = latest.FeatureVersion

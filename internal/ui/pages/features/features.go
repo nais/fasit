@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -48,7 +49,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 		var assignmentRows []assignmentRow
 		for _, fa := range fas {
-			statuses, err := featureassignment.ReconcileStatuses(r.Context(), fa.ID)
+			statuses, err := reconciler.ReconcileStatuses(r.Context(), fa.ID)
 			if err != nil || len(statuses) == 0 {
 				assignmentRows = append(assignmentRows, assignmentRow{
 					FeatureName:  fa.Feature.Name,

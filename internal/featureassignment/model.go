@@ -43,26 +43,6 @@ func (f *FeatureAssignment) Target() []*environment.EnvironmentLabel {
 	return target
 }
 
-type FeatureReconcileStatus struct {
-	State        FeatureReconcileStatusState `json:"state"`
-	Message      string                      `json:"message"`
-	LastModified time.Time                   `json:"lastModified"`
-	Created      time.Time                   `json:"created"`
-
-	FeatureAssignmentID uuid.UUID `json:"-"`
-	EnvironmentID       uuid.UUID `json:"-"`
-}
-
-type FeatureReconcileStatusState string
-
-const (
-	FeatureReconcileStatusUnknown       FeatureReconcileStatusState = "UNKNOWN"
-	FeatureReconcileStatusStatePending  FeatureReconcileStatusState = "PENDING"
-	FeatureReconcileStatusStateDeployed FeatureReconcileStatusState = "DEPLOYED"
-	FeatureReconcileStatusStateFailed   FeatureReconcileStatusState = "FAILED"
-	FeatureReconcileStatusStateDisabled FeatureReconcileStatusState = "DISABLED"
-)
-
 func makeFeatureYAML(fd featureassignmentsql.FeatureDatum) (feature.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := feature.FeatureYAML{
 		Timeout: time.Duration(fd.Timeout) * time.Millisecond,

@@ -13,6 +13,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
 	commonmodel "github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -45,7 +46,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		statuses, _ := featureassignment.ReconcileStatuses(r.Context(), id)
+		statuses, _ := reconciler.ReconcileStatuses(r.Context(), id)
 
 		rows := make([]reconcileStatusRow, 0, len(statuses))
 		for _, status := range statuses {
@@ -59,7 +60,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 				continue
 			}
 
-			state := featureassignment.NormalizeStatus(string(status.State))
+			state := reconciler.NormalizeStatus(string(status.State))
 			rows = append(rows, reconcileStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
