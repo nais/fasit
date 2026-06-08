@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/uidata"
 )
 
@@ -28,6 +29,7 @@ func NewLoaderFunc(pool *pgxpool.Pool, log *slog.Logger) (LoaderFunc, error) {
 		ctx = environment.Register(ctx, pool)
 		ctx = feature.Register(ctx, pool)
 		ctx = naisdstatus.Register(ctx, pool)
+		ctx = reconciler.Register(ctx, pool)
 		ctx = uidata.Register(ctx, pool)
 		ctx = featureassignment.Register(ctx, manager)
 		return ctx

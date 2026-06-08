@@ -2,7 +2,6 @@ package reconciler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -27,11 +26,6 @@ type FeatureReconcileStatus struct {
 }
 
 type FeatureReconcileStatusState string
-
-// ErrNoReconciler is returned when the reconcile-status read path is used
-// without a reconciler in the context. The reconciler singleton is placed in
-// the context for every HTTP request (see WithContext / run.go).
-var ErrNoReconciler = errors.New("reconciler not present in context")
 
 // NormalizeStatus uppercases a status and maps the empty status to UNKNOWN.
 func NormalizeStatus(s string) string {
@@ -70,11 +64,20 @@ func deriveState(deployStatus string, action Action, disabled bool) string {
 // deploy rollout state, disabled-feature membership) and joins them by
 // environment in Go.
 func ReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*FeatureReconcileStatus, error) {
-	r := FromContext(ctx)
-	if r == nil {
-		return nil, ErrNoReconciler
+	q := querier(ctx)
+	decisions, err := q.ListDecisionStatuses(ctx, featureAssignmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list decision statuses: %w", err)
 	}
-	return r.reconcileStatuses(ctx, featureAssignmentID)
+	deploys, err := q.ListDeployStatuses(ctx, featureAssignmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list deploy statuses: %w", err)
+	}
+	disabled, err := q.ListDisabledEnvironments(ctx, featureAssignmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list disabled environments: %w", err)
+	}
+	return joinReconcileSignals(featureAssignmentID, decisions, deploys, disabled), nil
 }
 
 // FeatureStatusForEnvironment returns the reconcile status of the winning
@@ -97,20 +100,14 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 	return "", "", nil
 }
 
-func (r *Reconciler) reconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*FeatureReconcileStatus, error) {
-	decisions, err := r.querier.ListDecisionStatuses(ctx, featureAssignmentID)
-	if err != nil {
-		return nil, fmt.Errorf("list decision statuses: %w", err)
-	}
-	deploys, err := r.querier.ListDeployStatuses(ctx, featureAssignmentID)
-	if err != nil {
-		return nil, fmt.Errorf("list deploy statuses: %w", err)
-	}
-	disabled, err := r.querier.ListDisabledEnvironments(ctx, featureAssignmentID)
-	if err != nil {
-		return nil, fmt.Errorf("list disabled environments: %w", err)
-	}
-
+// joinReconcileSignals joins the three raw per-environment signals by
+// environment and derives the effective reconcile status for each.
+func joinReconcileSignals(
+	featureAssignmentID uuid.UUID,
+	decisions []reconcilersql.ListDecisionStatusesRow,
+	deploys []reconcilersql.ListDeployStatusesRow,
+	disabled []reconcilersql.ListDisabledEnvironmentsRow,
+) []*FeatureReconcileStatus {
 	decByEnv := make(map[uuid.UUID]reconcilersql.ListDecisionStatusesRow, len(decisions))
 	for _, d := range decisions {
 		decByEnv[d.EnvironmentID] = d
@@ -162,7 +159,7 @@ func (r *Reconciler) reconcileStatuses(ctx context.Context, featureAssignmentID 
 		}
 	}
 
-	return statuses, nil
+	return statuses
 }
 
 func latestTime(ts ...time.Time) time.Time {
