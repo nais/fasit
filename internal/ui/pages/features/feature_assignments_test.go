@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 )
 
 func TestCurrentAssignmentEnvStatusesSkipsOverriddenRows(t *testing.T) {
@@ -50,7 +50,7 @@ func TestCurrentAssignmentEnvStatusesSkipsOverriddenRows(t *testing.T) {
 func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
 	var buf bytes.Buffer
 	node := assignmentDetailContent(&DetailPage{
-		CurrentFeature: &model.Feature{Name: "naiserator"},
+		CurrentFeature: &feature.Feature{Name: "naiserator"},
 		AssignmentEnvs: []AssignmentEnvStatus{
 			{Name: "dev", TenantName: "nav", TenantSlug: "nav", StatusText: "DEPLOYED", AssignmentVersion: "1.0.0"},
 		},
@@ -80,7 +80,7 @@ func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
 func TestDeploymentDetailContentRendersTableAndGrid(t *testing.T) {
 	var buf bytes.Buffer
 	node := assignmentDetailContent(&DetailPage{
-		CurrentFeature: &model.Feature{Name: "naiserator"},
+		CurrentFeature: &feature.Feature{Name: "naiserator"},
 		AssignmentEnvs: []AssignmentEnvStatus{
 			{Name: "dev", TenantName: "atil", TenantSlug: "atil", StatusText: "DEPLOYED", AssignmentVersion: "1.0.0"},
 			{Name: "prod", TenantName: "atil", TenantSlug: "atil", StatusText: "DEPLOYED", AssignmentVersion: "1.0.0"},

@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/graph/model"
+	environment2 "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 )
 
 type environment struct {
 	ID         uuid.UUID
 	Name       string
-	Kind       model.EnvironmentKind
+	Kind       environment2.EnvironmentKind
 	Labels     map[string]string
 	TenantID   uuid.UUID
 	TenantName string
@@ -23,7 +24,7 @@ type environment struct {
 
 type reconcileAssignment struct {
 	ID           uuid.UUID
-	Feature      *model.Feature
+	Feature      *feature.Feature
 	TargetLabels map[string]string
 	Created      time.Time
 }
@@ -61,7 +62,7 @@ type DeployDecision struct {
 	EnvironmentName     string
 	TenantName          string
 	FeatureAssignmentID uuid.UUID
-	Feature             *model.Feature
+	Feature             *feature.Feature
 	Values              map[string]any
 	Hash                string
 	Action              Action
@@ -79,19 +80,19 @@ type Dispatcher interface {
 }
 
 func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reconcileAssignment, error) {
-	var deps model.Dependencies
+	var deps feature.Dependencies
 	if err := json.Unmarshal(row.Dependencies, &deps); err != nil {
 		return nil, fmt.Errorf("unmarshal dependencies for %s: %w", row.FeatureName, err)
 	}
 
-	var values model.Values
+	var values feature.Values
 	if err := json.Unmarshal(row.Values, &values); err != nil {
 		return nil, fmt.Errorf("unmarshal values for %s: %w", row.FeatureName, err)
 	}
 
-	kinds := make([]model.EnvironmentKind, len(row.Kinds))
+	kinds := make([]environment2.EnvironmentKind, len(row.Kinds))
 	for i, k := range row.Kinds {
-		kinds[i] = model.EnvironmentKind(k)
+		kinds[i] = environment2.EnvironmentKind(k)
 	}
 
 	var defaultValues map[string]json.RawMessage
@@ -101,8 +102,8 @@ func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reco
 
 	return &reconcileAssignment{
 		ID: row.ID,
-		Feature: &model.Feature{
-			FeatureYAML: model.FeatureYAML{
+		Feature: &feature.Feature{
+			FeatureYAML: feature.FeatureYAML{
 				Dependencies:     deps,
 				EnvironmentKinds: kinds,
 				Timeout:          time.Duration(row.Timeout) * time.Millisecond,

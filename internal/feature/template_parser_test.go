@@ -4,18 +4,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 func TestEnvValuesUsed(t *testing.T) {
-	vals := model.Values{
+	vals := Values{
 		"a": {
-			Computed: &model.Computed{
+			Computed: &Computed{
 				Template: `{{ eachOf .Envs "name" | toJSON }}'`,
 			},
 		},
 		"b": {
-			Computed: &model.Computed{
+			Computed: &Computed{
 				Template: `
 {{with $root = .}}
 	{{range $cluster := .Envs}}
@@ -26,7 +25,7 @@ func TestEnvValuesUsed(t *testing.T) {
 			},
 		},
 		"c": {
-			Computed: &model.Computed{
+			Computed: &Computed{
 				Template: `
 {{with $cn := .Env.name}}
 	{{if $cn}}
@@ -37,7 +36,7 @@ func TestEnvValuesUsed(t *testing.T) {
 			},
 		},
 		"d": {
-			Computed: &model.Computed{
+			Computed: &Computed{
 				Template: `
 {{ .Env.name }}
 {{ .Env.value | quote }}

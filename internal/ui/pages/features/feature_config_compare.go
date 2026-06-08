@@ -12,7 +12,6 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
@@ -60,7 +59,7 @@ type compareRow struct {
 	EnvHref    string
 }
 
-func compareKeyAcrossEnvs(ctx context.Context, feat *model.Feature, key string, envs []configCompareEnv) ([]compareRow, error) {
+func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key string, envs []configCompareEnv) ([]compareRow, error) {
 	val, hasVal := feat.Values[key]
 	isComputed := hasVal && val.Computed != nil
 	isSecret := hasVal && val.Config != nil && val.Config.Secret
@@ -147,7 +146,7 @@ func compareKeyAcrossEnvs(ctx context.Context, feat *model.Feature, key string, 
 	return rows, nil
 }
 
-func configCompareFragment(key string, feat *model.Feature, rows []compareRow) g.Node {
+func configCompareFragment(key string, feat *featurepkg.Feature, rows []compareRow) g.Node {
 	displayName := key
 	if val, ok := feat.Values[key]; ok && val.DisplayName != "" {
 		displayName = val.DisplayName
@@ -216,7 +215,7 @@ type configCompareEnv struct {
 	TenantName string
 }
 
-func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configCompareEnv, error) {
+func featureEnvironments(ctx context.Context, feat *featurepkg.Feature) ([]configCompareEnv, error) {
 	assignments, err := featureassignment.ListByFeature(ctx, feat.Name)
 	if err != nil {
 		return nil, err
@@ -229,7 +228,7 @@ func featureEnvironments(ctx context.Context, feat *model.Feature) ([]configComp
 	}
 
 	type envInfo struct {
-		env        *model.Environment
+		env        *envpkg.Environment
 		tenantName string
 		labels     map[string]string
 	}

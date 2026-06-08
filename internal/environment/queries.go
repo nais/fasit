@@ -14,7 +14,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func Create(ctx context.Context, env *model.EnvironmentCreate) (*model.Environment, error) {
+func Create(ctx context.Context, env *EnvironmentCreate) (*Environment, error) {
 	var ret environmentsql.Environment
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
@@ -114,22 +114,22 @@ func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key strin
 	})
 }
 
-func ListTenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
+func ListTenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*TenantEnvironment, error) {
 	data, err := querier(ctx).ListTenantEnvironments(ctx, !onlyReconciled)
 	if err != nil {
 		return nil, err
 	}
 
-	var ret []*model.TenantEnvironment
+	var ret []*TenantEnvironment
 	for _, d := range data {
-		ret = append(ret, &model.TenantEnvironment{
-			Environment: model.Environment{
+		ret = append(ret, &TenantEnvironment{
+			Environment: Environment{
 				ID:           d.ID,
 				Name:         d.Name,
 				Description:  d.Description,
 				Created:      d.Created,
 				LastModified: d.LastModified,
-				Kind:         model.EnvironmentKind(d.Kind),
+				Kind:         EnvironmentKind(d.Kind),
 			},
 			TenantName: d.TenantName,
 			TenantID:   d.TenantID,
@@ -139,7 +139,7 @@ func ListTenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.
 	return ret, nil
 }
 
-func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
+func Get(ctx context.Context, id uuid.UUID) (*Environment, error) {
 	env, err := querier(ctx).GetEnvironment(ctx, id)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
 	return environmentFromSQL(env), nil
 }
 
-func GetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error) {
+func GetByName(ctx context.Context, tenantID uuid.UUID, name string) (*Environment, error) {
 	env, err := querier(ctx).GetEnvironmentByName(ctx, environmentsql.GetEnvironmentByNameParams{
 		TenantID: tenantID,
 		Name:     name,
@@ -158,7 +158,7 @@ func GetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Env
 	return environmentFromSQL(env), nil
 }
 
-func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
+func GetTenant(ctx context.Context, id uuid.UUID) (*Tenant, error) {
 	tenant, err := querier(ctx).GetTenant(ctx, id)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 	return tenantFromSQL(tenant), nil
 }
 
-func GetTenantByName(ctx context.Context, name string) (*model.Tenant, error) {
+func GetTenantByName(ctx context.Context, name string) (*Tenant, error) {
 	tenant, err := querier(ctx).GetTenantByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func GetTenantByName(ctx context.Context, name string) (*model.Tenant, error) {
 	return tenantFromSQL(tenant), nil
 }
 
-func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
+func CreateTenant(ctx context.Context, t *TenantCreate) (*Tenant, error) {
 	var tenant environmentsql.Tenant
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
@@ -198,12 +198,12 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 	return tenantFromSQL(tenant), nil
 }
 
-func List(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
+func List(ctx context.Context, tenantID uuid.UUID) ([]*Environment, error) {
 	envs, err := querier(ctx).ListEnvironments(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	environmentSlice := make([]*model.Environment, len(envs))
+	environmentSlice := make([]*Environment, len(envs))
 	for i, env := range envs {
 		environmentSlice[i] = environmentFromSQL(env)
 	}

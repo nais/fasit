@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/nais/fasit/internal/graph/model"
+	feature2 "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/message"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +26,7 @@ const (
 )
 
 func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, naisProjectID, env, tenantName string) error {
-	feature, err := model.FromChart(msg.Chart, msg.Version)
+	feature, err := feature2.FromChart(msg.Chart, msg.Version)
 	if err != nil {
 		return err
 	}

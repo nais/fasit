@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/feature/featuresql"
 )
@@ -142,6 +143,238 @@ func TestMakeHelmConfigMap_NestingConflictOrderIndependent(t *testing.T) {
 			_, err := MakeHelmConfigMap(tc.in)
 			if err == nil || !strings.Contains(err.Error(), "is not nestable") {
 				t.Errorf("got err=%v, want error containing \"is not nestable\"", err)
+			}
+		})
+	}
+}
+
+func TestConfigType_IsValid(t *testing.T) {
+	tests := map[string]struct {
+		input ConfigType
+		valid bool
+	}{
+		"ConfigTypeString": {
+			input: ConfigTypeString,
+			valid: true,
+		},
+		"ConfigTypeInt": {
+			input: ConfigTypeInt,
+			valid: true,
+		},
+		"ConfigTypeBool": {
+			input: ConfigTypeBool,
+			valid: true,
+		},
+		"ConfigTypeStringArray": {
+			input: ConfigTypeStringArray,
+			valid: true,
+		},
+		"ConfigTypeInvalid": {
+			input: ConfigType("invalid"),
+			valid: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.valid != tc.input.IsValid() {
+				t.Errorf("expected %v, got %v", tc.valid, tc.input.IsValid())
+			}
+		})
+	}
+}
+
+func TestConfigType_String(t *testing.T) {
+	tests := map[string]struct {
+		input  ConfigType
+		output string
+	}{
+		"ConfigTypeString": {
+			input:  ConfigTypeString,
+			output: "string",
+		},
+		"ConfigTypeInt": {
+			input:  ConfigTypeInt,
+			output: "int",
+		},
+		"ConfigTypeBool": {
+			input:  ConfigTypeBool,
+			output: "bool",
+		},
+		"ConfigTypeStringArray": {
+			input:  ConfigTypeStringArray,
+			output: "string_array",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.output != tc.input.String() {
+				t.Errorf("expected %q, got %q", tc.output, tc.input.String())
+			}
+		})
+	}
+}
+
+func TestConfigType_MarshalJSON(t *testing.T) {
+	tests := map[string]struct {
+		input  ConfigType
+		output string
+	}{
+		"ConfigTypeString": {
+			input:  ConfigTypeString,
+			output: `"STRING"`,
+		},
+		"ConfigTypeInt": {
+			input:  ConfigTypeInt,
+			output: `"INT"`,
+		},
+		"ConfigTypeBool": {
+			input:  ConfigTypeBool,
+			output: `"BOOL"`,
+		},
+		"ConfigTypeStringArray": {
+			input:  ConfigTypeStringArray,
+			output: `"STRING_ARRAY"`,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf, err := tc.input.MarshalJSON()
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			if tc.output != string(buf) {
+				t.Errorf("expected %q, got %q", tc.output, string(buf))
+			}
+		})
+	}
+}
+
+func TestConfigType_UnmarshalJSON(t *testing.T) {
+	tests := map[string]struct {
+		input  string
+		output ConfigType
+		valid  bool
+	}{
+		"ConfigTypeString": {
+			input:  `"STRING"`,
+			output: ConfigTypeString,
+			valid:  true,
+		},
+		"ConfigTypeInt": {
+			input:  `"INT"`,
+			output: ConfigTypeInt,
+			valid:  true,
+		},
+		"ConfigTypeBool": {
+			input:  `"BOOL"`,
+			output: ConfigTypeBool,
+			valid:  true,
+		},
+		"ConfigTypeStringArray": {
+			input:  `"STRING_ARRAY"`,
+			output: ConfigTypeStringArray,
+			valid:  true,
+		},
+		"ConfigTypeInvalid": {
+			input:  `"INVALID"`,
+			output: ConfigType("invalid"),
+			valid:  true,
+		},
+		"ConfigTypeInvalidJSON": {
+			input:  `"INVALID'`,
+			output: "",
+			valid:  false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var output ConfigType
+			err := output.UnmarshalJSON([]byte(tc.input))
+			if tc.valid != (err == nil) {
+				t.Errorf("expected %v, got %v", tc.valid, err == nil)
+			}
+			if tc.valid && tc.output != output {
+				t.Errorf("expected %q, got %q", tc.output, output)
+			}
+		})
+	}
+}
+
+func TestDependencies_FindMissing(t *testing.T) {
+	tests := map[string]struct {
+		dep      Dependencies
+		features []string
+		want     []string
+	}{
+		"empty": {
+			dep:  Dependencies{},
+			want: []string{},
+		},
+		"any of": {
+			dep: Dependencies{
+				{
+					AnyOf: []string{"foo", "bar"},
+				},
+			},
+			features: []string{"foo"},
+			want:     []string{},
+		},
+		"all of": {
+			dep: Dependencies{
+				{
+					AllOf: []string{"foo", "bar"},
+				},
+			},
+			features: []string{"foo", "bar"},
+			want:     []string{},
+		},
+		"all of and any of": {
+			dep: Dependencies{
+				{
+					AllOf: []string{"foo", "bar"},
+					AnyOf: []string{"baz", "qux"},
+				},
+			},
+			features: []string{"foo", "bar", "baz"},
+			want:     []string{},
+		},
+		"all of and any of, not satisfied": {
+			dep: Dependencies{
+				{
+					AllOf: []string{"foo", "bar"},
+					AnyOf: []string{"baz", "qux"},
+				},
+			},
+			features: []string{"foo", "bar"},
+			want:     []string{"baz", "qux"},
+		},
+		"all of, not satisfied": {
+			dep: Dependencies{
+				{
+					AllOf: []string{"foo", "bar"},
+				},
+			},
+			features: []string{"foo", "baz"},
+			want:     []string{"bar"},
+		},
+		"all of, not satisfied, no features": {
+			dep: Dependencies{
+				{
+					AllOf: []string{"foo", "bar"},
+				},
+			},
+			features: []string{},
+			want:     []string{"foo", "bar"},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := tt.dep.FindMissing(tt.features); !cmp.Equal(tt.want, got) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
 			}
 		})
 	}

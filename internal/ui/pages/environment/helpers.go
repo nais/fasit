@@ -25,7 +25,7 @@ type FeatureConfigItem = components.ConfigItem
 
 type FeaturePage struct {
 	Breadcrumbs             []breadcrumb.Crumb
-	Tenant                  *model.Tenant
+	Tenant                  *envpkg.Tenant
 	TenantSlug              string
 	Environment             *Environment
 	Feature                 *FeatureDetail
@@ -44,7 +44,7 @@ type FeaturePage struct {
 }
 
 type FeatureDetail struct {
-	*model.Feature
+	*featurepkg.Feature
 	Enabled       bool
 	DisableReason string
 	ConfigItems   []FeatureConfigItem
@@ -87,7 +87,7 @@ func toTenantNavs(tenants []*uidata.Tenant) []view.TenantNav {
 	return ret
 }
 
-func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav {
+func toEnvironmentNavs(environments []*envpkg.Environment) []view.EnvironmentNav {
 	ret := make([]view.EnvironmentNav, 0, len(environments))
 	for _, env := range environments {
 		ret = append(ret, view.EnvironmentNav{Name: env.Name})
@@ -95,7 +95,7 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func getEnvironmentMetadata(env *model.Environment) []MetadataItem {
+func getEnvironmentMetadata(env *envpkg.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
 	addMetadata(&metadata, "ID", env.ID.String())
 	addMetadata(&metadata, "Name", env.Name)
@@ -151,7 +151,7 @@ func gcpProjectIDFromValues(values []*model.EnvironmentValue) string {
 	return ""
 }
 
-func featureBreadcrumbs(tenant *model.Tenant, env *model.Environment, featureName string) []breadcrumb.Crumb {
+func featureBreadcrumbs(tenant *envpkg.Tenant, env *envpkg.Environment, featureName string) []breadcrumb.Crumb {
 	envCrumb := breadcrumb.FeatureEnvironment(featureName, tenant.Name, env.Name)
 	envCrumb.Icon = components.TenantAvatar(tenant.Name, components.HasTenantLogo(tenant.Name), "18px")
 	return []breadcrumb.Crumb{
@@ -277,7 +277,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	return page, nil
 }
 
-func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid.UUID) ([]FeatureConfigItem, error) {
+func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID uuid.UUID) ([]FeatureConfigItem, error) {
 	configs, err := featurepkg.EnvConfig(ctx, feat, envID)
 	if err != nil {
 		return nil, err
@@ -297,7 +297,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 		}
 		if !found {
 			value := val
-			configs = append(configs, &model.Configuration{
+			configs = append(configs, &featurepkg.Configuration{
 				ID:      uuid.NewSHA1(uuid.Nil, []byte(feat.Name+"|"+key)),
 				Key:     key,
 				Value:   &value,
@@ -393,7 +393,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 	return items, nil
 }
 
-func countTemplateRefs(values model.Values, key string) int {
+func countTemplateRefs(values featurepkg.Values, key string) int {
 	needle := ".Configs." + key
 	count := 0
 	for k, v := range values {
@@ -516,7 +516,7 @@ func labelsMatch(envLabels, target map[string]string) bool {
 	return true
 }
 
-func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *model.Feature) *FeatureLog {
+func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *featurepkg.Feature) *FeatureLog {
 	di, err := featurepkg.GetLatestDeployInstruction(ctx, envID, feat.Name)
 	if err != nil {
 		return nil

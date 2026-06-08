@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/environment"
 )
 
 // renderBoth renders the given feature values twice: once with the supplied
@@ -12,7 +12,7 @@ import (
 // probe sentinel and secret config values replaced with the probe sentinel.
 // It then returns the taint set produced by computedSecretTaint, mirroring
 // what HelmValuesWithSecretTaint does without needing a database.
-func renderBoth(t *testing.T, values model.Values, kind model.EnvironmentKind, controlMV, probeMV *ComputedValues, configs map[string]json.RawMessage, secretConfigKeys []string) map[string]bool {
+func renderBoth(t *testing.T, values Values, kind environment.EnvironmentKind, controlMV, probeMV *ComputedValues, configs map[string]json.RawMessage, secretConfigKeys []string) map[string]bool {
 	t.Helper()
 
 	rawToMap := func(in map[string]json.RawMessage) map[string]any {
@@ -46,7 +46,7 @@ func TestComputedSecretTaint(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		values           model.Values
+		values           Values
 		realMV           *ComputedValues
 		probeMV          *ComputedValues
 		configs          map[string]json.RawMessage
@@ -56,9 +56,9 @@ func TestComputedSecretTaint(t *testing.T) {
 	}{
 		{
 			name: "env value secret used via .Env",
-			values: model.Values{
-				"out":  {Computed: &model.Computed{Template: `{{ .Env.token | quote }}`}},
-				"safe": {Computed: &model.Computed{Template: `{{ .Env.name | quote }}`}},
+			values: Values{
+				"out":  {Computed: &Computed{Template: `{{ .Env.token | quote }}`}},
+				"safe": {Computed: &Computed{Template: `{{ .Env.name | quote }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -73,8 +73,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "secret hidden behind b64enc still tainted",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ .Env.token | b64enc }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ .Env.token | b64enc }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -88,8 +88,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "with-block dot rebinding caught by render diff",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ with .Env }}{{ .token | quote }}{{ end }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ with .Env }}{{ .token | quote }}{{ end }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -103,8 +103,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "range over .Envs with implicit dot",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ range .Envs }}{{ .token | quote }}{{ end }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ range .Envs }}{{ .token | quote }}{{ end }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -118,8 +118,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "mapOf helper with string key arg",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ mapOf "name" "token" .Envs | toJSON }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ mapOf "name" "token" .Envs | toJSON }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -137,8 +137,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "secret referenced but discarded is not tainted",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ if .Env.token }}static{{ end }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ if .Env.token }}static{{ end }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -152,9 +152,9 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "management value secret used via .Management",
-			values: model.Values{
-				"out":  {Computed: &model.Computed{Template: `{{ .Management.token | quote }}`}},
-				"safe": {Computed: &model.Computed{Template: `{{ .Management.public | quote }}`}},
+			values: Values{
+				"out":  {Computed: &Computed{Template: `{{ .Management.token | quote }}`}},
+				"safe": {Computed: &Computed{Template: `{{ .Management.public | quote }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant:     baseTenant,
@@ -169,8 +169,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "two-variable range over .Envs",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ range $k, $v := .Envs }}{{ $v.token | quote }}{{ end }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ range $k, $v := .Envs }}{{ $v.token | quote }}{{ end }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -184,8 +184,8 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "eachOf helper with string key arg",
-			values: model.Values{
-				"out": {Computed: &model.Computed{Template: `{{ eachOf .Envs "token" | toJSON }}`}},
+			values: Values{
+				"out": {Computed: &Computed{Template: `{{ eachOf .Envs "token" | toJSON }}`}},
 			},
 			realMV: &ComputedValues{
 				Tenant: baseTenant,
@@ -203,11 +203,11 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "secret config value used in computed",
-			values: model.Values{
-				"plain": {Config: &model.Config{Type: model.ConfigTypeString, Secret: true}},
-				"out":   {Computed: &model.Computed{Template: `{{ .Configs.plain | quote }}`}},
-				"other": {Config: &model.Config{Type: model.ConfigTypeString}},
-				"safe":  {Computed: &model.Computed{Template: `{{ .Configs.other | quote }}`}},
+			values: Values{
+				"plain": {Config: &Config{Type: ConfigTypeString, Secret: true}},
+				"out":   {Computed: &Computed{Template: `{{ .Configs.plain | quote }}`}},
+				"other": {Config: &Config{Type: ConfigTypeString}},
+				"safe":  {Computed: &Computed{Template: `{{ .Configs.other | quote }}`}},
 			},
 			realMV:  &ComputedValues{Tenant: baseTenant, Env: map[string]any{"name": "env1"}},
 			probeMV: &ComputedValues{Tenant: baseTenant, Env: map[string]any{"name": "env1"}},
@@ -221,9 +221,9 @@ func TestComputedSecretTaint(t *testing.T) {
 		},
 		{
 			name: "secret config accessed via index helper still tainted",
-			values: model.Values{
-				"plain": {Config: &model.Config{Type: model.ConfigTypeString, Secret: true}},
-				"out":   {Computed: &model.Computed{Template: `{{ index .Configs "plain" | quote }}`}},
+			values: Values{
+				"plain": {Config: &Config{Type: ConfigTypeString, Secret: true}},
+				"out":   {Computed: &Computed{Template: `{{ index .Configs "plain" | quote }}`}},
 			},
 			realMV:  &ComputedValues{Tenant: baseTenant, Env: map[string]any{"name": "env1"}},
 			probeMV: &ComputedValues{Tenant: baseTenant, Env: map[string]any{"name": "env1"}},
@@ -238,7 +238,7 @@ func TestComputedSecretTaint(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			got := renderBoth(t, tc.values, model.EnvironmentKindTenant, tc.realMV, tc.probeMV, tc.configs, tc.secretConfigKeys)
+			got := renderBoth(t, tc.values, environment.EnvironmentKindTenant, tc.realMV, tc.probeMV, tc.configs, tc.secretConfigKeys)
 			for _, k := range tc.wantSecret {
 				if !got[k] {
 					t.Errorf("expected key %q to be tainted as secret; taint=%v", k, got)
@@ -329,8 +329,8 @@ func TestMaskEnvSecrets(t *testing.T) {
 func TestDeterministicFuncs_NoFalsePositive(t *testing.T) {
 	t.Parallel()
 
-	values := model.Values{
-		"out": {Computed: &model.Computed{Template: `{{ now | date "2006-01-02" }}`}},
+	values := Values{
+		"out": {Computed: &Computed{Template: `{{ now | date "2006-01-02" }}`}},
 	}
 	mv := &ComputedValues{
 		Tenant: ComputedTenant{Name: "t"},
@@ -338,12 +338,12 @@ func TestDeterministicFuncs_NoFalsePositive(t *testing.T) {
 	}
 
 	control := map[string]any{}
-	if err := GenerateWith(values, model.EnvironmentKindTenant, mv, control, deterministicTemplateFuncs); err != nil {
+	if err := GenerateWith(values, environment.EnvironmentKindTenant, mv, control, deterministicTemplateFuncs); err != nil {
 		t.Fatalf("control render: %v", err)
 	}
 
 	probe := map[string]any{}
-	if err := GenerateWith(values, model.EnvironmentKindTenant, mv, probe, deterministicTemplateFuncs); err != nil {
+	if err := GenerateWith(values, environment.EnvironmentKindTenant, mv, probe, deterministicTemplateFuncs); err != nil {
 		t.Fatalf("probe render: %v", err)
 	}
 
@@ -360,9 +360,9 @@ func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
 	// a type mismatch in templates that expect a number. The probe render
 	// should fail, and the caller should pessimistically mask all computed
 	// values.
-	values := model.Values{
-		"port": {Config: &model.Config{Type: model.ConfigTypeInt, Secret: true}},
-		"out":  {Computed: &model.Computed{Template: `port={{ .Configs.port }}`}},
+	values := Values{
+		"port": {Config: &Config{Type: ConfigTypeInt, Secret: true}},
+		"out":  {Computed: &Computed{Template: `port={{ .Configs.port }}`}},
 	}
 
 	mv := &ComputedValues{
@@ -372,7 +372,7 @@ func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
 
 	// Control render with real int value succeeds.
 	controlCfg := map[string]any{"port": json.RawMessage(`8080`)}
-	if err := GenerateWith(values, model.EnvironmentKindTenant, mv, controlCfg, deterministicTemplateFuncs); err != nil {
+	if err := GenerateWith(values, environment.EnvironmentKindTenant, mv, controlCfg, deterministicTemplateFuncs); err != nil {
 		t.Fatalf("control render: %v", err)
 	}
 
@@ -381,7 +381,7 @@ func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
 	// control, so the value is correctly tainted.
 	probeCfg := map[string]any{"port": json.RawMessage(`8080`)}
 	setNestedSentinel(probeCfg, "port")
-	probeErr := GenerateWith(values, model.EnvironmentKindTenant, mv, probeCfg, deterministicTemplateFuncs)
+	probeErr := GenerateWith(values, environment.EnvironmentKindTenant, mv, probeCfg, deterministicTemplateFuncs)
 
 	if probeErr != nil {
 		// Probe failed — caller should pessimistically mask everything.

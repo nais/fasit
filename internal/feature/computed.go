@@ -9,12 +9,10 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature/featureutil"
-	"github.com/nais/fasit/internal/graph/model"
 	"gopkg.in/yaml.v3"
 )
-
-type Computed map[string]ComputedConfig
 
 type ComputedConfig struct {
 	DisplayName string `yaml:"displayName,omitempty" json:"displayName,omitempty"`
@@ -29,7 +27,7 @@ type ComputedTenant struct {
 
 type ComputedValues struct {
 	// Kind is the kind of environment the feature is deployed to.
-	Kind model.EnvironmentKind
+	Kind environment.EnvironmentKind
 	// Tenant is information about the tenant that owns the cluster the feature is deployed to.
 	Tenant ComputedTenant
 	// Management is information about the management cluster for the tenant.
@@ -42,11 +40,11 @@ type ComputedValues struct {
 	Configs map[string]any
 }
 
-func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any) error {
+func Generate(vals Values, kind environment.EnvironmentKind, values *ComputedValues, target map[string]any) error {
 	return GenerateWith(vals, kind, values, target, TemplateFuncs)
 }
 
-func GenerateWith(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any, funcs template.FuncMap) error {
+func GenerateWith(vals Values, kind environment.EnvironmentKind, values *ComputedValues, target map[string]any, funcs template.FuncMap) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
@@ -176,6 +174,6 @@ func copyMap(m map[string]any) map[string]any {
 	return ret
 }
 
-func ContainsKind(kinds []model.EnvironmentKind, kind model.EnvironmentKind) bool {
+func ContainsKind(kinds []environment.EnvironmentKind, kind environment.EnvironmentKind) bool {
 	return slices.Contains(kinds, kind)
 }

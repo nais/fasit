@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	environment2 "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 )
@@ -15,8 +16,8 @@ func TestEnvironmentPageRendersSideMenuAndBreadcrumbs(t *testing.T) {
 	node := page(
 		[]breadcrumb.Crumb{breadcrumb.Environments(), {Label: "dev-nais"}, breadcrumb.EnvironmentWithSwitcher("dev-nais", "dev", nil)},
 		environmentTabFeatures,
-		&model.Tenant{Name: "dev-nais"},
-		&Environment{Environment: &model.Environment{Name: "dev"}},
+		&environment2.Tenant{Name: "dev-nais"},
+		&Environment{Environment: &environment2.Environment{Name: "dev"}},
 		nil,
 		nil,
 		nil,
@@ -50,7 +51,7 @@ func TestEnvironmentPageRendersSideMenuAndBreadcrumbs(t *testing.T) {
 func TestEnvironmentDetailsRendersNaisdHealthAsCallout(t *testing.T) {
 	var buf bytes.Buffer
 	node := environmentDetailsCard(
-		&Environment{Environment: &model.Environment{Name: "dev"}},
+		&Environment{Environment: &environment2.Environment{Name: "dev"}},
 		nil,
 		"",
 		environmentHealth{ReportedAt: time.Now(), HasReport: true},

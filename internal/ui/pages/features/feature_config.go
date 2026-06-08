@@ -19,7 +19,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-func loadGlobalConfigItems(ctx context.Context, feat *model.Feature) ([]components.ConfigItem, error) {
+func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]components.ConfigItem, error) {
 	configs, err := featurepkg.ConfigGet(ctx, feat.Name)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func loadGlobalConfigItems(ctx context.Context, feat *model.Feature) ([]componen
 	return items, nil
 }
 
-func populateFromValue(item *components.ConfigItem, val model.Value) {
+func populateFromValue(item *components.ConfigItem, val featurepkg.Value) {
 	item.DisplayName = val.DisplayName
 	item.Description = val.Description
 	if val.Config != nil {
@@ -331,7 +331,7 @@ func SetGlobalConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigGlobalCreate(ctx, model.NewConfiguration{
+			_, err := featurepkg.ConfigGlobalCreate(ctx, featurepkg.NewConfiguration{
 				Feature: featureName,
 				Key:     key,
 				Value:   raw,

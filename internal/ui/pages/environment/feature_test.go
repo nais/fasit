@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	environment2 "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"golang.org/x/net/html"
@@ -82,9 +84,9 @@ func findElements(n *html.Node, tag string) []*html.Node {
 
 func TestFeatureSidebarUsesFeatureEnvironmentList(t *testing.T) {
 	page := &FeaturePage{
-		Feature:     &FeatureDetail{Feature: &model.Feature{Name: "azureator-nav"}},
+		Feature:     &FeatureDetail{Feature: &feature.Feature{Name: "azureator-nav"}},
 		TenantSlug:  "nav",
-		Environment: &Environment{Environment: &model.Environment{Name: "dev-fss"}},
+		Environment: &Environment{Environment: &environment2.Environment{Name: "dev-fss"}},
 		FeatureEnvs: []featureenvs.Environment{
 			{TenantName: "ci-nais", TenantSlug: "ci-nais", EnvironmentName: "ci-fss", Status: "DEPLOYED"},
 			{TenantName: "nav", TenantSlug: "nav", EnvironmentName: "dev", Status: "DEPLOYED"},
@@ -116,19 +118,19 @@ func TestFeatureSidebarUsesFeatureEnvironmentList(t *testing.T) {
 }
 
 func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
-	feat := &model.Feature{
+	feat := &feature.Feature{
 		Name: "test-feature",
-		FeatureYAML: model.FeatureYAML{
-			Values: model.Values{
-				"certificates": model.Value{
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"certificates": feature.Value{
 					DisplayName: "Certificates",
 					Required:    true,
-					Config:      &model.Config{Type: model.ConfigTypeString},
+					Config:      &feature.Config{Type: feature.ConfigTypeString},
 				},
-				"max_replicas": model.Value{
+				"max_replicas": feature.Value{
 					DisplayName: "Max Replicas",
 					Required:    false,
-					Config:      &model.Config{Type: model.ConfigTypeString},
+					Config:      &feature.Config{Type: feature.ConfigTypeString},
 				},
 			},
 		},
@@ -137,7 +139,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 	page := &FeaturePage{
 		TenantSlug: "test-tenant",
 		Environment: &Environment{
-			Environment: &model.Environment{Name: "test-env"},
+			Environment: &environment2.Environment{Name: "test-env"},
 		},
 		Feature: &FeatureDetail{
 			Feature: feat,
@@ -231,17 +233,17 @@ func TestOverviewTab_RequiredEmptyStructuredConfigWarning(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			feat := &model.Feature{
+			feat := &feature.Feature{
 				Name: "f",
-				FeatureYAML: model.FeatureYAML{
-					Values: model.Values{
-						"k": model.Value{Required: true, Config: &model.Config{Type: model.ConfigTypeString}},
+				FeatureYAML: feature.FeatureYAML{
+					Values: feature.Values{
+						"k": feature.Value{Required: true, Config: &feature.Config{Type: feature.ConfigTypeString}},
 					},
 				},
 			}
 			page := &FeaturePage{
 				TenantSlug:  "t",
-				Environment: &Environment{Environment: &model.Environment{Name: "e"}},
+				Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
 				Feature: &FeatureDetail{
 					Feature: feat,
 					Enabled: true,

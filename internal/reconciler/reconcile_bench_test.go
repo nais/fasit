@@ -11,7 +11,6 @@ import (
 
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
 )
 
@@ -39,11 +38,11 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 
 	for fi := range numFeatures {
 		name := fmt.Sprintf("feature-%03d", fi)
-		values := model.Values{
-			"setting_a":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting A"},
-			"setting_b":     {Config: &model.Config{Type: model.ConfigTypeString}, DisplayName: "Setting B"},
-			"computed_name": {Computed: &model.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
-			"computed_cfg":  {Computed: &model.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
+		values := feature.Values{
+			"setting_a":     {Config: &feature.Config{Type: feature.ConfigTypeString}, DisplayName: "Setting A"},
+			"setting_b":     {Config: &feature.Config{Type: feature.ConfigTypeString}, DisplayName: "Setting B"},
+			"computed_name": {Computed: &feature.Computed{Template: `"{{ .Env.name }}-{{ .Tenant.Name }}"`}},
+			"computed_cfg":  {Computed: &feature.Computed{Template: `"prefix-{{ .Configs.setting_a }}-suffix"`}},
 		}
 		defaults := map[string]any{
 			"setting_a": fmt.Sprintf("default-a-%d", fi),
@@ -56,7 +55,7 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 		name := fmt.Sprintf("feature-%03d", fi)
 		for _, key := range []string{"setting_a", "setting_b"} {
 			b, _ := json.Marshal(fmt.Sprintf("global-%s-%d", key, fi))
-			if _, err := feature.ConfigGlobalCreate(h.ctx, model.NewConfiguration{
+			if _, err := feature.ConfigGlobalCreate(h.ctx, feature.NewConfiguration{
 				Feature: name, Key: key, Value: b,
 			}); err != nil {
 				t.Fatalf("create config: %v", err)

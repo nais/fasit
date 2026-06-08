@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	commonmodel "github.com/nais/fasit/internal/model"
 )
 
@@ -23,19 +23,19 @@ type assignmentInput struct {
 	Version          string
 	Target           environment.Labels
 	Dependencies     []string
-	EnvironmentKinds []model.EnvironmentKind
-	Values           model.Values
+	EnvironmentKinds []environment.EnvironmentKind
+	Values           feature.Values
 	Defaults         map[string]any
 	Description      string
 }
 
 type assignments []assignmentInput
 
-func (d assignmentInput) kinds() []model.EnvironmentKind {
+func (d assignmentInput) kinds() []environment.EnvironmentKind {
 	if len(d.EnvironmentKinds) > 0 {
 		return d.EnvironmentKinds
 	}
-	return []model.EnvironmentKind{"tenant", "management"}
+	return []environment.EnvironmentKind{"tenant", "management"}
 }
 
 func NewSeeder() *Seeder {
@@ -56,7 +56,7 @@ func (s *Seeder) AddAssignment(name, version string, target environment.Labels, 
 // optional fake chart defaults. The defaults are returned by the seeder's
 // ChartDownloader as the feature's ValuesYAML, mimicking values pulled from a
 // real chart's values.yaml in production.
-func (s *Seeder) AddAssignmentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, description string, deps ...string) *Seeder {
+func (s *Seeder) AddAssignmentWithValues(name, version string, target environment.Labels, kinds []environment.EnvironmentKind, values feature.Values, defaults map[string]any, description string, deps ...string) *Seeder {
 	s.assignments = append(s.assignments, assignmentInput{
 		FeatureName:      name,
 		Version:          version,
@@ -92,7 +92,7 @@ func (s *Seeder) CreateAssignment(ctx context.Context, name, version string, tar
 
 // CreateAssignmentWithValues is CreateAssignment with configurable values and
 // fake chart defaults; see AddAssignmentWithValues.
-func (s *Seeder) CreateAssignmentWithValues(ctx context.Context, name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, description string, deps ...string) (uuid.UUID, error) {
+func (s *Seeder) CreateAssignmentWithValues(ctx context.Context, name, version string, target environment.Labels, kinds []environment.EnvironmentKind, values feature.Values, defaults map[string]any, description string, deps ...string) (uuid.UUID, error) {
 	s.AddAssignmentWithValues(name, version, target, kinds, values, defaults, description, deps...)
 	return s.create(ctx, s.assignments[len(s.assignments)-1])
 }
@@ -112,14 +112,14 @@ func (s *Seeder) Reset() {
 }
 
 func (s *Seeder) ChartDownloader() featureassignment.ChartDownloaderFunc {
-	return func(chartURL, version string) (*model.Feature, error) {
+	return func(chartURL, version string) (*feature.Feature, error) {
 		for _, deploy := range s.assignments {
 			u := "oci://" + deploy.FeatureName
 			if u == chartURL && deploy.Version == version {
-				var deps model.Dependencies
+				var deps feature.Dependencies
 				if len(deploy.Dependencies) > 0 {
-					deps = model.Dependencies{
-						&model.Dependency{
+					deps = feature.Dependencies{
+						&feature.Dependency{
 							AllOf: deploy.Dependencies,
 						},
 					}
@@ -128,12 +128,12 @@ func (s *Seeder) ChartDownloader() featureassignment.ChartDownloaderFunc {
 				if err != nil {
 					return nil, fmt.Errorf("build defaults for %s: %w", deploy.FeatureName, err)
 				}
-				return &model.Feature{
+				return &feature.Feature{
 					Name:        deploy.FeatureName,
 					Version:     deploy.Version,
 					Chart:       u,
 					Description: deploy.Description,
-					FeatureYAML: model.FeatureYAML{
+					FeatureYAML: feature.FeatureYAML{
 						Dependencies:     deps,
 						EnvironmentKinds: deploy.kinds(),
 						Values:           deploy.Values,
@@ -158,7 +158,7 @@ func fakeGitHubCommit(name, version string) *commonmodel.GitHubCommit {
 	}
 }
 
-func buildValuesYAML(values model.Values, defaults map[string]any) (map[string]json.RawMessage, error) {
+func buildValuesYAML(values feature.Values, defaults map[string]any) (map[string]json.RawMessage, error) {
 	if len(defaults) == 0 {
 		return nil, nil
 	}

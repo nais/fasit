@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	environment2 "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
@@ -222,7 +223,7 @@ func mostSpecificPerFeature(deps []*reconcileAssignment) []*reconcileAssignment 
 	return result
 }
 
-func checkDependencies(f *model.Feature, envID uuid.UUID, deployedFeats map[uuid.UUID]map[string]bool) (bool, []string) {
+func checkDependencies(f *featurepkg.Feature, envID uuid.UUID, deployedFeats map[uuid.UUID]map[string]bool) (bool, []string) {
 	if len(f.Dependencies) == 0 {
 		return true, nil
 	}
@@ -257,7 +258,7 @@ func checkDependencies(f *model.Feature, envID uuid.UUID, deployedFeats map[uuid
 	return true, nil
 }
 
-func configIncludeKeys(f *model.Feature, envKind model.EnvironmentKind) []string {
+func configIncludeKeys(f *featurepkg.Feature, envKind environment2.EnvironmentKind) []string {
 	var keys []string
 	for key, val := range f.Values {
 		if val.Config != nil && !slices.Contains(val.IgnoreKind, envKind) {
@@ -330,7 +331,7 @@ func isErrMissingFields(err error, target **errs.ErrMissingRequiredFields) bool 
 	return errors.As(err, target)
 }
 
-func generateHash(values map[string]any, feature *model.Feature) (string, error) {
+func generateHash(values map[string]any, feature *featurepkg.Feature) (string, error) {
 	b, err := json.Marshal(values)
 	if err != nil {
 		return "", err

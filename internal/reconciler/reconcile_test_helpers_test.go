@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/graph/model"
@@ -135,7 +136,7 @@ func (h *reconcileTest) createAssignment(name, version string, target environmen
 
 // createAssignmentWithValues is createAssignment with configurable values and
 // fake chart defaults.
-func (h *reconcileTest) createAssignmentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, description string, deps ...string) {
+func (h *reconcileTest) createAssignmentWithValues(name, version string, target environment.Labels, kinds []environment.EnvironmentKind, values feature.Values, defaults map[string]any, description string, deps ...string) {
 	h.t.Helper()
 	if _, err := h.seeder.CreateAssignmentWithValues(h.ctx, name, version, target, kinds, values, defaults, description, deps...); err != nil {
 		h.t.Fatalf("create assignment %s@%s: %v", name, version, err)
@@ -156,12 +157,12 @@ func (h *reconcileTest) reconcile() {
 
 func (h *reconcileTest) createEnvs(envs ...tenantEnv) {
 	h.t.Helper()
-	tenants := make(map[string]*model.Tenant)
+	tenants := make(map[string]*environment.Tenant)
 	for _, e := range envs {
 		tenant, exists := tenants[e.tenant]
 		if !exists {
 			var err error
-			tenant, err = environment.CreateTenant(h.ctx, &model.TenantCreate{Name: e.tenant})
+			tenant, err = environment.CreateTenant(h.ctx, &environment.TenantCreate{Name: e.tenant})
 			if err != nil {
 				h.t.Fatalf("create tenant: %v", err)
 			}
@@ -171,15 +172,15 @@ func (h *reconcileTest) createEnvs(envs ...tenantEnv) {
 	}
 }
 
-func (h *reconcileTest) createEnv(tenant *model.Tenant, name string, labels environment.Labels) {
+func (h *reconcileTest) createEnv(tenant *environment.Tenant, name string, labels environment.Labels) {
 	h.t.Helper()
 	if labels["kind"] == "" {
 		labels["kind"] = "tenant"
 	}
-	env, err := environment.Create(h.ctx, &model.EnvironmentCreate{
+	env, err := environment.Create(h.ctx, &environment.EnvironmentCreate{
 		Name:     name,
 		TenantID: tenant.ID,
-		Kind:     model.EnvironmentKind(labels["kind"]),
+		Kind:     environment.EnvironmentKind(labels["kind"]),
 	})
 	if err != nil {
 		h.t.Fatalf("create environment: %v", err)

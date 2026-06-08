@@ -11,7 +11,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/uidata"
 )
 
@@ -26,7 +25,7 @@ type Environment struct {
 	Status               string
 }
 
-func LoadEnvironments(ctx context.Context, feature *model.Feature) []Environment {
+func LoadEnvironments(ctx context.Context, feature *featurepkg.Feature) []Environment {
 	assignments, err := featureassignment.ListByFeature(ctx, feature.Name)
 	if err != nil || len(assignments) == 0 {
 		return []Environment{}
@@ -90,12 +89,12 @@ func LoadEnvironments(ctx context.Context, feature *model.Feature) []Environment
 }
 
 type envInfo struct {
-	env        *model.Environment
+	env        *envpkg.Environment
 	tenantName string
 	labels     map[string]string
 }
 
-func targetedEnvironments(ctx context.Context, feature *model.Feature) []envInfo {
+func targetedEnvironments(ctx context.Context, feature *featurepkg.Feature) []envInfo {
 	tenants, err := uidata.ListTenants(ctx)
 	if err != nil {
 		return nil
@@ -187,7 +186,7 @@ func targetMatchesLabels(target, envLabels map[string]string) bool {
 	return true
 }
 
-func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.EnvironmentKind) bool {
+func featureTargetsKind(kinds []envpkg.EnvironmentKind, envKind envpkg.EnvironmentKind) bool {
 	if len(kinds) == 0 {
 		return true
 	}

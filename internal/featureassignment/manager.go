@@ -4,8 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 type Manager struct {
@@ -14,11 +14,11 @@ type Manager struct {
 	pool    *pgxpool.Pool
 }
 
-type ChartDownloaderFunc func(chartURL, version string) (*model.Feature, error)
+type ChartDownloaderFunc func(chartURL, version string) (*feature.Feature, error)
 
 // ChartDownloader is a function that downloads a chart and returns a Feature model. It can be overridden for testing purposes.
-var ChartDownloader = func(chartURL, version string) (*model.Feature, error) {
-	return model.FromChart(chartURL, version)
+var ChartDownloader = func(chartURL, version string) (*feature.Feature, error) {
+	return feature.FromChart(chartURL, version)
 }
 
 type Option func(*Manager)

@@ -19,7 +19,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
-	"github.com/nais/fasit/internal/graph/model"
 	commonmodel "github.com/nais/fasit/internal/model"
 )
 
@@ -290,7 +289,7 @@ func InvalidateLatestDeploy(ctx context.Context, envID uuid.UUID, featureName st
 	return nil
 }
 
-func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {
+func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*featurepkg.Feature, error) {
 	dep, err := mostSpecificAssignment(ctx, envID, featureName)
 	if err != nil {
 		return nil, err
@@ -342,7 +341,7 @@ func mostSpecificPerFeature(deps []*FeatureAssignment) []*FeatureAssignment {
 	return ret
 }
 
-func createFeatureAssignment(ctx context.Context, feat *model.Feature, description *string, githubRef *commonmodel.GitHubCommit, target environment.Labels) (uuid.UUID, error) {
+func createFeatureAssignment(ctx context.Context, feat *featurepkg.Feature, description *string, githubRef *commonmodel.GitHubCommit, target environment.Labels) (uuid.UUID, error) {
 	details, err := featurepkg.ParseTemplateDetails(feat.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)

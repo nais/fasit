@@ -14,8 +14,8 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *model.Configuration {
-	return &model.Configuration{
+func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *Configuration {
+	return &Configuration{
 		ID:      c.ID,
 		Key:     c.Key,
 		Content: c.Value,
@@ -24,8 +24,8 @@ func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *mo
 	}
 }
 
-func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *model.Configuration {
-	return &model.Configuration{
+func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *Configuration {
+	return &Configuration{
 		ID:      c.ID,
 		Key:     c.Key,
 		Content: c.Value,
@@ -34,7 +34,7 @@ func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *model.Configuration
 	}
 }
 
-func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
+func EnvConfig(ctx context.Context, feature *Feature, envID uuid.UUID) ([]*Configuration, error) {
 	globalConfigs, err := querier(ctx).ConfigGlobalListByFeature(ctx, feature.Name)
 	if err != nil {
 		return nil, err
@@ -49,13 +49,13 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 	}
 
 	merged := MergeConfigs(globalConfigs, envConfigs, nil)
-	retVal := make([]*model.Configuration, 0, len(merged))
+	retVal := make([]*Configuration, 0, len(merged))
 	for _, conf := range merged {
 		source := model.ConfigSourceGlobal
 		if conf.EnvironmentID != nil {
 			source = model.ConfigSourceEnv
 		}
-		retVal = append(retVal, &model.Configuration{
+		retVal = append(retVal, &Configuration{
 			ID:      conf.ID,
 			Key:     conf.Key,
 			Content: conf.Value,
@@ -67,12 +67,12 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 	return retVal, nil
 }
 
-func ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
+func ConfigGet(ctx context.Context, feature string) ([]*Configuration, error) {
 	config, err := querier(ctx).ConfigGlobalListByFeature(ctx, feature)
 	if err != nil {
 		return nil, err
 	}
-	retVal := []*model.Configuration{}
+	retVal := []*Configuration{}
 	for _, conf := range config {
 		retVal = append(retVal, globalConfigFromSQL(conf))
 	}
@@ -104,7 +104,7 @@ func ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]EnvConfig
 	return result, nil
 }
 
-func ConfigEnvCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
+func ConfigEnvCreate(ctx context.Context, c NewConfiguration) (*Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func ConfigEnvCreate(ctx context.Context, c model.NewConfiguration) (*model.Conf
 	return environmentConfigurationFromSQL(config), nil
 }
 
-func ConfigGlobalCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
+func ConfigGlobalCreate(ctx context.Context, c NewConfiguration) (*Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func ConfigGlobalCreate(ctx context.Context, c model.NewConfiguration) (*model.C
 	return globalConfigFromSQL(config), nil
 }
 
-func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
+func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*Configuration, error) {
 	var conf featuresql.ConfigurationsGlobal
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
@@ -301,7 +301,7 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 	})
 }
 
-func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
+func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*Configuration, error) {
 	var conf featuresql.ConfigurationsEnvironment
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error

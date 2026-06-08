@@ -3,7 +3,7 @@ package feature
 import (
 	"testing"
 
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/environment"
 )
 
 // TestRenderHelmValuesWithSecretTaint_NoLeakBetweenRenders is a regression
@@ -15,15 +15,15 @@ import (
 func TestRenderHelmValuesWithSecretTaint_NoLeakBetweenRenders(t *testing.T) {
 	t.Parallel()
 
-	f := &model.Feature{
+	f := &Feature{
 		Name: "dependencytrack",
-		FeatureYAML: model.FeatureYAML{
-			Values: model.Values{
-				"slackAlertUrl": model.Value{
-					Computed: &model.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}/alerts"`},
+		FeatureYAML: FeatureYAML{
+			Values: Values{
+				"slackAlertUrl": Value{
+					Computed: &Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}/alerts"`},
 				},
-				"notificationUrl": model.Value{
-					Computed: &model.Computed{Template: `"https://dt.{{ .Env.name }}.example.com/notify"`},
+				"notificationUrl": Value{
+					Computed: &Computed{Template: `"https://dt.{{ .Env.name }}.example.com/notify"`},
 				},
 			},
 		},
@@ -37,7 +37,7 @@ func TestRenderHelmValuesWithSecretTaint_NoLeakBetweenRenders(t *testing.T) {
 				"slack_token": "xoxb-dev-token",
 			},
 		},
-		EnvKind:       model.EnvironmentKindTenant,
+		EnvKind:       environment.EnvironmentKindTenant,
 		ConfigMap:     map[string]any{},
 		SecretEnvKeys: map[string]bool{"slack_token": true},
 	}

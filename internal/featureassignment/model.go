@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
-	"github.com/nais/fasit/internal/graph/model"
 	commonmodel "github.com/nais/fasit/internal/model"
 )
 
@@ -21,21 +21,21 @@ type CreateFeatureAssignment struct {
 }
 
 type FeatureAssignment struct {
-	ID          uuid.UUID      `json:"id"`
-	Feature     *model.Feature `json:"feature"`
-	Description *string        `json:"description"`
-	GHRef       []byte         `json:"ghRef,omitempty"`
-	Created     time.Time      `json:"created"`
-	Active      bool           `json:"active"`
+	ID          uuid.UUID        `json:"id"`
+	Feature     *feature.Feature `json:"feature"`
+	Description *string          `json:"description"`
+	GHRef       []byte           `json:"ghRef,omitempty"`
+	Created     time.Time        `json:"created"`
+	Active      bool             `json:"active"`
 
 	TargetLabels    environment.Labels `json:"-"`
 	FeatureDisabled bool               `json:"-"`
 }
 
-func (f *FeatureAssignment) Target() []*model.EnvironmentLabel {
-	target := make([]*model.EnvironmentLabel, 0)
+func (f *FeatureAssignment) Target() []*environment.EnvironmentLabel {
+	target := make([]*environment.EnvironmentLabel, 0)
 	for k, v := range f.TargetLabels {
-		target = append(target, &model.EnvironmentLabel{
+		target = append(target, &environment.EnvironmentLabel{
 			Key:   k,
 			Value: v,
 		})
@@ -64,8 +64,8 @@ const (
 	FeatureReconcileStatusStateDisabled FeatureReconcileStatusState = "DISABLED"
 )
 
-func makeFeatureYAML(fd featureassignmentsql.FeatureDatum) (model.FeatureYAML, map[string]json.RawMessage, error) {
-	ret := model.FeatureYAML{
+func makeFeatureYAML(fd featureassignmentsql.FeatureDatum) (feature.FeatureYAML, map[string]json.RawMessage, error) {
+	ret := feature.FeatureYAML{
 		Timeout: time.Duration(fd.Timeout) * time.Millisecond,
 	}
 	if err := json.Unmarshal(fd.Dependencies, &ret.Dependencies); err != nil {
@@ -77,9 +77,9 @@ func makeFeatureYAML(fd featureassignmentsql.FeatureDatum) (model.FeatureYAML, m
 		return ret, nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 
-	ret.EnvironmentKinds = make([]model.EnvironmentKind, len(fd.Kinds))
+	ret.EnvironmentKinds = make([]environment.EnvironmentKind, len(fd.Kinds))
 	for i, k := range fd.Kinds {
-		ret.EnvironmentKinds[i] = model.EnvironmentKind(k)
+		ret.EnvironmentKinds[i] = environment.EnvironmentKind(k)
 	}
 
 	if err := json.Unmarshal(fd.Values, &ret.Values); err != nil {
@@ -89,13 +89,13 @@ func makeFeatureYAML(fd featureassignmentsql.FeatureDatum) (model.FeatureYAML, m
 	return ret, retDefaultVals, nil
 }
 
-func featureFromSQL(f featureassignmentsql.FeatureDatum) (*model.Feature, error) {
+func featureFromSQL(f featureassignmentsql.FeatureDatum) (*feature.Feature, error) {
 	fyaml, defaultValues, err := makeFeatureYAML(f)
 	if err != nil {
 		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}
 
-	return &model.Feature{
+	return &feature.Feature{
 		FeatureYAML: fyaml,
 		Name:        f.Name,
 		Chart:       f.Chart,

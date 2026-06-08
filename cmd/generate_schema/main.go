@@ -6,11 +6,11 @@ import (
 	"os"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 )
 
 func main() {
-	err := genSchema("./schema/jsonschema/feature.json", model.FeatureYAML{}, "github.com/nais/fasit", "./internal/graph/model/")
+	err := genSchema("./schema/jsonschema/feature.json", feature.FeatureYAML{}, "github.com/nais/fasit", "./internal/graph/model/")
 	if err != nil {
 		log.Fatal(err)
 	}

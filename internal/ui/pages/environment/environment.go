@@ -26,7 +26,7 @@ import (
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Environment struct {
-	*model.Environment
+	*envpkg.Environment
 	Metadata []MetadataItem
 }
 
@@ -173,7 +173,7 @@ func sortedKeys(m map[string]string) []string {
 	return keys
 }
 
-func loadEnvironmentFeatureRows(ctx context.Context, env *model.Environment) ([]environmentFeatureRow, error) {
+func loadEnvironmentFeatureRows(ctx context.Context, env *envpkg.Environment) ([]environmentFeatureRow, error) {
 	features, err := uidata.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, err
@@ -218,7 +218,7 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 	return environmentHealth{ReportedAt: health.ReportedAt, HasReport: true}, nil
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
+func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
 	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, health)
 	return h.Div(h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab),
@@ -296,7 +296,7 @@ func environmentSummaryNodes(environment *Environment, labels map[string]string,
 	return []g.Node{h.Div(h.Class("env-header-actions"), g.Group(items))}
 }
 
-func environmentTabContent(activeTab string, tenant *model.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
+func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
 	switch activeTab {
 	case environmentTabValues:
 		return environmentValuesCard(envValues, valueRefs)

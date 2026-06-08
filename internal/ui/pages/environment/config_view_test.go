@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	environment2 "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 )
@@ -122,18 +124,18 @@ func TestTryPrettyJSON(t *testing.T) {
 
 func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
 	t.Parallel()
-	feat := &model.Feature{
+	feat := &feature.Feature{
 		Name: "f",
-		FeatureYAML: model.FeatureYAML{
-			Values: model.Values{
-				"safe":   {Computed: &model.Computed{Template: `{{ .Env.public | quote }}`}},
-				"secret": {Computed: &model.Computed{Template: `{{ .Env.token | quote }}`}},
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"safe":   {Computed: &feature.Computed{Template: `{{ .Env.public | quote }}`}},
+				"secret": {Computed: &feature.Computed{Template: `{{ .Env.token | quote }}`}},
 			},
 		},
 	}
 	page := &FeaturePage{
 		TenantSlug:  "t",
-		Environment: &Environment{Environment: &model.Environment{Name: "e"}},
+		Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
 		Feature: &FeatureDetail{
 			Feature: feat,
 			Enabled: true,
@@ -163,19 +165,19 @@ func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
 
 func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 	t.Parallel()
-	feat := &model.Feature{
+	feat := &feature.Feature{
 		Name: "test-feature",
-		FeatureYAML: model.FeatureYAML{
-			Values: model.Values{
-				"replicas":      {DisplayName: "Replicas", Config: &model.Config{Type: model.ConfigTypeInt}},
-				"clusterDomain": {DisplayName: "Cluster Domain", Computed: &model.Computed{Template: `"x"`}},
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"replicas":      {DisplayName: "Replicas", Config: &feature.Config{Type: feature.ConfigTypeInt}},
+				"clusterDomain": {DisplayName: "Cluster Domain", Computed: &feature.Computed{Template: `"x"`}},
 			},
 		},
 	}
 
 	page := &FeaturePage{
 		TenantSlug:  "t",
-		Environment: &Environment{Environment: &model.Environment{Name: "e"}},
+		Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
 		Feature: &FeatureDetail{
 			Feature: feat,
 			Enabled: true,
@@ -217,18 +219,18 @@ func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 
 func TestOverviewTab_SourceLabels(t *testing.T) {
 	t.Parallel()
-	feat := &model.Feature{
+	feat := &feature.Feature{
 		Name: "f",
-		FeatureYAML: model.FeatureYAML{
-			Values: model.Values{
-				"a": {Config: &model.Config{Type: model.ConfigTypeString}},
-				"b": {Config: &model.Config{Type: model.ConfigTypeString}},
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"a": {Config: &feature.Config{Type: feature.ConfigTypeString}},
+				"b": {Config: &feature.Config{Type: feature.ConfigTypeString}},
 			},
 		},
 	}
 	page := &FeaturePage{
 		TenantSlug:  "t",
-		Environment: &Environment{Environment: &model.Environment{Name: "e"}},
+		Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
 		Feature: &FeatureDetail{
 			Feature: feat,
 			Enabled: true,

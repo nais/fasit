@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	environment2 "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"golang.org/x/sync/errgroup"
 )
@@ -21,7 +21,7 @@ type snapshot struct {
 	globalConfig   map[string][]featurepkg.MergedConfigRow
 	envConfig      map[uuid.UUID]map[string][]featurepkg.MergedConfigRow
 	envValues      map[uuid.UUID]*featurepkg.ComputedValues
-	envKinds       map[uuid.UUID]model.EnvironmentKind
+	envKinds       map[uuid.UUID]environment2.EnvironmentKind
 	envTenantNames map[uuid.UUID]string
 	latestInstr    map[uuid.UUID]map[string]latestInstruction
 	deployedFeats  map[uuid.UUID]map[string]bool
@@ -35,16 +35,16 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 	}
 
 	var envs []environment
-	envKinds := make(map[uuid.UUID]model.EnvironmentKind, len(allEnvRows))
+	envKinds := make(map[uuid.UUID]environment2.EnvironmentKind, len(allEnvRows))
 	envTenantNames := make(map[uuid.UUID]string, len(allEnvRows))
 	for _, row := range allEnvRows {
-		envKinds[row.ID] = model.EnvironmentKind(row.Kind)
+		envKinds[row.ID] = environment2.EnvironmentKind(row.Kind)
 		envTenantNames[row.ID] = row.TenantName
 		if row.Reconcile {
 			envs = append(envs, environment{
 				ID:         row.ID,
 				Name:       row.Name,
-				Kind:       model.EnvironmentKind(row.Kind),
+				Kind:       environment2.EnvironmentKind(row.Kind),
 				Labels:     map[string]string(row.Labels),
 				TenantID:   row.TenantID,
 				TenantName: row.TenantName,
@@ -238,7 +238,7 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 	type envInfo struct {
 		ID   uuid.UUID
 		Name string
-		Kind model.EnvironmentKind
+		Kind environment2.EnvironmentKind
 	}
 	tenantEnvs := make(map[uuid.UUID][]envInfo)
 	tenantNames := make(map[uuid.UUID]string)
@@ -246,7 +246,7 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 		tenantEnvs[e.TenantID] = append(tenantEnvs[e.TenantID], envInfo{
 			ID:   e.ID,
 			Name: e.Name,
-			Kind: model.EnvironmentKind(e.Kind),
+			Kind: environment2.EnvironmentKind(e.Kind),
 		})
 		tenantNames[e.TenantID] = e.TenantName
 	}
@@ -299,7 +299,7 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 
 			// Envs and Management include all environments in the tenant.
 			for _, other := range parsed {
-				if other.info.Kind == model.EnvironmentKindManagement {
+				if other.info.Kind == environment2.EnvironmentKindManagement {
 					mv.Management = other.vals
 				} else {
 					mv.Envs = append(mv.Envs, other.vals)
