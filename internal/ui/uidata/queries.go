@@ -46,7 +46,7 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 }
 
 func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) ([]*DeployInstruction, error) {
-	rows, err := querier(ctx).ListDeployInstructions(ctx, &featureAssignmentID)
+	rows, err := querier(ctx).ListDeployInstructions(ctx, featureAssignmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) 
 
 func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
 	di, err := querier(ctx).GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx, sqlgen.GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams{
-		FeatureAssignmentID: &featureAssignmentID,
+		FeatureAssignmentID: featureAssignmentID,
 		EnvironmentID:       environmentID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -83,13 +83,13 @@ func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.
 		return nil, fmt.Errorf("get deploy instruction: %w", err)
 	}
 
-	lines, err := featurepkg.LogsGet(ctx, di.DeployInstruction.ID)
+	lines, err := featurepkg.LogsGet(ctx, di.ID)
 	if err != nil {
 		return nil, fmt.Errorf("get logs: %w", err)
 	}
 
 	return &model.RolloutLog{
-		ID:          di.DeployInstruction.ID,
+		ID:          di.ID,
 		TenantName:  di.TenantName,
 		Environment: di.EnvironmentName,
 		Lines:       lines,

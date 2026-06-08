@@ -52,133 +52,75 @@ func NewPubSubDeployer(pool *pgxpool.Pool, publisher NewPublisher, meter metric.
 }
 
 func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []ComputeResult) error {
-	var instructions []reconcilersql.CreateDeployInstructionParams
-	var statuses []reconcilersql.UpsertReconcileStatusParams
-
 	type publishItem struct {
 		topicID     string
+		diid        uuid.UUID
+		vals        []byte
 		instruction message.DeployInstruction
-		envName     string
-		tenantName  string
-		featureName string
+		res         ComputeResult
 	}
 	var toPublish []publishItem
 
 	for _, res := range decisions {
-		switch res.Action {
-		case ActionDeploy:
-			id := uuid.New()
-			vals, err := json.Marshal(res.Values)
-			if err != nil {
-				return fmt.Errorf("marshal values for %s: %w", res.Feature.Name, err)
-			}
-
-			instructions = append(instructions, reconcilersql.CreateDeployInstructionParams{
-				ID:                  id,
-				EnvironmentID:       res.EnvironmentID,
-				FeatureName:         res.Feature.Name,
-				FeatureVersion:      res.Feature.Version,
-				Hash:                res.Hash,
-				Vals:                vals,
-				FeatureAssignmentID: &res.FeatureAssignmentID,
-			})
-
-			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
-				FeatureAssignmentID: res.FeatureAssignmentID,
-				EnvironmentID:       res.EnvironmentID,
-				Status:              model.RolloutStatusCreated.String(),
-				Message:             res.Message,
-			})
-
-			toPublish = append(toPublish, publishItem{
-				topicID: naisdTopicID(res.TenantName, res.EnvironmentName),
-				instruction: message.DeployInstruction{
-					ID:         id,
-					Name:       res.Feature.Name,
-					Version:    res.Feature.Version,
-					Chart:      res.Feature.Chart,
-					ConfigHash: res.Hash,
-					Timeout:    res.Feature.Timeout,
-					Values:     res.Values,
-				},
-				envName:     res.EnvironmentName,
-				tenantName:  res.TenantName,
-				featureName: res.Feature.Name,
-			})
-
-		case ActionSkipInProgress, ActionSkipUnchanged:
-			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
-				FeatureAssignmentID: res.FeatureAssignmentID,
-				EnvironmentID:       res.EnvironmentID,
-				Message:             res.Message,
-			})
-
-		case ActionFailMissingDeps, ActionFailMissingConfig, ActionFailRender:
-			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
-				FeatureAssignmentID: res.FeatureAssignmentID,
-				EnvironmentID:       res.EnvironmentID,
-				Status:              model.RolloutStatusFailed.String(),
-				Message:             res.Message,
-			})
-
-		case ActionSkipUnhealthy:
-			statuses = append(statuses, reconcilersql.UpsertReconcileStatusParams{
-				FeatureAssignmentID: res.FeatureAssignmentID,
-				EnvironmentID:       res.EnvironmentID,
-				Status:              model.RolloutStatusPending.String(),
-				Message:             res.Message,
-			})
-
-		case ActionSkipDisabled:
-			// No status update for disabled features.
+		if res.Action != ActionDeploy {
+			continue
 		}
-	}
-
-	if len(instructions) > 0 {
-		br := w.querier.CreateDeployInstruction(ctx, instructions)
-		var batchErr error
-		br.Exec(func(i int, err error) {
-			if err != nil {
-				batchErr = fmt.Errorf("create instruction %d (%s): %w", i, instructions[i].FeatureName, err)
-			}
+		diid := uuid.New()
+		vals, err := json.Marshal(res.Values)
+		if err != nil {
+			return fmt.Errorf("marshal values for %s: %w", res.Feature.Name, err)
+		}
+		toPublish = append(toPublish, publishItem{
+			topicID: naisdTopicID(res.TenantName, res.EnvironmentName),
+			diid:    diid,
+			vals:    vals,
+			instruction: message.DeployInstruction{
+				ID:         diid,
+				Name:       res.Feature.Name,
+				Version:    res.Feature.Version,
+				Chart:      res.Feature.Chart,
+				ConfigHash: res.Hash,
+				Timeout:    res.Feature.Timeout,
+				Values:     res.Values,
+			},
+			res: res,
 		})
-		if batchErr != nil {
-			return batchErr
-		}
 	}
 
-	if len(statuses) > 0 {
-		br := w.querier.UpsertReconcileStatus(ctx, statuses)
-		var batchErr error
-		br.Exec(func(i int, err error) {
-			if err != nil {
-				batchErr = fmt.Errorf("upsert status %d: %w", i, err)
-			}
-		})
-		if batchErr != nil {
-			return batchErr
-		}
-	}
-
+	// Append-only: a deploy_log row is written only after a successful publish,
+	// carrying the diid sent to naisd, the hash, and the rendered values (status
+	// pending). naisd later appends the terminal row for the same diid. A publish
+	// failure writes nothing, so the next cycle sees the previous deploy and
+	// retries.
+	var deployRows []reconcilersql.AppendDeploysParams
 	for _, item := range toPublish {
 		pub := w.publisher(item.topicID)
 		if err := pub.Publish(ctx, item.instruction); err != nil {
-			w.log.With("err", err, "feature", item.featureName, "env", item.envName).Error("publish deploy instruction")
+			w.log.With("err", err, "feature", item.res.Feature.Name, "env", item.res.EnvironmentName).Error("publish deploy instruction")
 			continue
 		}
 
-		// TODO: make it more obvious (remove the conditional from the query, it currently only updates statuses that is "created")
-		if err := w.querier.SetDeployInstructionStatusForCreated(ctx, reconcilersql.SetDeployInstructionStatusForCreatedParams{
-			ID:     item.instruction.ID,
-			Status: model.RolloutStatusPending.String(),
-		}); err != nil {
-			w.log.With("err", err, "id", item.instruction.ID).Error("set instruction status to sent")
-		}
+		deployRows = append(deployRows, reconcilersql.AppendDeploysParams{
+			Diid:                item.diid,
+			EnvironmentID:       item.res.EnvironmentID,
+			FeatureAssignmentID: item.res.FeatureAssignmentID,
+			FeatureName:         item.res.Feature.Name,
+			FeatureVersion:      item.res.Feature.Version,
+			Status:              model.RolloutStatusPending.String(),
+			Hash:                item.res.Hash,
+			Vals:                item.vals,
+		})
 		w.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(
-			attribute.String("tenant", item.tenantName),
-			attribute.String("environment", item.envName),
-			attribute.String("feature", item.featureName),
+			attribute.String("tenant", item.res.TenantName),
+			attribute.String("environment", item.res.EnvironmentName),
+			attribute.String("feature", item.res.Feature.Name),
 		)))
+	}
+
+	if len(deployRows) > 0 {
+		if _, err := w.querier.AppendDeploys(ctx, deployRows); err != nil {
+			return fmt.Errorf("append deploys: %w", err)
+		}
 	}
 
 	return nil

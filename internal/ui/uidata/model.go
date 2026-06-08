@@ -47,7 +47,7 @@ type DeployInstruction struct {
 	Created             time.Time
 	LastModified        time.Time
 	Values              []byte
-	FeatureAssignmentID *uuid.UUID
+	FeatureAssignmentID uuid.UUID
 	EnvironmentName     string
 	TenantName          string
 }

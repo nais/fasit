@@ -422,9 +422,7 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 
 	if showActions {
 		kebabID := "row-kebab-" + env.TenantSlug + "-" + env.Name
-		redeployPopoverID := "redeploy-" + env.TenantSlug + "-" + env.Name
 		reconcilePopoverID := "reconcile-" + env.TenantSlug + "-" + env.Name
-		redeployAction := baseHref + "/redeploy"
 		toggleReconcileAction := baseHref + "/toggle-reconcile"
 
 		menuItems := []g.Node{
@@ -433,15 +431,6 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 				g.Text("Deploy logs"),
 			),
 			components.LokiLogsItem(environment.LokiExploreURL(env.TenantName, env.Name, featureName)),
-		}
-
-		if env.Enabled {
-			menuItems = append(menuItems,
-				h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", redeployPopoverID),
-					g.Raw(components.IconRedeploy),
-					g.Text("Trigger redeploy"),
-				),
-			)
 		}
 
 		if env.Enabled {
@@ -469,7 +458,6 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 
 		cells = append(cells, h.Td(h.Class("action"),
 			components.KebabWrap(kebabID, menuItems,
-				components.RedeployPopover(redeployPopoverID, redeployAction, featureName, env.Name, env.Enabled, "/features/"+featureName),
 				components.ReconcilePopover(reconcilePopoverID, toggleReconcileAction, featureName, env.Name, env.Enabled, "/features/"+featureName),
 			),
 		))

@@ -9,9 +9,11 @@ import (
 )
 
 type Querier interface {
-	CreateDeployInstruction(ctx context.Context, arg []CreateDeployInstructionParams) *CreateDeployInstructionBatchResults
+	AppendDecisions(ctx context.Context, arg []AppendDecisionsParams) (int64, error)
+	AppendDeployStatus(ctx context.Context, arg AppendDeployStatusParams) error
+	AppendDeploys(ctx context.Context, arg []AppendDeploysParams) (int64, error)
 	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
-	GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
+	LatestDeployByDIID(ctx context.Context, diid uuid.UUID) (LatestDeployByDIIDRow, error)
 	ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error)
 	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
@@ -19,14 +21,11 @@ type Querier interface {
 	ListDeployedFeatures(ctx context.Context) ([]ListDeployedFeaturesRow, error)
 	ListDisabledFeatures(ctx context.Context) ([]ListDisabledFeaturesRow, error)
 	ListHealthStatuses(ctx context.Context) ([]HealthStatus, error)
-	ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error)
+	ListLatestDecisions(ctx context.Context) ([]ListLatestDecisionsRow, error)
+	ListLatestDeploys(ctx context.Context) ([]ListLatestDeploysRow, error)
 	ListLatestFeatureAssignments(ctx context.Context) ([]ListLatestFeatureAssignmentsRow, error)
-	SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error
-	SetDeployInstructionStatusForCreated(ctx context.Context, arg SetDeployInstructionStatusForCreatedParams) error
-	SetReconcileStatus(ctx context.Context, arg SetReconcileStatusParams) error
 	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error
-	TimeoutDeployInstructions(ctx context.Context) error
-	UpsertReconcileStatus(ctx context.Context, arg []UpsertReconcileStatusParams) *UpsertReconcileStatusBatchResults
+	TimeoutPendingDeploys(ctx context.Context) error
 }
 
 var _ Querier = (*Queries)(nil)

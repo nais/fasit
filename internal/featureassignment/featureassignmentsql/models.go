@@ -33,12 +33,3 @@ type FeatureDatum struct {
 	Timeout       int64
 	TplDetails    []byte
 }
-
-type FeatureReconcileStatus struct {
-	FeatureAssignmentID uuid.UUID
-	EnvironmentID       uuid.UUID
-	Status              string
-	Message             string
-	LastModified        time.Time
-	Created             time.Time
-}

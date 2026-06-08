@@ -29,13 +29,17 @@ type Querier interface {
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error)
 	FeatureNames(ctx context.Context) ([]string, error)
-	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (DeployInstruction, error)
-	GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (DeployInstruction, error)
-	GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
+	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error)
+	GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (GetLatestDeployedDeployInstructionRow, error)
+	// Deploy history is derived from deploy_log. Each deploy is identified by its
+	// diid: the publish row (earliest row for the diid) carries version/hash/values,
+	// and the current status is the latest row for that diid. A "deploy instruction"
+	// in these queries is the publish row joined with its current status.
+	GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (GetPreviousDeployInstructionRow, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
-	ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]DeployInstruction, error)
+	ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]ListRecentDeployInstructionsRow, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)
 	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
 	LogsByID(ctx context.Context, id int64) (Log, error)

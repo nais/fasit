@@ -21,7 +21,6 @@ import (
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
 	"github.com/nais/fasit/internal/ioconvenience"
-	"github.com/nais/fasit/internal/reconciler"
 )
 
 type (
@@ -508,14 +507,9 @@ func main() {
 		// Then disable it again with a different reason (generates disable+enable+disable sequence)
 		_ = feature.FeatureDisable(ctx, devNaisDev, "dependencytrack", "re-disabled after testing: broken metrics endpoint")
 
-		// Trigger a redeploy (exercises ActionTriggered)
-		ctx = auth.SetEmail(ctx, actors[0])
-		testPartnerDev := envID("test-partner", "dev")
-		_ = featureassignment.InvalidateLatestDeploy(ctx, testPartnerDev, "naiserator")
-		reconciler.TriggerReconcile()
-
 		// Update environment labels (exercises SetLabels audit)
 		ctx = auth.SetEmail(ctx, actors[1])
+		testPartnerDev := envID("test-partner", "dev")
 		_ = environment.SetLabels(ctx, testPartnerDev, environment.Labels{
 			"monitoring": "enabled",
 			"tier":       "development",

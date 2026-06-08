@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
@@ -28,21 +29,16 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-// sqlPublisher records published messages and simulates naisd status updates
-// via raw SQL so it works independently of the deployment context loader.
+// sqlPublisher records published messages. naisd terminal-status reporting is
+// simulated separately (see reconcileTest.reconcile) since the deploy_log row
+// only exists after the deployer publishes.
 type sqlPublisher struct {
-	pool *pgxpool.Pool
-	msg  []message.DeployInstruction
+	msg []message.DeployInstruction
 }
 
 func (p *sqlPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
 	p.msg = append(p.msg, msg)
-	status := model.RolloutStatusDeployed
-	if strings.HasSuffix(msg.Name, "-pending") {
-		status = model.RolloutStatusPending
-	}
-	_, err := p.pool.Exec(ctx, `UPDATE deploy_instructions SET status = $1 WHERE id = $2`, status.String(), msg.ID)
-	return err
+	return nil
 }
 
 func (p *sqlPublisher) Stop() {}
@@ -101,7 +97,7 @@ func newReconcileTest(ctx context.Context, t *testing.T, container *postgres.Pos
 		t.Fatalf("failed to create loader: %v", err)
 	}
 
-	pub := &sqlPublisher{pool: pool}
+	pub := &sqlPublisher{}
 	newPub := func(topicID string, log *slog.Logger) reconciler.Publisher { return pub }
 	deployer, err := reconciler.NewPubSubDeployer(pool, newPub, meter, logger)
 	if err != nil {
@@ -143,15 +139,39 @@ func (h *reconcileTest) createAssignmentWithValues(name, version string, target 
 	}
 }
 
-// reconcile computes the desired state and deploys the resulting decisions.
+// reconcile computes the desired state, deploys the resulting decisions, and
+// simulates naisd reporting a terminal status for each newly published
+// instruction (deployed, unless the feature name ends in "-pending", which
+// stays in-progress).
 func (h *reconcileTest) reconcile() {
 	h.t.Helper()
+	before := len(h.pub.msg)
 	result, err := h.reconciler.ComputeDesiredState(h.ctx)
 	if err != nil {
 		h.t.Fatalf("reconcile: %v", err)
 	}
 	if err := h.deployer.Deploy(h.ctx, result.Results); err != nil {
 		h.t.Fatalf("deploy: %v", err)
+	}
+	for _, msg := range h.pub.msg[before:] {
+		if strings.HasSuffix(msg.Name, "-pending") {
+			continue
+		}
+		h.appendDeployStatus(msg.ID, model.RolloutStatusDeployed)
+	}
+}
+
+// appendDeployStatus mimics the naisd Receiver: it appends a terminal deploy_log
+// row for the given diid, carrying the hash forward from the latest row.
+func (h *reconcileTest) appendDeployStatus(diid uuid.UUID, status model.RolloutStatus) {
+	h.t.Helper()
+	_, err := h.pool.Exec(h.ctx, `
+		INSERT INTO deploy_log (diid, environment_id, feature_assignment_id, feature_name, feature_version, status, hash)
+		SELECT diid, environment_id, feature_assignment_id, feature_name, feature_version, $2, hash
+		FROM deploy_log WHERE diid = $1 ORDER BY created DESC LIMIT 1
+	`, diid, status.String())
+	if err != nil {
+		h.t.Fatalf("append deploy status: %v", err)
 	}
 }
 
@@ -197,30 +217,30 @@ func (h *reconcileTest) createEnv(tenant *environment.Tenant, name string, label
 	}
 }
 
-// deployedInstructions returns "tenant:env:feature:version" for every deployed
-// instruction, sorted.
+// deployedInstructions returns "tenant:env:feature:version" for every currently
+// deployed feature×environment, sorted.
 func (h *reconcileTest) deployedInstructions() []string {
 	h.t.Helper()
 	return h.queryStrings(`
-		SELECT t.name || ':' || e.name || ':' || di.feature_name || ':' || di.feature_version
-		FROM deploy_instructions di
-		JOIN environments e ON e.id = di.environment_id
+		SELECT t.name || ':' || e.name || ':' || ds.feature_name || ':' || ds.feature_version
+		FROM deploy_status ds
+		JOIN environments e ON e.id = ds.environment_id
 		JOIN tenants t ON t.id = e.tenant_id
-		WHERE di.status = 'deployed'
+		WHERE ds.status = 'deployed'
 		ORDER BY 1
 	`)
 }
 
-// deployedFeatures returns "tenant:env" for every deployed instruction of the
-// given feature, sorted.
+// deployedFeatures returns "tenant:env" for every currently deployed
+// environment of the given feature, sorted.
 func (h *reconcileTest) deployedFeatures(featureName string) []string {
 	h.t.Helper()
 	return h.queryStrings(`
 		SELECT t.name || ':' || e.name
-		FROM deploy_instructions di
-		JOIN environments e ON e.id = di.environment_id
+		FROM deploy_status ds
+		JOIN environments e ON e.id = ds.environment_id
 		JOIN tenants t ON t.id = e.tenant_id
-		WHERE di.status = 'deployed' AND di.feature_name = $1
+		WHERE ds.status = 'deployed' AND ds.feature_name = $1
 		ORDER BY 1
 	`, featureName)
 }
@@ -229,7 +249,7 @@ func (h *reconcileTest) countInstructions(featureName, version string) int {
 	h.t.Helper()
 	var count int
 	err := h.pool.QueryRow(h.ctx, `
-		SELECT COUNT(*) FROM deploy_instructions
+		SELECT COUNT(DISTINCT diid) FROM deploy_log
 		WHERE feature_name = $1 AND feature_version = $2
 	`, featureName, version).Scan(&count)
 	if err != nil {

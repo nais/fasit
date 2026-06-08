@@ -9,26 +9,24 @@ import (
 )
 
 type Querier interface {
-	CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error)
 	CreateFeatureAssignment(ctx context.Context, arg CreateFeatureAssignmentParams) (FeatureAssignment, error)
 	DeactivateActiveFeatureAssignmentForTarget(ctx context.Context, arg DeactivateActiveFeatureAssignmentForTargetParams) error
 	DeactivateFeatureAssignment(ctx context.Context, id uuid.UUID) error
 	DeactivateFeatureAssignmentsByFeatureAndTarget(ctx context.Context, arg DeactivateFeatureAssignmentsByFeatureAndTargetParams) error
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
-	GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (FeatureReconcileStatus, error)
+	GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (GetReconcileStatusRow, error)
 	HasActiveAssignments(ctx context.Context, featureName string) (bool, error)
-	InvalidateDeployInstruction(ctx context.Context, arg InvalidateDeployInstructionParams) error
-	LatestReconcileStatusForEnvironment(ctx context.Context, arg LatestReconcileStatusForEnvironmentParams) (string, error)
 	ListAllFeatureAssignments(ctx context.Context) ([]ListAllFeatureAssignmentsRow, error)
 	ListAllFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListAllFeatureAssignmentsByFeatureRow, error)
-	ListDeployedFeaturesInEnvironment(ctx context.Context, arg ListDeployedFeaturesInEnvironmentParams) ([]string, error)
 	ListFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListFeatureAssignmentsByFeatureRow, error)
 	ListFeatureAssignmentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureAssignmentsForEnvironmentRow, error)
 	ListFeatureAssignmentsForFeatureInEnvironment(ctx context.Context, arg ListFeatureAssignmentsForFeatureInEnvironmentParams) ([]ListFeatureAssignmentsForFeatureInEnvironmentRow, error)
 	ListRecentFeatureAssignments(ctx context.Context) ([]ListRecentFeatureAssignmentsRow, error)
+	// Derives a single display status per environment in the rollout vocabulary
+	// (pending/deployed/failed/DISABLED) by preferring the deploy_log rollout state
+	// and falling back to the latest decision action when the feature was never
+	// deployed (e.g. pre-flight failures). disabled_features membership wins.
 	ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error)
-	SetReconcileStatus(ctx context.Context, arg SetReconcileStatusParams) error
-	UpdateDeployInstructionStatus(ctx context.Context, arg UpdateDeployInstructionStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

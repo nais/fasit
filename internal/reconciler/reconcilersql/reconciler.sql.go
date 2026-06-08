@@ -11,6 +11,68 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
+type AppendDecisionsParams struct {
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Action              string
+	Message             string
+}
+
+const appendDeployStatus = `-- name: AppendDeployStatus :exec
+INSERT INTO deploy_log(
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6,
+	$7)
+`
+
+type AppendDeployStatusParams struct {
+	Diid                uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+}
+
+func (q *Queries) AppendDeployStatus(ctx context.Context, arg AppendDeployStatusParams) error {
+	_, err := q.db.Exec(ctx, appendDeployStatus,
+		arg.Diid,
+		arg.EnvironmentID,
+		arg.FeatureAssignmentID,
+		arg.FeatureName,
+		arg.FeatureVersion,
+		arg.Status,
+		arg.Hash,
+	)
+	return err
+}
+
+type AppendDeploysParams struct {
+	Diid                uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Vals                []byte
+}
+
 const deleteReleaseStatusesInEnvironment = `-- name: DeleteReleaseStatusesInEnvironment :exec
 DELETE FROM release_statuses
 WHERE environment_id = $1
@@ -21,29 +83,42 @@ func (q *Queries) DeleteReleaseStatusesInEnvironment(ctx context.Context, enviro
 	return err
 }
 
-const getDeployInstruction = `-- name: GetDeployInstruction :one
+const latestDeployByDIID = `-- name: LatestDeployByDIID :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	hash,
+	created
 FROM
-	deploy_instructions
+	deploy_log
 WHERE
-	id = $1
+	diid = $1
+ORDER BY
+	created DESC
+LIMIT 1
 `
 
-func (q *Queries) GetDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
-	row := q.db.QueryRow(ctx, getDeployInstruction, id)
-	var i DeployInstruction
+type LatestDeployByDIIDRow struct {
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Hash                string
+	Created             time.Time
+}
+
+func (q *Queries) LatestDeployByDIID(ctx context.Context, diid uuid.UUID) (LatestDeployByDIIDRow, error) {
+	row := q.db.QueryRow(ctx, latestDeployByDIID, diid)
+	var i LatestDeployByDIIDRow
 	err := row.Scan(
-		&i.ID,
 		&i.EnvironmentID,
+		&i.FeatureAssignmentID,
 		&i.FeatureName,
 		&i.FeatureVersion,
-		&i.Status,
 		&i.Hash,
 		&i.Created,
-		&i.LastModified,
-		&i.Values,
-		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
@@ -248,21 +323,21 @@ func (q *Queries) ListAllTenantEnvironments(ctx context.Context) ([]ListAllTenan
 }
 
 const listDeployedFeatures = `-- name: ListDeployedFeatures :many
-SELECT DISTINCT ON (feature_name, environment_id)
-	feature_name,
-	environment_id
+SELECT
+	environment_id,
+	feature_name
 FROM
-	deploy_instructions
+	deploy_status
 WHERE
 	status = 'deployed'
 ORDER BY
-	feature_name,
-	environment_id
+	environment_id,
+	feature_name
 `
 
 type ListDeployedFeaturesRow struct {
-	FeatureName   string
 	EnvironmentID uuid.UUID
+	FeatureName   string
 }
 
 func (q *Queries) ListDeployedFeatures(ctx context.Context) ([]ListDeployedFeaturesRow, error) {
@@ -274,7 +349,7 @@ func (q *Queries) ListDeployedFeatures(ctx context.Context) ([]ListDeployedFeatu
 	items := []ListDeployedFeaturesRow{}
 	for rows.Next() {
 		var i ListDeployedFeaturesRow
-		if err := rows.Scan(&i.FeatureName, &i.EnvironmentID); err != nil {
+		if err := rows.Scan(&i.EnvironmentID, &i.FeatureName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -351,42 +426,89 @@ func (q *Queries) ListHealthStatuses(ctx context.Context) ([]HealthStatus, error
 	return items, nil
 }
 
-const listLatestDeployInstructions = `-- name: ListLatestDeployInstructions :many
-SELECT DISTINCT ON (feature_name, environment_id)
-	id,
+const listLatestDecisions = `-- name: ListLatestDecisions :many
+SELECT
+	environment_id,
+	feature_name,
+	feature_assignment_id,
+	feature_version,
+	action,
+	message
+FROM
+	decision_status
+ORDER BY
+	environment_id,
+	feature_name
+`
+
+type ListLatestDecisionsRow struct {
+	EnvironmentID       uuid.UUID
+	FeatureName         string
+	FeatureAssignmentID uuid.UUID
+	FeatureVersion      string
+	Action              string
+	Message             string
+}
+
+func (q *Queries) ListLatestDecisions(ctx context.Context) ([]ListLatestDecisionsRow, error) {
+	rows, err := q.db.Query(ctx, listLatestDecisions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLatestDecisionsRow{}
+	for rows.Next() {
+		var i ListLatestDecisionsRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.FeatureName,
+			&i.FeatureAssignmentID,
+			&i.FeatureVersion,
+			&i.Action,
+			&i.Message,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLatestDeploys = `-- name: ListLatestDeploys :many
+SELECT
 	environment_id,
 	feature_name,
 	hash,
 	status,
 	feature_assignment_id
 FROM
-	deploy_instructions
+	deploy_status
 ORDER BY
-	feature_name,
 	environment_id,
-	created DESC
+	feature_name
 `
 
-type ListLatestDeployInstructionsRow struct {
-	ID                  uuid.UUID
+type ListLatestDeploysRow struct {
 	EnvironmentID       uuid.UUID
 	FeatureName         string
 	Hash                string
 	Status              string
-	FeatureAssignmentID *uuid.UUID
+	FeatureAssignmentID uuid.UUID
 }
 
-func (q *Queries) ListLatestDeployInstructions(ctx context.Context) ([]ListLatestDeployInstructionsRow, error) {
-	rows, err := q.db.Query(ctx, listLatestDeployInstructions)
+func (q *Queries) ListLatestDeploys(ctx context.Context) ([]ListLatestDeploysRow, error) {
+	rows, err := q.db.Query(ctx, listLatestDeploys)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListLatestDeployInstructionsRow{}
+	items := []ListLatestDeploysRow{}
 	for rows.Next() {
-		var i ListLatestDeployInstructionsRow
+		var i ListLatestDeploysRow
 		if err := rows.Scan(
-			&i.ID,
 			&i.EnvironmentID,
 			&i.FeatureName,
 			&i.Hash,
@@ -489,81 +611,6 @@ func (q *Queries) ListLatestFeatureAssignments(ctx context.Context) ([]ListLates
 	return items, nil
 }
 
-const setDeployInstructionStatus = `-- name: SetDeployInstructionStatus :exec
-UPDATE
-	deploy_instructions
-SET
-	status = $1
-WHERE
-	id = $2
-`
-
-type SetDeployInstructionStatusParams struct {
-	Status string
-	ID     uuid.UUID
-}
-
-func (q *Queries) SetDeployInstructionStatus(ctx context.Context, arg SetDeployInstructionStatusParams) error {
-	_, err := q.db.Exec(ctx, setDeployInstructionStatus, arg.Status, arg.ID)
-	return err
-}
-
-const setDeployInstructionStatusForCreated = `-- name: SetDeployInstructionStatusForCreated :exec
-UPDATE
-	deploy_instructions
-SET
-	status = $1
-WHERE
-	id = $2
-	AND status = 'created'
-`
-
-type SetDeployInstructionStatusForCreatedParams struct {
-	Status string
-	ID     uuid.UUID
-}
-
-func (q *Queries) SetDeployInstructionStatusForCreated(ctx context.Context, arg SetDeployInstructionStatusForCreatedParams) error {
-	_, err := q.db.Exec(ctx, setDeployInstructionStatusForCreated, arg.Status, arg.ID)
-	return err
-}
-
-const setReconcileStatus = `-- name: SetReconcileStatus :exec
-INSERT INTO feature_reconcile_statuses(
-	feature_assignment_id,
-	environment_id,
-	status,
-	message)
-VALUES (
-	$1,
-	$2,
-	$3,
-	$4)
-ON CONFLICT (
-	feature_assignment_id,
-	environment_id)
-	DO UPDATE SET
-		status = EXCLUDED.status,
-		message = EXCLUDED.message
-`
-
-type SetReconcileStatusParams struct {
-	FeatureAssignmentID uuid.UUID
-	EnvironmentID       uuid.UUID
-	Status              string
-	Message             string
-}
-
-func (q *Queries) SetReconcileStatus(ctx context.Context, arg SetReconcileStatusParams) error {
-	_, err := q.db.Exec(ctx, setReconcileStatus,
-		arg.FeatureAssignmentID,
-		arg.EnvironmentID,
-		arg.Status,
-		arg.Message,
-	)
-	return err
-}
-
 const setReleaseStatus = `-- name: SetReleaseStatus :exec
 INSERT INTO release_statuses(
 	environment_id,
@@ -610,17 +657,31 @@ func (q *Queries) SetReleaseStatus(ctx context.Context, arg SetReleaseStatusPara
 	return err
 }
 
-const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
-UPDATE
-	deploy_instructions
-SET
-	status = 'failed'
+const timeoutPendingDeploys = `-- name: TimeoutPendingDeploys :exec
+INSERT INTO deploy_log(
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash)
+SELECT
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	'failed',
+	hash
+FROM
+	deploy_status
 WHERE
 	status = 'pending'
-	AND last_modified < NOW() - INTERVAL '1 hour'
+	AND created < NOW() - INTERVAL '1 hour'
 `
 
-func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, timeoutDeployInstructions)
+func (q *Queries) TimeoutPendingDeploys(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, timeoutPendingDeploys)
 	return err
 }

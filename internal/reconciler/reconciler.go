@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"go.opentelemetry.io/otel/metric"
@@ -57,7 +58,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, deployer D
 			r.log.With("err", err).Error("reconcile")
 		} else {
 			ioStart := time.Now()
-			if err := r.writeResultLogs(desiredState.Results); err != nil {
+			if err := r.writeResultLogs(ctx, desiredState.Results); err != nil {
 				r.log.With("err", err).Error("log compute results")
 			} else if err := deployer.Deploy(ctx, desiredState.Results); err != nil {
 				r.log.With("err", err).Error("deploy")
@@ -75,15 +76,57 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, deployer D
 	}
 }
 
-func (r *Reconciler) writeResultLogs(_ []ComputeResult) any {
+// writeResultLogs appends a decision_log row for every (environment, feature)
+// whose decision changed since the last cycle. Change detection compares the
+// feature assignment, version, action, and message against the latest decision.
+func (r *Reconciler) writeResultLogs(ctx context.Context, results []ComputeResult) error {
+	latest, err := r.querier.ListLatestDecisions(ctx)
+	if err != nil {
+		return fmt.Errorf("list latest decisions: %w", err)
+	}
+
+	type key struct {
+		env  uuid.UUID
+		feat string
+	}
+	prev := make(map[key]reconcilersql.ListLatestDecisionsRow, len(latest))
+	for _, d := range latest {
+		prev[key{d.EnvironmentID, d.FeatureName}] = d
+	}
+
+	var changed []reconcilersql.AppendDecisionsParams
+	for _, res := range results {
+		p, ok := prev[key{res.EnvironmentID, res.Feature.Name}]
+		if ok &&
+			p.FeatureAssignmentID == res.FeatureAssignmentID &&
+			p.FeatureVersion == res.Feature.Version &&
+			p.Action == res.Action.String() &&
+			p.Message == res.Message {
+			continue
+		}
+		changed = append(changed, reconcilersql.AppendDecisionsParams{
+			EnvironmentID:       res.EnvironmentID,
+			FeatureAssignmentID: res.FeatureAssignmentID,
+			FeatureName:         res.Feature.Name,
+			FeatureVersion:      res.Feature.Version,
+			Action:              res.Action.String(),
+			Message:             res.Message,
+		})
+	}
+
+	if len(changed) > 0 {
+		if _, err := r.querier.AppendDecisions(ctx, changed); err != nil {
+			return fmt.Errorf("append decisions: %w", err)
+		}
+	}
 	return nil
 }
 
-// TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
-// more than one hour and mark them as failed
+// TimeoutDeployInstructions periodically marks deploys stuck in pending for more
+// than one hour as failed by appending a terminal deploy_log row.
 func (r *Reconciler) TimeoutDeployInstructions(ctx context.Context, log *slog.Logger) {
 	for {
-		err := r.querier.TimeoutDeployInstructions(ctx)
+		err := r.querier.TimeoutPendingDeploys(ctx)
 		if err != nil {
 			log.With("err", err).Error("failed to timeout deploy instructions")
 		}

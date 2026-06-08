@@ -103,93 +103,114 @@ ORDER BY
 	ev.environment_id,
 	ev.key;
 
--- name: ListLatestDeployInstructions :many
-SELECT DISTINCT ON (feature_name, environment_id)
-	id,
+-- name: ListLatestDeploys :many
+SELECT
 	environment_id,
 	feature_name,
 	hash,
 	status,
 	feature_assignment_id
 FROM
-	deploy_instructions
+	deploy_status
 ORDER BY
-	feature_name,
 	environment_id,
-	created DESC;
+	feature_name;
 
 -- name: ListDeployedFeatures :many
-SELECT DISTINCT ON (feature_name, environment_id)
-	feature_name,
-	environment_id
+SELECT
+	environment_id,
+	feature_name
 FROM
-	deploy_instructions
+	deploy_status
 WHERE
 	status = 'deployed'
 ORDER BY
-	feature_name,
-	environment_id;
-
--- name: CreateDeployInstruction :batchexec
-INSERT INTO deploy_instructions(
-	id,
 	environment_id,
+	feature_name;
+
+-- name: ListLatestDecisions :many
+SELECT
+	environment_id,
+	feature_name,
+	feature_assignment_id,
+	feature_version,
+	action,
+	message
+FROM
+	decision_status
+ORDER BY
+	environment_id,
+	feature_name;
+
+-- name: AppendDecisions :copyfrom
+INSERT INTO decision_log(
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	action,
+	message)
+VALUES (
+	@environment_id,
+	@feature_assignment_id,
+	@feature_name,
+	@feature_version,
+	@action,
+	@message);
+
+-- name: AppendDeploys :copyfrom
+INSERT INTO deploy_log(
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	"values")
+VALUES (
+	@diid,
+	@environment_id,
+	@feature_assignment_id,
+	@feature_name,
+	@feature_version,
+	@status,
+	@hash,
+	@vals);
+
+-- name: AppendDeployStatus :exec
+INSERT INTO deploy_log(
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash)
+VALUES (
+	@diid,
+	@environment_id,
+	@feature_assignment_id,
+	@feature_name,
+	@feature_version,
+	@status,
+	@hash);
+
+-- name: LatestDeployByDIID :one
+SELECT
+	environment_id,
+	feature_assignment_id,
 	feature_name,
 	feature_version,
 	hash,
-	"values",
-	feature_assignment_id)
-VALUES (
-	@id,
-	@environment_id,
-	@feature_name,
-	@feature_version,
-	@hash,
-	@vals,
-	@feature_assignment_id);
-
--- name: UpsertReconcileStatus :batchexec
-INSERT INTO feature_reconcile_statuses(
-	feature_assignment_id,
-	environment_id,
-	status,
-	message)
-VALUES (
-	@feature_assignment_id,
-	@environment_id,
-	@status,
-	@message)
-ON CONFLICT (
-	feature_assignment_id,
-	environment_id)
-	DO UPDATE SET
-		status = EXCLUDED.status,
-		message = EXCLUDED.message;
-
--- name: SetDeployInstructionStatusForCreated :exec
-UPDATE
-	deploy_instructions
-SET
-	status = @status
-WHERE
-	id = @id
-	AND status = 'created';
-
--- name: SetDeployInstructionStatus :exec
-UPDATE
-	deploy_instructions
-SET
-	status = @status
-WHERE
-	id = @id;
-
--- name: GetDeployInstruction :one
-SELECT
-	*
+	created
 FROM
-	deploy_instructions
+	deploy_log
 WHERE
-	id = @id;
+	diid = @diid
+ORDER BY
+	created DESC
+LIMIT 1;
 
 -- name: DeleteReleaseStatusesInEnvironment :exec
 DELETE FROM release_statuses
@@ -219,30 +240,26 @@ ON CONFLICT (
 		revision = EXCLUDED.revision,
 		last_deployed = EXCLUDED.last_deployed;
 
--- name: SetReconcileStatus :exec
-INSERT INTO feature_reconcile_statuses(
-	feature_assignment_id,
+-- name: TimeoutPendingDeploys :exec
+INSERT INTO deploy_log(
+	diid,
 	environment_id,
-	status,
-	message)
-VALUES (
-	@feature_assignment_id,
-	@environment_id,
-	@status,
-	@message)
-ON CONFLICT (
 	feature_assignment_id,
-	environment_id)
-	DO UPDATE SET
-		status = EXCLUDED.status,
-		message = EXCLUDED.message;
-
--- name: TimeoutDeployInstructions :exec
-UPDATE
-	deploy_instructions
-SET
-	status = 'failed'
+	feature_name,
+	feature_version,
+	status,
+	hash)
+SELECT
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	'failed',
+	hash
+FROM
+	deploy_status
 WHERE
 	status = 'pending'
-	AND last_modified < NOW() - INTERVAL '1 hour';
+	AND created < NOW() - INTERVAL '1 hour';
 
