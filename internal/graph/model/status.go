@@ -6,19 +6,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type RolloutStatus string
+type DeployStatus string
 
 const (
-	RolloutStatusUnknown    RolloutStatus = ""
-	RolloutStatusSent       RolloutStatus = "sent"
-	RolloutStatusInstalling RolloutStatus = "installing"
-	RolloutStatusDeployed   RolloutStatus = "deployed"
-	RolloutStatusFailed     RolloutStatus = "failed"
+	DeployStatusUnknown    DeployStatus = ""
+	DeployStatusSent       DeployStatus = "sent"
+	DeployStatusInstalling DeployStatus = "installing"
+	DeployStatusDeployed   DeployStatus = "deployed"
+	DeployStatusFailed     DeployStatus = "failed"
 )
 
-func (r RolloutStatus) IsValid() bool {
+func (r DeployStatus) IsValid() bool {
 	switch r {
-	case RolloutStatusUnknown, RolloutStatusSent, RolloutStatusInstalling, RolloutStatusDeployed, RolloutStatusFailed:
+	case DeployStatusUnknown, DeployStatusSent, DeployStatusInstalling, DeployStatusDeployed, DeployStatusFailed:
 		return true
 	}
 	return false
@@ -26,11 +26,11 @@ func (r RolloutStatus) IsValid() bool {
 
 // IsInProgress reports whether the rollout has been dispatched but has not yet
 // reached a terminal state (deployed/failed).
-func (r RolloutStatus) IsInProgress() bool {
-	return r == RolloutStatusSent || r == RolloutStatusInstalling
+func (r DeployStatus) IsInProgress() bool {
+	return r == DeployStatusSent || r == DeployStatusInstalling
 }
 
-func (r RolloutStatus) String() string {
+func (r DeployStatus) String() string {
 	return string(r)
 }
 

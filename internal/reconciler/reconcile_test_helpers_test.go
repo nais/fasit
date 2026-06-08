@@ -157,13 +157,13 @@ func (h *reconcileTest) reconcile() {
 		if strings.HasSuffix(msg.Name, "-pending") {
 			continue
 		}
-		h.appendDeployStatus(msg.ID, model.RolloutStatusDeployed)
+		h.appendDeployStatus(msg.ID, model.DeployStatusDeployed)
 	}
 }
 
 // appendDeployStatus mimics the naisd Receiver: it appends a terminal deploy_log
 // row for the given diid, carrying the hash forward from the latest row.
-func (h *reconcileTest) appendDeployStatus(diid uuid.UUID, status model.RolloutStatus) {
+func (h *reconcileTest) appendDeployStatus(diid uuid.UUID, status model.DeployStatus) {
 	h.t.Helper()
 	_, err := h.pool.Exec(h.ctx, `
 		INSERT INTO deploy_log (diid, environment_id, feature_assignment_id, feature_name, feature_version, status, hash)
