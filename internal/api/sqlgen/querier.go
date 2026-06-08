@@ -10,11 +10,11 @@ import (
 
 type Querier interface {
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
-	// Derives a single display status per environment in the rollout vocabulary
-	// (pending/deployed/failed/DISABLED) by preferring the deploy_log rollout state
-	// and falling back to the latest decision action when the feature was never
-	// deployed (e.g. pre-flight failures). disabled_features membership wins.
-	ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error)
+	// Returns the raw status signals per environment for a feature assignment: the
+	// deploy rollout state, the latest reconciler decision, and disabled-feature
+	// membership. The effective display status is selected in Go
+	// (featureassignment.DeriveReconcileState).
+	ListReconcileSignals(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileSignalsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

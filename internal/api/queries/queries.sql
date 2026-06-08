@@ -9,11 +9,11 @@ FROM
 WHERE
 	d.id = @id::UUID;
 
--- name: ListReconcileStatuses :many
--- Derives a single display status per environment in the rollout vocabulary
--- (pending/deployed/failed/DISABLED) by preferring the deploy_log rollout state
--- and falling back to the latest decision action when the feature was never
--- deployed (e.g. pre-flight failures). disabled_features membership wins.
+-- name: ListReconcileSignals :many
+-- Returns the raw status signals per environment for a feature assignment: the
+-- deploy rollout state, the latest reconciler decision, and disabled-feature
+-- membership. The effective display status is selected in Go
+-- (featureassignment.DeriveReconcileState).
 WITH dep AS (
 	SELECT
 		environment_id,
@@ -64,33 +64,17 @@ envs AS (
 		disabled
 )
 SELECT
-	@feature_assignment_id::UUID AS feature_assignment_id,
 	ev.environment_id,
-(
-		CASE WHEN dis.environment_id IS NOT NULL THEN
-			'DISABLED'
-		WHEN dep.status IS NOT NULL THEN
-			dep.status
-		WHEN dec.action = 'disabled' THEN
-			'DISABLED'
-		WHEN dec.action IN ('missing-deps', 'missing-config', 'render-error') THEN
-			'failed'
-		WHEN dec.action IN ('unhealthy', 'in-progress', 'deploy') THEN
-			'pending'
-		WHEN dec.action = 'unchanged' THEN
-			'deployed'
-		ELSE
-			'unknown'
-		END)::TEXT AS status,
-	COALESCE(dec.message, '')::TEXT AS message,
-	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS last_modified,
-	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS created
+	COALESCE(dep.status, '')::TEXT AS deploy_status,
+	COALESCE(dec.action, '')::TEXT AS decision_action,
+	COALESCE(dec.message, '')::TEXT AS decision_message,
+(dis.environment_id IS NOT NULL)::BOOL AS disabled,
+	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS last_modified
 FROM
 	envs ev
 	LEFT JOIN dep ON dep.environment_id = ev.environment_id
 	LEFT JOIN dec ON dec.environment_id = ev.environment_id
 	LEFT JOIN disabled dis ON dis.environment_id = ev.environment_id
 ORDER BY
-	last_modified DESC,
 	ev.environment_id ASC;
 
