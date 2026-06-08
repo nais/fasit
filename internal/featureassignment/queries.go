@@ -142,13 +142,11 @@ func ListFeatureReconcileStatuses(ctx context.Context, featureAssignmentID uuid.
 	return models, nil
 }
 
-// NormalizeStatus uppercases a deployment status and maps intermediate
-// states to user-facing labels (e.g. CREATED → PENDING).
+// NormalizeStatus uppercases a deployment status and maps the empty status to
+// UNKNOWN.
 func NormalizeStatus(s string) string {
 	s = strings.ToUpper(s)
 	switch s {
-	case "CREATED", "INVALIDATED":
-		return "PENDING"
 	case "":
 		return "UNKNOWN"
 	default:

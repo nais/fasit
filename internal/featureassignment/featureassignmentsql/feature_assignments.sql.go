@@ -162,14 +162,7 @@ const getReconcileStatus = `-- name: GetReconcileStatus :one
 WITH dep AS (
 	SELECT
 		environment_id,
-		CASE status
-		WHEN 'created' THEN
-			'pending'
-		WHEN 'invalidated' THEN
-			'pending'
-		ELSE
-			status
-		END AS status,
+		status,
 		created
 	FROM
 		deploy_status
@@ -667,14 +660,7 @@ const listReconcileStatuses = `-- name: ListReconcileStatuses :many
 WITH dep AS (
 	SELECT
 		environment_id,
-		CASE status
-		WHEN 'created' THEN
-			'pending'
-		WHEN 'invalidated' THEN
-			'pending'
-		ELSE
-			status
-		END AS status,
+		status,
 		created
 	FROM
 		deploy_status

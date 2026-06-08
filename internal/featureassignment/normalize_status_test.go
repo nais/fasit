@@ -6,11 +6,6 @@ func TestNormalizeStatus(t *testing.T) {
 	tests := []struct {
 		input, want string
 	}{
-		{"created", "PENDING"},
-		{"CREATED", "PENDING"},
-		{"Created", "PENDING"},
-		{"invalidated", "PENDING"},
-		{"INVALIDATED", "PENDING"},
 		{"deployed", "DEPLOYED"},
 		{"failed", "FAILED"},
 		{"pending", "PENDING"},
