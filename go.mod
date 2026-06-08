@@ -29,7 +29,6 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
-	github.com/nsf/jsondiff v0.0.0-20260207060731-8e8d90c4c0ac
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/sethvargo/go-envconfig v1.3.0

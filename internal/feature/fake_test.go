@@ -34,11 +34,7 @@ func (f *fakeQuerier) GetLatestDeployInstruction(ctx context.Context, arg featur
 	panic("implement me")
 }
 
-func (f *fakeQuerier) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (featuresql.GetPreviousDeployInstructionRow, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) ListRecentDeployInstructions(ctx context.Context, arg featuresql.ListRecentDeployInstructionsParams) ([]featuresql.ListRecentDeployInstructionsRow, error) {
+func (f *fakeQuerier) ListDeployLog(ctx context.Context, arg featuresql.ListDeployLogParams) ([]featuresql.ListDeployLogRow, error) {
 	panic("not implemented")
 }
 

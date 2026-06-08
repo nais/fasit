@@ -10,8 +10,8 @@ import (
 
 type Querier interface {
 	GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams) (GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow, error)
-	// Deploy history for the UI, derived from deploy_log. Publish row (earliest per
-	// diid) carries version/hash/values; current status is the latest row per diid.
+	// Deploy history for the UI, derived from the deploy_status view (latest row
+	// per environment x feature). One row per environment for the assignment.
 	ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDeployInstructionsRow, error)
 	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)

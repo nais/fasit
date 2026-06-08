@@ -4,11 +4,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type HelmValueDiff struct {
-	Difference HelmValueDifference `json:"difference"`
-	Diff       string              `json:"diff"`
-}
-
 type RolloutLog struct {
 	ID          uuid.UUID  `json:"id"`
 	TenantName  string     `json:"tenantName"`
@@ -16,11 +11,23 @@ type RolloutLog struct {
 	Lines       []*LogLine `json:"lines"`
 }
 
-type HelmValueDifference string
+type ConfigSource string
 
 const (
-	HelmValueDifferenceFullMatch     HelmValueDifference = "FULL_MATCH"
-	HelmValueDifferenceSupersetMatch HelmValueDifference = "SUPERSET_MATCH"
-	HelmValueDifferenceNoMatch       HelmValueDifference = "NO_MATCH"
-	HelmValueDifferenceInvalidJSON   HelmValueDifference = "INVALID_JSON"
+	ConfigSourceGlobal  ConfigSource = "GLOBAL"
+	ConfigSourceEnv     ConfigSource = "ENV"
+	ConfigSourceHelm    ConfigSource = "HELM"
+	ConfigSourceUnknown ConfigSource = "UNKNOWN"
 )
+
+func (e ConfigSource) IsValid() bool {
+	switch e {
+	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm, ConfigSourceUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ConfigSource) String() string {
+	return string(e)
+}

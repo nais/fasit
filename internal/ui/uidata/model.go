@@ -46,7 +46,6 @@ type DeployInstruction struct {
 	Hash                string
 	Created             time.Time
 	LastModified        time.Time
-	Values              []byte
 	FeatureAssignmentID uuid.UUID
 	EnvironmentName     string
 	TenantName          string
