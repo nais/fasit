@@ -107,10 +107,6 @@ func (s *Seeder) create(ctx context.Context, d assignmentInput) (uuid.UUID, erro
 	})
 }
 
-func (s *Seeder) Reset() {
-	s.assignments = nil
-}
-
 func (s *Seeder) ChartDownloader() featureassignment.ChartDownloaderFunc {
 	return func(chartURL, version string) (*feature.Feature, error) {
 		for _, deploy := range s.assignments {
