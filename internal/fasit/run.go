@@ -102,7 +102,7 @@ func Run(ctx context.Context) error {
 	}
 	ctx = reconciler.WithContext(ctx, rec)
 
-	go rec.TimeoutDeployInstructions(ctx, log)
+	go rec.TimeoutPendingDeploys(ctx, log)
 
 	deployer, err := reconciler.NewPubSubDeployer(pool, assignmentPublisher, meter, log)
 	if err != nil {

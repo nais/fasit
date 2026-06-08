@@ -135,8 +135,9 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 		}
 	}
 
-	// Append the terminal deploy_log row for this diid, carrying the hash forward
-	// so deploy_status reflects the deployed hash for skip-unchanged comparison.
+	// Append the deploy_log row for this diid's reported status (installing or
+	// terminal deployed/failed), carrying the hash forward so deploy_status
+	// reflects the deployed hash for skip-unchanged comparison.
 	if err := r.querier.AppendDeployStatus(ctx, reconcilersql.AppendDeployStatusParams{
 		Diid:                helmStatus.DIID,
 		EnvironmentID:       deploy.EnvironmentID,

@@ -122,13 +122,14 @@ func (r *Reconciler) writeResultLogs(ctx context.Context, results []DeployDecisi
 	return nil
 }
 
-// TimeoutDeployInstructions periodically marks deploys stuck in pending for more
-// than one hour as failed by appending a terminal deploy_log row.
-func (r *Reconciler) TimeoutDeployInstructions(ctx context.Context, log *slog.Logger) {
+// TimeoutPendingDeploys periodically marks deploys stuck in a non-terminal
+// status (sent/installing) for more than one hour as failed by appending a
+// terminal deploy_log row.
+func (r *Reconciler) TimeoutPendingDeploys(ctx context.Context, log *slog.Logger) {
 	for {
 		err := r.querier.TimeoutPendingDeploys(ctx)
 		if err != nil {
-			log.With("err", err).Error("failed to timeout deploy instructions")
+			log.With("err", err).Error("failed to timeout pending deploys")
 		}
 
 		select {

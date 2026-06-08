@@ -89,9 +89,9 @@ func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []DeployDecision)
 
 	// Append-only: a deploy_log row is written only after a successful publish,
 	// carrying the diid sent to naisd, the hash, and the rendered values (status
-	// pending). naisd later appends the terminal row for the same diid. A publish
-	// failure writes nothing, so the next cycle sees the previous deploy and
-	// retries.
+	// sent). naisd later appends the installing and terminal (deployed/failed)
+	// rows for the same diid. A publish failure writes nothing, so the next cycle
+	// sees the previous deploy and retries.
 	var deployRows []reconcilersql.AppendDeploysParams
 	for _, item := range toPublish {
 		pub := w.publisher(item.topicID)
