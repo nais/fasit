@@ -209,7 +209,8 @@ FROM
 WHERE
 	diid = @diid
 ORDER BY
-	created DESC
+	created DESC,
+	id DESC
 LIMIT 1;
 
 -- name: DeleteReleaseStatusesInEnvironment :exec
