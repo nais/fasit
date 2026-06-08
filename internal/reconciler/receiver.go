@@ -123,7 +123,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 		return err
 	}
 
-	if helmStatus.RolloutStatus == model.RolloutStatusFailed {
+	if helmStatus.RolloutStatus == model.DeployStatusFailed {
 		tenant, err := envpkg.GetTenant(ctx, env.TenantID)
 		if err != nil {
 			return fmt.Errorf("getting tenant: %w", err)

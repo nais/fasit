@@ -48,8 +48,11 @@ type Helm struct {
 	// Name is the name of the feature
 	Name string
 	// Version is the chart version
-	Version       string
-	RolloutStatus model.RolloutStatus
+	Version string
+	// RolloutStatus is the deploy lifecycle status reported by naisd. Its JSON key
+	// is part of the naisd<->fasit wire contract and must stay stable across
+	// independent naisd upgrades, so the field name is kept.
+	RolloutStatus model.DeployStatus `json:"RolloutStatus"`
 	ConfigHash    string
 	Log           string
 	Error         string `json:",omitempty"`

@@ -281,7 +281,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStatus := message.Helm{
 		DIID:          msg.ID,
 		ConfigHash:    msg.ConfigHash,
-		RolloutStatus: model.RolloutStatusInstalling,
+		RolloutStatus: model.DeployStatusInstalling,
 	}
 
 	_ = d.publishStatus(ctx, helmStatus)
@@ -295,10 +295,10 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args)
 	if err != nil {
 		d.log.With("err", err, "feature", msg.Name).Warn("failed to run helm")
-		helmStatus.RolloutStatus = model.RolloutStatusFailed
+		helmStatus.RolloutStatus = model.DeployStatusFailed
 		helmStatus.Error = err.Error()
 	} else {
-		helmStatus.RolloutStatus = model.RolloutStatusDeployed
+		helmStatus.RolloutStatus = model.DeployStatusDeployed
 	}
 	if d.helmDuration != nil {
 		d.helmDuration.Record(ctx, time.Since(helmStart).Seconds(), metric.WithAttributes(

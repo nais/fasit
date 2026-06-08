@@ -175,7 +175,7 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 
 	// Check against latest instruction.
 	if instr, ok := snap.latestInstr[env.ID][dep.Feature.Name]; ok {
-		if model.RolloutStatus(instr.Status).IsInProgress() {
+		if model.DeployStatus(instr.Status).IsInProgress() {
 			base.Action = ActionSkipInProgress
 			base.Message = "deployment is already in progress"
 			return base

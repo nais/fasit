@@ -506,7 +506,7 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 		FeatureAssignmentID: &di.FeatureAssignmentID,
 		FeatureName:         di.FeatureName,
 		FeatureVersion:      di.FeatureVersion,
-		Status:              model.RolloutStatus(di.Status),
+		Status:              model.DeployStatus(di.Status),
 		Hash:                di.Hash,
 		Created:             di.Created,
 		LastModified:        di.Created,
@@ -531,7 +531,7 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 		FeatureAssignmentID: &di.FeatureAssignmentID,
 		FeatureName:         di.FeatureName,
 		FeatureVersion:      di.FeatureVersion,
-		Status:              model.RolloutStatus(di.Status),
+		Status:              model.DeployStatus(di.Status),
 		Hash:                di.Hash,
 		Created:             di.Created,
 		LastModified:        di.Created,
@@ -568,7 +568,7 @@ func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureN
 			byDiid[r.Diid] = d
 			order = append(order, r.Diid)
 		}
-		d.Status = model.RolloutStatus(r.Status)
+		d.Status = model.DeployStatus(r.Status)
 		d.LastModified = r.Created
 	}
 
