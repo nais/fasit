@@ -105,7 +105,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 		return nil
 	}
 
-	di, err := r.querier.GetDeployInstruction(ctx, helmStatus.DIID)
+	deploy, err := r.querier.LatestDeployByDIID(ctx, helmStatus.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.With("diid", helmStatus.DIID).Warn("unknown deploy instruction")
@@ -114,21 +114,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 		return err
 	}
 
-	msg := "received status from naisd."
-	if helmStatus.Error != "" {
-		msg += " error: " + helmStatus.Error
-	}
-	err = r.querier.SetReconcileStatus(ctx, reconcilersql.SetReconcileStatusParams{
-		FeatureAssignmentID: *di.FeatureAssignmentID,
-		EnvironmentID:       di.EnvironmentID,
-		Status:              helmStatus.RolloutStatus.String(),
-		Message:             msg,
-	})
-	if err != nil {
-		return err
-	}
-
-	env, err := envpkg.Get(ctx, di.EnvironmentID)
+	env, err := envpkg.Get(ctx, deploy.EnvironmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.With("deploy_instruction", helmStatus.DIID).Warn("unknown deploy instruction")
@@ -143,23 +129,30 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 			return fmt.Errorf("getting tenant: %w", err)
 		}
 
-		slackMsg := r.slack.GetFeatureDeployFailedMessageOptions(di.FeatureName, tenant.Name, env.Name)
+		slackMsg := r.slack.GetFeatureDeployFailedMessageOptions(deploy.FeatureName, tenant.Name, env.Name)
 		if _, _, err := r.slack.PostMessage(r.slackChannel, slackMsg); err != nil {
 			r.log.With("err", err).Error("sending slack message")
 		}
 	}
 
-	if err := r.querier.SetDeployInstructionStatus(ctx, reconcilersql.SetDeployInstructionStatusParams{
-		Status: helmStatus.RolloutStatus.String(),
-		ID:     helmStatus.DIID,
+	// Append the terminal deploy_log row for this diid, carrying the hash forward
+	// so deploy_status reflects the deployed hash for skip-unchanged comparison.
+	if err := r.querier.AppendDeployStatus(ctx, reconcilersql.AppendDeployStatusParams{
+		Diid:                helmStatus.DIID,
+		EnvironmentID:       deploy.EnvironmentID,
+		FeatureAssignmentID: deploy.FeatureAssignmentID,
+		FeatureName:         deploy.FeatureName,
+		FeatureVersion:      deploy.FeatureVersion,
+		Status:              helmStatus.RolloutStatus.String(),
+		Hash:                deploy.Hash,
 	}); err != nil {
-		return fmt.Errorf("updating deploy instruction status: %w", err)
+		return fmt.Errorf("appending deploy status: %w", err)
 	}
 
 	if r.deployDuration != nil {
-		duration := time.Since(di.Created).Seconds()
+		duration := time.Since(deploy.Created).Seconds()
 		r.deployDuration.Record(ctx, duration, metric.WithAttributes(
-			attribute.String("feature", di.FeatureName),
+			attribute.String("feature", deploy.FeatureName),
 			attribute.String("status", helmStatus.RolloutStatus.String()),
 		))
 	}

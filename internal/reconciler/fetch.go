@@ -134,7 +134,7 @@ func (r *Reconciler) fetchSnapshot(ctx context.Context) (*snapshot, error) {
 	})
 
 	g.Go(func() error {
-		rows, err := r.querier.ListLatestDeployInstructions(gctx)
+		rows, err := r.querier.ListLatestDeploys(gctx)
 		if err != nil {
 			return fmt.Errorf("list instructions: %w", err)
 		}

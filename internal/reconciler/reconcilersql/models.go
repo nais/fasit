@@ -8,19 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type DeployInstruction struct {
-	ID                  uuid.UUID
-	EnvironmentID       uuid.UUID
-	FeatureName         string
-	FeatureVersion      string
-	Status              string
-	Hash                string
-	Created             time.Time
-	LastModified        time.Time
-	Values              []byte
-	FeatureAssignmentID *uuid.UUID
-}
-
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
 	ReportedAt    time.Time

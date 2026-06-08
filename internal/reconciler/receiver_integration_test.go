@@ -111,7 +111,7 @@ func TestReceiverIntegration(t *testing.T) {
 		}
 	})
 
-	t.Run("helmStatus: updates deploy instruction status", func(t *testing.T) {
+	t.Run("helmStatus: appends terminal deploy_log row", func(t *testing.T) {
 		pool := db.Pool(ctx, t)
 		ctx := testinfra.Context(ctx, pool)
 		testinfra.Exec(ctx, t, pool, fixtures...)
@@ -121,7 +121,7 @@ func TestReceiverIntegration(t *testing.T) {
 		testinfra.Exec(ctx, t, pool,
 			fmt.Sprintf("INSERT INTO feature_data (name, version, values, chart, source, description, kinds, default_values, dependencies) VALUES ('myfeature', '1.0.0', '{}', 'oci://chart', 'source', 'description', '{tenant}', '{}', '{}')"),
 			fmt.Sprintf("INSERT INTO feature_assignments (id, feature_name, version) VALUES ('%s', 'myfeature', '1.0.0')", faID),
-			fmt.Sprintf("INSERT INTO deploy_instructions (id, environment_id, feature_name, feature_version, hash, feature_assignment_id) VALUES ('%s', '%s', 'myfeature', '1.0.0', 'abc', '%s')", diID, envID, faID),
+			fmt.Sprintf("INSERT INTO deploy_log (diid, environment_id, feature_assignment_id, feature_name, feature_version, status, hash) VALUES ('%s', '%s', '%s', 'myfeature', '1.0.0', 'pending', 'abc')", diID, envID, faID),
 		)
 
 		helm := map[string]any{
@@ -137,14 +137,17 @@ func TestReceiverIntegration(t *testing.T) {
 		}}, slog.Default(), fake.NewFakeSlackClient(), "test", noop.Meter{})
 		rec.Run(ctx)
 
-		// Verify the deploy instruction status was updated.
-		var status string
-		err := pool.QueryRow(ctx, "SELECT status FROM deploy_instructions WHERE id = $1", diID).Scan(&status)
+		// Verify the receiver appended a terminal deployed row carrying the hash.
+		var status, hash string
+		err := pool.QueryRow(ctx, "SELECT status, hash FROM deploy_log WHERE diid = $1 ORDER BY created DESC LIMIT 1", diID).Scan(&status, &hash)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if status != "deployed" {
 			t.Errorf("status = %q, want %q", status, "deployed")
+		}
+		if hash != "abc" {
+			t.Errorf("hash = %q, want %q (carried forward)", hash, "abc")
 		}
 	})
 }

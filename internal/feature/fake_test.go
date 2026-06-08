@@ -26,19 +26,19 @@ type fakeQuerier struct {
 	configEnvListByFeatureFunc    func(ctx context.Context, arg featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error)
 }
 
-func (f *fakeQuerier) GetLatestDeployedDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployedDeployInstructionParams) (featuresql.DeployInstruction, error) {
+func (f *fakeQuerier) GetLatestDeployedDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployedDeployInstructionParams) (featuresql.GetLatestDeployedDeployInstructionRow, error) {
 	panic("implement me")
 }
 
-func (f *fakeQuerier) GetLatestDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployInstructionParams) (featuresql.DeployInstruction, error) {
+func (f *fakeQuerier) GetLatestDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployInstructionParams) (featuresql.GetLatestDeployInstructionRow, error) {
 	panic("implement me")
 }
 
-func (f *fakeQuerier) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (featuresql.DeployInstruction, error) {
+func (f *fakeQuerier) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (featuresql.GetPreviousDeployInstructionRow, error) {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) ListRecentDeployInstructions(ctx context.Context, arg featuresql.ListRecentDeployInstructionsParams) ([]featuresql.DeployInstruction, error) {
+func (f *fakeQuerier) ListRecentDeployInstructions(ctx context.Context, arg featuresql.ListRecentDeployInstructionsParams) ([]featuresql.ListRecentDeployInstructionsRow, error) {
 	panic("not implemented")
 }
 

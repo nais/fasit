@@ -256,52 +256,6 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 	}
 }
 
-func RedeployHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "Invalid form data", http.StatusBadRequest)
-			return
-		}
-
-		tenant, err := envpkg.GetTenantByName(r.Context(), chi.URLParam(r, "tenant"))
-		if err != nil {
-			http.Error(w, "Failed to get tenant: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		env, err := envpkg.GetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
-		if err != nil {
-			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		feature, err := featureassignment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
-		if err != nil {
-			status := http.StatusInternalServerError
-			if errors.Is(err, featureassignment.ErrFeatureNotFound) {
-				status = http.StatusNotFound
-			}
-			http.Error(w, "Failed to get feature: "+err.Error(), status)
-			return
-		}
-		_, disabled, err := featurepkg.FeatureDisabledAt(r.Context(), env.ID, feature.Name)
-		if err != nil {
-			http.Error(w, "Failed to get feature state: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if disabled {
-			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
-			return
-		}
-		if err := featureassignment.InvalidateLatestDeploy(r.Context(), env.ID, feature.Name); err != nil {
-			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		reconciler.TriggerReconcile()
-
-		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
-	}
-}
-
 func featurePageContent(page *FeaturePage) g.Node {
 	var tabContent g.Node
 	switch page.ActiveTab {
@@ -354,17 +308,7 @@ func pageKebab(page *FeaturePage) g.Node {
 	items := []g.Node{}
 
 	items = append(items, components.LokiLogsItem(LokiExploreURL(page.Tenant.Name, page.Environment.Name, page.Feature.Name)))
-	redeployPopoverID := "trigger-redeploy"
 	reconcilePopoverID := "toggle-reconcile"
-
-	if page.Feature.Enabled {
-		items = append(items,
-			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", redeployPopoverID),
-				g.Raw(components.IconRedeploy),
-				g.Text("Trigger redeploy"),
-			),
-		)
-	}
 
 	if page.Feature.Enabled {
 		items = append(items,
@@ -391,11 +335,7 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
-	return components.KebabWrap(kebabID, items, redeployPopover(page), reconcilePopover(page))
-}
-
-func redeployPopover(page *FeaturePage) g.Node {
-	return components.RedeployPopover("trigger-redeploy", featureBasePathForPage(page)+"/redeploy", page.Feature.Name, page.Environment.Name, page.Feature.Enabled, "")
+	return components.KebabWrap(kebabID, items, reconcilePopover(page))
 }
 
 func reconcilePopover(page *FeaturePage) g.Node {

@@ -260,35 +260,6 @@ func DeactivateByFeatureAndTarget(ctx context.Context, featureName string, targe
 	})
 }
 
-func InvalidateLatestDeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
-	err := querier(ctx).InvalidateDeployInstruction(ctx, featureassignmentsql.InvalidateDeployInstructionParams{
-		EnvironmentID: envID,
-		FeatureName:   featureName,
-	})
-	if err != nil {
-		return fmt.Errorf("invalidate hash: %w", err)
-	}
-
-	if dep, err := mostSpecificAssignment(ctx, envID, featureName); err == nil {
-		_ = querier(ctx).SetReconcileStatus(ctx, featureassignmentsql.SetReconcileStatusParams{
-			FeatureAssignmentID: dep.ID,
-			EnvironmentID:       envID,
-			Status:              "pending",
-			Message:             "redeploy triggered",
-		})
-	}
-
-	_ = audit.Create(ctx, audit.CreateParams{
-		Action:        audit.ActionRedeploy,
-		ObjectType:    audit.ObjectTypeFeatureAssignment,
-		ObjectID:      featureName,
-		Feature:       featureName,
-		EnvironmentID: &envID,
-	})
-
-	return nil
-}
-
 func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*featurepkg.Feature, error) {
 	dep, err := mostSpecificAssignment(ctx, envID, featureName)
 	if err != nil {

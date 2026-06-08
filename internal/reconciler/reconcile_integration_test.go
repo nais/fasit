@@ -135,8 +135,11 @@ func TestReconcileWhenPreviousIsFailed(t *testing.T) {
 	h.reconcile()
 
 	_, err := h.pool.Exec(ctx, `
-		UPDATE deploy_instructions SET status = 'failed'
+		INSERT INTO deploy_log (diid, environment_id, feature_assignment_id, feature_name, feature_version, status, hash)
+		SELECT diid, environment_id, feature_assignment_id, feature_name, feature_version, 'failed', hash
+		FROM deploy_log
 		WHERE feature_name = 'feature-failed' AND feature_version = '1.0.0'
+		ORDER BY created DESC LIMIT 1
 	`)
 	if err != nil {
 		t.Fatalf("mark failed: %v", err)
@@ -389,7 +392,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 	h.reconcile()
 
 	var totalInstructions int
-	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed'`).Scan(&totalInstructions)
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_status WHERE status = 'deployed'`).Scan(&totalInstructions)
 	t.Logf("deployed instructions: %d", totalInstructions)
 	if totalInstructions != numFeatures*len(allEnvs) {
 		t.Errorf("deployed instructions = %d, want %d", totalInstructions, numFeatures*len(allEnvs))
@@ -412,7 +415,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 
 	expectedChanged := len(allEnvs) - len(envKinds) // 30 - 3 = 27
 	var newInstructions int
-	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_instructions WHERE status = 'deployed' AND feature_name = $1 AND feature_version = '3.0.0'`, changedFeature).Scan(&newInstructions)
+	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM deploy_status WHERE status = 'deployed' AND feature_name = $1 AND feature_version = '3.0.0'`, changedFeature).Scan(&newInstructions)
 	t.Logf("new deployed instructions for %s v3.0.0: %d", changedFeature, newInstructions)
 	if newInstructions != expectedChanged {
 		t.Errorf("new instructions = %d, want %d", newInstructions, expectedChanged)

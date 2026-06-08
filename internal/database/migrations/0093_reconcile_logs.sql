@@ -41,22 +41,30 @@ ORDER BY
 	feature_name,
 	created DESC;
 
--- Append-only log of deploy outcomes. Every deploy is a change, so every
--- dispatched deploy is recorded.
+-- Append-only deploy lifecycle log. The Deployer appends a row at publish
+-- (status created/pending) carrying the diid sent to naisd, the hash, and the
+-- rendered values; the naisd Receiver appends a new row with the same diid for
+-- the terminal status (deployed/failed). diid repeats across a deploy's
+-- transition rows, so it is a correlation key, not unique. values lands on the
+-- publish row; transition rows leave it at the default.
 CREATE TABLE deploy_log(
 	id BIGSERIAL PRIMARY KEY,
+	diid UUID NOT NULL,
 	environment_id UUID NOT NULL REFERENCES environments(id) ON DELETE CASCADE,
 	feature_assignment_id UUID NOT NULL REFERENCES feature_assignments(id) ON DELETE CASCADE,
 	feature_name TEXT NOT NULL,
 	feature_version TEXT NOT NULL,
 	status TEXT NOT NULL,
 	hash TEXT NOT NULL DEFAULT '',
+	values JSONB NOT NULL DEFAULT '{}',
 	created TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX deploy_log_env_feature_idx ON deploy_log(environment_id, feature_name, created DESC);
 
 CREATE INDEX deploy_log_assignment_idx ON deploy_log(feature_assignment_id, created DESC);
+
+CREATE INDEX deploy_log_diid_idx ON deploy_log(diid, created DESC);
 
 CREATE TRIGGER deploy_log_no_modify
 	BEFORE DELETE OR UPDATE ON deploy_log
@@ -66,6 +74,7 @@ CREATE TRIGGER deploy_log_no_modify
 -- Latest deploy outcome per feature×environment.
 CREATE VIEW deploy_status AS SELECT DISTINCT ON (environment_id, feature_name)
 	id,
+	diid,
 	environment_id,
 	feature_assignment_id,
 	feature_name,

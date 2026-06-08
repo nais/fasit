@@ -5,20 +5,61 @@ package featuresql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const getLatestDeployInstruction = `-- name: GetLatestDeployInstruction :one
+WITH publish AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		environment_id,
+		feature_assignment_id,
+		feature_name,
+		feature_version,
+		hash,
+		"values",
+		created
+	FROM
+		deploy_log
+	WHERE
+		feature_name = $1::TEXT
+		AND environment_id = $2::UUID
+	ORDER BY
+		diid,
+		created ASC
+),
+current_status AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		status,
+		created AS last_modified
+	FROM
+		deploy_log
+	WHERE
+		feature_name = $1::TEXT
+		AND environment_id = $2::UUID
+	ORDER BY
+		diid,
+		created DESC
+)
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
+	p.diid AS id,
+	p.environment_id,
+	p.feature_assignment_id,
+	p.feature_name,
+	p.feature_version,
+	cs.status,
+	p.hash,
+	p.created,
+	cs.last_modified,
+	p."values"
 FROM
-	deploy_instructions
-WHERE
-	feature_name = $1
-	AND environment_id = $2
+	publish p
+	JOIN current_status cs ON cs.diid = p.diid
 ORDER BY
-	created DESC
+	p.created DESC
 LIMIT 1
 `
 
@@ -27,12 +68,26 @@ type GetLatestDeployInstructionParams struct {
 	EnvironmentID uuid.UUID
 }
 
-func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (DeployInstruction, error) {
+type GetLatestDeployInstructionRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
+	Values              []byte
+}
+
+func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error) {
 	row := q.db.QueryRow(ctx, getLatestDeployInstruction, arg.FeatureName, arg.EnvironmentID)
-	var i DeployInstruction
+	var i GetLatestDeployInstructionRow
 	err := row.Scan(
 		&i.ID,
 		&i.EnvironmentID,
+		&i.FeatureAssignmentID,
 		&i.FeatureName,
 		&i.FeatureVersion,
 		&i.Status,
@@ -40,22 +95,62 @@ func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestD
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
-		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
 
 const getLatestDeployedDeployInstruction = `-- name: GetLatestDeployedDeployInstruction :one
+WITH publish AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		environment_id,
+		feature_assignment_id,
+		feature_name,
+		feature_version,
+		hash,
+		"values",
+		created
+	FROM
+		deploy_log
+	WHERE
+		feature_name = $1::TEXT
+		AND environment_id = $2::UUID
+	ORDER BY
+		diid,
+		created ASC
+),
+current_status AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		status,
+		created AS last_modified
+	FROM
+		deploy_log
+	WHERE
+		feature_name = $1::TEXT
+		AND environment_id = $2::UUID
+	ORDER BY
+		diid,
+		created DESC
+)
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
+	p.diid AS id,
+	p.environment_id,
+	p.feature_assignment_id,
+	p.feature_name,
+	p.feature_version,
+	cs.status,
+	p.hash,
+	p.created,
+	cs.last_modified,
+	p."values"
 FROM
-	deploy_instructions
+	publish p
+	JOIN current_status cs ON cs.diid = p.diid
 WHERE
-	feature_name = $1
-	AND environment_id = $2
-	AND status = 'deployed'
+	cs.status = 'deployed'
 ORDER BY
-	last_modified DESC
+	cs.last_modified DESC
 LIMIT 1
 `
 
@@ -64,12 +159,26 @@ type GetLatestDeployedDeployInstructionParams struct {
 	EnvironmentID uuid.UUID
 }
 
-func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (DeployInstruction, error) {
+type GetLatestDeployedDeployInstructionRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
+	Values              []byte
+}
+
+func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (GetLatestDeployedDeployInstructionRow, error) {
 	row := q.db.QueryRow(ctx, getLatestDeployedDeployInstruction, arg.FeatureName, arg.EnvironmentID)
-	var i DeployInstruction
+	var i GetLatestDeployedDeployInstructionRow
 	err := row.Scan(
 		&i.ID,
 		&i.EnvironmentID,
+		&i.FeatureAssignmentID,
 		&i.FeatureName,
 		&i.FeatureVersion,
 		&i.Status,
@@ -77,51 +186,99 @@ func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg Ge
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
-		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
 
 const getPreviousDeployInstruction = `-- name: GetPreviousDeployInstruction :one
-WITH CURRENT AS (
+WITH cur AS (
 	SELECT
-		di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.feature_assignment_id
+		environment_id,
+		feature_name,
+		created
 	FROM
-		deploy_instructions di
+		deploy_log
 	WHERE
-		di.id = $1
+		diid = $1::UUID
+	ORDER BY
+		created ASC
+	LIMIT 1
+),
+publish AS (
+	SELECT DISTINCT ON (dl.diid)
+		dl.diid,
+		dl.environment_id,
+		dl.feature_assignment_id,
+		dl.feature_name,
+		dl.feature_version,
+		dl.hash,
+		dl."values",
+		dl.created
+	FROM
+		deploy_log dl,
+		cur
+	WHERE
+		dl.environment_id = cur.environment_id
+		AND dl.feature_name = cur.feature_name
+		AND dl.created < cur.created
+	ORDER BY
+		dl.diid,
+		dl.created ASC
+),
+current_status AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		status,
+		created AS last_modified
+	FROM
+		deploy_log
+	ORDER BY
+		diid,
+		created DESC
 )
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
+	p.diid AS id,
+	p.environment_id,
+	p.feature_assignment_id,
+	p.feature_name,
+	p.feature_version,
+	cs.status,
+	p.hash,
+	p.created,
+	cs.last_modified,
+	p."values"
 FROM
-	deploy_instructions
-WHERE
-	feature_name =(
-		SELECT
-			feature_name
-		FROM
-			CURRENT)
-	AND environment_id =(
-		SELECT
-			environment_id
-		FROM
-			CURRENT)
-	AND created <(
-		SELECT
-			created
-		FROM
-			CURRENT)
+	publish p
+	JOIN current_status cs ON cs.diid = p.diid
 ORDER BY
-	created DESC
+	p.created DESC
 LIMIT 1
 `
 
-func (q *Queries) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
+type GetPreviousDeployInstructionRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
+	Values              []byte
+}
+
+// Deploy history is derived from deploy_log. Each deploy is identified by its
+// diid: the publish row (earliest row for the diid) carries version/hash/values,
+// and the current status is the latest row for that diid. A "deploy instruction"
+// in these queries is the publish row joined with its current status.
+func (q *Queries) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (GetPreviousDeployInstructionRow, error) {
 	row := q.db.QueryRow(ctx, getPreviousDeployInstruction, id)
-	var i DeployInstruction
+	var i GetPreviousDeployInstructionRow
 	err := row.Scan(
 		&i.ID,
 		&i.EnvironmentID,
+		&i.FeatureAssignmentID,
 		&i.FeatureName,
 		&i.FeatureVersion,
 		&i.Status,
@@ -129,42 +286,95 @@ func (q *Queries) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
-		&i.FeatureAssignmentID,
 	)
 	return i, err
 }
 
 const listRecentDeployInstructions = `-- name: ListRecentDeployInstructions :many
+WITH publish AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		environment_id,
+		feature_assignment_id,
+		feature_name,
+		feature_version,
+		hash,
+		"values",
+		created
+	FROM
+		deploy_log
+	WHERE
+		feature_name = $2::TEXT
+		AND environment_id = $3::UUID
+	ORDER BY
+		diid,
+		created ASC
+),
+current_status AS (
+	SELECT DISTINCT ON (diid)
+		diid,
+		status,
+		created AS last_modified
+	FROM
+		deploy_log
+	WHERE
+		feature_name = $2::TEXT
+		AND environment_id = $3::UUID
+	ORDER BY
+		diid,
+		created DESC
+)
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, feature_assignment_id
+	p.diid AS id,
+	p.environment_id,
+	p.feature_assignment_id,
+	p.feature_name,
+	p.feature_version,
+	cs.status,
+	p.hash,
+	p.created,
+	cs.last_modified,
+	p."values"
 FROM
-	deploy_instructions
-WHERE
-	feature_name = $1
-	AND environment_id = $2
+	publish p
+	JOIN current_status cs ON cs.diid = p.diid
 ORDER BY
-	created DESC
-LIMIT $3
+	p.created DESC
+LIMIT $1
 `
 
 type ListRecentDeployInstructionsParams struct {
+	Limit         int32
 	FeatureName   string
 	EnvironmentID uuid.UUID
-	Limit         int32
 }
 
-func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]DeployInstruction, error) {
-	rows, err := q.db.Query(ctx, listRecentDeployInstructions, arg.FeatureName, arg.EnvironmentID, arg.Limit)
+type ListRecentDeployInstructionsRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
+	Values              []byte
+}
+
+func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]ListRecentDeployInstructionsRow, error) {
+	rows, err := q.db.Query(ctx, listRecentDeployInstructions, arg.Limit, arg.FeatureName, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DeployInstruction{}
+	items := []ListRecentDeployInstructionsRow{}
 	for rows.Next() {
-		var i DeployInstruction
+		var i ListRecentDeployInstructionsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.EnvironmentID,
+			&i.FeatureAssignmentID,
 			&i.FeatureName,
 			&i.FeatureVersion,
 			&i.Status,
@@ -172,7 +382,6 @@ func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRece
 			&i.Created,
 			&i.LastModified,
 			&i.Values,
-			&i.FeatureAssignmentID,
 		); err != nil {
 			return nil, err
 		}
