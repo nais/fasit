@@ -1,10 +1,10 @@
 -- +goose Up
--- Append-only changelog of reconciler compute decisions. A new row is inserted
--- only when the decision for a feature×environment actually changes; change
--- detection is done in Go (comparing against the latest row) for speed, not in
--- SQL. The compute_status view derives current state as the latest row per
+-- Append-only log of reconciler decisions. A new row is inserted only when the
+-- decision for a feature×environment actually changes; change detection is done
+-- in Go (comparing against the latest row) for speed, not in SQL. The
+-- decision_status view derives current state as the latest row per
 -- feature×environment.
-CREATE TABLE compute_changelog(
+CREATE TABLE decision_log(
 	id BIGSERIAL PRIMARY KEY,
 	environment_id UUID NOT NULL REFERENCES environments(id) ON DELETE CASCADE,
 	feature_assignment_id UUID NOT NULL REFERENCES feature_assignments(id) ON DELETE CASCADE,
@@ -15,17 +15,17 @@ CREATE TABLE compute_changelog(
 	created TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX compute_changelog_env_feature_idx ON compute_changelog(environment_id, feature_name, created DESC);
+CREATE INDEX decision_log_env_feature_idx ON decision_log(environment_id, feature_name, created DESC);
 
-CREATE INDEX compute_changelog_assignment_idx ON compute_changelog(feature_assignment_id, created DESC);
+CREATE INDEX decision_log_assignment_idx ON decision_log(feature_assignment_id, created DESC);
 
-CREATE TRIGGER compute_changelog_no_modify
-	BEFORE DELETE OR UPDATE ON compute_changelog
+CREATE TRIGGER decision_log_no_modify
+	BEFORE DELETE OR UPDATE ON decision_log
 	FOR EACH ROW
 	EXECUTE FUNCTION prevent_modify();
 
--- Latest compute decision per feature×environment.
-CREATE VIEW compute_status AS SELECT DISTINCT ON (environment_id, feature_name)
+-- Latest decision per feature×environment.
+CREATE VIEW decision_status AS SELECT DISTINCT ON (environment_id, feature_name)
 	id,
 	environment_id,
 	feature_assignment_id,
@@ -35,7 +35,7 @@ CREATE VIEW compute_status AS SELECT DISTINCT ON (environment_id, feature_name)
 	message,
 	created
 FROM
-	compute_changelog
+	decision_log
 ORDER BY
 	environment_id,
 	feature_name,
