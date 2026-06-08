@@ -21,7 +21,6 @@ import (
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nsf/jsondiff"
 )
 
 type ctxKey int
@@ -492,41 +491,6 @@ func FeatureIndexRows(ctx context.Context) ([]FeatureIndexRow, error) {
 	return ret, nil
 }
 
-func HelmValueDiff(ctx context.Context, di *DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {
-	ret := &model.HelmValueDiff{
-		Difference: model.HelmValueDifferenceNoMatch,
-	}
-
-	prev, err := querier(ctx).GetPreviousDeployInstruction(ctx, di.ID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ret, nil
-		}
-		return nil, fmt.Errorf("failed to get previous deploy instruction: %w", err)
-	}
-
-	currentValues := scrubSecrets(di.Values, secretKeys)
-	previousValues := scrubSecrets(prev.Values, secretKeys)
-
-	opts := jsondiff.DefaultHTMLOptions()
-	opts.Indent = "\t"
-	opts.PrintTypes = true
-	opts.SkipMatches = true
-	diff, diff2 := jsondiff.Compare(previousValues, currentValues, &opts)
-	ret.Diff = diff2
-
-	switch diff {
-	case jsondiff.FullMatch:
-		ret.Difference = model.HelmValueDifferenceFullMatch
-	case jsondiff.SupersetMatch:
-		ret.Difference = model.HelmValueDifferenceSupersetMatch
-	case jsondiff.BothArgsAreInvalidJson, jsondiff.FirstArgIsInvalidJson, jsondiff.SecondArgIsInvalidJson:
-		ret.Difference = model.HelmValueDifferenceInvalidJSON
-	}
-
-	return ret, nil
-}
-
 func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*DeployInstruction, error) {
 	di, err := querier(ctx).GetLatestDeployInstruction(ctx, featuresql.GetLatestDeployInstructionParams{
 		EnvironmentID: envID,
@@ -539,14 +503,13 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 	return &DeployInstruction{
 		ID:                  di.ID,
 		EnvironmentID:       di.EnvironmentID,
-		FeatureAssignmentID: di.FeatureAssignmentID,
+		FeatureAssignmentID: &di.FeatureAssignmentID,
 		FeatureName:         di.FeatureName,
 		FeatureVersion:      di.FeatureVersion,
 		Status:              model.RolloutStatus(di.Status),
 		Hash:                di.Hash,
 		Created:             di.Created,
-		LastModified:        di.LastModified,
-		Values:              di.Values,
+		LastModified:        di.Created,
 	}, nil
 }
 
@@ -565,78 +528,57 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 	return &DeployInstruction{
 		ID:                  di.ID,
 		EnvironmentID:       di.EnvironmentID,
-		FeatureAssignmentID: di.FeatureAssignmentID,
+		FeatureAssignmentID: &di.FeatureAssignmentID,
 		FeatureName:         di.FeatureName,
 		FeatureVersion:      di.FeatureVersion,
 		Status:              model.RolloutStatus(di.Status),
 		Hash:                di.Hash,
 		Created:             di.Created,
-		LastModified:        di.LastModified,
-		Values:              di.Values,
+		LastModified:        di.Created,
 	}, nil
 }
 
+// ListRecentDeployInstructions returns deploy history for an environment x
+// feature, one entry per deploy (diid). The deploy_log holds one row per status
+// transition, so rows are grouped by diid here: the earliest row is the publish
+// (version/hash/created), the latest row carries the current status.
 func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureName string, limit int) ([]*DeployInstruction, error) {
-	rows, err := querier(ctx).ListRecentDeployInstructions(ctx, featuresql.ListRecentDeployInstructionsParams{
+	rows, err := querier(ctx).ListDeployLog(ctx, featuresql.ListDeployLogParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
-		Limit:         int32(limit), // #nosec G115 -- limit is always a small positive constant
 	})
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*DeployInstruction, 0, len(rows))
-	for _, di := range rows {
-		result = append(result, &DeployInstruction{
-			ID:                  di.ID,
-			EnvironmentID:       di.EnvironmentID,
-			FeatureAssignmentID: di.FeatureAssignmentID,
-			FeatureName:         di.FeatureName,
-			FeatureVersion:      di.FeatureVersion,
-			Status:              model.RolloutStatus(di.Status),
-			Hash:                di.Hash,
-			Created:             di.Created,
-			LastModified:        di.LastModified,
-			Values:              di.Values,
-		})
+
+	byDiid := make(map[uuid.UUID]*DeployInstruction, len(rows))
+	order := make([]uuid.UUID, 0, len(rows))
+	for _, r := range rows { // ordered by created ASC
+		d, ok := byDiid[r.Diid]
+		if !ok {
+			d = &DeployInstruction{
+				ID:                  r.Diid,
+				EnvironmentID:       r.EnvironmentID,
+				FeatureAssignmentID: &r.FeatureAssignmentID,
+				FeatureName:         r.FeatureName,
+				FeatureVersion:      r.FeatureVersion,
+				Hash:                r.Hash,
+				Created:             r.Created,
+			}
+			byDiid[r.Diid] = d
+			order = append(order, r.Diid)
+		}
+		d.Status = model.RolloutStatus(r.Status)
+		d.LastModified = r.Created
+	}
+
+	// order holds diids by publish time ascending; emit most recent first.
+	result := make([]*DeployInstruction, 0, len(order))
+	for i := len(order) - 1; i >= 0; i-- {
+		result = append(result, byDiid[order[i]])
+	}
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
 	}
 	return result, nil
-}
-
-func scrubSecrets(data []byte, secretKeys []string) []byte {
-	if len(secretKeys) == 0 {
-		return data
-	}
-	var obj map[string]any
-	if err := json.Unmarshal(data, &obj); err != nil {
-		return data
-	}
-	for _, key := range secretKeys {
-		parts, err := featureutil.SmartDotSplit(key)
-		if err != nil {
-			continue
-		}
-		scrubPath(obj, parts)
-	}
-	result, err := json.Marshal(obj)
-	if err != nil {
-		return data
-	}
-	return result
-}
-
-func scrubPath(obj map[string]any, parts []string) {
-	for i, part := range parts {
-		if i == len(parts)-1 {
-			if _, ok := obj[part]; ok {
-				obj[part] = "••••••••"
-			}
-			return
-		}
-		next, ok := obj[part].(map[string]any)
-		if !ok {
-			return
-		}
-		obj = next
-	}
 }

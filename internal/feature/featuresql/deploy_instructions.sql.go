@@ -11,56 +11,20 @@ import (
 )
 
 const getLatestDeployInstruction = `-- name: GetLatestDeployInstruction :one
-WITH publish AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		environment_id,
-		feature_assignment_id,
-		feature_name,
-		feature_version,
-		hash,
-		"values",
-		created
-	FROM
-		deploy_log
-	WHERE
-		feature_name = $1::TEXT
-		AND environment_id = $2::UUID
-	ORDER BY
-		diid,
-		created ASC
-),
-current_status AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		status,
-		created AS last_modified
-	FROM
-		deploy_log
-	WHERE
-		feature_name = $1::TEXT
-		AND environment_id = $2::UUID
-	ORDER BY
-		diid,
-		created DESC
-)
 SELECT
-	p.diid AS id,
-	p.environment_id,
-	p.feature_assignment_id,
-	p.feature_name,
-	p.feature_version,
-	cs.status,
-	p.hash,
-	p.created,
-	cs.last_modified,
-	p."values"
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
 FROM
-	publish p
-	JOIN current_status cs ON cs.diid = p.diid
-ORDER BY
-	p.created DESC
-LIMIT 1
+	deploy_status
+WHERE
+	feature_name = $1::TEXT
+	AND environment_id = $2::UUID
 `
 
 type GetLatestDeployInstructionParams struct {
@@ -77,10 +41,11 @@ type GetLatestDeployInstructionRow struct {
 	Status              string
 	Hash                string
 	Created             time.Time
-	LastModified        time.Time
-	Values              []byte
 }
 
+// Deploy state is derived from deploy_log. Per-environment current state comes
+// from the deploy_status view (latest row per environment x feature). Deploy
+// history (one entry per deploy) is grouped by diid in Go from ListDeployLog.
 func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error) {
 	row := q.db.QueryRow(ctx, getLatestDeployInstruction, arg.FeatureName, arg.EnvironmentID)
 	var i GetLatestDeployInstructionRow
@@ -93,64 +58,28 @@ func (q *Queries) GetLatestDeployInstruction(ctx context.Context, arg GetLatestD
 		&i.Status,
 		&i.Hash,
 		&i.Created,
-		&i.LastModified,
-		&i.Values,
 	)
 	return i, err
 }
 
 const getLatestDeployedDeployInstruction = `-- name: GetLatestDeployedDeployInstruction :one
-WITH publish AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		environment_id,
-		feature_assignment_id,
-		feature_name,
-		feature_version,
-		hash,
-		"values",
-		created
-	FROM
-		deploy_log
-	WHERE
-		feature_name = $1::TEXT
-		AND environment_id = $2::UUID
-	ORDER BY
-		diid,
-		created ASC
-),
-current_status AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		status,
-		created AS last_modified
-	FROM
-		deploy_log
-	WHERE
-		feature_name = $1::TEXT
-		AND environment_id = $2::UUID
-	ORDER BY
-		diid,
-		created DESC
-)
 SELECT
-	p.diid AS id,
-	p.environment_id,
-	p.feature_assignment_id,
-	p.feature_name,
-	p.feature_version,
-	cs.status,
-	p.hash,
-	p.created,
-	cs.last_modified,
-	p."values"
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
 FROM
-	publish p
-	JOIN current_status cs ON cs.diid = p.diid
+	deploy_log
 WHERE
-	cs.status = 'deployed'
+	feature_name = $1::TEXT
+	AND environment_id = $2::UUID
+	AND status = 'deployed'
 ORDER BY
-	cs.last_modified DESC
+	created DESC
 LIMIT 1
 `
 
@@ -168,8 +97,6 @@ type GetLatestDeployedDeployInstructionRow struct {
 	Status              string
 	Hash                string
 	Created             time.Time
-	LastModified        time.Time
-	Values              []byte
 }
 
 func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (GetLatestDeployedDeployInstructionRow, error) {
@@ -184,173 +111,36 @@ func (q *Queries) GetLatestDeployedDeployInstruction(ctx context.Context, arg Ge
 		&i.Status,
 		&i.Hash,
 		&i.Created,
-		&i.LastModified,
-		&i.Values,
 	)
 	return i, err
 }
 
-const getPreviousDeployInstruction = `-- name: GetPreviousDeployInstruction :one
-WITH cur AS (
-	SELECT
-		environment_id,
-		feature_name,
-		created
-	FROM
-		deploy_log
-	WHERE
-		diid = $1::UUID
-	ORDER BY
-		created ASC
-	LIMIT 1
-),
-publish AS (
-	SELECT DISTINCT ON (dl.diid)
-		dl.diid,
-		dl.environment_id,
-		dl.feature_assignment_id,
-		dl.feature_name,
-		dl.feature_version,
-		dl.hash,
-		dl."values",
-		dl.created
-	FROM
-		deploy_log dl,
-		cur
-	WHERE
-		dl.environment_id = cur.environment_id
-		AND dl.feature_name = cur.feature_name
-		AND dl.created < cur.created
-	ORDER BY
-		dl.diid,
-		dl.created ASC
-),
-current_status AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		status,
-		created AS last_modified
-	FROM
-		deploy_log
-	ORDER BY
-		diid,
-		created DESC
-)
+const listDeployLog = `-- name: ListDeployLog :many
 SELECT
-	p.diid AS id,
-	p.environment_id,
-	p.feature_assignment_id,
-	p.feature_name,
-	p.feature_version,
-	cs.status,
-	p.hash,
-	p.created,
-	cs.last_modified,
-	p."values"
+	diid,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
 FROM
-	publish p
-	JOIN current_status cs ON cs.diid = p.diid
+	deploy_log
+WHERE
+	feature_name = $1::TEXT
+	AND environment_id = $2::UUID
 ORDER BY
-	p.created DESC
-LIMIT 1
+	created ASC
 `
 
-type GetPreviousDeployInstructionRow struct {
-	ID                  uuid.UUID
-	EnvironmentID       uuid.UUID
-	FeatureAssignmentID uuid.UUID
-	FeatureName         string
-	FeatureVersion      string
-	Status              string
-	Hash                string
-	Created             time.Time
-	LastModified        time.Time
-	Values              []byte
-}
-
-// Deploy history is derived from deploy_log. Each deploy is identified by its
-// diid: the publish row (earliest row for the diid) carries version/hash/values,
-// and the current status is the latest row for that diid. A "deploy instruction"
-// in these queries is the publish row joined with its current status.
-func (q *Queries) GetPreviousDeployInstruction(ctx context.Context, id uuid.UUID) (GetPreviousDeployInstructionRow, error) {
-	row := q.db.QueryRow(ctx, getPreviousDeployInstruction, id)
-	var i GetPreviousDeployInstructionRow
-	err := row.Scan(
-		&i.ID,
-		&i.EnvironmentID,
-		&i.FeatureAssignmentID,
-		&i.FeatureName,
-		&i.FeatureVersion,
-		&i.Status,
-		&i.Hash,
-		&i.Created,
-		&i.LastModified,
-		&i.Values,
-	)
-	return i, err
-}
-
-const listRecentDeployInstructions = `-- name: ListRecentDeployInstructions :many
-WITH publish AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		environment_id,
-		feature_assignment_id,
-		feature_name,
-		feature_version,
-		hash,
-		"values",
-		created
-	FROM
-		deploy_log
-	WHERE
-		feature_name = $2::TEXT
-		AND environment_id = $3::UUID
-	ORDER BY
-		diid,
-		created ASC
-),
-current_status AS (
-	SELECT DISTINCT ON (diid)
-		diid,
-		status,
-		created AS last_modified
-	FROM
-		deploy_log
-	WHERE
-		feature_name = $2::TEXT
-		AND environment_id = $3::UUID
-	ORDER BY
-		diid,
-		created DESC
-)
-SELECT
-	p.diid AS id,
-	p.environment_id,
-	p.feature_assignment_id,
-	p.feature_name,
-	p.feature_version,
-	cs.status,
-	p.hash,
-	p.created,
-	cs.last_modified,
-	p."values"
-FROM
-	publish p
-	JOIN current_status cs ON cs.diid = p.diid
-ORDER BY
-	p.created DESC
-LIMIT $1
-`
-
-type ListRecentDeployInstructionsParams struct {
-	Limit         int32
+type ListDeployLogParams struct {
 	FeatureName   string
 	EnvironmentID uuid.UUID
 }
 
-type ListRecentDeployInstructionsRow struct {
-	ID                  uuid.UUID
+type ListDeployLogRow struct {
+	Diid                uuid.UUID
 	EnvironmentID       uuid.UUID
 	FeatureAssignmentID uuid.UUID
 	FeatureName         string
@@ -358,21 +148,19 @@ type ListRecentDeployInstructionsRow struct {
 	Status              string
 	Hash                string
 	Created             time.Time
-	LastModified        time.Time
-	Values              []byte
 }
 
-func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRecentDeployInstructionsParams) ([]ListRecentDeployInstructionsRow, error) {
-	rows, err := q.db.Query(ctx, listRecentDeployInstructions, arg.Limit, arg.FeatureName, arg.EnvironmentID)
+func (q *Queries) ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error) {
+	rows, err := q.db.Query(ctx, listDeployLog, arg.FeatureName, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListRecentDeployInstructionsRow{}
+	items := []ListDeployLogRow{}
 	for rows.Next() {
-		var i ListRecentDeployInstructionsRow
+		var i ListDeployLogRow
 		if err := rows.Scan(
-			&i.ID,
+			&i.Diid,
 			&i.EnvironmentID,
 			&i.FeatureAssignmentID,
 			&i.FeatureName,
@@ -380,8 +168,6 @@ func (q *Queries) ListRecentDeployInstructions(ctx context.Context, arg ListRece
 			&i.Status,
 			&i.Hash,
 			&i.Created,
-			&i.LastModified,
-			&i.Values,
 		); err != nil {
 			return nil, err
 		}

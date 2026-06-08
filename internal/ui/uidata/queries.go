@@ -61,8 +61,7 @@ func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) 
 			Status:              row.Status,
 			Hash:                row.Hash,
 			Created:             row.Created,
-			LastModified:        row.LastModified,
-			Values:              row.Values,
+			LastModified:        row.Created,
 			TenantName:          row.TenantName,
 			EnvironmentName:     row.EnvironmentName,
 		}

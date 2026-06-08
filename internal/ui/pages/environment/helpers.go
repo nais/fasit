@@ -13,7 +13,6 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/featureenvs"
@@ -65,7 +64,6 @@ type FeatureLog struct {
 	LastModifiedRelative string
 	LastDeployed         string
 	CurrentLog           []LogLine
-	HelmDiff             *model.HelmValueDiff
 }
 
 type LogLine struct {
@@ -539,6 +537,5 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *featurepkg.Featu
 	for _, line := range lines {
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
 	}
-	ret.HelmDiff, _ = featurepkg.HelmValueDiff(ctx, di, feat.SecretKeys())
 	return ret
 }
