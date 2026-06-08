@@ -464,7 +464,7 @@ func loadEnvironmentAssignments(ctx context.Context, featureName string, envID u
 		}
 
 		fallbackState := "UNKNOWN"
-		if statuses, err := featureassignment.ListFeatureReconcileStatuses(ctx, dep.ID); err == nil {
+		if statuses, err := featureassignment.ReconcileStatuses(ctx, dep.ID); err == nil {
 			for _, s := range statuses {
 				if s.EnvironmentID == envID {
 					fallbackState = featureassignment.NormalizeStatus(string(s.State))

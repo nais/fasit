@@ -627,7 +627,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 
 	statusByAssignmentEnv := map[string]*featureassignment.FeatureReconcileStatus{}
 	for _, fa := range fas {
-		statuses, err := featureassignment.ListFeatureReconcileStatuses(ctx, fa.ID)
+		statuses, err := featureassignment.ReconcileStatuses(ctx, fa.ID)
 		if err != nil {
 			continue
 		}

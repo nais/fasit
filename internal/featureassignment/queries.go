@@ -121,47 +121,108 @@ func ListRecent(ctx context.Context) ([]*FeatureAssignment, error) {
 	return ret, nil
 }
 
-func ListFeatureReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*FeatureReconcileStatus, error) {
-	rows, err := querier(ctx).ListReconcileSignals(ctx, featureAssignmentID)
+// ReconcileStatuses returns the effective reconcile status per environment for a
+// feature assignment. It reads the three raw signals with simple per-table
+// queries (latest decision, deploy rollout state, disabled-feature membership)
+// and joins them by environment in Go via deriveReconcileState.
+func ReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*FeatureReconcileStatus, error) {
+	q := querier(ctx)
+	decisions, err := q.ListDecisionStatuses(ctx, featureAssignmentID)
 	if err != nil {
-		return nil, fmt.Errorf("get feature assignment statuses: %w", err)
+		return nil, fmt.Errorf("list decision statuses: %w", err)
+	}
+	deploys, err := q.ListDeployStatuses(ctx, featureAssignmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list deploy statuses: %w", err)
+	}
+	disabled, err := q.ListDisabledEnvironments(ctx, featureAssignmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list disabled environments: %w", err)
 	}
 
-	models := make([]*FeatureReconcileStatus, len(rows))
-	for i, row := range rows {
-		state := DeriveReconcileState(ReconcileSignals{
-			DeployStatus:   row.DeployStatus,
-			DecisionAction: row.DecisionAction,
-			Disabled:       row.Disabled,
+	decByEnv := make(map[uuid.UUID]featureassignmentsql.ListDecisionStatusesRow, len(decisions))
+	for _, d := range decisions {
+		decByEnv[d.EnvironmentID] = d
+	}
+	depByEnv := make(map[uuid.UUID]featureassignmentsql.ListDeployStatusesRow, len(deploys))
+	for _, d := range deploys {
+		depByEnv[d.EnvironmentID] = d
+	}
+	disabledAtByEnv := make(map[uuid.UUID]time.Time, len(disabled))
+	for _, d := range disabled {
+		disabledAtByEnv[d.EnvironmentID] = d.DisabledAt
+	}
+
+	envIDs := make([]uuid.UUID, 0, len(decByEnv))
+	seen := make(map[uuid.UUID]struct{})
+	addEnv := func(id uuid.UUID) {
+		if _, ok := seen[id]; ok {
+			return
+		}
+		seen[id] = struct{}{}
+		envIDs = append(envIDs, id)
+	}
+	for id := range decByEnv {
+		addEnv(id)
+	}
+	for id := range depByEnv {
+		addEnv(id)
+	}
+	for id := range disabledAtByEnv {
+		addEnv(id)
+	}
+	sort.Slice(envIDs, func(i, j int) bool { return envIDs[i].String() < envIDs[j].String() })
+
+	statuses := make([]*FeatureReconcileStatus, len(envIDs))
+	for i, envID := range envIDs {
+		dec := decByEnv[envID]
+		dep := depByEnv[envID]
+		disabledAt, isDisabled := disabledAtByEnv[envID]
+
+		state := deriveReconcileState(reconcileSignals{
+			DeployStatus:   dep.Status,
+			DecisionAction: dec.Action,
+			Disabled:       isDisabled,
 		})
-		models[i] = &FeatureReconcileStatus{
+		lastModified := latestTime(dec.Created, dep.Created, disabledAt)
+		statuses[i] = &FeatureReconcileStatus{
 			State:               FeatureReconcileStatusState(NormalizeStatus(state)),
-			Message:             row.DecisionMessage,
-			LastModified:        row.LastModified,
-			Created:             row.LastModified,
+			Message:             dec.Message,
+			LastModified:        lastModified,
+			Created:             lastModified,
 			FeatureAssignmentID: featureAssignmentID,
-			EnvironmentID:       row.EnvironmentID,
+			EnvironmentID:       envID,
 		}
 	}
 
-	return models, nil
+	return statuses, nil
 }
 
-// ReconcileSignals holds the raw per-environment status signals for a feature
+func latestTime(ts ...time.Time) time.Time {
+	var latest time.Time
+	for _, t := range ts {
+		if t.After(latest) {
+			latest = t
+		}
+	}
+	return latest
+}
+
+// reconcileSignals holds the raw per-environment status signals for a feature
 // assignment: the deploy rollout state, the latest reconciler decision action,
 // and disabled-feature membership.
-type ReconcileSignals struct {
+type reconcileSignals struct {
 	DeployStatus   string
 	DecisionAction string
 	Disabled       bool
 }
 
-// DeriveReconcileState selects the effective display status from the raw
+// deriveReconcileState selects the effective display status from the raw
 // signals: disabled-feature membership wins, then the deploy rollout state
 // (sent/installing/deployed/failed), then the latest reconciler decision action
 // mapped onto a display status. The action strings mirror reconciler.Action and
 // are duplicated here to avoid an import cycle.
-func DeriveReconcileState(s ReconcileSignals) string {
+func deriveReconcileState(s reconcileSignals) string {
 	switch {
 	case s.Disabled:
 		return "DISABLED"
@@ -201,20 +262,14 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 	if err != nil {
 		return "", "", err
 	}
-	rows, err := querier(ctx).ListReconcileSignals(ctx, dep.ID)
+	statuses, err := ReconcileStatuses(ctx, dep.ID)
 	if err != nil {
-		return "", "", fmt.Errorf("list reconcile signals: %w", err)
+		return "", "", fmt.Errorf("reconcile statuses: %w", err)
 	}
-	for _, row := range rows {
-		if row.EnvironmentID != envID {
-			continue
+	for _, s := range statuses {
+		if s.EnvironmentID == envID {
+			return string(s.State), s.Message, nil
 		}
-		state := DeriveReconcileState(ReconcileSignals{
-			DeployStatus:   row.DeployStatus,
-			DecisionAction: row.DecisionAction,
-			Disabled:       row.Disabled,
-		})
-		return NormalizeStatus(state), row.DecisionMessage, nil
 	}
 	return "", "", nil
 }

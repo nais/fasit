@@ -64,11 +64,15 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 	}
 
 	state := model.FeatureReconcileStatusStateUnknown
-	states, err := h.listReconcileStatuses(ctx, assignmentID)
+	statuses, err := featureassignment.ReconcileStatuses(ctx, assignmentID)
 	if err != nil {
 		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
 		h.log.With("err", err).Warn("list reconcile statuses; returning UNKNOWN")
 	} else {
+		states := make(model.FeatureReconcileStatusStates, len(statuses))
+		for i, s := range statuses {
+			states[i] = model.FeatureReconcileStatusState(s.State)
+		}
 		state, _ = states.Aggregate()
 	}
 

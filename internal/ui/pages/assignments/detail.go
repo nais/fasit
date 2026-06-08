@@ -45,7 +45,7 @@ func DetailHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		statuses, _ := featureassignment.ListFeatureReconcileStatuses(r.Context(), id)
+		statuses, _ := featureassignment.ReconcileStatuses(r.Context(), id)
 
 		rows := make([]reconcileStatusRow, 0, len(statuses))
 		for _, status := range statuses {
