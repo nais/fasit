@@ -31,7 +31,7 @@ type Reconciler struct {
 
 // DesiredState holds the results and phase durations of a reconcile run.
 type DesiredState struct {
-	Results    []ComputeResult
+	Results    []DeployDecision
 	FetchDur   time.Duration
 	ComputeDur time.Duration
 }
@@ -79,7 +79,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, deployer D
 // writeResultLogs appends a decision_log row for every (environment, feature)
 // whose decision changed since the last cycle. Change detection compares the
 // feature assignment, version, action, and message against the latest decision.
-func (r *Reconciler) writeResultLogs(ctx context.Context, results []ComputeResult) error {
+func (r *Reconciler) writeResultLogs(ctx context.Context, results []DeployDecision) error {
 	latest, err := r.querier.ListLatestDecisions(ctx)
 	if err != nil {
 		return fmt.Errorf("list latest decisions: %w", err)
@@ -198,7 +198,7 @@ type StreamSummary struct {
 // out, closing it when done. The caller must consume out (e.g. range over it).
 // Returns a summary after all decisions are sent.
 // Returns ErrReconcileInProgress if another stream is running.
-func (r *Reconciler) StreamDecisions(ctx context.Context, out chan<- ComputeResult) (*StreamSummary, error) {
+func (r *Reconciler) StreamDecisions(ctx context.Context, out chan<- DeployDecision) (*StreamSummary, error) {
 	if !r.streamMu.TryLock() {
 		return nil, ErrReconcileInProgress
 	}

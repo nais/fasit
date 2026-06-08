@@ -29,19 +29,19 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-// sqlPublisher records published messages. naisd terminal-status reporting is
+// recordingPublisher records published messages. naisd terminal-status reporting is
 // simulated separately (see reconcileTest.reconcile) since the deploy_log row
 // only exists after the deployer publishes.
-type sqlPublisher struct {
+type recordingPublisher struct {
 	msg []message.DeployInstruction
 }
 
-func (p *sqlPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
+func (p *recordingPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
 	p.msg = append(p.msg, msg)
 	return nil
 }
 
-func (p *sqlPublisher) Stop() {}
+func (p *recordingPublisher) Stop() {}
 
 // tenantEnv describes one environment to create under a tenant.
 type tenantEnv struct {
@@ -57,7 +57,7 @@ type reconcileTest struct {
 	t          *testing.T
 	ctx        context.Context
 	pool       *pgxpool.Pool
-	pub        *sqlPublisher
+	pub        *recordingPublisher
 	seeder     *featureassignmenttest.Seeder
 	reconciler *reconciler.Reconciler
 	deployer   reconciler.Deployer
@@ -97,7 +97,7 @@ func newReconcileTest(ctx context.Context, t *testing.T, container *postgres.Pos
 		t.Fatalf("failed to create loader: %v", err)
 	}
 
-	pub := &sqlPublisher{}
+	pub := &recordingPublisher{}
 	newPub := func(topicID string, log *slog.Logger) reconciler.Publisher { return pub }
 	deployer, err := reconciler.NewPubSubDeployer(pool, newPub, meter, logger)
 	if err != nil {
