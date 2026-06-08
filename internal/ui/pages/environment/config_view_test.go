@@ -7,7 +7,6 @@ import (
 
 	environment2 "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
 )
 
@@ -140,8 +139,8 @@ func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
 			Feature: feat,
 			Enabled: true,
 			ConfigItems: []FeatureConfigItem{
-				{Key: "safe", Value: "public-value", Source: string(model.ConfigSourceHelm), IsComputed: true},
-				{Key: "secret", Value: "real-secret", Source: string(model.ConfigSourceHelm), IsComputed: true, IsSecret: true},
+				{Key: "safe", Value: "public-value", Source: string(feature.ConfigSourceHelm), IsComputed: true},
+				{Key: "secret", Value: "real-secret", Source: string(feature.ConfigSourceHelm), IsComputed: true, IsSecret: true},
 			},
 		},
 	}
@@ -182,8 +181,8 @@ func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 			Feature: feat,
 			Enabled: true,
 			ConfigItems: []FeatureConfigItem{
-				{Key: "replicas", Value: "3", Source: string(model.ConfigSourceHelm), Type: "INT", IsConfigurable: true},
-				{Key: "clusterDomain", Value: "e.t.cloud.nais.io", Source: string(model.ConfigSourceHelm), IsComputed: true},
+				{Key: "replicas", Value: "3", Source: string(feature.ConfigSourceHelm), Type: "INT", IsConfigurable: true},
+				{Key: "clusterDomain", Value: "e.t.cloud.nais.io", Source: string(feature.ConfigSourceHelm), IsComputed: true},
 			},
 		},
 	}
@@ -235,8 +234,8 @@ func TestOverviewTab_SourceLabels(t *testing.T) {
 			Feature: feat,
 			Enabled: true,
 			ConfigItems: []FeatureConfigItem{
-				{Key: "a", Value: "x", Source: string(model.ConfigSourceHelm), Type: "STRING", IsConfigurable: true},
-				{Key: "b", Value: "y", Source: string(model.ConfigSourceEnv), Type: "STRING", IsConfigurable: true, ID: "00000000-0000-0000-0000-000000000001"},
+				{Key: "a", Value: "x", Source: string(feature.ConfigSourceHelm), Type: "STRING", IsConfigurable: true},
+				{Key: "b", Value: "y", Source: string(feature.ConfigSourceEnv), Type: "STRING", IsConfigurable: true, ID: "00000000-0000-0000-0000-000000000001"},
 			},
 		},
 	}

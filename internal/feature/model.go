@@ -455,10 +455,61 @@ func (e *ConfigType) UnmarshalJSON(b []byte) error {
 }
 
 type Configuration struct {
-	ID      uuid.UUID          `json:"id"`
-	Value   *Value             `json:"value"`
-	Content json.RawMessage    `json:"content"`
-	Created time.Time          `json:"created"`
-	Source  model.ConfigSource `json:"source"`
-	Key     string             `json:"key"`
+	ID      uuid.UUID       `json:"id"`
+	Value   *Value          `json:"value"`
+	Content json.RawMessage `json:"content"`
+	Created time.Time       `json:"created"`
+	Source  ConfigSource    `json:"source"`
+	Key     string          `json:"key"`
+}
+
+type DeployInstruction struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID *uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              model.RolloutStatus
+	Hash                string
+	Created             time.Time
+	LastModified        time.Time
+
+	// Helm values for this deploy instruction.
+	Values []byte
+}
+
+type UpdateConfiguration struct {
+	Description *string         `json:"description,omitempty"`
+	Value       json.RawMessage `json:"value"`
+}
+
+type ConfigSource string
+
+const (
+	ConfigSourceGlobal  ConfigSource = "GLOBAL"
+	ConfigSourceEnv     ConfigSource = "ENV"
+	ConfigSourceHelm    ConfigSource = "HELM"
+	ConfigSourceUnknown ConfigSource = "UNKNOWN"
+)
+
+func (e ConfigSource) IsValid() bool {
+	switch e {
+	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm, ConfigSourceUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ConfigSource) String() string {
+	return string(e)
+}
+
+type Release struct {
+	Name         string    `json:"name"`
+	Version      string    `json:"version"`
+	Status       string    `json:"status"`
+	Revision     int       `json:"revision"`
+	LastDeployed time.Time `json:"lastDeployed"`
+	Created      time.Time `json:"created"`
+	LastModified time.Time `json:"lastModified"`
 }

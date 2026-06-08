@@ -11,7 +11,6 @@ import (
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/feature/featuresql"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *Configuration {
@@ -20,7 +19,7 @@ func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *Co
 		Key:     c.Key,
 		Content: c.Value,
 		Created: c.Created,
-		Source:  model.ConfigSourceEnv,
+		Source:  ConfigSourceEnv,
 	}
 }
 
@@ -30,7 +29,7 @@ func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *Configuration {
 		Key:     c.Key,
 		Content: c.Value,
 		Created: c.Created,
-		Source:  model.ConfigSourceGlobal,
+		Source:  ConfigSourceGlobal,
 	}
 }
 
@@ -51,9 +50,9 @@ func EnvConfig(ctx context.Context, feature *Feature, envID uuid.UUID) ([]*Confi
 	merged := MergeConfigs(globalConfigs, envConfigs, nil)
 	retVal := make([]*Configuration, 0, len(merged))
 	for _, conf := range merged {
-		source := model.ConfigSourceGlobal
+		source := ConfigSourceGlobal
 		if conf.EnvironmentID != nil {
-			source = model.ConfigSourceEnv
+			source = ConfigSourceEnv
 		}
 		retVal = append(retVal, &Configuration{
 			ID:      conf.ID,
@@ -215,7 +214,7 @@ func ConfigGlobalCreate(ctx context.Context, c NewConfiguration) (*Configuration
 	return globalConfigFromSQL(config), nil
 }
 
-func ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*Configuration, error) {
+func ConfigUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Configuration, error) {
 	var conf featuresql.ConfigurationsGlobal
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
@@ -301,7 +300,7 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 	})
 }
 
-func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*Configuration, error) {
+func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Configuration, error) {
 	var conf featuresql.ConfigurationsEnvironment
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error

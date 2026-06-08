@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"encoding/json"
 	"slices"
 	"time"
 
@@ -69,4 +70,12 @@ func environmentFromSQL(e environmentsql.Environment) *Environment {
 		Reconcile:    e.Reconcile,
 		Labels:       e.Labels,
 	}
+}
+
+type EnvironmentValue struct {
+	EnvironmentID uuid.UUID
+
+	Key    string          `json:"key"`
+	Value  json.RawMessage `json:"value"`
+	Secret bool            `json:"secret"`
 }

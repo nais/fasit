@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/feature/featuresql"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 func TestConfigCreate(t *testing.T) {
@@ -165,7 +164,7 @@ func TestConfigUpdate(t *testing.T) {
 				}, nil
 			}
 
-			_, err := ConfigUpdate(ctx, tc.existing.ID, model.UpdateConfiguration{Value: tc.newValue})
+			_, err := ConfigUpdate(ctx, tc.existing.ID, UpdateConfiguration{Value: tc.newValue})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -263,10 +262,10 @@ func TestEnvConfig_PreservesIDAndCreated(t *testing.T) {
 		byKey[c.Key] = c
 	}
 
-	if g := byKey["g-only"]; g.ID != globalID || !g.Created.Equal(globalCreated) || g.Source != model.ConfigSourceGlobal {
+	if g := byKey["g-only"]; g.ID != globalID || !g.Created.Equal(globalCreated) || g.Source != ConfigSourceGlobal {
 		t.Errorf("global row = %+v, want ID=%v Created=%v Source=global", g, globalID, globalCreated)
 	}
-	if e := byKey["e-only"]; e.ID != envRowID || !e.Created.Equal(envCreated) || e.Source != model.ConfigSourceEnv {
+	if e := byKey["e-only"]; e.ID != envRowID || !e.Created.Equal(envCreated) || e.Source != ConfigSourceEnv {
 		t.Errorf("env row = %+v, want ID=%v Created=%v Source=env", e, envRowID, envCreated)
 	}
 }

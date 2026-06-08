@@ -492,7 +492,7 @@ func FeatureIndexRows(ctx context.Context) ([]FeatureIndexRow, error) {
 	return ret, nil
 }
 
-func HelmValueDiff(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {
+func HelmValueDiff(ctx context.Context, di *DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {
 	ret := &model.HelmValueDiff{
 		Difference: model.HelmValueDifferenceNoMatch,
 	}
@@ -527,7 +527,7 @@ func HelmValueDiff(ctx context.Context, di *model.DeployInstruction, secretKeys 
 	return ret, nil
 }
 
-func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*DeployInstruction, error) {
 	di, err := querier(ctx).GetLatestDeployInstruction(ctx, featuresql.GetLatestDeployInstructionParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -536,7 +536,7 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 		return nil, err
 	}
 
-	return &model.DeployInstruction{
+	return &DeployInstruction{
 		ID:                  di.ID,
 		EnvironmentID:       di.EnvironmentID,
 		FeatureAssignmentID: di.FeatureAssignmentID,
@@ -550,7 +550,7 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 	}, nil
 }
 
-func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*DeployInstruction, error) {
 	di, err := querier(ctx).GetLatestDeployedDeployInstruction(ctx, featuresql.GetLatestDeployedDeployInstructionParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -562,7 +562,7 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 		return nil, err
 	}
 
-	return &model.DeployInstruction{
+	return &DeployInstruction{
 		ID:                  di.ID,
 		EnvironmentID:       di.EnvironmentID,
 		FeatureAssignmentID: di.FeatureAssignmentID,
@@ -576,7 +576,7 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 	}, nil
 }
 
-func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureName string, limit int) ([]*model.DeployInstruction, error) {
+func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureName string, limit int) ([]*DeployInstruction, error) {
 	rows, err := querier(ctx).ListRecentDeployInstructions(ctx, featuresql.ListRecentDeployInstructionsParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -585,9 +585,9 @@ func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureN
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*model.DeployInstruction, 0, len(rows))
+	result := make([]*DeployInstruction, 0, len(rows))
 	for _, di := range rows {
-		result = append(result, &model.DeployInstruction{
+		result = append(result, &DeployInstruction{
 			ID:                  di.ID,
 			EnvironmentID:       di.EnvironmentID,
 			FeatureAssignmentID: di.FeatureAssignmentID,
