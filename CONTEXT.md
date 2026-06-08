@@ -36,9 +36,19 @@ _Avoid_: deployment (legacy term), release (overloaded with naisd release status
 **Deploy instruction**:
 An immutable record sent to a naisd agent telling it to install or upgrade a specific feature version with specific helm values in a specific environment.
 
+**Decision**:
+The compute stage's verdict for one (assignment, environment) in a cycle: an action (deploy, skip-unchanged, skip-disabled, skip-unhealthy, fail-missing-deps, fail-missing-config, fail-render) plus a human-readable message. Recorded in `decision_log` only when it changes from the previous cycle.
+
+**Rollout status**:
+The lifecycle state of a deploy instruction: created → pending → deployed/failed. `created`/`pending` are set by the Deployer at publish; `deployed`/`failed` are reported back by naisd. Recorded in `deploy_log`; the latest entry per feature×environment is the current rollout state.
+_Avoid_: deploy status, reconcile status (the legacy merged field)
+
 **Reconciler**:
-The background loop that compares desired state (assignments × environments) against actual state (latest deploy instructions) and emits new deploy instructions where the rendered helm values have changed.
-_Avoid_: deployer (the deployer is the component that creates assignments; the reconciler acts on them)
+The background loop that compares desired state (assignments × environments) against actual state (latest deploy instructions) and emits new deploy instructions where the rendered helm values have changed. Runs in two stages: a pure **compute** stage that produces a decision per (assignment, environment), and a **Deployer** stage that applies them.
+
+**Deployer**:
+The reconciler's IO stage. Takes the compute stage's decisions and applies them: records them to the logs, publishes deploy instructions to naisd, and updates rollout status.
+_Avoid_: dispatcher, applier (earlier names for this stage)
 
 ## Relationships
 
@@ -48,6 +58,8 @@ _Avoid_: deployer (the deployer is the component that creates assignments; the r
 - **Secret taint** is detected by comparing a **Probe render** against a control render
 - An **Assignment** targets a **Feature** version at a set of **Environment labels**; the most specific label match wins per environment
 - The **Reconciler** produces a **Deploy instruction** for each (assignment, environment) pair whose rendered helm values have changed
+- The compute stage emits one **Decision** per (assignment, environment); the **Deployer** applies it
+- The displayed status of a feature×environment is two complementary signals: its **Rollout status** (from `deploy_log`) and its latest **Decision** (from `decision_log`)
 
 ## Example dialogue
 
