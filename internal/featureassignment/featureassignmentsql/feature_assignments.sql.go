@@ -158,104 +158,6 @@ func (q *Queries) GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFe
 	return i, err
 }
 
-const getReconcileStatus = `-- name: GetReconcileStatus :one
-WITH dep AS (
-	SELECT
-		environment_id,
-		status,
-		created
-	FROM
-		deploy_status
-	WHERE
-		feature_assignment_id = $1::UUID
-		AND environment_id = $2::UUID
-),
-dec AS (
-	SELECT
-		environment_id,
-		action,
-		message,
-		created
-	FROM
-		decision_status
-	WHERE
-		feature_assignment_id = $1::UUID
-		AND environment_id = $2::UUID
-),
-disabled AS (
-	SELECT
-		e.id AS environment_id,
-		df.disabled_at
-	FROM
-		environments e
-		JOIN disabled_features df ON df.environment_id = e.id
-		JOIN feature_assignments d ON df.feature = d.feature_name
-	WHERE
-		e.labels @> d.target
-		AND d.id = $1::UUID
-		AND e.id = $2::UUID
-),
-envs AS (
-	SELECT
-		environment_id
-	FROM
-		dep
-	UNION
-	SELECT
-		environment_id
-	FROM
-		dec
-	UNION
-	SELECT
-		environment_id
-	FROM
-		disabled
-)
-SELECT
-	ev.environment_id,
-(
-		CASE WHEN dis.environment_id IS NOT NULL THEN
-			'DISABLED'
-		WHEN dep.status IS NOT NULL THEN
-			dep.status
-		WHEN dec.action = 'disabled' THEN
-			'DISABLED'
-		WHEN dec.action IN ('missing-deps', 'missing-config', 'render-error') THEN
-			'failed'
-		WHEN dec.action IN ('unhealthy', 'in-progress', 'deploy') THEN
-			'pending'
-		WHEN dec.action = 'unchanged' THEN
-			'deployed'
-		ELSE
-			'unknown'
-		END)::TEXT AS status,
-	COALESCE(dec.message, '')::TEXT AS message
-FROM
-	envs ev
-	LEFT JOIN dep ON dep.environment_id = ev.environment_id
-	LEFT JOIN dec ON dec.environment_id = ev.environment_id
-	LEFT JOIN disabled dis ON dis.environment_id = ev.environment_id
-LIMIT 1
-`
-
-type GetReconcileStatusParams struct {
-	FeatureAssignmentID uuid.UUID
-	EnvironmentID       uuid.UUID
-}
-
-type GetReconcileStatusRow struct {
-	EnvironmentID uuid.UUID
-	Status        string
-	Message       string
-}
-
-func (q *Queries) GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (GetReconcileStatusRow, error) {
-	row := q.db.QueryRow(ctx, getReconcileStatus, arg.FeatureAssignmentID, arg.EnvironmentID)
-	var i GetReconcileStatusRow
-	err := row.Scan(&i.EnvironmentID, &i.Status, &i.Message)
-	return i, err
-}
-
 const hasActiveAssignments = `-- name: HasActiveAssignments :one
 SELECT
 	EXISTS (
@@ -656,7 +558,7 @@ func (q *Queries) ListRecentFeatureAssignments(ctx context.Context) ([]ListRecen
 	return items, nil
 }
 
-const listReconcileStatuses = `-- name: ListReconcileStatuses :many
+const listReconcileSignals = `-- name: ListReconcileSignals :many
 WITH dep AS (
 	SELECT
 		environment_id,
@@ -707,66 +609,50 @@ envs AS (
 		disabled
 )
 SELECT
-	$1::UUID AS feature_assignment_id,
 	ev.environment_id,
-(
-		CASE WHEN dis.environment_id IS NOT NULL THEN
-			'DISABLED'
-		WHEN dep.status IS NOT NULL THEN
-			dep.status
-		WHEN dec.action = 'disabled' THEN
-			'DISABLED'
-		WHEN dec.action IN ('missing-deps', 'missing-config', 'render-error') THEN
-			'failed'
-		WHEN dec.action IN ('unhealthy', 'in-progress', 'deploy') THEN
-			'pending'
-		WHEN dec.action = 'unchanged' THEN
-			'deployed'
-		ELSE
-			'unknown'
-		END)::TEXT AS status,
-	COALESCE(dec.message, '')::TEXT AS message,
-	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS last_modified,
-	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS created
+	COALESCE(dep.status, '')::TEXT AS deploy_status,
+	COALESCE(dec.action, '')::TEXT AS decision_action,
+	COALESCE(dec.message, '')::TEXT AS decision_message,
+(dis.environment_id IS NOT NULL)::BOOL AS disabled,
+	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS last_modified
 FROM
 	envs ev
 	LEFT JOIN dep ON dep.environment_id = ev.environment_id
 	LEFT JOIN dec ON dec.environment_id = ev.environment_id
 	LEFT JOIN disabled dis ON dis.environment_id = ev.environment_id
 ORDER BY
-	last_modified DESC,
 	ev.environment_id ASC
 `
 
-type ListReconcileStatusesRow struct {
-	FeatureAssignmentID uuid.UUID
-	EnvironmentID       uuid.UUID
-	Status              string
-	Message             string
-	LastModified        time.Time
-	Created             time.Time
+type ListReconcileSignalsRow struct {
+	EnvironmentID   uuid.UUID
+	DeployStatus    string
+	DecisionAction  string
+	DecisionMessage string
+	Disabled        bool
+	LastModified    time.Time
 }
 
-// Derives a single display status per environment in the rollout vocabulary
-// (pending/deployed/failed/DISABLED) by preferring the deploy_log rollout state
-// and falling back to the latest decision action when the feature was never
-// deployed (e.g. pre-flight failures). disabled_features membership wins.
-func (q *Queries) ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error) {
-	rows, err := q.db.Query(ctx, listReconcileStatuses, featureAssignmentID)
+// Returns the raw status signals per environment for a feature assignment: the
+// deploy rollout state, the latest reconciler decision, and disabled-feature
+// membership. The effective display status is selected in Go
+// (DeriveReconcileState).
+func (q *Queries) ListReconcileSignals(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileSignalsRow, error) {
+	rows, err := q.db.Query(ctx, listReconcileSignals, featureAssignmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListReconcileStatusesRow{}
+	items := []ListReconcileSignalsRow{}
 	for rows.Next() {
-		var i ListReconcileStatusesRow
+		var i ListReconcileSignalsRow
 		if err := rows.Scan(
-			&i.FeatureAssignmentID,
 			&i.EnvironmentID,
-			&i.Status,
-			&i.Message,
+			&i.DeployStatus,
+			&i.DecisionAction,
+			&i.DecisionMessage,
+			&i.Disabled,
 			&i.LastModified,
-			&i.Created,
 		); err != nil {
 			return nil, err
 		}

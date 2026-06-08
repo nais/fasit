@@ -57,7 +57,6 @@ type FeatureReconcileStatusState string
 
 const (
 	FeatureReconcileStatusUnknown       FeatureReconcileStatusState = "UNKNOWN"
-	FeatureReconcileStatusStateCreated  FeatureReconcileStatusState = "CREATED"
 	FeatureReconcileStatusStatePending  FeatureReconcileStatusState = "PENDING"
 	FeatureReconcileStatusStateDeployed FeatureReconcileStatusState = "DEPLOYED"
 	FeatureReconcileStatusStateFailed   FeatureReconcileStatusState = "FAILED"

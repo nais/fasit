@@ -14,7 +14,6 @@ type Querier interface {
 	DeactivateFeatureAssignment(ctx context.Context, id uuid.UUID) error
 	DeactivateFeatureAssignmentsByFeatureAndTarget(ctx context.Context, arg DeactivateFeatureAssignmentsByFeatureAndTargetParams) error
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
-	GetReconcileStatus(ctx context.Context, arg GetReconcileStatusParams) (GetReconcileStatusRow, error)
 	HasActiveAssignments(ctx context.Context, featureName string) (bool, error)
 	ListAllFeatureAssignments(ctx context.Context) ([]ListAllFeatureAssignmentsRow, error)
 	ListAllFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListAllFeatureAssignmentsByFeatureRow, error)
@@ -22,11 +21,11 @@ type Querier interface {
 	ListFeatureAssignmentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureAssignmentsForEnvironmentRow, error)
 	ListFeatureAssignmentsForFeatureInEnvironment(ctx context.Context, arg ListFeatureAssignmentsForFeatureInEnvironmentParams) ([]ListFeatureAssignmentsForFeatureInEnvironmentRow, error)
 	ListRecentFeatureAssignments(ctx context.Context) ([]ListRecentFeatureAssignmentsRow, error)
-	// Derives a single display status per environment in the rollout vocabulary
-	// (pending/deployed/failed/DISABLED) by preferring the deploy_log rollout state
-	// and falling back to the latest decision action when the feature was never
-	// deployed (e.g. pre-flight failures). disabled_features membership wins.
-	ListReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileStatusesRow, error)
+	// Returns the raw status signals per environment for a feature assignment: the
+	// deploy rollout state, the latest reconciler decision, and disabled-feature
+	// membership. The effective display status is selected in Go
+	// (DeriveReconcileState).
+	ListReconcileSignals(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileSignalsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

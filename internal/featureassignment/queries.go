@@ -122,24 +122,64 @@ func ListRecent(ctx context.Context) ([]*FeatureAssignment, error) {
 }
 
 func ListFeatureReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*FeatureReconcileStatus, error) {
-	rows, err := querier(ctx).ListReconcileStatuses(ctx, featureAssignmentID)
+	rows, err := querier(ctx).ListReconcileSignals(ctx, featureAssignmentID)
 	if err != nil {
 		return nil, fmt.Errorf("get feature assignment statuses: %w", err)
 	}
 
 	models := make([]*FeatureReconcileStatus, len(rows))
-	for i, status := range rows {
+	for i, row := range rows {
+		state := DeriveReconcileState(ReconcileSignals{
+			DeployStatus:   row.DeployStatus,
+			DecisionAction: row.DecisionAction,
+			Disabled:       row.Disabled,
+		})
 		models[i] = &FeatureReconcileStatus{
-			State:               FeatureReconcileStatusState(strings.ToUpper(status.Status)),
-			Message:             status.Message,
-			LastModified:        status.LastModified,
-			Created:             status.Created,
-			FeatureAssignmentID: status.FeatureAssignmentID,
-			EnvironmentID:       status.EnvironmentID,
+			State:               FeatureReconcileStatusState(NormalizeStatus(state)),
+			Message:             row.DecisionMessage,
+			LastModified:        row.LastModified,
+			Created:             row.LastModified,
+			FeatureAssignmentID: featureAssignmentID,
+			EnvironmentID:       row.EnvironmentID,
 		}
 	}
 
 	return models, nil
+}
+
+// ReconcileSignals holds the raw per-environment status signals for a feature
+// assignment: the deploy rollout state, the latest reconciler decision action,
+// and disabled-feature membership.
+type ReconcileSignals struct {
+	DeployStatus   string
+	DecisionAction string
+	Disabled       bool
+}
+
+// DeriveReconcileState selects the effective display status from the raw
+// signals: disabled-feature membership wins, then the deploy rollout state,
+// then the latest reconciler decision action mapped onto the rollout vocabulary
+// (pending/deployed/failed/DISABLED). The action strings mirror
+// reconciler.Action and are duplicated here to avoid an import cycle.
+func DeriveReconcileState(s ReconcileSignals) string {
+	switch {
+	case s.Disabled:
+		return "DISABLED"
+	case s.DeployStatus != "":
+		return s.DeployStatus
+	}
+	switch s.DecisionAction {
+	case "disabled":
+		return "DISABLED"
+	case "missing-deps", "missing-config", "render-error":
+		return "failed"
+	case "unhealthy", "in-progress", "deploy":
+		return "pending"
+	case "unchanged":
+		return "deployed"
+	default:
+		return "unknown"
+	}
 }
 
 // NormalizeStatus uppercases a deployment status and maps the empty status to
@@ -161,17 +201,22 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 	if err != nil {
 		return "", "", err
 	}
-	row, err := querier(ctx).GetReconcileStatus(ctx, featureassignmentsql.GetReconcileStatusParams{
-		FeatureAssignmentID: dep.ID,
-		EnvironmentID:       envID,
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return "", "", nil
-	}
+	rows, err := querier(ctx).ListReconcileSignals(ctx, dep.ID)
 	if err != nil {
-		return "", "", fmt.Errorf("get reconcile status: %w", err)
+		return "", "", fmt.Errorf("list reconcile signals: %w", err)
 	}
-	return NormalizeStatus(row.Status), row.Message, nil
+	for _, row := range rows {
+		if row.EnvironmentID != envID {
+			continue
+		}
+		state := DeriveReconcileState(ReconcileSignals{
+			DeployStatus:   row.DeployStatus,
+			DecisionAction: row.DecisionAction,
+			Disabled:       row.Disabled,
+		})
+		return NormalizeStatus(state), row.DecisionMessage, nil
+	}
+	return "", "", nil
 }
 
 func ListByFeature(ctx context.Context, featureName string) ([]*FeatureAssignment, error) {
