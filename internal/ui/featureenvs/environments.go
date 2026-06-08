@@ -139,7 +139,7 @@ func winningAssignments(assignments []*featureassignment.FeatureAssignment, envs
 func reconcileStatuses(ctx context.Context, assignments []*featureassignment.FeatureAssignment) map[string]*featureassignment.FeatureReconcileStatus {
 	ret := map[string]*featureassignment.FeatureReconcileStatus{}
 	for _, fa := range assignments {
-		statuses, err := featureassignment.ListFeatureReconcileStatuses(ctx, fa.ID)
+		statuses, err := featureassignment.ReconcileStatuses(ctx, fa.ID)
 		if err != nil {
 			continue
 		}

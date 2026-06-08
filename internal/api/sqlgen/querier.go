@@ -10,11 +10,6 @@ import (
 
 type Querier interface {
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
-	// Returns the raw status signals per environment for a feature assignment: the
-	// deploy rollout state, the latest reconciler decision, and disabled-feature
-	// membership. The effective display status is selected in Go
-	// (featureassignment.DeriveReconcileState).
-	ListReconcileSignals(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileSignalsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

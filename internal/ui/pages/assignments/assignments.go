@@ -26,7 +26,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 		rows := make([]Summary, 0, len(fas))
 		for _, fa := range fas {
-			statuses, _ := featureassignment.ListFeatureReconcileStatuses(r.Context(), fa.ID)
+			statuses, _ := featureassignment.ReconcileStatuses(r.Context(), fa.ID)
 
 			states := make(model.FeatureReconcileStatusStates, len(statuses))
 			for i, s := range statuses {

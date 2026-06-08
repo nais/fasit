@@ -48,7 +48,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 		var assignmentRows []assignmentRow
 		for _, fa := range fas {
-			statuses, err := featureassignment.ListFeatureReconcileStatuses(r.Context(), fa.ID)
+			statuses, err := featureassignment.ReconcileStatuses(r.Context(), fa.ID)
 			if err != nil || len(statuses) == 0 {
 				assignmentRows = append(assignmentRows, assignmentRow{
 					FeatureName:  fa.Feature.Name,

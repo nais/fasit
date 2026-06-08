@@ -303,6 +303,136 @@ func (q *Queries) ListAllFeatureAssignmentsByFeature(ctx context.Context, featur
 	return items, nil
 }
 
+const listDecisionStatuses = `-- name: ListDecisionStatuses :many
+SELECT
+	environment_id,
+	action,
+	message,
+	created
+FROM
+	decision_status
+WHERE
+	feature_assignment_id = $1::UUID
+ORDER BY
+	environment_id ASC
+`
+
+type ListDecisionStatusesRow struct {
+	EnvironmentID uuid.UUID
+	Action        string
+	Message       string
+	Created       time.Time
+}
+
+// Latest reconciler decision per environment for a feature assignment. The
+// deploy rollout state and disabled-feature membership are joined in Go
+// (ReconcileStatuses).
+func (q *Queries) ListDecisionStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDecisionStatusesRow, error) {
+	rows, err := q.db.Query(ctx, listDecisionStatuses, featureAssignmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDecisionStatusesRow{}
+	for rows.Next() {
+		var i ListDecisionStatusesRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Action,
+			&i.Message,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDeployStatuses = `-- name: ListDeployStatuses :many
+SELECT
+	environment_id,
+	status,
+	created
+FROM
+	deploy_status
+WHERE
+	feature_assignment_id = $1::UUID
+ORDER BY
+	environment_id ASC
+`
+
+type ListDeployStatusesRow struct {
+	EnvironmentID uuid.UUID
+	Status        string
+	Created       time.Time
+}
+
+// Latest deploy rollout state per environment for a feature assignment.
+func (q *Queries) ListDeployStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDeployStatusesRow, error) {
+	rows, err := q.db.Query(ctx, listDeployStatuses, featureAssignmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeployStatusesRow{}
+	for rows.Next() {
+		var i ListDeployStatusesRow
+		if err := rows.Scan(&i.EnvironmentID, &i.Status, &i.Created); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDisabledEnvironments = `-- name: ListDisabledEnvironments :many
+SELECT
+	e.id AS environment_id,
+	df.disabled_at
+FROM
+	environments e
+	JOIN disabled_features df ON df.environment_id = e.id
+	JOIN feature_assignments d ON df.feature = d.feature_name
+WHERE
+	e.labels @> d.target
+	AND d.id = $1::UUID
+ORDER BY
+	environment_id ASC
+`
+
+type ListDisabledEnvironmentsRow struct {
+	EnvironmentID uuid.UUID
+	DisabledAt    time.Time
+}
+
+// Environments the assignment targets where the feature is disabled.
+func (q *Queries) ListDisabledEnvironments(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDisabledEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, listDisabledEnvironments, featureAssignmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDisabledEnvironmentsRow{}
+	for rows.Next() {
+		var i ListDisabledEnvironmentsRow
+		if err := rows.Scan(&i.EnvironmentID, &i.DisabledAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeatureAssignmentsByFeature = `-- name: ListFeatureAssignmentsByFeature :many
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.active,
@@ -547,112 +677,6 @@ func (q *Queries) ListRecentFeatureAssignments(ctx context.Context) ([]ListRecen
 			&i.FeatureDatum.DefaultValues,
 			&i.FeatureDatum.Timeout,
 			&i.FeatureDatum.TplDetails,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listReconcileSignals = `-- name: ListReconcileSignals :many
-WITH dep AS (
-	SELECT
-		environment_id,
-		status,
-		created
-	FROM
-		deploy_status
-	WHERE
-		feature_assignment_id = $1::UUID
-),
-dec AS (
-	SELECT
-		environment_id,
-		action,
-		message,
-		created
-	FROM
-		decision_status
-	WHERE
-		feature_assignment_id = $1::UUID
-),
-disabled AS (
-	SELECT
-		e.id AS environment_id,
-		df.disabled_at
-	FROM
-		environments e
-		JOIN disabled_features df ON df.environment_id = e.id
-		JOIN feature_assignments d ON df.feature = d.feature_name
-	WHERE
-		e.labels @> d.target
-		AND d.id = $1::UUID
-),
-envs AS (
-	SELECT
-		environment_id
-	FROM
-		dep
-	UNION
-	SELECT
-		environment_id
-	FROM
-		dec
-	UNION
-	SELECT
-		environment_id
-	FROM
-		disabled
-)
-SELECT
-	ev.environment_id,
-	COALESCE(dep.status, '')::TEXT AS deploy_status,
-	COALESCE(dec.action, '')::TEXT AS decision_action,
-	COALESCE(dec.message, '')::TEXT AS decision_message,
-(dis.environment_id IS NOT NULL)::BOOL AS disabled,
-	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS last_modified
-FROM
-	envs ev
-	LEFT JOIN dep ON dep.environment_id = ev.environment_id
-	LEFT JOIN dec ON dec.environment_id = ev.environment_id
-	LEFT JOIN disabled dis ON dis.environment_id = ev.environment_id
-ORDER BY
-	ev.environment_id ASC
-`
-
-type ListReconcileSignalsRow struct {
-	EnvironmentID   uuid.UUID
-	DeployStatus    string
-	DecisionAction  string
-	DecisionMessage string
-	Disabled        bool
-	LastModified    time.Time
-}
-
-// Returns the raw status signals per environment for a feature assignment: the
-// deploy rollout state, the latest reconciler decision, and disabled-feature
-// membership. The effective display status is selected in Go
-// (DeriveReconcileState).
-func (q *Queries) ListReconcileSignals(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListReconcileSignalsRow, error) {
-	rows, err := q.db.Query(ctx, listReconcileSignals, featureAssignmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListReconcileSignalsRow{}
-	for rows.Next() {
-		var i ListReconcileSignalsRow
-		if err := rows.Scan(
-			&i.EnvironmentID,
-			&i.DeployStatus,
-			&i.DecisionAction,
-			&i.DecisionMessage,
-			&i.Disabled,
-			&i.LastModified,
 		); err != nil {
 			return nil, err
 		}

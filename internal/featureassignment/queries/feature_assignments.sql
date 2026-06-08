@@ -101,74 +101,49 @@ ORDER BY
 	d.target,
 	d.created DESC;
 
--- name: ListReconcileSignals :many
--- Returns the raw status signals per environment for a feature assignment: the
--- deploy rollout state, the latest reconciler decision, and disabled-feature
--- membership. The effective display status is selected in Go
--- (DeriveReconcileState).
-WITH dep AS (
-	SELECT
-		environment_id,
-		status,
-		created
-	FROM
-		deploy_status
-	WHERE
-		feature_assignment_id = @feature_assignment_id::UUID
-),
-dec AS (
-	SELECT
-		environment_id,
-		action,
-		message,
-		created
-	FROM
-		decision_status
-	WHERE
-		feature_assignment_id = @feature_assignment_id::UUID
-),
-disabled AS (
-	SELECT
-		e.id AS environment_id,
-		df.disabled_at
-	FROM
-		environments e
-		JOIN disabled_features df ON df.environment_id = e.id
-		JOIN feature_assignments d ON df.feature = d.feature_name
-	WHERE
-		e.labels @> d.target
-		AND d.id = @feature_assignment_id::UUID
-),
-envs AS (
-	SELECT
-		environment_id
-	FROM
-		dep
-	UNION
-	SELECT
-		environment_id
-	FROM
-		dec
-	UNION
-	SELECT
-		environment_id
-	FROM
-		disabled
-)
+-- name: ListDecisionStatuses :many
+-- Latest reconciler decision per environment for a feature assignment. The
+-- deploy rollout state and disabled-feature membership are joined in Go
+-- (ReconcileStatuses).
 SELECT
-	ev.environment_id,
-	COALESCE(dep.status, '')::TEXT AS deploy_status,
-	COALESCE(dec.action, '')::TEXT AS decision_action,
-	COALESCE(dec.message, '')::TEXT AS decision_message,
-(dis.environment_id IS NOT NULL)::BOOL AS disabled,
-	GREATEST(dep.created, dec.created, dis.disabled_at)::TIMESTAMPTZ AS last_modified
+	environment_id,
+	action,
+	message,
+	created
 FROM
-	envs ev
-	LEFT JOIN dep ON dep.environment_id = ev.environment_id
-	LEFT JOIN dec ON dec.environment_id = ev.environment_id
-	LEFT JOIN disabled dis ON dis.environment_id = ev.environment_id
+	decision_status
+WHERE
+	feature_assignment_id = @feature_assignment_id::UUID
 ORDER BY
-	ev.environment_id ASC;
+	environment_id ASC;
+
+-- name: ListDeployStatuses :many
+-- Latest deploy rollout state per environment for a feature assignment.
+SELECT
+	environment_id,
+	status,
+	created
+FROM
+	deploy_status
+WHERE
+	feature_assignment_id = @feature_assignment_id::UUID
+ORDER BY
+	environment_id ASC;
+
+-- name: ListDisabledEnvironments :many
+-- Environments the assignment targets where the feature is disabled.
+SELECT
+	e.id AS environment_id,
+	df.disabled_at
+FROM
+	environments e
+	JOIN disabled_features df ON df.environment_id = e.id
+	JOIN feature_assignments d ON df.feature = d.feature_name
+WHERE
+	e.labels @> d.target
+	AND d.id = @feature_assignment_id::UUID
+ORDER BY
+	environment_id ASC;
 
 -- name: DeactivateFeatureAssignmentsByFeatureAndTarget :exec
 UPDATE
