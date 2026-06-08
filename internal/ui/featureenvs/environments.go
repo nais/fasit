@@ -11,6 +11,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/uidata"
 )
 
@@ -72,7 +73,7 @@ func LoadEnvironments(ctx context.Context, feature *featurepkg.Feature) []Enviro
 			status.Status = "DISABLED"
 		case statusByAssignmentEnv[winner.ID.String()+":"+env.env.ID.String()] != nil:
 			reconcileStatus := statusByAssignmentEnv[winner.ID.String()+":"+env.env.ID.String()]
-			status.Status = featureassignment.NormalizeStatus(string(reconcileStatus.State))
+			status.Status = reconciler.NormalizeStatus(string(reconcileStatus.State))
 			status.LastModified = reconcileStatus.LastModified
 		}
 
@@ -136,10 +137,10 @@ func winningAssignments(assignments []*featureassignment.FeatureAssignment, envs
 	return winners
 }
 
-func reconcileStatuses(ctx context.Context, assignments []*featureassignment.FeatureAssignment) map[string]*featureassignment.FeatureReconcileStatus {
-	ret := map[string]*featureassignment.FeatureReconcileStatus{}
+func reconcileStatuses(ctx context.Context, assignments []*featureassignment.FeatureAssignment) map[string]*reconciler.FeatureReconcileStatus {
+	ret := map[string]*reconciler.FeatureReconcileStatus{}
 	for _, fa := range assignments {
-		statuses, err := featureassignment.ReconcileStatuses(ctx, fa.ID)
+		statuses, err := reconciler.ReconcileStatuses(ctx, fa.ID)
 		if err != nil {
 			continue
 		}

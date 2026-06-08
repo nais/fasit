@@ -64,7 +64,7 @@ func (h *HttpHandler) GetFeatureAssignment(w http.ResponseWriter, req *http.Requ
 	}
 
 	state := model.FeatureReconcileStatusStateUnknown
-	statuses, err := featureassignment.ReconcileStatuses(ctx, assignmentID)
+	statuses, err := reconciler.ReconcileStatuses(ctx, assignmentID)
 	if err != nil {
 		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
 		h.log.With("err", err).Warn("list reconcile statuses; returning UNKNOWN")

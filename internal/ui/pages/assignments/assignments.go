@@ -8,6 +8,7 @@ import (
 
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -26,7 +27,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 		rows := make([]Summary, 0, len(fas))
 		for _, fa := range fas {
-			statuses, _ := featureassignment.ReconcileStatuses(r.Context(), fa.ID)
+			statuses, _ := reconciler.ReconcileStatuses(r.Context(), fa.ID)
 
 			states := make(model.FeatureReconcileStatusStates, len(statuses))
 			for i, s := range statuses {
@@ -202,7 +203,7 @@ func labelPill(key, value string) g.Node {
 	return h.Span(h.Class("label-filter-tag"), g.Text(key+": "+value))
 }
 
-func latestStatusTime(statuses []*featureassignment.FeatureReconcileStatus) string {
+func latestStatusTime(statuses []*reconciler.FeatureReconcileStatus) string {
 	var latest time.Time
 	for _, s := range statuses {
 		if s.LastModified.After(latest) {
