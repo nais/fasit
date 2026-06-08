@@ -24,7 +24,7 @@ func New(restConfig *rest.Config, namespace string, log *slog.Logger) *Client {
 	cfg := &action.Configuration{}
 
 	// Init cannot error, it will panic if something goes wrong
-	_ = cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", func(format string, v ...interface{}) {
+	_ = cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", func(format string, v ...any) {
 		log.Debug(fmt.Sprintf(format, v...))
 	})
 	return &Client{

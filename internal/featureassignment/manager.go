@@ -16,7 +16,7 @@ type Manager struct {
 
 type ChartDownloaderFunc func(chartURL, version string) (*model.Feature, error)
 
-// Override for testing
+// ChartDownloader is a function that downloads a chart and returns a Feature model. It can be overridden for testing purposes.
 var ChartDownloader = func(chartURL, version string) (*model.Feature, error) {
 	return model.FromChart(chartURL, version)
 }
