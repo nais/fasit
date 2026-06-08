@@ -39,7 +39,8 @@ FROM
 ORDER BY
 	environment_id,
 	feature_name,
-	created DESC;
+	created DESC,
+	id DESC;
 
 -- Append-only deploy lifecycle log. The Deployer appends a row at publish
 -- (status sent) carrying the diid sent to naisd, the hash, and the rendered
@@ -87,5 +88,6 @@ FROM
 ORDER BY
 	environment_id,
 	feature_name,
-	created DESC;
+	created DESC,
+	id DESC;
 

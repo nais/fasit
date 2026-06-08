@@ -96,7 +96,8 @@ FROM
 WHERE
 	diid = $1
 ORDER BY
-	created DESC
+	created DESC,
+	id DESC
 LIMIT 1
 `
 
