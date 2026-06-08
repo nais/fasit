@@ -17,7 +17,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/components"
@@ -108,7 +107,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigEnvUpdate(ctx, configID, model.UpdateConfiguration{Value: raw})
+			_, err := featurepkg.ConfigEnvUpdate(ctx, configID, featurepkg.UpdateConfiguration{Value: raw})
 			return err
 		}); err != nil {
 			http.Error(w, "Failed to update configuration: "+err.Error(), http.StatusInternalServerError)
@@ -455,7 +454,7 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 	}
 
 	currentFound := false
-	rows := g.Map(page.RecentDeployHistory, func(di *model.DeployInstruction) g.Node {
+	rows := g.Map(page.RecentDeployHistory, func(di *featurepkg.DeployInstruction) g.Node {
 		isCurrent := !currentFound && page.FeatureLog != nil && di.FeatureVersion == page.FeatureLog.CurrentVersion && string(di.Status) == strings.ToLower(page.FeatureLog.CurrentStatus)
 		if isCurrent {
 			currentFound = true
@@ -598,7 +597,7 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				valDef := page.Feature.Values[item.Key]
-				warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
+				warn := valDef.Required && item.Source == string(featurepkg.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
 				return h.Tr(h.ID("config-"+item.Key), g.If(warn, h.Class("config-warning")),
 					components.ConfigKeyCell(item),
 					components.ConfigActionsCell(configActionsCell(page, item)),
@@ -650,9 +649,9 @@ func sourceLabelCell(item FeatureConfigItem) g.Node {
 
 func sourceLabel(item FeatureConfigItem) string {
 	switch item.Source {
-	case string(model.ConfigSourceEnv):
+	case string(featurepkg.ConfigSourceEnv):
 		return "env config"
-	case string(model.ConfigSourceGlobal):
+	case string(featurepkg.ConfigSourceGlobal):
 		return "global config"
 	default:
 		if item.IsComputed {
@@ -721,7 +720,7 @@ func labelPills(labels map[string]string) g.Node {
 
 func configActionsCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 	basePath := featureBasePathForPage(page)
-	if item.Source == string(model.ConfigSourceEnv) {
+	if item.Source == string(featurepkg.ConfigSourceEnv) {
 		return g.Group([]g.Node{
 			components.ConfigEditPopover(
 				"edit-"+item.ID,

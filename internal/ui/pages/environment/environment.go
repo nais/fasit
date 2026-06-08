@@ -12,7 +12,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -218,7 +217,7 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 	return environmentHealth{ReportedAt: health.ReportedAt, HasReport: true}, nil
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
+func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*featurepkg.Release, health environmentHealth) g.Node {
 	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, health)
 	return h.Div(h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab),
@@ -296,7 +295,7 @@ func environmentSummaryNodes(environment *Environment, labels map[string]string,
 	return []g.Node{h.Div(h.Class("env-header-actions"), g.Group(items))}
 }
 
-func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*model.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*model.Release, health environmentHealth) g.Node {
+func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*featurepkg.Release, health environmentHealth) g.Node {
 	switch activeTab {
 	case environmentTabValues:
 		return environmentValuesCard(envValues, valueRefs)
@@ -401,7 +400,7 @@ func environmentDetailsCard(environment *Environment, labels map[string]string, 
 	)
 }
 
-func environmentValuesCard(envValues []*model.EnvironmentValue, valueRefs map[string][]string) g.Node {
+func environmentValuesCard(envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string) g.Node {
 	if len(envValues) == 0 {
 		return g.Group(nil)
 	}
@@ -409,7 +408,7 @@ func environmentValuesCard(envValues []*model.EnvironmentValue, valueRefs map[st
 		h.Div(h.Class("card-body"),
 			h.H2(h.Class("card-section-heading"), g.Text("Environment values")),
 			h.Table(h.Class("table"),
-				h.TBody(g.Group(g.Map(envValues, func(val *model.EnvironmentValue) g.Node {
+				h.TBody(g.Group(g.Map(envValues, func(val *envpkg.EnvironmentValue) g.Node {
 					var valNode g.Node
 					if val.Secret {
 						valNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
@@ -459,7 +458,7 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 	)
 }
 
-func helmReleasesCard(releases []*model.Release) g.Node {
+func helmReleasesCard(releases []*featurepkg.Release) g.Node {
 	sort.Slice(releases, func(i, j int) bool { return releases[i].Name < releases[j].Name })
 	return h.Div(h.Class("card"),
 		h.Div(h.Class("card-body"),
@@ -476,7 +475,7 @@ func helmReleasesCard(releases []*model.Release) g.Node {
 					h.Th(g.Text("Created")),
 					h.Th(g.Text("Revision")),
 				)),
-				h.TBody(g.Group(g.Map(releases, func(release *model.Release) g.Node {
+				h.TBody(g.Group(g.Map(releases, func(release *featurepkg.Release) g.Node {
 					return h.Tr(
 						h.Td(g.Text(release.Name)),
 						h.Td(g.Text(release.Status)),

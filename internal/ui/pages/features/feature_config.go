@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/dbtx"
 	featurepkg "github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	g "maragu.dev/gomponents"
@@ -45,7 +44,7 @@ func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]com
 			item.IsOrphaned = true
 		} else {
 			populateFromValue(&item, feat.Values[cfg.Key])
-			if cfg.Source == model.ConfigSourceGlobal {
+			if cfg.Source == featurepkg.ConfigSourceGlobal {
 				if raw, ok := feat.ValuesYAML[cfg.Key]; ok {
 					item.FallbackValue = components.RawValueForDisplay(raw)
 				}
@@ -61,7 +60,7 @@ func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]com
 		item := components.ConfigItem{
 			ID:     uuid.NewSHA1(uuid.Nil, []byte(feat.Name+"|"+key)).String(),
 			Key:    key,
-			Source: string(model.ConfigSourceHelm),
+			Source: string(featurepkg.ConfigSourceHelm),
 			Value:  components.RawValueForDisplay(feat.ValuesYAML[key]),
 		}
 		populateFromValue(&item, val)
@@ -190,14 +189,14 @@ func orphanedConfigTable(featureName string, items []components.ConfigItem) g.No
 
 func globalSourceLabel(item components.ConfigItem) g.Node {
 	label := "helm value"
-	if item.Source == string(model.ConfigSourceGlobal) {
+	if item.Source == string(featurepkg.ConfigSourceGlobal) {
 		label = "global config"
 	}
 	return h.Td(h.Span(h.Class("source-label"), g.Text(label)))
 }
 
 func globalConfigActionsCell(featureName string, item components.ConfigItem) g.Node {
-	if item.Source == string(model.ConfigSourceGlobal) {
+	if item.Source == string(featurepkg.ConfigSourceGlobal) {
 		return g.Group([]g.Node{
 			components.ConfigEditPopover(
 				"edit-"+item.ID,
@@ -220,7 +219,7 @@ func globalConfigActionsCell(featureName string, item components.ConfigItem) g.N
 }
 
 func globalDeleteButton(featureName string, item components.ConfigItem) g.Node {
-	if item.Source != string(model.ConfigSourceGlobal) {
+	if item.Source != string(featurepkg.ConfigSourceGlobal) {
 		return nil
 	}
 	return components.ConfigDeletePopover(
@@ -258,7 +257,7 @@ func UpdateGlobalConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigUpdate(ctx, configID, model.UpdateConfiguration{Value: raw})
+			_, err := featurepkg.ConfigUpdate(ctx, configID, featurepkg.UpdateConfiguration{Value: raw})
 			return err
 		}); err != nil {
 			http.Error(w, "Failed to update: "+err.Error(), http.StatusInternalServerError)

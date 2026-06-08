@@ -11,7 +11,6 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment/environmentsql"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 func Create(ctx context.Context, env *EnvironmentCreate) (*Environment, error) {
@@ -210,7 +209,7 @@ func List(ctx context.Context, tenantID uuid.UUID) ([]*Environment, error) {
 	return environmentSlice, nil
 }
 
-func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {
+func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*EnvironmentValue, error) {
 	ev, err := querier(ctx).GetEnvironmentValue(ctx, environmentsql.GetEnvironmentValueParams{
 		EnvironmentID: environmentID,
 		Key:           key,
@@ -220,7 +219,7 @@ func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key strin
 		return nil, err
 	}
 
-	return &model.EnvironmentValue{
+	return &EnvironmentValue{
 		EnvironmentID: ev.EnvironmentID,
 		Key:           ev.Key,
 		Value:         ev.Value,
@@ -228,7 +227,7 @@ func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key strin
 	}, nil
 }
 
-func ListEnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error) {
+func ListEnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*EnvironmentValue, error) {
 	values, err := querier(ctx).ListEnvironmentValuesForEnvironment(ctx, environmentsql.ListEnvironmentValuesForEnvironmentParams{
 		EnvironmentID: envID,
 		Showsensitive: showSensitive,
@@ -237,9 +236,9 @@ func ListEnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, s
 		return nil, err
 	}
 
-	ret := make([]*model.EnvironmentValue, len(values))
+	ret := make([]*EnvironmentValue, len(values))
 	for i, ev := range values {
-		ret[i] = &model.EnvironmentValue{
+		ret[i] = &EnvironmentValue{
 			EnvironmentID: ev.EnvironmentID,
 			Key:           ev.Key,
 			Value:         ev.Value,

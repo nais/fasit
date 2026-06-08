@@ -37,7 +37,7 @@ type FeaturePage struct {
 	ActiveTab               string
 	AuditEntries            []*audit.Entry
 	WinningAssignment       *featureassignment.FeatureAssignment
-	RecentDeployHistory     []*model.DeployInstruction
+	RecentDeployHistory     []*featurepkg.DeployInstruction
 	DeployLogsByInstruction map[string][]LogLine
 	ExpandedLogID           string
 	ShowAllDeploys          bool
@@ -142,7 +142,7 @@ func isEmptyConfigValue(value string) bool {
 	}
 }
 
-func gcpProjectIDFromValues(values []*model.EnvironmentValue) string {
+func gcpProjectIDFromValues(values []*envpkg.EnvironmentValue) string {
 	for _, v := range values {
 		if v.Key == "project_id" && !v.Secret {
 			return components.RawValueForDisplay(v.Value)
@@ -302,7 +302,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 				Key:     key,
 				Value:   &value,
 				Content: feat.ValuesYAML[key],
-				Source:  model.ConfigSourceHelm,
+				Source:  featurepkg.ConfigSourceHelm,
 			})
 		}
 	}
@@ -366,7 +366,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 				}
 			}
 		}
-		if cfg.Source == model.ConfigSourceEnv {
+		if cfg.Source == featurepkg.ConfigSourceEnv {
 			if gv, ok := globalByKey[cfg.Key]; ok {
 				item.FallbackValue = components.RawValueForDisplay(gv)
 			} else if raw, ok := feat.ValuesYAML[cfg.Key]; ok {
@@ -381,7 +381,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 			if !item.IsComputed || items[i].IsSecret {
 				continue
 			}
-			if item.Source == string(model.ConfigSourceEnv) {
+			if item.Source == string(featurepkg.ConfigSourceEnv) {
 				continue
 			}
 			if v, ok := lookupHelmValue(rendered, item.Key); ok {

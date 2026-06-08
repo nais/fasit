@@ -20,7 +20,6 @@ import (
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/reconciler"
 )
@@ -527,7 +526,7 @@ func main() {
 		confs, _ := feature.ConfigGet(ctx, "naiserator")
 		for _, c := range confs {
 			if c.Key == "logLevel" {
-				_, _ = feature.ConfigUpdate(ctx, c.ID, model.UpdateConfiguration{
+				_, _ = feature.ConfigUpdate(ctx, c.ID, feature.UpdateConfiguration{
 					Value: json.RawMessage(`"warn"`),
 				})
 				break

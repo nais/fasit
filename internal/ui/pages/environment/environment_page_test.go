@@ -7,7 +7,7 @@ import (
 	"time"
 
 	environment2 "github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 )
 
@@ -23,7 +23,7 @@ func TestEnvironmentPageRendersSideMenuAndBreadcrumbs(t *testing.T) {
 		nil,
 		"",
 		[]environmentFeatureRow{{Name: "kyverno", Status: "DEPLOYED", Version: "1.2.3"}},
-		[]*model.Release{{Name: "kyverno", Status: "deployed", Version: "1.2.3", Revision: 7}},
+		[]*feature.Release{{Name: "kyverno", Status: "deployed", Version: "1.2.3", Revision: 7}},
 		environmentHealth{ReportedAt: time.Now(), HasReport: true},
 	)
 	if err := node.Render(&buf); err != nil {

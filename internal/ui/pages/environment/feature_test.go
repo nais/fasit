@@ -9,7 +9,6 @@ import (
 
 	environment2 "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"golang.org/x/net/html"
 )
@@ -149,7 +148,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 					Key:            "certificates",
 					DisplayName:    "Certificates",
 					Value:          "",
-					Source:         string(model.ConfigSourceHelm),
+					Source:         string(feature.ConfigSourceHelm),
 					Type:           "STRING",
 					IsConfigurable: true,
 				},
@@ -157,7 +156,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 					Key:            "max_replicas",
 					DisplayName:    "Max Replicas",
 					Value:          "250m",
-					Source:         string(model.ConfigSourceHelm),
+					Source:         string(feature.ConfigSourceHelm),
 					Type:           "STRING",
 					IsConfigurable: true,
 				},
@@ -195,7 +194,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 	rows := make([]rowInfo, 2)
 	for i, item := range page.Feature.ConfigItems {
 		valDef := feat.Values[item.Key]
-		warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && item.Value == ""
+		warn := valDef.Required && item.Source == string(feature.ConfigSourceHelm) && item.Value == ""
 		rows[i] = rowInfo{
 			skeleton:   skeleton(dataRows[i]),
 			shouldWarn: warn,
@@ -249,7 +248,7 @@ func TestOverviewTab_RequiredEmptyStructuredConfigWarning(t *testing.T) {
 					Enabled: true,
 					ConfigItems: []FeatureConfigItem{{
 						Key: "k", Value: tc.value,
-						Source: string(model.ConfigSourceHelm),
+						Source: string(feature.ConfigSourceHelm),
 						Type:   "STRING", IsConfigurable: true,
 					}},
 				},

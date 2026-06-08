@@ -21,8 +21,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
-	"github.com/nais/fasit/internal/graph/model"
-
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -137,7 +135,7 @@ func TestConfig(t *testing.T) {
 				Key:     "my.key",
 				Content: []byte(`"stringval"`),
 				Created: created,
-				Source:  model.ConfigSourceGlobal,
+				Source:  ConfigSourceGlobal,
 			},
 		}
 
@@ -172,7 +170,7 @@ func TestConfig(t *testing.T) {
 		want := &Configuration{
 			Key:     config.Key,
 			Content: config.Value,
-			Source:  model.ConfigSourceEnv,
+			Source:  ConfigSourceEnv,
 		}
 
 		opts := cmpopts.IgnoreFields(Configuration{}, "ID", "Created")
@@ -199,7 +197,7 @@ func TestConfig(t *testing.T) {
 		want := &Configuration{
 			Key:     config.Key,
 			Content: config.Value,
-			Source:  model.ConfigSourceGlobal,
+			Source:  ConfigSourceGlobal,
 		}
 
 		opts := cmpopts.IgnoreFields(Configuration{}, "ID", "Created")
@@ -224,7 +222,7 @@ func TestConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err = ConfigUpdate(ctx, got.ID, model.UpdateConfiguration{
+		got, err = ConfigUpdate(ctx, got.ID, UpdateConfiguration{
 			Value: []byte(`"newval"`),
 		})
 		if err != nil {
@@ -234,7 +232,7 @@ func TestConfig(t *testing.T) {
 		want := &Configuration{
 			Key:     config.Key,
 			Content: []byte(`"newval"`),
-			Source:  model.ConfigSourceGlobal,
+			Source:  ConfigSourceGlobal,
 		}
 
 		opts := cmpopts.IgnoreFields(Configuration{}, "ID", "Created")
