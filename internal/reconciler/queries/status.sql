@@ -41,3 +41,4 @@ WHERE
 	AND d.id = @feature_assignment_id::UUID
 ORDER BY
 	environment_id ASC;
+
