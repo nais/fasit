@@ -3,7 +3,7 @@
 The reconciler's per-feature×environment state was tracked in two mutable tables — `feature_reconcile_statuses` (a merged "reconcile status" updated in place by both the reconciler and the naisd callback) and `deploy_instructions` (one row per deploy, `status` UPDATEd as naisd reports back). We are replacing both with two append-only logs plus derived `DISTINCT ON` views:
 
 - **`decision_log`** / `decision_status` — the compute stage's decision per (assignment, environment): an `action` (deploy / skip-* / fail-*) plus `message`. A row is inserted only when `(feature_assignment_id, feature_version, action, message)` differs from the latest row for `(environment_id, feature_name)`; change detection is done in Go, not SQL, for speed.
-- **`deploy_log`** / `deploy_status` — the deploy lifecycle. The Deployer appends a row at publish (`created`/`pending`) carrying the DIID, hash, and rendered values; the naisd Receiver appends a new row with the same DIID for the terminal `deployed`/`failed`. Latest row per `(environment_id, feature_name)` is the current rollout state.
+- **`deploy_log`** / `deploy_status` — the deploy lifecycle. The Deployer appends a row at publish (`sent`) carrying the DIID, hash, and rendered values; the naisd Receiver appends new rows with the same DIID for `installing` and the terminal `deployed`/`failed`. Latest row per `(environment_id, feature_name)` is the current rollout state.
 
 The displayed status of a feature×environment becomes **two complementary signals** rather than one merged field: rollout state from `deploy_status` and the latest reconciler decision from `decision_status`.
 
@@ -28,4 +28,4 @@ The `message.DeployInstruction` wire type and the naisd agent code that consumes
 ## Affected behaviours
 
 - **Manual redeploy removed.** The old "redeploy" button blanked `deploy_instructions.hash` to force a redeploy. There is no row to mutate in an append-only log, so the manual redeploy/invalidate affordance (`InvalidateLatestDeploy`) is dropped; redeploys are driven by config/version changes. `featureassignment`'s now-dead `CreateDeployInstruction`/`UpdateDeployInstructionStatus` queries are removed too.
-- **Deploy history reads `deploy_log`.** The per-deploy history on the assignment-detail and environment-feature pages (previously `deploy_instructions` via the `feature`/`uidata` queries) is rebacked by `deploy_log`: the publish rows carry version/hash/values and the appended transition rows give the full created→pending→deployed/failed timeline. `logs` keeps its DIID column for correlation.
+- **Deploy history reads `deploy_log`.** The per-deploy history on the assignment-detail and environment-feature pages (previously `deploy_instructions` via the `feature`/`uidata` queries) is rebacked by `deploy_log`: the publish rows carry version/hash/values and the appended transition rows give the full sent→installing→deployed/failed timeline. `logs` keeps its DIID column for correlation.

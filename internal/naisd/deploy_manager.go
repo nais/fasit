@@ -281,7 +281,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStatus := message.Helm{
 		DIID:          msg.ID,
 		ConfigHash:    msg.ConfigHash,
-		RolloutStatus: model.RolloutStatusPending,
+		RolloutStatus: model.RolloutStatusInstalling,
 	}
 
 	_ = d.publishStatus(ctx, helmStatus)
