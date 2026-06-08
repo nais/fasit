@@ -51,13 +51,13 @@ func NewPubSubDeployer(pool *pgxpool.Pool, publisher NewPublisher, meter metric.
 	}, nil
 }
 
-func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []ComputeResult) error {
+func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []DeployDecision) error {
 	type publishItem struct {
 		topicID     string
 		diid        uuid.UUID
 		vals        []byte
 		instruction message.DeployInstruction
-		res         ComputeResult
+		res         DeployDecision
 	}
 	var toPublish []publishItem
 
