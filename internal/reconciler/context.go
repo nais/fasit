@@ -29,11 +29,6 @@ func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
 	return context.WithValue(ctx, querierKey{}, reconcilersql.New(pool))
 }
 
-// RegisterForTest stores a specific querier in the context, for tests.
-func RegisterForTest(ctx context.Context, q reconcilersql.Querier) context.Context {
-	return context.WithValue(ctx, querierKey{}, q)
-}
-
 // querier returns the request-scoped reconciler querier, bound to the current
 // transaction when one is active (dbtx), so the read path participates in
 // caller transactions.
