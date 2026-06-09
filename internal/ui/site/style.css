@@ -767,13 +767,6 @@ nav .user {
   font-size: 0.875rem;
   flex-wrap: wrap;
 }
-.reconcile-reason {
-  width: 100%;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  font-style: italic;
-}
-
 /* Consensus highlighting: dominant column values recede, deviations stand out. */
 .cell-consensus {
   color: var(--text-muted);
@@ -782,29 +775,32 @@ nav .user {
   color: color-mix(in srgb, var(--text-heading) 55%, var(--status-warning) 45%);
 }
 
-/* Status tab */
-.env-feature-status {
-  display: grid;
-  gap: 1.5rem;
-}
-.status-section h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-}
+/* Merged env-feature heading: latest deploy + problem, shown in the card header */
 .deploy-version {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
 }
-.badge-current {
-  display: inline-block;
-  font-size: 0.7rem;
+.deploy-status-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  min-width: 0;
+}
+.heading-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.deploy-status-heading > .heading-group + .heading-group {
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 1rem;
+}
+.reconcile-reason-inline {
+  font-size: 0.875rem;
   color: var(--text-muted);
-  background: var(--bg-inset);
-  border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  padding: 0.1rem 0.35rem;
-  vertical-align: middle;
+  font-style: italic;
 }
 
 .card pre {
@@ -1435,47 +1431,6 @@ nav .user {
   cursor: pointer;
   font: inherit;
   text-decoration: none;
-}
-.log-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-.log-toggle:hover {
-  text-decoration: none;
-  color: var(--text-heading);
-}
-.log-arrow {
-  font-size: 1.1em;
-}
-
-.deploy-row-clickable {
-  cursor: pointer;
-}
-.deploy-row-clickable:hover {
-  background: var(--bg-hover, rgba(0, 0, 0, 0.03));
-}
-
-.deploy-row-superseded {
-  color: var(--text-muted, #888);
-  opacity: 0.7;
-}
-.deploy-row-superseded:hover {
-  color: inherit;
-  opacity: 1;
-}
-
-.log-row td {
-  padding: 0;
-  max-width: 0;
-}
-.log-row .code-block {
-  margin: 0;
-  border-radius: 0;
-  max-height: 20rem;
-  overflow: auto;
-  white-space: pre;
-  word-break: normal;
 }
 
 .btn-small {
@@ -2125,12 +2080,6 @@ a:hover .status-badge {
   border-top: 1px solid var(--border);
 }
 
-/* Config toolbar */
-.config-toolbar {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-}
 .btn-secondary {
   background: var(--bg-surface);
   color: var(--text-secondary);
