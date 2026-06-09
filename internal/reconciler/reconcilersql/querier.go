@@ -18,6 +18,9 @@ type Querier interface {
 	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
 	ListAllTenantEnvironments(ctx context.Context) ([]ListAllTenantEnvironmentsRow, error)
+	// Decision history for a feature in an environment, newest first. Rows exist
+	// only for cycles where the decision changed.
+	ListDecisionLog(ctx context.Context, arg ListDecisionLogParams) ([]ListDecisionLogRow, error)
 	// Latest reconciler decision per environment for a feature assignment. The
 	// deploy rollout state and disabled-feature membership are joined in Go
 	// (ReconcileStatuses).
