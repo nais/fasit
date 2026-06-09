@@ -114,9 +114,11 @@ func overviewTable(envs []AssignmentEnvStatus, featureName string) g.Node {
 		h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Deployed")),
 		h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")),
 	}
-	rows := g.Map(envs, func(env AssignmentEnvStatus) g.Node {
-		return envCardRow(env, featureName, prefs, true, true, true, true)
-	})
+	versionEmph := assignmentVersionEmphasis(envs)
+	rows := make([]g.Node, len(envs))
+	for i, env := range envs {
+		rows[i] = envCardRow(env, featureName, prefs, true, true, true, true, versionEmph[i])
+	}
 	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-overview"),
 		h.THead(h.Tr(g.Group(thNodes))),
 		h.TBody(g.Group(rows)),
@@ -360,9 +362,11 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 		thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
 	}
 
-	rows := g.Map(c.Environments, func(env AssignmentEnvStatus) g.Node {
-		return envCardRow(env, featureName, prefs, showTenant, showVersion, false, prefs.ShowRowActions)
-	})
+	versionEmph := assignmentVersionEmphasis(c.Environments)
+	rows := make([]g.Node, len(c.Environments))
+	for i, env := range c.Environments {
+		rows[i] = envCardRow(env, featureName, prefs, showTenant, showVersion, false, prefs.ShowRowActions, versionEmph[i])
+	}
 
 	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-card"),
 		h.THead(h.Tr(g.Group(thNodes))),
@@ -375,7 +379,15 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 	)
 }
 
-func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion, showTenantAvatar, showActions bool) g.Node {
+func assignmentVersionEmphasis(envs []AssignmentEnvStatus) []components.Emphasis {
+	versions := make([]string, len(envs))
+	for i, env := range envs {
+		versions[i] = env.AssignmentVersion
+	}
+	return components.ColumnConsensus(versions)
+}
+
+func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, showTenant, showVersion, showTenantAvatar, showActions bool, versionEmph components.Emphasis) g.Node {
 	baseHref := "/features/" + featureName + "/envs/" + env.TenantSlug + "/" + env.Name
 	envLink := h.A(h.Href(baseHref), g.Text(env.Name))
 	logsHref := baseHref
@@ -412,7 +424,7 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 	cells = append(cells, h.Td(statusCell...))
 
 	if showVersion {
-		cells = append(cells, h.Td(g.Text(env.AssignmentVersion), driftIcon))
+		cells = append(cells, h.Td(components.ConsensusCell(versionEmph, g.Text(env.AssignmentVersion)), driftIcon))
 	}
 
 	if prefs.ShowLastDeploy {

@@ -168,19 +168,37 @@ func configCompareFragment(key string, feat *featurepkg.Feature, rows []compareR
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
 			)),
-			h.TBody(g.Group(g.Map(rows, func(row compareRow) g.Node {
-				valueNode := h.Span(g.Text(truncateValue(row.Value, 60)))
-				if row.IsSecret {
-					valueNode = h.Span(h.Class("text-muted"), g.Text("••••••••"))
-				}
-				return h.Tr(
-					h.Td(h.A(h.Href(row.EnvHref), h.Strong(g.Text(row.TenantName)), g.Text(" / "), g.Text(row.EnvName))),
-					h.Td(valueNode),
-					h.Td(h.Span(h.Class("source-label"), g.Text(row.Source))),
-				)
-			}))),
+			h.TBody(g.Group(configCompareRows(rows))),
 		),
 	)
+}
+
+// configCompareRows builds the table body, applying consensus highlighting to
+// the Value and Source columns so the odd one out across environments is easy
+// to spot.
+func configCompareRows(rows []compareRow) []g.Node {
+	valKeys := make([]string, len(rows))
+	srcKeys := make([]string, len(rows))
+	for i, row := range rows {
+		if row.IsSecret {
+			valKeys[i] = "••••••••"
+		} else {
+			valKeys[i] = truncateValue(row.Value, 60)
+		}
+		srcKeys[i] = row.Source
+	}
+	valEmph := components.ColumnConsensus(valKeys)
+	srcEmph := components.ColumnConsensus(srcKeys)
+
+	body := make([]g.Node, len(rows))
+	for i, row := range rows {
+		body[i] = h.Tr(
+			h.Td(h.A(h.Href(row.EnvHref), h.Strong(g.Text(row.TenantName)), g.Text(" / "), g.Text(row.EnvName))),
+			h.Td(components.ConsensusCell(valEmph[i], g.Text(valKeys[i]))),
+			h.Td(components.ConsensusCell(srcEmph[i], h.Span(h.Class("source-label"), g.Text(row.Source)))),
+		)
+	}
+	return body
 }
 
 func lookupRenderedValue(m map[string]any, key string) (string, bool) {

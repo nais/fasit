@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	err := genSchema("./schema/jsonschema/feature.json", feature.FeatureYAML{}, "github.com/nais/fasit", "./internal/graph/model/")
+	err := genSchema("./schema/jsonschema/feature.json", feature.FeatureYAML{}, "github.com/nais/fasit")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -774,6 +774,18 @@ nav .user {
   font-style: italic;
 }
 
+/* Consensus highlighting: dominant column values recede, deviations stand out. */
+.cell-consensus {
+  color: var(--text-muted);
+}
+.cell-outlier {
+  color: var(--status-warning);
+  font-weight: 600;
+}
+.cell-outlier-marker {
+  color: var(--status-warning);
+}
+
 /* Status tab */
 .env-feature-status {
   display: grid;
