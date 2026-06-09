@@ -57,9 +57,15 @@ When configs, environment values, or feature versions change, the reconciler det
 ```sh
 mise install              # install tools
 cp .env.example .env     # configure environment
-mise run setup            # start postgres + pubsub emulator, seed database
+mise run setup            # start postgres, seed database
 mise run dev              # run fasit with auto-reload
 ```
+
+Local development runs an in-process fake naisd (`FASIT_FAKE_NAISD=true` in
+`.env`), so no Pub/Sub emulator or separate naisd process is needed. The fake
+simulates Helm deploys and reports status, release state and health back to the
+reconciler. `FASIT_FAKE_NAISD_FAILING_ENVS` / `FASIT_FAKE_NAISD_UNHEALTHY_ENVS`
+reproduce a demo mix of FAILED and PENDING features.
 
 See `mise run --list` for all available tasks.
 

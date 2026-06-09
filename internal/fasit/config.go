@@ -18,6 +18,12 @@ type Config struct {
 	IAPAudience               string `env:"FASIT_IAP_AUDIENCE"`
 	SlackAPIToken             string `env:"SLACK_API_TOKEN"`
 	SlackChannelFeatureAlerts string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
+
+	// LocalFakeNaisd replaces the Pub/Sub round-trip to naisd with an in-process
+	// fake. Local development only; never enable in production.
+	LocalFakeNaisd         bool     `env:"FASIT_FAKE_NAISD,default=false"`
+	FakeNaisdFailingEnvs   []string `env:"FASIT_FAKE_NAISD_FAILING_ENVS"`
+	FakeNaisdUnhealthyEnvs []string `env:"FASIT_FAKE_NAISD_UNHEALTHY_ENVS"`
 }
 
 // newConfig creates a new configuration instance from environment variables.

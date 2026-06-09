@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/pubsub/v2"
-	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
@@ -32,66 +30,60 @@ type (
 	}
 )
 
-var (
-	naisProjectID      = "nais-local-dev"
-	statusSubscription = "fasit-subscription"
-	statusTopic        = "status"
-
-	envs = map[tenant]map[environmentName]envSpec{
-		"test-partner": {
-			"management": {
-				kind: environment.EnvironmentKindManagement,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"dev": {
-				kind: environment.EnvironmentKindTenant,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"prod": {
-				kind: environment.EnvironmentKindTenant,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"staging": {
-				kind:   environment.EnvironmentKindTenant,
-				labels: environment.Labels{},
+var envs = map[tenant]map[environmentName]envSpec{
+	"test-partner": {
+		"management": {
+			kind: environment.EnvironmentKindManagement,
+			labels: environment.Labels{
+				"aiven": "enabled",
 			},
 		},
-		"nav": {
-			"management": {
-				kind:   environment.EnvironmentKindManagement,
-				labels: environment.Labels{},
-			},
-			"dev": {
-				kind: environment.EnvironmentKindTenant,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"prod": {
-				kind: environment.EnvironmentKindTenant,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
+		"dev": {
+			kind: environment.EnvironmentKindTenant,
+			labels: environment.Labels{
+				"aiven": "enabled",
 			},
 		},
-		"dev-nais": {
-			"management": {
-				kind:   environment.EnvironmentKindManagement,
-				labels: environment.Labels{},
-			},
-			"dev": {
-				kind:   environment.EnvironmentKindTenant,
-				labels: environment.Labels{},
+		"prod": {
+			kind: environment.EnvironmentKindTenant,
+			labels: environment.Labels{
+				"aiven": "enabled",
 			},
 		},
-	}
-)
+		"staging": {
+			kind:   environment.EnvironmentKindTenant,
+			labels: environment.Labels{},
+		},
+	},
+	"nav": {
+		"management": {
+			kind:   environment.EnvironmentKindManagement,
+			labels: environment.Labels{},
+		},
+		"dev": {
+			kind: environment.EnvironmentKindTenant,
+			labels: environment.Labels{
+				"aiven": "enabled",
+			},
+		},
+		"prod": {
+			kind: environment.EnvironmentKindTenant,
+			labels: environment.Labels{
+				"aiven": "enabled",
+			},
+		},
+	},
+	"dev-nais": {
+		"management": {
+			kind:   environment.EnvironmentKindManagement,
+			labels: environment.Labels{},
+		},
+		"dev": {
+			kind:   environment.EnvironmentKindTenant,
+			labels: environment.Labels{},
+		},
+	},
+}
 
 func main() {
 	log := slog.Default()
@@ -102,11 +94,6 @@ func main() {
 		b := make([]byte, 3)
 		_, _ = rand.Read(b)
 		return fmt.Sprintf("%s-%x%d", now, b, seq)
-	}
-
-	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
-		log.With("err", err).Error("fatal")
-		os.Exit(1)
 	}
 
 	ctx := context.Background()
@@ -544,52 +531,6 @@ func main() {
 
 		// Restore actor for the rest of the seeder
 		ctx = auth.SetEmail(ctx, "setup_local_env")
-	}
-
-	// Set up pubsub topics and subscriptions.
-	client, err := pubsub.NewClient(ctx, naisProjectID)
-	if err != nil {
-		log.With("err", err).Error("fatal")
-		os.Exit(1)
-	}
-
-	topicRes, err := client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
-		Name: "projects/" + naisProjectID + "/topics/" + statusTopic,
-	})
-	if err != nil {
-		log.With("err", err).Error("error")
-	}
-	_, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
-		Name:  "projects/" + naisProjectID + "/subscriptions/" + statusSubscription,
-		Topic: topicRes.GetName(),
-	})
-	if err != nil {
-		log.With("err", err).Error("error")
-	}
-
-	for tenant, envs := range envs {
-		for env := range envs {
-			topic := fmt.Sprintf("projects/%v/topics/naisd-%v-%v", naisProjectID, tenant, env)
-			subscription := fmt.Sprintf("projects/%v/subscriptions/naisd-subscription", "local-"+tenant+"-"+env)
-
-			_, err = client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{Name: topic})
-			if err != nil {
-				log.With("err", err).Error("error")
-			}
-
-			envClient, err := pubsub.NewClient(ctx, "local-"+tenant+"-"+env)
-			if err != nil {
-				log.With("err", err).Error("fatal")
-				os.Exit(1)
-			}
-			_, err = envClient.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
-				Name:  subscription,
-				Topic: topic,
-			})
-			if err != nil {
-				log.With("err", err).Error("error")
-			}
-		}
 	}
 }
 

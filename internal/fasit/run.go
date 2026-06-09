@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/fakeagent"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
@@ -51,14 +52,6 @@ func Run(ctx context.Context) error {
 
 	log := newLogger(cfg.LogLevel)
 
-	log.Info("starting pub/sub client")
-	pubSubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
-	if err != nil {
-		return fmt.Errorf("error creating pub/sub client: %w", err)
-	}
-	defer ioconvenience.CloseWithLog(pubSubClient, log)
-	log.Info("successfully started pub/sub client")
-
 	meter, err := newMetricsProvider()
 	if err != nil {
 		return fmt.Errorf("error creating metrics provider: %w", err)
@@ -83,12 +76,6 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error registering pool metrics: %w", err)
 	}
 
-	assignmentPublisher := func(topicID string, log *slog.Logger) reconciler.Publisher {
-		p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
-		p.SetMeter(meter)
-		return p
-	}
-
 	loadContext, err := contextloader.NewLoaderFunc(pool, log)
 	if err != nil {
 		return fmt.Errorf("creating setup context: %w", err)
@@ -104,18 +91,50 @@ func Run(ctx context.Context) error {
 
 	go rec.TimeoutPendingDeploys(ctx, log)
 
-	deployer, err := reconciler.NewPubSubDeployer(pool, assignmentPublisher, meter, log)
+	var (
+		newPublisher   reconciler.NewPublisher
+		receiverClient reconciler.ReceiverClient
+		fakeAgent      *fakeagent.Agent
+	)
+	if cfg.LocalFakeNaisd {
+		log.Warn("FASIT_FAKE_NAISD enabled: using in-process fake naisd, no Pub/Sub")
+		fakeAgent = fakeagent.New(log.With("component", "fake-naisd"), fakeagent.Options{
+			FailingEnvs:   cfg.FakeNaisdFailingEnvs,
+			UnhealthyEnvs: cfg.FakeNaisdUnhealthyEnvs,
+		})
+		newPublisher = fakeAgent.Publisher
+		receiverClient = fakeAgent
+	} else {
+		log.Info("starting pub/sub client")
+		pubSubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
+		if err != nil {
+			return fmt.Errorf("error creating pub/sub client: %w", err)
+		}
+		defer ioconvenience.CloseWithLog(pubSubClient, log)
+		log.Info("successfully started pub/sub client")
+
+		newPublisher = func(topicID string, log *slog.Logger) reconciler.Publisher {
+			p := message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
+			p.SetMeter(meter)
+			return p
+		}
+		receiverClient = message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
+	}
+
+	deployer, err := reconciler.NewPubSubDeployer(pool, newPublisher, meter, log)
 	if err != nil {
 		return err
 	}
 
 	go rec.Run(ctx, 1*time.Minute, deployer)
 
-	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
+	if fakeAgent != nil {
+		go fakeAgent.ReportHealth(ctx, 30*time.Second)
+	}
 
 	receiver := reconciler.NewReceiver(
 		pool,
-		statusMgr,
+		receiverClient,
 		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
