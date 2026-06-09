@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
-	commonmodel "github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -272,11 +272,11 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 	)
 }
 
-func parseGHRef(raw []byte) *commonmodel.GitHubCommit {
+func parseGHRef(raw []byte) *model.GitHubCommit {
 	if len(raw) == 0 {
 		return nil
 	}
-	var ref commonmodel.GitHubCommit
+	var ref model.GitHubCommit
 	if err := json.Unmarshal(raw, &ref); err != nil {
 		return nil
 	}
@@ -286,7 +286,7 @@ func parseGHRef(raw []byte) *commonmodel.GitHubCommit {
 	return &ref
 }
 
-func ghRefLink(ref *commonmodel.GitHubCommit) g.Node {
+func ghRefLink(ref *model.GitHubCommit) g.Node {
 	if ref == nil {
 		return nil
 	}

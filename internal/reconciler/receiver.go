@@ -9,12 +9,13 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/dbtx"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
@@ -123,7 +124,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, status message.Status) error
 		return err
 	}
 
-	if helmStatus.RolloutStatus == model.DeployStatusFailed {
+	if helmStatus.RolloutStatus == feature.DeployStatusFailed {
 		tenant, err := envpkg.GetTenant(ctx, env.TenantID)
 		if err != nil {
 			return fmt.Errorf("getting tenant: %w", err)
@@ -241,9 +242,32 @@ func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) erro
 		return nil
 	}
 
-	if err := feature.LogCreate(ctx, status.DIID, status.Logs); err != nil {
+	if err := logCreate(ctx, status.DIID, status.Logs); err != nil {
 		r.log.With("err", err).Error("unable to log status")
 	}
 
 	return nil
+}
+
+func logCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error {
+	params := make([]reconcilersql.LogsCreateParams, len(lines))
+	for i, line := range lines {
+		params[i] = reconcilersql.LogsCreateParams{
+			DeployInstruction: deployInstructionID,
+			Time:              line.Time,
+			Message:           line.Msg,
+			Kind:              string(line.Kind),
+		}
+	}
+
+	br := querier(ctx).LogsCreate(ctx, params)
+
+	var outerErr error
+	br.Exec(func(i int, err error) {
+		if err != nil {
+			outerErr = multierror.Append(outerErr, err)
+		}
+	})
+
+	return outerErr
 }

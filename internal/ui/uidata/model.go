@@ -2,6 +2,7 @@ package uidata
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -90,4 +91,51 @@ func tenantFromSQL(t sqlgen.Tenant) *Tenant {
 		Created:      t.Created,
 		LastModified: t.LastModified,
 	}
+}
+
+func logLineFromSQL(log sqlgen.Log) *LogLine {
+	return &LogLine{
+		ID:                  fmt.Sprintf("%s-%d", log.DeployInstruction, log.ID),
+		Timestamp:           log.Time,
+		Message:             log.Message,
+		IntID:               int(log.ID),
+		DeployInstructionID: log.DeployInstruction,
+	}
+}
+
+type LogLine struct {
+	ID        string    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Message   string    `json:"message"`
+
+	IntID               int       `json:"-"`
+	DeployInstructionID uuid.UUID `json:"-"`
+}
+
+type RolloutLog struct {
+	ID          uuid.UUID  `json:"id"`
+	TenantName  string     `json:"tenantName"`
+	Environment string     `json:"environment"`
+	Lines       []*LogLine `json:"lines"`
+}
+
+type ConfigSource string
+
+const (
+	ConfigSourceGlobal  ConfigSource = "GLOBAL"
+	ConfigSourceEnv     ConfigSource = "ENV"
+	ConfigSourceHelm    ConfigSource = "HELM"
+	ConfigSourceUnknown ConfigSource = "UNKNOWN"
+)
+
+func (e ConfigSource) IsValid() bool {
+	switch e {
+	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm, ConfigSourceUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ConfigSource) String() string {
+	return string(e)
 }

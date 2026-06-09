@@ -8,7 +8,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -53,7 +52,7 @@ func LogsHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func logsPage(dep *featureassignment.FeatureAssignment, log *model.RolloutLog) g.Node {
+func logsPage(dep *featureassignment.FeatureAssignment, log *uidata.RolloutLog) g.Node {
 	var logContent []g.Node
 
 	if log == nil || len(log.Lines) == 0 {

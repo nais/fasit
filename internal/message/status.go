@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 )
 
 type Status struct {
@@ -52,7 +52,7 @@ type Helm struct {
 	// RolloutStatus is the deploy lifecycle status reported by naisd. Its JSON key
 	// is part of the naisd<->fasit wire contract and must stay stable across
 	// independent naisd upgrades, so the field name is kept.
-	RolloutStatus model.DeployStatus `json:"RolloutStatus"`
+	RolloutStatus feature.DeployStatus `json:"RolloutStatus"`
 	ConfigHash    string
 	Log           string
 	Error         string `json:",omitempty"`

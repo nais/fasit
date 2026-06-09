@@ -15,6 +15,8 @@ type Querier interface {
 	ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDeployInstructionsRow, error)
 	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)
+	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
+	LogsByID(ctx context.Context, id int64) (Log, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -21,7 +21,6 @@ import (
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmenttest"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/reconciler"
@@ -157,13 +156,13 @@ func (h *reconcileTest) reconcile() {
 		if strings.HasSuffix(msg.Name, "-pending") {
 			continue
 		}
-		h.appendDeployStatus(msg.ID, model.DeployStatusDeployed)
+		h.appendDeployStatus(msg.ID, feature.DeployStatusDeployed)
 	}
 }
 
 // appendDeployStatus mimics the naisd Receiver: it appends a terminal deploy_log
 // row for the given diid, carrying the hash forward from the latest row.
-func (h *reconcileTest) appendDeployStatus(diid uuid.UUID, status model.DeployStatus) {
+func (h *reconcileTest) appendDeployStatus(diid uuid.UUID, status feature.DeployStatus) {
 	h.t.Helper()
 	_, err := h.pool.Exec(h.ctx, `
 		INSERT INTO deploy_log (diid, environment_id, feature_assignment_id, feature_name, feature_version, status, hash)

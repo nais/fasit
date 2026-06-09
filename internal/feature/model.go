@@ -13,7 +13,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/helm"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chart"
@@ -470,7 +469,7 @@ type DeployInstruction struct {
 	FeatureAssignmentID *uuid.UUID
 	FeatureName         string
 	FeatureVersion      string
-	Status              model.DeployStatus
+	Status              DeployStatus
 	Hash                string
 	Created             time.Time
 	LastModified        time.Time
@@ -513,4 +512,32 @@ type Release struct {
 	LastDeployed time.Time `json:"lastDeployed"`
 	Created      time.Time `json:"created"`
 	LastModified time.Time `json:"lastModified"`
+}
+
+type DeployStatus string
+
+const (
+	DeployStatusUnknown    DeployStatus = ""
+	DeployStatusSent       DeployStatus = "sent"
+	DeployStatusInstalling DeployStatus = "installing"
+	DeployStatusDeployed   DeployStatus = "deployed"
+	DeployStatusFailed     DeployStatus = "failed"
+)
+
+func (r DeployStatus) IsValid() bool {
+	switch r {
+	case DeployStatusUnknown, DeployStatusSent, DeployStatusInstalling, DeployStatusDeployed, DeployStatusFailed:
+		return true
+	}
+	return false
+}
+
+// IsInProgress reports whether the rollout has been dispatched but has not yet
+// reached a terminal state (deployed/failed).
+func (r DeployStatus) IsInProgress() bool {
+	return r == DeployStatusSent || r == DeployStatusInstalling
+}
+
+func (r DeployStatus) String() string {
+	return string(r)
 }

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 )
 
@@ -54,7 +54,7 @@ func NormalizeStatus(s string) string {
 // Rung 2 sits above rung 3 deliberately: an in-flight deploy is shown until it
 // terminates even if the latest desired state no longer renders; once it
 // terminates, rung 3 surfaces the blocker.
-func deriveState(disabled bool, deploy model.DeployStatus, action Action) string {
+func deriveState(disabled bool, deploy feature.DeployStatus, action Action) string {
 	switch {
 	case disabled:
 		return "disabled"
@@ -64,7 +64,7 @@ func deriveState(disabled bool, deploy model.DeployStatus, action Action) string
 		return "unhealthy"
 	case action.IsFailure():
 		return "failed"
-	case deploy == model.DeployStatusDeployed, deploy == model.DeployStatusFailed:
+	case deploy == feature.DeployStatusDeployed, deploy == feature.DeployStatusFailed:
 		return string(deploy) // deployed / failed
 	}
 
@@ -170,7 +170,7 @@ func joinReconcileSignals(
 		dep := depByEnv[envID]
 		disabledAt, isDisabled := disabledAtByEnv[envID]
 
-		state := deriveState(isDisabled, model.DeployStatus(dep.Status), Action(dec.Action))
+		state := deriveState(isDisabled, feature.DeployStatus(dep.Status), Action(dec.Action))
 		lastModified := latestTime(dec.Created, dep.Created, disabledAt)
 		statuses[i] = &FeatureReconcileStatus{
 			State:               FeatureReconcileStatusState(NormalizeStatus(state)),
