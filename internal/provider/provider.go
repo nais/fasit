@@ -260,13 +260,11 @@ func (s *server) ListEnvironments(ctx context.Context, in *protogen.ListEnvironm
 
 	resp := make([]*protogen.EnvironmentResponse, len(envs))
 	for i, env := range envs {
-		keys := slices.Sorted(func(yield func(string) bool) {
-			for k := range env.Labels {
-				if !yield(k) {
-					return
-				}
-			}
-		})
+		keys := make([]string, 0, len(env.Labels))
+		for k := range env.Labels {
+			keys = append(keys, k)
+		}
+		slices.Sort(keys)
 		labels := make([]*protogen.EnvironmentLabel, 0, len(env.Labels))
 		for _, k := range keys {
 			labels = append(labels, &protogen.EnvironmentLabel{Key: k, Value: env.Labels[k]})

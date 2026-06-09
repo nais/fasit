@@ -86,6 +86,86 @@ func TestProvider(t *testing.T) {
 			t.Errorf("expected label kind=tenant, got %q", labels["kind"])
 		}
 	})
+
+	t.Run("list tenants returns created tenants", func(t *testing.T) {
+		ctx := loadContext(ctx)
+
+		_, err := environment.CreateTenant(ctx, &environment.TenantCreate{Name: "list-tenant-a"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = environment.CreateTenant(ctx, &environment.TenantCreate{Name: "list-tenant-b"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		resp, err := c.ListTenants(ctx, &protogen.ListTenantsRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		found := map[string]bool{}
+		for _, tenant := range resp.GetTenants() {
+			found[tenant.GetName()] = true
+		}
+
+		if !found["list-tenant-a"] {
+			t.Errorf("expected list-tenant-a in response")
+		}
+		if !found["list-tenant-b"] {
+			t.Errorf("expected list-tenant-b in response")
+		}
+	})
+
+	t.Run("list environments returns environments for tenant with sorted labels", func(t *testing.T) {
+		ctx := loadContext(ctx)
+
+		tenant, err := environment.CreateTenant(ctx, &environment.TenantCreate{Name: "list-env-tenant"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = environment.Create(ctx, &environment.EnvironmentCreate{
+			Name:     "env-alpha",
+			TenantID: tenant.ID,
+			Kind:     environment.EnvironmentKindTenant,
+			Labels:   map[string]string{"zone": "east", "tier": "prod"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		resp, err := c.ListEnvironments(ctx, &protogen.ListEnvironmentsRequest{TenantId: tenant.ID.String()})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(resp.GetEnvironments()) != 1 {
+			t.Fatalf("expected 1 environment, got %d", len(resp.GetEnvironments()))
+		}
+
+		env := resp.GetEnvironments()[0]
+		if env.GetName() != "env-alpha" {
+			t.Errorf("expected env-alpha, got %q", env.GetName())
+		}
+		if env.GetTenantId() != tenant.ID.String() {
+			t.Errorf("expected tenant id %s, got %s", tenant.ID.String(), env.GetTenantId())
+		}
+
+		labelMap := map[string]string{}
+		for i, l := range env.GetLabels() {
+			labelMap[l.GetKey()] = l.GetValue()
+			if i > 0 && env.GetLabels()[i-1].GetKey() > l.GetKey() {
+				t.Errorf("labels not sorted: %q > %q", env.GetLabels()[i-1].GetKey(), l.GetKey())
+			}
+		}
+		if labelMap["zone"] != "east" {
+			t.Errorf("expected label zone=east, got %q", labelMap["zone"])
+		}
+		if labelMap["tier"] != "prod" {
+			t.Errorf("expected label tier=prod, got %q", labelMap["tier"])
+		}
+	})
 }
 
 // startGrpcServer initializes an in-memory gRPC server
