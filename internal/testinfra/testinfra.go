@@ -16,7 +16,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -93,7 +92,7 @@ func (db *DB) Pool(ctx context.Context, t *testing.T) *pgxpool.Pool {
 func Context(ctx context.Context, pool *pgxpool.Pool) context.Context {
 	ctx = audit.Register(ctx, pool, discardLogger())
 	ctx = environment.Register(ctx, pool)
-	ctx = featureassignment.RegisterForTest(ctx, featureassignmentsql.New(pool))
+	ctx = featureassignment.Register(ctx, pool)
 	ctx = naisdstatus.Register(ctx, pool)
 	return ctx
 }

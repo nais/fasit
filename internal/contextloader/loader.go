@@ -18,11 +18,6 @@ import (
 type LoaderFunc func(context.Context) context.Context
 
 func NewLoaderFunc(pool *pgxpool.Pool, log *slog.Logger) (LoaderFunc, error) {
-	manager, err := featureassignment.NewManager(pool, log)
-	if err != nil {
-		return nil, err
-	}
-
 	return func(ctx context.Context) context.Context {
 		ctx = dbtx.Register(ctx, pool)
 		ctx = audit.Register(ctx, pool, log)
@@ -31,7 +26,7 @@ func NewLoaderFunc(pool *pgxpool.Pool, log *slog.Logger) (LoaderFunc, error) {
 		ctx = naisdstatus.Register(ctx, pool)
 		ctx = reconciler.Register(ctx, pool)
 		ctx = uidata.Register(ctx, pool)
-		ctx = featureassignment.Register(ctx, manager)
+		ctx = featureassignment.Register(ctx, pool)
 		return ctx
 	}, nil
 }
