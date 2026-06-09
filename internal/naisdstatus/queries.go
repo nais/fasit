@@ -57,3 +57,27 @@ func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*featu
 
 	return releases, nil
 }
+
+// GetReleaseStatus returns the live Helm release state reported by naisd for a
+// single feature in an environment, or (nil, nil) when none has been reported.
+func GetReleaseStatus(ctx context.Context, environmentID uuid.UUID, featureName string) (*feature.Release, error) {
+	r, err := querier(ctx).GetReleaseStatus(ctx, naisdstatussql.GetReleaseStatusParams{
+		EnvironmentID: environmentID,
+		Feature:       featureName,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &feature.Release{
+		Name:         r.Feature,
+		Version:      r.Version,
+		Status:       r.Status,
+		Revision:     int(r.Revision),
+		LastDeployed: r.LastDeployed,
+		Created:      r.Created,
+		LastModified: r.LastModified,
+	}, nil
+}

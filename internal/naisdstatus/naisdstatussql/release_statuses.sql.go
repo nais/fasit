@@ -9,6 +9,37 @@ import (
 	"github.com/google/uuid"
 )
 
+const getReleaseStatus = `-- name: GetReleaseStatus :one
+SELECT
+	environment_id, feature, version, status, revision, last_deployed, created, last_modified
+FROM
+	release_statuses
+WHERE
+	environment_id = $1
+	AND feature = $2
+`
+
+type GetReleaseStatusParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+}
+
+func (q *Queries) GetReleaseStatus(ctx context.Context, arg GetReleaseStatusParams) (ReleaseStatus, error) {
+	row := q.db.QueryRow(ctx, getReleaseStatus, arg.EnvironmentID, arg.Feature)
+	var i ReleaseStatus
+	err := row.Scan(
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Version,
+		&i.Status,
+		&i.Revision,
+		&i.LastDeployed,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
 const listReleaseStatuses = `-- name: ListReleaseStatuses :many
 SELECT
 	environment_id, feature, version, status, revision, last_deployed, created, last_modified

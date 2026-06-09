@@ -13,6 +13,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -24,24 +25,22 @@ import (
 type FeatureConfigItem = components.ConfigItem
 
 type FeaturePage struct {
-	Breadcrumbs             []breadcrumb.Crumb
-	Tenant                  *envpkg.Tenant
-	TenantSlug              string
-	Environment             *Environment
-	Feature                 *FeatureDetail
-	FeatureEnvs             []featureenvs.Environment
-	Assignments             []EnvAssignmentItem
-	FeatureLog              *FeatureLog
-	Status                  string
-	StatusMessage           string
-	ActiveTab               string
-	AuditEntries            []*audit.Entry
-	WinningAssignment       *featureassignment.FeatureAssignment
-	RecentDeployHistory     []*featurepkg.DeployInstruction
-	DeployLogsByInstruction map[string][]LogLine
-	DecisionHistory         []*reconciler.DecisionLogEntry
-	ExpandedLogID           string
-	ShowAllDeploys          bool
+	Breadcrumbs         []breadcrumb.Crumb
+	Tenant              *envpkg.Tenant
+	TenantSlug          string
+	Environment         *Environment
+	Feature             *FeatureDetail
+	FeatureEnvs         []featureenvs.Environment
+	Assignments         []EnvAssignmentItem
+	FeatureLog          *FeatureLog
+	Status              string
+	StatusMessage       string
+	ActiveTab           string
+	AuditEntries        []*audit.Entry
+	WinningAssignment   *featureassignment.FeatureAssignment
+	Release             *featurepkg.Release
+	RecentDeployHistory []*featurepkg.DeployInstruction
+	DecisionHistory     []*reconciler.DecisionLogEntry
 }
 
 type FeatureDetail struct {
@@ -60,12 +59,7 @@ type EnvAssignmentItem struct {
 }
 
 type FeatureLog struct {
-	CurrentVersion       string
-	CurrentStatus        string
-	LastModified         string
-	LastModifiedRelative string
-	LastDeployed         string
-	CurrentLog           []LogLine
+	CurrentLog []LogLine
 }
 
 type LogLine struct {
@@ -161,7 +155,7 @@ func featureBreadcrumbs(tenant *envpkg.Tenant, env *envpkg.Environment, featureN
 	}
 }
 
-func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab, expandedLogID string, showAllDeploys bool) (*FeaturePage, error) {
+func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, activeTab string) (*FeaturePage, error) {
 	tenant, err := envpkg.GetTenantByName(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
@@ -190,14 +184,13 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 	breadcrumbs := featureBreadcrumbs(tenant, env, featureName)
 
 	page := &FeaturePage{
-		Breadcrumbs:   breadcrumbs,
-		Tenant:        tenant,
-		TenantSlug:    tenantSlug,
-		Environment:   &Environment{Environment: env, Metadata: getEnvironmentMetadata(env)},
-		Feature:       &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
-		FeatureEnvs:   featureenvs.LoadEnvironments(ctx, feat),
-		ActiveTab:     activeTab,
-		ExpandedLogID: expandedLogID,
+		Breadcrumbs: breadcrumbs,
+		Tenant:      tenant,
+		TenantSlug:  tenantSlug,
+		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(env)},
+		Feature:     &FeatureDetail{Feature: feat, Enabled: !disabled, DisableReason: disableReason},
+		FeatureEnvs: featureenvs.LoadEnvironments(ctx, feat),
+		ActiveTab:   activeTab,
 	}
 
 	if !env.Reconcile {
@@ -209,7 +202,9 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		page.StatusMessage = msg
 	}
 
-	if activeTab == "config" {
+	merged := activeTab != "assignments"
+
+	if merged {
 		page.Feature.ConfigItems, err = loadFeatureConfigItems(ctx, feat, env.ID)
 		if err != nil {
 			return nil, err
@@ -218,62 +213,22 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 
 	page.FeatureLog = loadFeatureLog(ctx, env.ID, feat)
 
-	if activeTab == "assignments" {
-		page.Assignments = loadEnvironmentAssignments(ctx, featureName, env.ID)
-	}
-	if activeTab == "" || activeTab == "status" {
+	if merged {
 		if dep, err := featureassignment.WinningAssignment(ctx, env.ID, featureName); err == nil {
 			page.WinningAssignment = dep
 		}
-		deployLimit := 11
-		if showAllDeploys {
-			deployLimit = 100
-		}
-		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, deployLimit)
-		if !showAllDeploys && len(page.RecentDeployHistory) > 10 {
-			page.ShowAllDeploys = false // there are more
-			page.RecentDeployHistory = page.RecentDeployHistory[:10]
-		} else {
-			page.ShowAllDeploys = true // already showing everything
-		}
-		page.DeployLogsByInstruction = map[string][]LogLine{}
+		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, 50)
+		page.Release, _ = naisdstatus.GetReleaseStatus(ctx, env.ID, featureName)
 		page.DecisionHistory, _ = reconciler.ListDecisionLog(ctx, env.ID, featureName)
-		if page.ExpandedLogID != "" {
-			for _, di := range page.RecentDeployHistory {
-				if di.ID.String() != page.ExpandedLogID {
-					continue
-				}
-				lines, err := uidata.GetLogLines(ctx, di.ID)
-				if err != nil {
-					break
-				}
-				entries := make([]LogLine, 0, len(lines))
-				for _, line := range lines {
-					entries = append(entries, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
-				}
-				page.DeployLogsByInstruction[di.ID.String()] = entries
-				break
-			}
-		}
+	} else {
+		page.Assignments = loadEnvironmentAssignments(ctx, featureName, env.ID)
 	}
-	switch activeTab {
-	case "config":
-		entries, err := audit.ListConfigForFeatureInEnvironment(ctx, featureName, env.ID, 10)
-		if err != nil {
-			return nil, fmt.Errorf("load audit entries: %w", err)
-		}
-		page.AuditEntries = entries
-	default:
-		limit := int32(3)
-		if activeTab == "audit" {
-			limit = 50
-		}
-		entries, err := audit.ListForFeatureInEnvironment(ctx, featureName, env.ID, limit)
-		if err != nil {
-			return nil, fmt.Errorf("load audit entries: %w", err)
-		}
-		page.AuditEntries = entries
+
+	entries, err := audit.ListForFeatureInEnvironment(ctx, featureName, env.ID, 3)
+	if err != nil {
+		return nil, fmt.Errorf("load audit entries: %w", err)
 	}
+	page.AuditEntries = entries
 
 	return page, nil
 }
@@ -526,17 +481,7 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *featurepkg.Featu
 	if err != nil {
 		return nil
 	}
-	lastDeployed := "never"
-	if dep, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, envID, feat.Name); err == nil && dep != nil {
-		lastDeployed = view.FormatTime(dep.LastModified)
-	}
-	ret := &FeatureLog{
-		CurrentVersion:       di.FeatureVersion,
-		CurrentStatus:        strings.ToUpper(di.Status.String()),
-		LastModified:         view.FormatTime(di.LastModified),
-		LastModifiedRelative: view.RelativeTime(di.LastModified),
-		LastDeployed:         lastDeployed,
-	}
+	ret := &FeatureLog{}
 	for _, line := range lines {
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
 	}

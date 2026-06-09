@@ -28,8 +28,7 @@ import (
 
 func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		showAll := r.URL.Query().Get("deploys") == "all"
-		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab, r.URL.Query().Get("logs"), showAll)
+		data, err := loadFeaturePageData(r.Context(), chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -53,31 +52,12 @@ func AuditRedirectHandler() http.HandlerFunc {
 	}
 }
 
-// FeatureLogsRedirectHandler redirects /logs to the status tab with the latest
-// deploy instruction's logs expanded.
+// FeatureLogsRedirectHandler redirects the legacy /logs URL to the merged
+// feature page, where deploy logs are available via the Logs popover.
 func FeatureLogsRedirectHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		featureName := chi.URLParam(r, "feature")
-		tenantSlug := chi.URLParam(r, "tenant")
-		envName := chi.URLParam(r, "env")
-		basePath := "/features/" + featureName + "/envs/" + tenantSlug + "/" + envName
-
-		tenant, err := envpkg.GetTenantByName(r.Context(), tenantSlug)
-		if err != nil {
-			http.Redirect(w, r, basePath, http.StatusSeeOther)
-			return
-		}
-		env, err := envpkg.GetByName(r.Context(), tenant.ID, envName)
-		if err != nil {
-			http.Redirect(w, r, basePath, http.StatusSeeOther)
-			return
-		}
-		di, err := featurepkg.GetLatestDeployInstruction(r.Context(), env.ID, featureName)
-		if err != nil || di == nil {
-			http.Redirect(w, r, basePath, http.StatusSeeOther)
-			return
-		}
-		http.Redirect(w, r, basePath+"?logs="+di.ID.String(), http.StatusSeeOther)
+		basePath := "/features/" + chi.URLParam(r, "feature") + "/envs/" + chi.URLParam(r, "tenant") + "/" + chi.URLParam(r, "env")
+		http.Redirect(w, r, basePath, http.StatusSeeOther)
 	}
 }
 
@@ -257,14 +237,14 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 }
 
 func featurePageContent(page *FeaturePage) g.Node {
-	var tabContent g.Node
-	switch page.ActiveTab {
-	case "assignments":
-		tabContent = assignmentsTab(page)
-	case "config":
-		tabContent = overviewTab(page)
-	default:
-		tabContent = statusTab(page)
+	merged := page.ActiveTab != "assignments"
+	var headerLeft, body g.Node
+	if merged {
+		headerLeft = deployHeaderLeft(page)
+		body = h.Div(h.Class("tab-content-wrapper env-feature-merged"), overviewTab(page))
+	} else {
+		headerLeft = h.Div()
+		body = assignmentsTab(page)
 	}
 
 	return h.Div(h.Class("container"),
@@ -273,13 +253,13 @@ func featurePageContent(page *FeaturePage) g.Node {
 		h.Main(h.Class("main-content"),
 			components.Card(
 				h.Div(h.Class("card-header-row"),
-					envFeatureTabsNav(page),
+					headerLeft,
 					h.Div(h.Class("card-header-actions"),
 						reconcileHeaderStatus(page),
 						pageKebab(page),
 					),
 				),
-				tabContent,
+				body,
 			),
 		),
 		envActivitySidebar(page),
@@ -290,24 +270,17 @@ func featurePageSidebar(page *FeaturePage) g.Node {
 	return components.FeatureSidebar(page.Feature.Name, "", page.TenantSlug, page.Environment.Name, page.FeatureEnvs)
 }
 
-func envFeatureTabsNav(page *FeaturePage) g.Node {
-	base := featureBasePathForPage(page)
-	tabs := []components.Tab{
-		{ID: "status", Href: base, Label: "Status"},
-		{ID: "config", Href: base + "/config", Label: "Config"},
-	}
-	activeTab := page.ActiveTab
-	if activeTab == "" {
-		activeTab = "status"
-	}
-	return components.TabsNav(activeTab, tabs)
-}
-
 func pageKebab(page *FeaturePage) g.Node {
 	kebabID := "page-kebab"
 	items := []g.Node{}
 
 	items = append(items, components.LokiLogsItem(LokiExploreURL(page.Tenant.Name, page.Environment.Name, page.Feature.Name)))
+	items = append(items,
+		h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("data-lazy-modal", featureBasePathForPage(page)+"/helm-values"),
+			g.Raw(components.IconDocument),
+			g.Text("Render Helm values"),
+		),
+	)
 	reconcilePopoverID := "toggle-reconcile"
 
 	if page.Feature.Enabled {
@@ -344,26 +317,35 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
-	return components.KebabWrap(kebabID, items, reconcilePopover(page), decisionHistoryPopover(page))
+	return components.KebabWrap(kebabID, items, reconcilePopover(page), decisionHistoryPopover(page), deployHistoryPopover(page), deployLogsPopover(page))
 }
 
 func reconcilePopover(page *FeaturePage) g.Node {
 	return components.ReconcilePopover("toggle-reconcile", featureBasePathForPage(page)+"/toggle-reconcile", page.Feature.Name, page.Environment.Name, page.Feature.Enabled, "")
 }
 
-func statusTab(page *FeaturePage) g.Node {
-	return h.Div(h.Class("tab-content-wrapper env-feature-status"),
-		statusReconcileSection(page),
-		statusProblemSection(page),
-		statusDeploysSection(page),
-	)
+// deployHeaderLeft is the left side of the merged page's header bar: any disabled
+// reason, an actionable problem (failed render, missing config/deps, unhealthy
+// agent) and the latest deploy with links to logs and full history. The popovers
+// these trigger are emitted by pageKebab.
+func deployHeaderLeft(page *FeaturePage) g.Node {
+	groups := []g.Node{}
+	if !page.Feature.Enabled {
+		reason := page.Feature.DisableReason
+		if reason == "" {
+			reason = "disabled before we started requiring reason"
+		}
+		groups = append(groups, h.Span(h.Class("heading-group"), h.Span(h.Class("reconcile-reason-inline"), g.Text(reason))))
+	}
+	if p := problemInline(page); p != nil {
+		groups = append(groups, p)
+	}
+	groups = append(groups, lastDeployInline(page))
+
+	return h.Div(h.Class("deploy-status-heading"), g.Group(groups))
 }
 
-// statusProblemSection surfaces the reconciler's reason when the feature is in a
-// state the user can act on (failed render, missing config/dependencies, or an
-// unhealthy agent). The message carries the actionable detail, e.g. which chart
-// fields or dependencies are missing.
-func statusProblemSection(page *FeaturePage) g.Node {
+func problemInline(page *FeaturePage) g.Node {
 	if page.StatusMessage == "" {
 		return nil
 	}
@@ -372,10 +354,71 @@ func statusProblemSection(page *FeaturePage) g.Node {
 	default:
 		return nil
 	}
-	return h.Section(h.Class("status-section"),
-		h.H3(g.Text("Needs attention")),
-		h.Div(components.Status(page.Status)),
-		h.Div(h.Class("reconcile-reason"), g.Text(page.StatusMessage)),
+	return h.Span(h.Class("heading-group"),
+		components.Status(page.Status),
+		h.Span(h.Class("reconcile-reason-inline"), g.Text(page.StatusMessage)),
+	)
+}
+
+func lastDeployInline(page *FeaturePage) g.Node {
+	var logToggle g.Node
+	if page.FeatureLog != nil && len(page.FeatureLog.CurrentLog) > 0 {
+		logToggle = h.Button(h.Type("button"), h.Class("btn-link"), g.Attr("popovertarget", "deploy-logs"), g.Text("Logs"))
+	}
+
+	var history g.Node
+	if len(page.RecentDeployHistory) > 1 {
+		history = h.Button(h.Type("button"), h.Class("btn-link"), g.Attr("popovertarget", "deploy-history"), g.Text("View history \u2192"))
+	}
+
+	rel := page.Release
+	if rel == nil {
+		return h.Span(h.Class("heading-group text-muted"), g.Text("No release reported."), logToggle, history)
+	}
+
+	return h.Span(h.Class("heading-group"),
+		h.Span(h.Class("deploy-version"), g.Text(rel.Version)),
+		components.Status(strings.ToUpper(rel.Status)),
+		h.Span(h.Class("text-muted"), h.Title(view.FormatTime(rel.LastDeployed)), g.Text(view.RelativeTime(rel.LastDeployed))),
+		logToggle,
+		history,
+	)
+}
+
+func deployLogsPopover(page *FeaturePage) g.Node {
+	if page.FeatureLog == nil || len(page.FeatureLog.CurrentLog) == 0 {
+		return nil
+	}
+	return components.Popover("deploy-logs", "popover-wide", "Logs",
+		h.Div(h.Class("popover-scroll"), logBlock(page.FeatureLog.CurrentLog)),
+	)
+}
+
+// deployHistoryPopover shows the full deploy history for this feature×environment
+// in a kebab/heading-toggled popover, keeping the heading itself to just the
+// latest deploy.
+func deployHistoryPopover(page *FeaturePage) g.Node {
+	if len(page.RecentDeployHistory) == 0 {
+		return nil
+	}
+	rows := g.Map(page.RecentDeployHistory, func(di *featurepkg.DeployInstruction) g.Node {
+		return h.Tr(
+			h.Td(h.Span(h.Class("deploy-version"), g.Text(di.FeatureVersion))),
+			h.Td(components.Status(strings.ToUpper(string(di.Status)))),
+			h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
+		)
+	})
+	return components.Popover("deploy-history", "popover-wide", "Deploy history",
+		h.Div(h.Class("popover-scroll"),
+			h.Table(h.Class("table table-compact"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Version")),
+					h.Th(g.Text("Status")),
+					h.Th(g.Text("When")),
+				)),
+				h.TBody(g.Group(rows)),
+			),
+		),
 	)
 }
 
@@ -396,106 +439,6 @@ func reconcileHeaderStatus(page *FeaturePage) g.Node {
 	return h.Span(h.Class("reconcile-header-status "+statusClass), h.Title(title),
 		h.Span(h.Class("reconcile-header-icon"), g.Text("●")),
 		h.Span(g.Text(statusText)),
-	)
-}
-
-func statusReconcileSection(page *FeaturePage) g.Node {
-	if page.Feature.Enabled {
-		return nil
-	}
-
-	reason := page.Feature.DisableReason
-	if reason == "" {
-		reason = "disabled before we started requiring reason"
-	}
-
-	return h.Section(h.Class("status-section"),
-		h.H3(g.Text("Reconciliation")),
-		h.Div(h.Class("reconcile-reason"), g.Text(reason)),
-	)
-}
-
-func statusDeploysSection(page *FeaturePage) g.Node {
-	if len(page.RecentDeployHistory) == 0 && page.FeatureLog == nil {
-		return h.Section(h.Class("status-section"),
-			h.H3(g.Text("Deploys")),
-			h.P(h.Class("text-muted"), g.Text("No deploy history.")),
-		)
-	}
-
-	currentFound := false
-	rows := g.Map(page.RecentDeployHistory, func(di *featurepkg.DeployInstruction) g.Node {
-		isCurrent := !currentFound && page.FeatureLog != nil && di.FeatureVersion == page.FeatureLog.CurrentVersion && string(di.Status) == strings.ToLower(page.FeatureLog.CurrentStatus)
-		if isCurrent {
-			currentFound = true
-		}
-		diID := di.ID.String()
-		expanded := page.ExpandedLogID == diID
-		lines := page.DeployLogsByInstruction[diID]
-
-		var logLink g.Node
-		if expanded {
-			logLink = h.A(h.Href(featureBasePathForPage(page)), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25b4")))
-		} else {
-			logLink = h.A(h.Href(featureBasePathForPage(page)+"?logs="+diID), h.Class("btn-link log-toggle"), g.Text("Logs "), h.Span(h.Class("log-arrow"), g.Text("\u25be")))
-		}
-
-		var rowClickURL string
-		if expanded {
-			rowClickURL = featureBasePathForPage(page)
-		} else {
-			rowClickURL = featureBasePathForPage(page) + "?logs=" + diID
-		}
-
-		rowClass := "deploy-row-clickable"
-		if currentFound && !isCurrent {
-			rowClass += " deploy-row-superseded"
-		}
-
-		nodes := []g.Node{
-			h.Tr(
-				h.Class(rowClass),
-				g.Attr("onclick", "window.location.href='"+rowClickURL+"'"),
-				h.Td(
-					h.Span(h.Class("deploy-version"),
-						g.Text(di.FeatureVersion),
-						g.If(isCurrent, h.Span(h.Class("badge-current"), g.Text("current"))),
-					),
-				),
-				h.Td(components.Status(strings.ToUpper(string(di.Status)))),
-				h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
-				h.Td(logLink),
-			),
-		}
-		if expanded {
-			var logContent g.Node
-			if len(lines) > 0 {
-				logContent = logBlock(lines)
-			} else {
-				logContent = h.P(h.Class("text-muted"), g.Text("No logs available."))
-			}
-			nodes = append(nodes, h.Tr(h.Class("log-row"),
-				h.Td(g.Attr("colspan", "4"), logContent),
-			))
-		}
-		return g.Group(nodes)
-	})
-
-	return h.Section(h.Class("status-section"),
-		h.Table(h.Class("table table-compact"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Version")),
-				h.Th(g.Text("Status")),
-				h.Th(g.Text("When")),
-				h.Th(),
-			)),
-			h.TBody(g.Group(rows)),
-		),
-		g.If(!page.ShowAllDeploys,
-			h.Div(h.Style("text-align: center; padding: 0.75rem 0;"),
-				h.A(h.Href(featureBasePathForPage(page)+"?deploys=all"), h.Class("link-muted"), g.Text("Show all \u25be")),
-			),
-		),
 	)
 }
 
@@ -565,14 +508,9 @@ func overviewTab(page *FeaturePage) g.Node {
 		}
 	}
 
-	helmURL := featureBasePathForPage(page) + "/helm-values"
-
 	return h.Div(h.Class("tab-content-wrapper env-feature-overview"),
 		configurableTable(page, configurable),
 		computedTable(page, computed),
-		h.Div(h.Class("config-toolbar"),
-			h.Button(h.Type("button"), h.Class("btn-secondary"), g.Attr("data-lazy-modal", helmURL), g.Text("Render Helm values")),
-		),
 	)
 }
 
@@ -581,9 +519,6 @@ func envActivitySidebar(page *FeaturePage) g.Node {
 		return nil
 	}
 	title := "Recent activity"
-	if page.ActiveTab == "config" {
-		title = "Config activity"
-	}
 	return h.Aside(h.Class("right-sidebar"),
 		components.CardCompact(auditview.ActivityList(auditview.ActivityListParams{
 			Title:        title,
