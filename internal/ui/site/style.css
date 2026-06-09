@@ -1350,7 +1350,7 @@ nav .user {
 .popover-header h3 {
   margin: 0;
 }
-.popover-close {
+[popover] .popover-header .popover-close {
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -1359,7 +1359,7 @@ nav .user {
   color: var(--text-muted);
   padding: 0;
 }
-.popover-close:hover {
+[popover] .popover-header .popover-close:hover {
   color: var(--text-primary);
 }
 [popover].popover-wide {
