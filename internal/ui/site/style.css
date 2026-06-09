@@ -1340,6 +1340,35 @@ nav .user {
 [popover]::backdrop {
   background: var(--popover-backdrop);
 }
+.popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.popover-header h3 {
+  margin: 0;
+}
+.popover-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+}
+.popover-close:hover {
+  color: var(--text-primary);
+}
+[popover].popover-wide {
+  max-width: min(56rem, 90vw);
+}
+.popover-scroll {
+  max-height: 60vh;
+  overflow: auto;
+}
 [popover] h3 {
   margin: 0 0 0.5rem 0;
 }

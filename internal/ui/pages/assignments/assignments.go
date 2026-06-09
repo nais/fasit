@@ -124,8 +124,7 @@ func listPage(rows []Summary, query string) g.Node {
 }
 
 func newAssignmentPopover() g.Node {
-	return h.Div(g.Attr("popover", ""), h.ID("new-assignment"),
-		h.H3(g.Text("New assignment")),
+	return components.Popover("new-assignment", "", "New assignment",
 		h.Form(h.Method("POST"), h.Action("/assignments"),
 			h.Label(g.Text("Chart")),
 			h.Input(h.Type("text"), h.Name("chart"), g.Attr("required", ""), g.Attr("placeholder", "e.g. oci://naiserator")),
@@ -140,9 +139,8 @@ func newAssignmentPopover() g.Node {
 				h.Button(h.Type("button"), h.Class("btn-small btn-outline"), h.ID("preview-targets-btn"), g.Text("Preview targets")),
 			),
 			h.Div(h.ID("preview-targets-result"), h.Class("preview-targets-result")),
-			h.Div(h.Class("popover-actions"),
+			components.PopoverActions(
 				h.Button(h.Type("submit"), h.ID("deploy-submit-btn"), g.Text("Deploy")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", "new-assignment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 			),
 		),
 	)
