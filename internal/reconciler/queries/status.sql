@@ -42,7 +42,6 @@ WHERE
 ORDER BY
 	environment_id ASC;
 
-
 -- name: ListDecisionLog :many
 -- Decision history for a feature in an environment, newest first. Rows exist
 -- only for cycles where the decision changed.
@@ -62,3 +61,4 @@ ORDER BY
 	created DESC,
 	id DESC
 LIMIT 50;
+
