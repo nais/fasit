@@ -350,7 +350,7 @@ func problemInline(page *FeaturePage) g.Node {
 		return nil
 	}
 	switch page.Status {
-	case "FAILED", "UNHEALTHY":
+	case "FAILED", "UNHEALTHY", "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR":
 	default:
 		return nil
 	}

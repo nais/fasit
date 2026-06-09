@@ -47,6 +47,7 @@ type ViewPrefs struct {
 	ShowVersion    bool
 	ShowLastDeploy bool
 	ShowRowActions bool
+	StatusTime     bool // time column shows when the current status was produced, not last deploy
 }
 
 func overviewViewPrefs() ViewPrefs {
@@ -55,6 +56,7 @@ func overviewViewPrefs() ViewPrefs {
 		ShowVersion:    true,
 		ShowLastDeploy: true,
 		ShowRowActions: true,
+		StatusTime:     true,
 	}
 }
 
@@ -99,8 +101,8 @@ func overviewTable(envs []AssignmentEnvStatus, featureName string) g.Node {
 		h.Th(g.Text("Tenant")),
 		h.Th(g.Text("Env")),
 		h.Th(g.Text("Status")),
+		h.Th(h.Title("When the current status was last updated"), g.Text("When")),
 		h.Th(g.Text("Version")),
-		h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Deployed")),
 		h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")),
 	}
 	versionEmph := assignmentVersionEmphasis(envs)
@@ -349,11 +351,15 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 	statusCell = append(statusCell, components.Status(env.StatusText))
 	cells = append(cells, h.Td(statusCell...))
 
+	if prefs.StatusTime {
+		cells = append(cells, lastDeployedCell(env.LastModified, ""))
+	}
+
 	if showVersion {
 		cells = append(cells, h.Td(components.ConsensusCell(versionEmph, g.Text(env.AssignmentVersion)), driftIcon))
 	}
 
-	if prefs.ShowLastDeploy {
+	if prefs.ShowLastDeploy && !prefs.StatusTime {
 		cells = append(cells, lastDeployedCell(env.LastDeployed, ""))
 	}
 
@@ -444,6 +450,10 @@ func statusTooltip(env AssignmentEnvStatus) string {
 			tip += " — Running: " + env.ReleaseVersion
 		}
 		return tip
+	}
+	switch env.StatusText {
+	case "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR", "FAILED":
+		return ""
 	}
 	if env.ReleaseVersion != "" && env.ReleaseVersion != env.AssignmentVersion {
 		return "Currently: " + env.ReleaseVersion

@@ -47,9 +47,9 @@ func TestDeriveState(t *testing.T) {
 		// when a previous deploy succeeded — the bug this ladder fixes, since the
 		// old code masked any decision once a deploy row existed.
 		{"unhealthy surfaces over a stale healthy deploy", false, deployed, ActionSkipUnhealthy, "UNHEALTHY"},
-		{"render failure surfaces over a healthy deploy", false, deployed, ActionFailRender, "FAILED"},
-		{"missing deps surfaces over a healthy deploy", false, deployed, ActionFailMissingDeps, "FAILED"},
-		{"missing config surfaces over a healthy deploy", false, deployed, ActionFailMissingConfig, "FAILED"},
+		{"render failure surfaces over a healthy deploy", false, deployed, ActionFailRender, "RENDER-ERROR"},
+		{"missing deps surfaces over a healthy deploy", false, deployed, ActionFailMissingDeps, "MISSING-DEPS"},
+		{"missing config surfaces over a healthy deploy", false, deployed, ActionFailMissingConfig, "MISSING-CONFIG"},
 
 		// Rung 4: with no blocker and no live deploy, the terminal deploy outcome
 		// is the truth. Note the decision here is unchanged/deploy — irrelevant.
@@ -58,7 +58,7 @@ func TestDeriveState(t *testing.T) {
 
 		// Rung 5: nothing has ever shipped; derive from the decision alone.
 		{"first deploy decided, not yet shipped", false, noDeploy, ActionDeploy, "PENDING"},
-		{"never deployed, missing deps", false, noDeploy, ActionFailMissingDeps, "FAILED"},
+		{"never deployed, missing deps", false, noDeploy, ActionFailMissingDeps, "MISSING-DEPS"},
 		{"never deployed, unhealthy", false, noDeploy, ActionSkipUnhealthy, "UNHEALTHY"},
 		{"never deployed, disabled decision", false, noDeploy, ActionSkipDisabled, "DISABLED"},
 		{"never deployed, unknown action", false, noDeploy, Action("bogus"), "UNKNOWN"},

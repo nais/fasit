@@ -2007,6 +2007,11 @@ a:hover .status-badge {
     color-mix(in srgb, var(--status-success, #36b37e) 40%, transparent);
   color: var(--status-success, #36b37e);
 }
+.version-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
 .table tr.version-inactive td {
   opacity: 0.5;
 }

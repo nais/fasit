@@ -89,7 +89,6 @@ func versionsListContent(data *DetailPage) g.Node {
 		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-versions"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Version")),
-				h.Th(g.Text("")),
 				h.Th(g.Text("Description")),
 				h.Th(g.Text("Instances")),
 				h.Th(g.Text("Last updated")),
@@ -101,8 +100,10 @@ func versionsListContent(data *DetailPage) g.Node {
 					rowAttrs = append(rowAttrs, h.Class("version-inactive"))
 				}
 				rowAttrs = append(rowAttrs,
-					h.Td(h.A(h.Href("/features/"+featureName+"/versions/"+v.Version), g.Text(v.Version))),
-					h.Td(activePill(instances)),
+					h.Td(h.Span(h.Class("version-cell"),
+						h.A(h.Href("/features/"+featureName+"/versions/"+v.Version), g.Text(v.Version)),
+						activePill(instances),
+					)),
 					h.Td(h.Class("text-muted"), g.Text(v.Description)),
 					h.Td(g.Text(strconv.Itoa(instances))),
 					lastDeployedCell(v.LastUpdated, "text-muted"),

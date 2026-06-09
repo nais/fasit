@@ -47,7 +47,7 @@ func NormalizeStatus(s string) string {
 //
 //  1. disabled-feature membership           -> DISABLED
 //  2. deploy lifecycle in progress          -> SENT / INSTALLING   (a live sync; let it finish)
-//  3. reconciler currently blocked          -> UNHEALTHY / FAILED   (desired state cannot proceed)
+//  3. reconciler currently blocked          -> UNHEALTHY / MISSING-DEPS / MISSING-CONFIG / RENDER-ERROR (desired state cannot proceed)
 //  4. terminal deploy outcome exists        -> DEPLOYED / FAILED    (the deploy log is the truth)
 //  5. never produced a deploy yet           -> derive from the decision alone
 //
@@ -62,8 +62,12 @@ func deriveState(disabled bool, deploy feature.DeployStatus, action Action) stri
 		return string(deploy) // sent / installing
 	case action == ActionSkipUnhealthy:
 		return "unhealthy"
-	case action.IsFailure():
-		return "failed"
+	case action == ActionFailMissingDeps:
+		return "missing-deps"
+	case action == ActionFailMissingConfig:
+		return "missing-config"
+	case action == ActionFailRender:
+		return "render-error"
 	case deploy == feature.DeployStatusDeployed, deploy == feature.DeployStatusFailed:
 		return string(deploy) // deployed / failed
 	}

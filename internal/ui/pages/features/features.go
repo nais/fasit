@@ -424,7 +424,7 @@ func computeAggStatus(statuses []string) aggStatus {
 	for _, s := range statuses {
 		total++
 		switch strings.ToUpper(s) {
-		case "FAILED":
+		case "FAILED", "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR":
 			failed++
 		case "DEPLOYED", "DISABLED":
 			deployed++
