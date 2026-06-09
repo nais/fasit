@@ -10,19 +10,16 @@ import (
 )
 
 func main() {
-	err := genSchema("./schema/jsonschema/feature.json", feature.FeatureYAML{}, "github.com/nais/fasit")
+	err := genSchema("./schema/jsonschema/feature.json", feature.FeatureYAML{})
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func genSchema(out string, v any, pkg, pkgPath string) error {
+func genSchema(out string, v any) error {
 	r := &jsonschema.Reflector{}
 	r.DoNotReference = true
 	r.BaseSchemaID = "https://fasit.nais.io/schema"
-	if err := r.AddGoComments(pkg, pkgPath); err != nil {
-		return err
-	}
 	schema := r.Reflect(v)
 
 	b, err := schema.MarshalJSON()
