@@ -188,7 +188,7 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 	}
 
 	base.Action = ActionDeploy
-	base.Message = "deployment instruction sent to naisd"
+	base.Message = "deployment instruction created"
 	return base
 }
 
