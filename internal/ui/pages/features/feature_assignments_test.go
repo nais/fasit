@@ -77,7 +77,7 @@ func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
 	}
 }
 
-func TestDeploymentDetailContentRendersTableAndGrid(t *testing.T) {
+func TestDeploymentDetailContentRendersTable(t *testing.T) {
 	var buf bytes.Buffer
 	node := assignmentDetailContent(&DetailPage{
 		CurrentFeature: &feature.Feature{Name: "naiserator"},
@@ -92,7 +92,7 @@ func TestDeploymentDetailContentRendersTableAndGrid(t *testing.T) {
 	}
 
 	html := buf.String()
-	for _, want := range []string{"overview-table", "Tenant", "atil", "ci-nais", "overview-grid", "feature-card-header"} {
+	for _, want := range []string{"overview-table", "Tenant", "atil", "ci-nais"} {
 		if !strings.Contains(html, want) {
 			t.Errorf("html missing %q", want)
 		}

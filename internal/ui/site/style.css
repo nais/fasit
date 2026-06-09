@@ -1087,12 +1087,6 @@ nav .user {
     background 0.1s,
     color 0.1s;
 }
-.breadcrumb-source + .view-toggle-btn {
-  margin-left: 0.25rem;
-}
-.breadcrumbs > .view-toggle-btn:not(.breadcrumb-source ~ .view-toggle-btn) {
-  margin-left: auto;
-}
 .breadcrumb-source:hover {
   color: var(--text-heading);
   background: var(--btn-bg);
@@ -2013,51 +2007,6 @@ a:hover .status-badge {
   font-weight: 600;
   line-height: 1;
   user-select: none;
-}
-
-/* View toggle */
-.view-toggle-btn {
-  background: var(--btn-bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 0.25rem 0.4rem;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  transition:
-    background 0.1s,
-    color 0.1s;
-}
-.view-toggle-btn:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-.view-toggle-btn svg {
-  width: 16px;
-  height: 16px;
-  transform: rotate(90deg);
-  transition: transform 0.15s ease;
-}
-.view-toggle-btn.view-grid svg {
-  transform: rotate(0deg);
-}
-
-/* View switching: grid (default) vs table */
-#env-overview[data-view="grid"] #overview-table {
-  display: none;
-}
-#env-overview[data-view="grid"] #overview-grid {
-  display: block;
-}
-#env-overview[data-view="grid"] .feature-card-body thead {
-  display: none;
-}
-#env-overview[data-view="table"] #overview-table {
-  display: block;
-}
-#env-overview[data-view="table"] #overview-grid {
-  display: none;
 }
 
 /* Reconciler page */

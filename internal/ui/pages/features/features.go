@@ -118,7 +118,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		}
 		data.ActiveTab = "overview"
 		data.RecentActivity, _ = audit.ListForFeature(r.Context(), data.CurrentFeature.Name, 10)
-		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data), Scripts: []string{"features.js"}})
+		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 
@@ -477,7 +477,6 @@ func detailPage(data *DetailPage) g.Node {
 		content = globalConfigContent(data)
 	default:
 		content = assignmentDetailContent(data)
-		breadcrumbActions = append(breadcrumbActions, overviewToolbar())
 	}
 	if len(data.RecentActivity) > 0 {
 		title := "Recent activity"

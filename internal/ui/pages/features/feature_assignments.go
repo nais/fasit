@@ -86,20 +86,9 @@ func assignmentDetailContent(data *DetailPage) g.Node {
 	}
 
 	featureName := data.CurrentFeature.Name
-	chart := data.CurrentFeature.Chart
 
-	return h.Div(h.ID("env-overview"), g.Attr("data-view", "grid"),
+	return h.Div(h.ID("env-overview"),
 		overviewTable(envs, featureName),
-		overviewCardGrid(envs, featureName, chart),
-	)
-}
-
-func overviewToolbar() g.Node {
-	return h.Button(h.Type("button"), h.Class("view-toggle-btn"), h.ID("view-toggle"),
-		g.Attr("data-view-toggle", "env-overview"),
-		g.Attr("aria-label", "Toggle view"),
-		g.Attr("title", "Toggle table/grid view"),
-		g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="3" height="12" rx="0.5"/><rect x="6.5" y="2" width="3" height="12" rx="0.5"/><rect x="12" y="2" width="3" height="12" rx="0.5"/></svg>`),
 	)
 }
 
@@ -130,14 +119,6 @@ func overviewTable(envs []AssignmentEnvStatus, featureName string) g.Node {
 	)
 }
 
-func overviewCardGrid(envs []AssignmentEnvStatus, featureName, chart string) g.Node {
-	prefs := ViewPrefs{Group: "tenant", ShowVersion: false, ShowLastDeploy: false, ShowRowActions: false}
-	cards := groupByTenantCards(envs)
-	return h.Div(h.Class("feature-overview-grid"), h.ID("overview-grid"),
-		cardGrid(cards, featureName, chart, prefs, nil),
-	)
-}
-
 func currentAssignmentEnvStatuses(envs []AssignmentEnvStatus) []AssignmentEnvStatus {
 	ret := make([]AssignmentEnvStatus, 0, len(envs))
 	for _, env := range envs {
@@ -155,14 +136,14 @@ func assignmentSpecsContent(data *DetailPage) g.Node {
 	}
 
 	prefs := assignmentSpecsViewPrefs()
-	cards := buildCards(data.AssignmentEnvs, prefs.Group)
+	cards := groupByAssignmentCards(data.AssignmentEnvs)
 	fallbacks := fallbackVersionMap(data.AssignmentEnvs)
 	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs, fallbacks)
 }
 
-// fallbackVersionMap returns a map from deployment ID to the version that
-// would take over if that deployment is removed. This is determined by looking
-// at environments that are overridden BY this deployment — their own deployment
+// fallbackVersionMap returns a map from assignment ID to the version that
+// would take over if that assignment is removed. This is determined by looking
+// at environments that are overridden BY this assignment — their own assignment
 // version is the fallback.
 func fallbackVersionMap(envs []AssignmentEnvStatus) map[string]string {
 	fallbacks := map[string]string{}
@@ -172,37 +153,6 @@ func fallbackVersionMap(envs []AssignmentEnvStatus) map[string]string {
 		}
 	}
 	return fallbacks
-}
-
-func buildCards(envs []AssignmentEnvStatus, groupBy string) []card {
-	switch groupBy {
-	case "assignment":
-		return groupByAssignmentCards(envs)
-	case "version":
-		return groupByVersionCards(envs)
-	default:
-		return groupByTenantCards(envs)
-	}
-}
-
-func groupByTenantCards(envs []AssignmentEnvStatus) []card {
-	groups := map[string]*card{}
-	var order []string
-	for _, env := range envs {
-		if _, ok := groups[env.TenantName]; !ok {
-			groups[env.TenantName] = &card{Title: env.TenantName}
-			order = append(order, env.TenantName)
-		}
-		groups[env.TenantName].Environments = append(groups[env.TenantName].Environments, env)
-	}
-	sort.Strings(order)
-	result := make([]card, 0, len(order))
-	for _, name := range order {
-		c := *groups[name]
-		sortEnvs(c.Environments)
-		result = append(result, c)
-	}
-	return result
 }
 
 func groupByAssignmentCards(envs []AssignmentEnvStatus) []card {
@@ -223,30 +173,6 @@ func groupByAssignmentCards(envs []AssignmentEnvStatus) []card {
 	result := make([]card, 0, len(order))
 	for _, id := range order {
 		c := *groups[id]
-		sortEnvs(c.Environments)
-		result = append(result, c)
-	}
-	return result
-}
-
-func groupByVersionCards(envs []AssignmentEnvStatus) []card {
-	groups := map[string]*card{}
-	var order []string
-	for _, env := range envs {
-		version := env.AssignmentVersion
-		if env.IsOverridden && env.OverriddenByVersion != "" {
-			version = env.OverriddenByVersion
-		}
-		if _, ok := groups[version]; !ok {
-			groups[version] = &card{Title: version}
-			order = append(order, version)
-		}
-		groups[version].Environments = append(groups[version].Environments, env)
-	}
-	sort.Strings(order)
-	result := make([]card, 0, len(order))
-	for _, v := range order {
-		c := *groups[v]
 		sortEnvs(c.Environments)
 		result = append(result, c)
 	}

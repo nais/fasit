@@ -41,7 +41,7 @@ func New(siteFS fs.FS, meter metric.Meter, appVersion string) *Server {
 
 func computeAssetVersion(siteFS fs.FS) string {
 	h := sha256.New()
-	for _, file := range []string{"site/style.css", "site/site.js", "site/assignments.js", "site/features.js", "site/reconciler.js", "site/favicon.ico"} {
+	for _, file := range []string{"site/style.css", "site/site.js", "site/assignments.js", "site/reconciler.js", "site/favicon.ico"} {
 		f, err := siteFS.Open(file)
 		if err != nil {
 			continue
