@@ -123,6 +123,39 @@ func TestLongValuesAreTruncatedWithHoverForFull(t *testing.T) {
 	}
 }
 
+func TestConfigCellShowsEnvironmentLocation(t *testing.T) {
+	envID := uuid.New()
+	e := &audit.Entry{
+		ObjectType:      audit.ObjectTypeConfiguration,
+		ObjectID:        "myapp/port",
+		Metadata:        json.RawMessage(`{"old":"3000","new":"8080"}`),
+		EnvironmentID:   &envID,
+		TenantName:      "test-partner",
+		EnvironmentName: "dev",
+	}
+
+	rendered := renderToString(t, configCell(e))
+	if !strings.Contains(rendered, "in test-partner/dev") {
+		t.Errorf("should show tenant/environment location, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "8080") {
+		t.Errorf("should still show the value diff, got %q", rendered)
+	}
+}
+
+func TestConfigCellShowsGlobalForTenantWideConfig(t *testing.T) {
+	e := &audit.Entry{
+		ObjectType: audit.ObjectTypeConfiguration,
+		ObjectID:   "myapp/port",
+		Metadata:   json.RawMessage(`{"old":"3000","new":"8080"}`),
+	}
+
+	rendered := renderToString(t, configCell(e))
+	if !strings.Contains(rendered, "global") {
+		t.Errorf("should mark a config with no environment as global, got %q", rendered)
+	}
+}
+
 func TestConfigResourceLinkGoesToConfigTab(t *testing.T) {
 	e := &audit.Entry{
 		ObjectType: audit.ObjectTypeConfiguration,

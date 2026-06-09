@@ -129,9 +129,28 @@ func DetailNode(e *audit.Entry) g.Node {
 	desc := Description(e)
 	showDesc := desc != "" && !IsDescriptionRedundant(e)
 	return g.Group([]g.Node{
-		ConfigChangeNode(e),
+		configCell(e),
 		g.If(showDesc, h.Div(g.Text(desc))),
 	})
+}
+
+// configCell renders the config value diff followed by the tenant/environment
+// (or "global") the config applies to. For non-config entries it falls back to
+// the plain diff node (nil).
+func configCell(e *audit.Entry) g.Node {
+	diff := ConfigChangeNode(e)
+	if e.ObjectType != audit.ObjectTypeConfiguration {
+		return diff
+	}
+	loc := "global"
+	if e.EnvironmentID != nil && e.TenantName != "" && e.EnvironmentName != "" {
+		loc = "in " + e.TenantName + "/" + e.EnvironmentName
+	}
+	locNode := h.Span(h.Class("text-muted"), g.Text(loc))
+	if diff == nil {
+		return locNode
+	}
+	return g.Group([]g.Node{diff, h.Span(h.Class("text-muted"), g.Text(" · ")), locNode})
 }
 
 // ActivityListParams configures the compact activity sidebar.
@@ -169,7 +188,7 @@ func ActivityList(p ActivityListParams) g.Node {
 				h.Span(h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
 			),
 			h.Div(h.Class("activity-resource"), resourceFn(e)),
-			ConfigChangeNode(e),
+			configCell(e),
 			g.If(showDesc, h.Div(h.Class("activity-description"), g.Text(desc))),
 		))
 	}
