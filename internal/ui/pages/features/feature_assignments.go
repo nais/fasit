@@ -317,8 +317,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 					),
 				),
 				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels),
-				h.Div(g.Attr("popover", ""), h.ID(removePopoverID),
-					h.H3(g.Text("Remove assignment spec")),
+				components.Popover(removePopoverID, "", "Remove assignment spec",
 					g.If(fallbackVersion != "",
 						h.P(g.Textf("This will remove this assignment spec. Version %s will take its place.", fallbackVersion)),
 					),
@@ -327,9 +326,8 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 					),
 					h.Form(h.Method("POST"), h.Action("/assignments/"+c.FeatureAssignmentID+"/deactivate"),
 						h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+featureName+"/assignments")),
-						h.Div(h.Class("popover-actions"),
+						components.PopoverActions(
 							h.Button(h.Type("submit"), g.Text("Remove")),
-							h.Button(h.Type("button"), g.Attr("popovertarget", removePopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 						),
 					),
 				),
@@ -547,15 +545,13 @@ func setVersionPopover(popoverID, featureName, chart string, target map[string]s
 	for _, k := range keys {
 		inputs = append(inputs, h.Input(h.Type("hidden"), h.Name("target_label"), h.Value(k+"="+target[k])))
 	}
-	return h.Div(g.Attr("popover", ""), h.ID(popoverID),
-		h.H3(g.Text("Set version")),
+	return components.Popover(popoverID, "", "Set version",
 		h.Form(h.Method("POST"), h.Action("/assignments"),
 			g.Group(inputs),
 			h.Label(g.Text("Version")),
 			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("autofocus", "")),
-			h.Div(h.Class("popover-actions"),
+			components.PopoverActions(
 				h.Button(h.Type("submit"), g.Text("Set version")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 			),
 		),
 	)

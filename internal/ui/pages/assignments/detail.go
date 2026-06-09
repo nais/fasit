@@ -310,29 +310,25 @@ func ghRefLink(ref *commonmodel.GitHubCommit) g.Node {
 }
 
 func deactivateAssignmentPopover(d *featureassignment.FeatureAssignment) g.Node {
-	return h.Div(g.Attr("popover", ""), h.ID("deactivate-assignment"),
-		h.H3(g.Text("Deactivate assignment")),
+	return components.Popover("deactivate-assignment", "", "Deactivate assignment",
 		h.P(g.Textf("This will deactivate %s. It will no longer be reconciled.", d.Feature.Name)),
 		h.Form(h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/deactivate"),
-			h.Div(h.Class("popover-actions"),
+			components.PopoverActions(
 				h.Button(h.Type("submit"), g.Text("Deactivate")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", "deactivate-assignment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 			),
 		),
 	)
 }
 
 func setVersionPopover(d *featureassignment.FeatureAssignment) g.Node {
-	return h.Div(g.Attr("popover", ""), h.ID("set-version"),
-		h.H3(g.Text("Set version")),
+	return components.Popover("set-version", "", "Set version",
 		h.Form(h.Method("POST"), h.Action("/assignments"),
 			h.Input(h.Type("hidden"), h.Name("chart"), h.Value(d.Feature.Chart)),
 			targetHiddenInputs(assignmentTargetLabels(d)),
 			h.Label(g.Text("Version")),
 			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("placeholder", "e.g. 2026-05-21-001"), h.Value(d.Feature.Version)),
-			h.Div(h.Class("popover-actions"),
+			components.PopoverActions(
 				h.Button(h.Type("submit"), g.Text("Deploy")),
-				h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 			),
 		),
 	)

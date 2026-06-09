@@ -167,16 +167,14 @@ func ConfigEditPopover(popoverID, action, title, submitLabel string, item Config
 	formFields := append([]g.Node{}, extraFields...)
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID),
-			h.H3(g.Text(title)),
+		Popover(popoverID, "", title,
 			h.Form(h.Method("POST"), h.Action(action),
 				g.Group(formFields),
 				h.Label(g.Text("Configuration Key")),
 				h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")),
 				ConfigValueEditor(item, item.Value),
-				h.Div(h.Class("popover-actions"),
+				PopoverActions(
 					h.Button(h.Type("submit"), g.Text(submitLabel)),
-					h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 				),
 			),
 		),
@@ -187,14 +185,12 @@ func ConfigEditPopover(popoverID, action, title, submitLabel string, item Config
 func ConfigDeletePopover(popoverID, action, message, fallbackValue string) g.Node {
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon delete-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID),
-			h.H3(g.Text("Remove Configuration")),
+		Popover(popoverID, "", "Remove Configuration",
 			h.P(g.Text(message)),
 			g.If(fallbackValue != "", fallbackValueNode(fallbackValue)),
 			h.Form(h.Method("POST"), h.Action(action),
-				h.Div(h.Class("popover-actions"),
+				PopoverActions(
 					h.Button(h.Type("submit"), g.Text("Remove")),
-					h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
 				),
 			),
 		),

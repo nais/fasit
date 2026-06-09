@@ -335,7 +335,16 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
-	return components.KebabWrap(kebabID, items, reconcilePopover(page))
+	if len(page.DecisionHistory) > 0 {
+		items = append(items,
+			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "decision-history"),
+				g.Raw(components.IconLogs),
+				g.Text("Reconciler log"),
+			),
+		)
+	}
+
+	return components.KebabWrap(kebabID, items, reconcilePopover(page), decisionHistoryPopover(page))
 }
 
 func reconcilePopover(page *FeaturePage) g.Node {
@@ -347,7 +356,6 @@ func statusTab(page *FeaturePage) g.Node {
 		statusReconcileSection(page),
 		statusProblemSection(page),
 		statusDeploysSection(page),
-		statusDecisionsSection(page),
 	)
 }
 
@@ -491,11 +499,12 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 	)
 }
 
-// statusDecisionsSection renders the reconciler decision history for this
-// feature×environment. A decision_log row exists only when the decision changed,
-// so it surfaces skip/failure reasons (missing-deps, disabled, ...) that never
-// produce a deploy and are therefore invisible in the deploy history above.
-func statusDecisionsSection(page *FeaturePage) g.Node {
+// decisionHistoryPopover renders the reconciler decision history for this
+// feature×environment inside a kebab-toggled popover. A decision_log row exists
+// only when the decision changed, so it surfaces skip/failure reasons
+// (missing-deps, disabled, ...) that never produce a deploy and are therefore
+// invisible in the deploy history.
+func decisionHistoryPopover(page *FeaturePage) g.Node {
 	if len(page.DecisionHistory) == 0 {
 		return nil
 	}
@@ -513,16 +522,17 @@ func statusDecisionsSection(page *FeaturePage) g.Node {
 		)
 	})
 
-	return h.Section(h.Class("status-section"),
-		h.H3(g.Text("Decisions")),
-		h.Table(h.Class("table table-compact"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Action")),
-				h.Th(g.Text("Version")),
-				h.Th(g.Text("Message")),
-				h.Th(g.Text("When")),
-			)),
-			h.TBody(g.Group(rows)),
+	return components.Popover("decision-history", "popover-wide", "Reconciler log",
+		h.Div(h.Class("popover-scroll"),
+			h.Table(h.Class("table table-compact"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Action")),
+					h.Th(g.Text("Version")),
+					h.Th(g.Text("Message")),
+					h.Th(g.Text("When")),
+				)),
+				h.TBody(g.Group(rows)),
+			),
 		),
 	)
 }
