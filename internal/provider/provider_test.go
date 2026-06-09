@@ -35,7 +35,7 @@ func TestProvider(t *testing.T) {
 		return ctx
 	}
 
-	c := startGrpcServer(t, loadContext, pool)
+	c := startGrpcServer(t, loadContext)
 
 	t.Run("tenant operations", func(t *testing.T) {
 		want, err := c.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: "test-tenant"})
@@ -89,7 +89,7 @@ func TestProvider(t *testing.T) {
 }
 
 // startGrpcServer initializes an in-memory gRPC server
-func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) protogen.ProviderClient {
+func startGrpcServer(t *testing.T, loadContext contextloader.LoaderFunc) protogen.ProviderClient {
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
