@@ -948,6 +948,174 @@ func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
 	return false
 }
 
+type ListTenantsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTenantsRequest) Reset() {
+	*x = ListTenantsRequest{}
+	mi := &file_provider_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTenantsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTenantsRequest) ProtoMessage() {}
+
+func (x *ListTenantsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_provider_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTenantsRequest.ProtoReflect.Descriptor instead.
+func (*ListTenantsRequest) Descriptor() ([]byte, []int) {
+	return file_provider_proto_rawDescGZIP(), []int{16}
+}
+
+type ListTenantsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tenants       []*TenantResponse      `protobuf:"bytes,1,rep,name=tenants,proto3" json:"tenants,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTenantsResponse) Reset() {
+	*x = ListTenantsResponse{}
+	mi := &file_provider_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTenantsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTenantsResponse) ProtoMessage() {}
+
+func (x *ListTenantsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_provider_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTenantsResponse.ProtoReflect.Descriptor instead.
+func (*ListTenantsResponse) Descriptor() ([]byte, []int) {
+	return file_provider_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListTenantsResponse) GetTenants() []*TenantResponse {
+	if x != nil {
+		return x.Tenants
+	}
+	return nil
+}
+
+type ListEnvironmentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TenantId      string                 `protobuf:"bytes,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListEnvironmentsRequest) Reset() {
+	*x = ListEnvironmentsRequest{}
+	mi := &file_provider_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListEnvironmentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListEnvironmentsRequest) ProtoMessage() {}
+
+func (x *ListEnvironmentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_provider_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListEnvironmentsRequest.ProtoReflect.Descriptor instead.
+func (*ListEnvironmentsRequest) Descriptor() ([]byte, []int) {
+	return file_provider_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ListEnvironmentsRequest) GetTenantId() string {
+	if x != nil {
+		return x.TenantId
+	}
+	return ""
+}
+
+type ListEnvironmentsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Environments  []*EnvironmentResponse `protobuf:"bytes,1,rep,name=environments,proto3" json:"environments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListEnvironmentsResponse) Reset() {
+	*x = ListEnvironmentsResponse{}
+	mi := &file_provider_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListEnvironmentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListEnvironmentsResponse) ProtoMessage() {}
+
+func (x *ListEnvironmentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_provider_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListEnvironmentsResponse.ProtoReflect.Descriptor instead.
+func (*ListEnvironmentsResponse) Descriptor() ([]byte, []int) {
+	return file_provider_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListEnvironmentsResponse) GetEnvironments() []*EnvironmentResponse {
+	if x != nil {
+		return x.Environments
+	}
+	return nil
+}
+
 var File_provider_proto protoreflect.FileDescriptor
 
 const file_provider_proto_rawDesc = "" +
@@ -1006,7 +1174,14 @@ const file_provider_proto_rawDesc = "" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\":\n" +
 	"\x1eDeleteEnvironmentValueResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*R\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x14\n" +
+	"\x12ListTenantsRequest\"@\n" +
+	"\x13ListTenantsResponse\x12)\n" +
+	"\atenants\x18\x01 \x03(\v2\x0f.TenantResponseR\atenants\"6\n" +
+	"\x17ListEnvironmentsRequest\x12\x1b\n" +
+	"\ttenant_id\x18\x01 \x01(\tR\btenantId\"T\n" +
+	"\x18ListEnvironmentsResponse\x128\n" +
+	"\fenvironments\x18\x01 \x03(\v2\x14.EnvironmentResponseR\fenvironments*R\n" +
 	"\x0fEnvironmentKind\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1016,12 +1191,14 @@ const file_provider_proto_rawDesc = "" +
 	"\n" +
 	"\x06ONPREM\x10\x03\x12\n" +
 	"\n" +
-	"\x06LEGACY\x10\x042\xdd\x05\n" +
+	"\x06LEGACY\x10\x042\xe4\x06\n" +
 	"\bProvider\x127\n" +
 	"\fCreateTenant\x12\x14.CreateTenantRequest\x1a\x0f.TenantResponse\"\x00\x121\n" +
-	"\tGetTenant\x12\x11.GetTenantRequest\x1a\x0f.TenantResponse\"\x00\x12F\n" +
+	"\tGetTenant\x12\x11.GetTenantRequest\x1a\x0f.TenantResponse\"\x00\x12:\n" +
+	"\vListTenants\x12\x13.ListTenantsRequest\x1a\x14.ListTenantsResponse\"\x00\x12F\n" +
 	"\x11CreateEnvironment\x12\x19.CreateEnvironmentRequest\x1a\x14.EnvironmentResponse\"\x00\x12@\n" +
-	"\x0eGetEnvironment\x12\x16.GetEnvironmentRequest\x1a\x14.EnvironmentResponse\"\x00\x12s\n" +
+	"\x0eGetEnvironment\x12\x16.GetEnvironmentRequest\x1a\x14.EnvironmentResponse\"\x00\x12I\n" +
+	"\x10ListEnvironments\x12\x18.ListEnvironmentsRequest\x1a\x19.ListEnvironmentsResponse\"\x00\x12s\n" +
 	"\x1eCreateOrUpdateEnvironmentValue\x12&.CreateOrUpdateEnvironmentValueRequest\x1a'.CreateOrUpdateEnvironmentValueResponse\"\x00\x12O\n" +
 	"\x13GetEnvironmentValue\x12\x1b.GetEnvironmentValueRequest\x1a\x19.EnvironmentValueResponse\"\x00\x12p\n" +
 	"\x1eGetEnvironmentValuesAcrossEnvs\x12&.GetEnvironmentValuesAcrossEnvsRequest\x1a$.EnvironmentValuesAcrossEnvsResponse\"\x00\x12[\n" +
@@ -1041,7 +1218,7 @@ func file_provider_proto_rawDescGZIP() []byte {
 }
 
 var file_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_provider_proto_goTypes = []any{
 	(EnvironmentKind)(0),                           // 0: EnvironmentKind
 	(*CreateTenantRequest)(nil),                    // 1: CreateTenantRequest
@@ -1060,6 +1237,10 @@ var file_provider_proto_goTypes = []any{
 	(*EnvironmentValuesAcrossEnvsResponse)(nil),    // 14: EnvironmentValuesAcrossEnvsResponse
 	(*DeleteEnvironmentValueRequest)(nil),          // 15: DeleteEnvironmentValueRequest
 	(*DeleteEnvironmentValueResponse)(nil),         // 16: DeleteEnvironmentValueResponse
+	(*ListTenantsRequest)(nil),                     // 17: ListTenantsRequest
+	(*ListTenantsResponse)(nil),                    // 18: ListTenantsResponse
+	(*ListEnvironmentsRequest)(nil),                // 19: ListEnvironmentsRequest
+	(*ListEnvironmentsResponse)(nil),               // 20: ListEnvironmentsResponse
 }
 var file_provider_proto_depIdxs = []int32{
 	0,  // 0: CreateEnvironmentRequest.kind:type_name -> EnvironmentKind
@@ -1067,29 +1248,35 @@ var file_provider_proto_depIdxs = []int32{
 	6,  // 2: UpdateEnvironmentRequest.labels:type_name -> EnvironmentLabel
 	6,  // 3: EnvironmentResponse.labels:type_name -> EnvironmentLabel
 	12, // 4: EnvironmentValuesAcrossEnvsResponse.values:type_name -> EnvironmentValueResponse
-	1,  // 5: Provider.CreateTenant:input_type -> CreateTenantRequest
-	2,  // 6: Provider.GetTenant:input_type -> GetTenantRequest
-	4,  // 7: Provider.CreateEnvironment:input_type -> CreateEnvironmentRequest
-	7,  // 8: Provider.GetEnvironment:input_type -> GetEnvironmentRequest
-	9,  // 9: Provider.CreateOrUpdateEnvironmentValue:input_type -> CreateOrUpdateEnvironmentValueRequest
-	11, // 10: Provider.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
-	13, // 11: Provider.GetEnvironmentValuesAcrossEnvs:input_type -> GetEnvironmentValuesAcrossEnvsRequest
-	15, // 12: Provider.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
-	5,  // 13: Provider.UpdateEnvironment:input_type -> UpdateEnvironmentRequest
-	3,  // 14: Provider.CreateTenant:output_type -> TenantResponse
-	3,  // 15: Provider.GetTenant:output_type -> TenantResponse
-	8,  // 16: Provider.CreateEnvironment:output_type -> EnvironmentResponse
-	8,  // 17: Provider.GetEnvironment:output_type -> EnvironmentResponse
-	10, // 18: Provider.CreateOrUpdateEnvironmentValue:output_type -> CreateOrUpdateEnvironmentValueResponse
-	12, // 19: Provider.GetEnvironmentValue:output_type -> EnvironmentValueResponse
-	14, // 20: Provider.GetEnvironmentValuesAcrossEnvs:output_type -> EnvironmentValuesAcrossEnvsResponse
-	16, // 21: Provider.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
-	8,  // 22: Provider.UpdateEnvironment:output_type -> EnvironmentResponse
-	14, // [14:23] is the sub-list for method output_type
-	5,  // [5:14] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	3,  // 5: ListTenantsResponse.tenants:type_name -> TenantResponse
+	8,  // 6: ListEnvironmentsResponse.environments:type_name -> EnvironmentResponse
+	1,  // 7: Provider.CreateTenant:input_type -> CreateTenantRequest
+	2,  // 8: Provider.GetTenant:input_type -> GetTenantRequest
+	17, // 9: Provider.ListTenants:input_type -> ListTenantsRequest
+	4,  // 10: Provider.CreateEnvironment:input_type -> CreateEnvironmentRequest
+	7,  // 11: Provider.GetEnvironment:input_type -> GetEnvironmentRequest
+	19, // 12: Provider.ListEnvironments:input_type -> ListEnvironmentsRequest
+	9,  // 13: Provider.CreateOrUpdateEnvironmentValue:input_type -> CreateOrUpdateEnvironmentValueRequest
+	11, // 14: Provider.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
+	13, // 15: Provider.GetEnvironmentValuesAcrossEnvs:input_type -> GetEnvironmentValuesAcrossEnvsRequest
+	15, // 16: Provider.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
+	5,  // 17: Provider.UpdateEnvironment:input_type -> UpdateEnvironmentRequest
+	3,  // 18: Provider.CreateTenant:output_type -> TenantResponse
+	3,  // 19: Provider.GetTenant:output_type -> TenantResponse
+	18, // 20: Provider.ListTenants:output_type -> ListTenantsResponse
+	8,  // 21: Provider.CreateEnvironment:output_type -> EnvironmentResponse
+	8,  // 22: Provider.GetEnvironment:output_type -> EnvironmentResponse
+	20, // 23: Provider.ListEnvironments:output_type -> ListEnvironmentsResponse
+	10, // 24: Provider.CreateOrUpdateEnvironmentValue:output_type -> CreateOrUpdateEnvironmentValueResponse
+	12, // 25: Provider.GetEnvironmentValue:output_type -> EnvironmentValueResponse
+	14, // 26: Provider.GetEnvironmentValuesAcrossEnvs:output_type -> EnvironmentValuesAcrossEnvsResponse
+	16, // 27: Provider.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
+	8,  // 28: Provider.UpdateEnvironment:output_type -> EnvironmentResponse
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_provider_proto_init() }
@@ -1103,7 +1290,7 @@ func file_provider_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_provider_proto_rawDesc), len(file_provider_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

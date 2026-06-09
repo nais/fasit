@@ -209,6 +209,18 @@ func List(ctx context.Context, tenantID uuid.UUID) ([]*Environment, error) {
 	return environmentSlice, nil
 }
 
+func ListTenants(ctx context.Context) ([]*Tenant, error) {
+	tenants, err := querier(ctx).ListTenants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tenantSlice := make([]*Tenant, len(tenants))
+	for i, t := range tenants {
+		tenantSlice[i] = tenantFromSQL(t)
+	}
+	return tenantSlice, nil
+}
+
 func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*EnvironmentValue, error) {
 	ev, err := querier(ctx).GetEnvironmentValue(ctx, environmentsql.GetEnvironmentValueParams{
 		EnvironmentID: environmentID,

@@ -5,8 +5,10 @@ option go_package = "internal/provider/protogen;protogen";
 service Provider {
   rpc CreateTenant(CreateTenantRequest) returns (TenantResponse) {}
   rpc GetTenant(GetTenantRequest) returns (TenantResponse) {}
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse) {}
   rpc CreateEnvironment(CreateEnvironmentRequest) returns (EnvironmentResponse) {}
   rpc GetEnvironment(GetEnvironmentRequest) returns (EnvironmentResponse) {}
+  rpc ListEnvironments(ListEnvironmentsRequest) returns (ListEnvironmentsResponse) {}
   rpc CreateOrUpdateEnvironmentValue(CreateOrUpdateEnvironmentValueRequest) returns (CreateOrUpdateEnvironmentValueResponse) {}
   rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValueResponse) {}
   rpc GetEnvironmentValuesAcrossEnvs(GetEnvironmentValuesAcrossEnvsRequest) returns (EnvironmentValuesAcrossEnvsResponse) {}
@@ -105,4 +107,18 @@ message DeleteEnvironmentValueRequest {
 
 message DeleteEnvironmentValueResponse {
   bool success = 1;
+}
+
+message ListTenantsRequest {}
+
+message ListTenantsResponse {
+  repeated TenantResponse tenants = 1;
+}
+
+message ListEnvironmentsRequest {
+  string tenant_id = 1;
+}
+
+message ListEnvironmentsResponse {
+  repeated EnvironmentResponse environments = 1;
 }

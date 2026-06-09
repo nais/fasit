@@ -229,6 +229,51 @@ func (s *server) DeleteEnvironmentValue(ctx context.Context, req *protogen.Delet
 	return &protogen.DeleteEnvironmentValueResponse{Success: true}, nil
 }
 
+func (s *server) ListTenants(ctx context.Context, _ *protogen.ListTenantsRequest) (*protogen.ListTenantsResponse, error) {
+	tenants, err := environment.ListTenants(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := make([]*protogen.TenantResponse, len(tenants))
+	for i, t := range tenants {
+		resp[i] = &protogen.TenantResponse{
+			Id:   t.ID.String(),
+			Name: t.Name,
+		}
+	}
+
+	return &protogen.ListTenantsResponse{Tenants: resp}, nil
+}
+
+func (s *server) ListEnvironments(ctx context.Context, in *protogen.ListEnvironmentsRequest) (*protogen.ListEnvironmentsResponse, error) {
+	tenantID, err := uuid.Parse(in.TenantId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
+	}
+
+	envs, err := environment.List(ctx, tenantID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := make([]*protogen.EnvironmentResponse, len(envs))
+	for i, env := range envs {
+		labels := make([]*protogen.EnvironmentLabel, 0, len(env.Labels))
+		for k, v := range env.Labels {
+			labels = append(labels, &protogen.EnvironmentLabel{Key: k, Value: v})
+		}
+		resp[i] = &protogen.EnvironmentResponse{
+			Id:       env.ID.String(),
+			TenantId: env.TenantID.String(),
+			Name:     env.Name,
+			Labels:   labels,
+		}
+	}
+
+	return &protogen.ListEnvironmentsResponse{Environments: resp}, nil
+}
+
 func toEnvironmentKind(kind protogen.EnvironmentKind) (environment.EnvironmentKind, error) {
 	switch kind {
 	case protogen.EnvironmentKind_MANAGEMENT:

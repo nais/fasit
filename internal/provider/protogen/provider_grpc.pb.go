@@ -21,8 +21,10 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Provider_CreateTenant_FullMethodName                   = "/Provider/CreateTenant"
 	Provider_GetTenant_FullMethodName                      = "/Provider/GetTenant"
+	Provider_ListTenants_FullMethodName                    = "/Provider/ListTenants"
 	Provider_CreateEnvironment_FullMethodName              = "/Provider/CreateEnvironment"
 	Provider_GetEnvironment_FullMethodName                 = "/Provider/GetEnvironment"
+	Provider_ListEnvironments_FullMethodName               = "/Provider/ListEnvironments"
 	Provider_CreateOrUpdateEnvironmentValue_FullMethodName = "/Provider/CreateOrUpdateEnvironmentValue"
 	Provider_GetEnvironmentValue_FullMethodName            = "/Provider/GetEnvironmentValue"
 	Provider_GetEnvironmentValuesAcrossEnvs_FullMethodName = "/Provider/GetEnvironmentValuesAcrossEnvs"
@@ -36,8 +38,10 @@ const (
 type ProviderClient interface {
 	CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*TenantResponse, error)
 	GetTenant(ctx context.Context, in *GetTenantRequest, opts ...grpc.CallOption) (*TenantResponse, error)
+	ListTenants(ctx context.Context, in *ListTenantsRequest, opts ...grpc.CallOption) (*ListTenantsResponse, error)
 	CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
 	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
+	ListEnvironments(ctx context.Context, in *ListEnvironmentsRequest, opts ...grpc.CallOption) (*ListEnvironmentsResponse, error)
 	CreateOrUpdateEnvironmentValue(ctx context.Context, in *CreateOrUpdateEnvironmentValueRequest, opts ...grpc.CallOption) (*CreateOrUpdateEnvironmentValueResponse, error)
 	GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValueResponse, error)
 	GetEnvironmentValuesAcrossEnvs(ctx context.Context, in *GetEnvironmentValuesAcrossEnvsRequest, opts ...grpc.CallOption) (*EnvironmentValuesAcrossEnvsResponse, error)
@@ -73,6 +77,16 @@ func (c *providerClient) GetTenant(ctx context.Context, in *GetTenantRequest, op
 	return out, nil
 }
 
+func (c *providerClient) ListTenants(ctx context.Context, in *ListTenantsRequest, opts ...grpc.CallOption) (*ListTenantsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTenantsResponse)
+	err := c.cc.Invoke(ctx, Provider_ListTenants_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *providerClient) CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnvironmentResponse)
@@ -87,6 +101,16 @@ func (c *providerClient) GetEnvironment(ctx context.Context, in *GetEnvironmentR
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnvironmentResponse)
 	err := c.cc.Invoke(ctx, Provider_GetEnvironment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *providerClient) ListEnvironments(ctx context.Context, in *ListEnvironmentsRequest, opts ...grpc.CallOption) (*ListEnvironmentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListEnvironmentsResponse)
+	err := c.cc.Invoke(ctx, Provider_ListEnvironments_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +173,10 @@ func (c *providerClient) UpdateEnvironment(ctx context.Context, in *UpdateEnviro
 type ProviderServer interface {
 	CreateTenant(context.Context, *CreateTenantRequest) (*TenantResponse, error)
 	GetTenant(context.Context, *GetTenantRequest) (*TenantResponse, error)
+	ListTenants(context.Context, *ListTenantsRequest) (*ListTenantsResponse, error)
 	CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*EnvironmentResponse, error)
 	GetEnvironment(context.Context, *GetEnvironmentRequest) (*EnvironmentResponse, error)
+	ListEnvironments(context.Context, *ListEnvironmentsRequest) (*ListEnvironmentsResponse, error)
 	CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error)
 	GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error)
 	GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error)
@@ -172,11 +198,17 @@ func (UnimplementedProviderServer) CreateTenant(context.Context, *CreateTenantRe
 func (UnimplementedProviderServer) GetTenant(context.Context, *GetTenantRequest) (*TenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTenant not implemented")
 }
+func (UnimplementedProviderServer) ListTenants(context.Context, *ListTenantsRequest) (*ListTenantsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTenants not implemented")
+}
 func (UnimplementedProviderServer) CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*EnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnvironment not implemented")
 }
 func (UnimplementedProviderServer) GetEnvironment(context.Context, *GetEnvironmentRequest) (*EnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironment not implemented")
+}
+func (UnimplementedProviderServer) ListEnvironments(context.Context, *ListEnvironmentsRequest) (*ListEnvironmentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEnvironments not implemented")
 }
 func (UnimplementedProviderServer) CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrUpdateEnvironmentValue not implemented")
@@ -250,6 +282,24 @@ func _Provider_GetTenant_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Provider_ListTenants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTenantsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).ListTenants(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Provider_ListTenants_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).ListTenants(ctx, req.(*ListTenantsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Provider_CreateEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateEnvironmentRequest)
 	if err := dec(in); err != nil {
@@ -282,6 +332,24 @@ func _Provider_GetEnvironment_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProviderServer).GetEnvironment(ctx, req.(*GetEnvironmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Provider_ListEnvironments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEnvironmentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).ListEnvironments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Provider_ListEnvironments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).ListEnvironments(ctx, req.(*ListEnvironmentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -392,12 +460,20 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Provider_GetTenant_Handler,
 		},
 		{
+			MethodName: "ListTenants",
+			Handler:    _Provider_ListTenants_Handler,
+		},
+		{
 			MethodName: "CreateEnvironment",
 			Handler:    _Provider_CreateEnvironment_Handler,
 		},
 		{
 			MethodName: "GetEnvironment",
 			Handler:    _Provider_GetEnvironment_Handler,
+		},
+		{
+			MethodName: "ListEnvironments",
+			Handler:    _Provider_ListEnvironments_Handler,
 		},
 		{
 			MethodName: "CreateOrUpdateEnvironmentValue",
