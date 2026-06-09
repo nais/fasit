@@ -21,6 +21,14 @@ type Environment struct {
 	Labels       types.EnvironmentLabels
 }
 
+type Log struct {
+	ID                int64
+	DeployInstruction uuid.UUID
+	Time              time.Time
+	Message           string
+	Kind              string
+}
+
 type Tenant struct {
 	ID           uuid.UUID
 	Name         string

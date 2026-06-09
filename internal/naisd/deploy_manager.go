@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd/selfupgrade"
@@ -281,7 +281,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStatus := message.Helm{
 		DIID:          msg.ID,
 		ConfigHash:    msg.ConfigHash,
-		RolloutStatus: model.DeployStatusInstalling,
+		RolloutStatus: feature.DeployStatusInstalling,
 	}
 
 	_ = d.publishStatus(ctx, helmStatus)
@@ -295,10 +295,10 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args)
 	if err != nil {
 		d.log.With("err", err, "feature", msg.Name).Warn("failed to run helm")
-		helmStatus.RolloutStatus = model.DeployStatusFailed
+		helmStatus.RolloutStatus = feature.DeployStatusFailed
 		helmStatus.Error = err.Error()
 	} else {
-		helmStatus.RolloutStatus = model.DeployStatusDeployed
+		helmStatus.RolloutStatus = feature.DeployStatusDeployed
 	}
 	if d.helmDuration != nil {
 		d.helmDuration.Record(ctx, time.Since(helmStart).Seconds(), metric.WithAttributes(

@@ -130,18 +130,6 @@ func (f *fakeQuerier) ListSecretKeysForTenant(context.Context, uuid.UUID) ([]fea
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) LogsByDeployInstruction(context.Context, uuid.UUID) ([]featuresql.Log, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) LogsByID(context.Context, int64) (featuresql.Log, error) {
-	panic("not implemented")
-}
-
-func (f *fakeQuerier) LogsCreate(context.Context, []featuresql.LogsCreateParams) *featuresql.LogsCreateBatchResults {
-	panic("not implemented")
-}
-
 var _ featuresql.Querier = (*fakeQuerier)(nil)
 
 // setupTestCtx builds a context with fake feature and audit queriers.

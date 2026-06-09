@@ -10,9 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/uidata/sqlgen"
 )
 
@@ -70,7 +68,21 @@ func ListDeployInstructions(ctx context.Context, featureAssignmentID uuid.UUID) 
 	return ret, nil
 }
 
-func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
+func GetLogLines(ctx context.Context, deployInstructionID uuid.UUID) ([]*LogLine, error) {
+	logs, err := querier(ctx).LogsByDeployInstruction(ctx, deployInstructionID)
+	if err != nil {
+		return nil, err
+	}
+
+	logLines := make([]*LogLine, len(logs))
+	for i, log := range logs {
+		logLines[i] = logLineFromSQL(log)
+	}
+
+	return logLines, nil
+}
+
+func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*RolloutLog, error) {
 	di, err := querier(ctx).GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx, sqlgen.GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams{
 		FeatureAssignmentID: featureAssignmentID,
 		EnvironmentID:       environmentID,
@@ -82,12 +94,12 @@ func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.
 		return nil, fmt.Errorf("get deploy instruction: %w", err)
 	}
 
-	lines, err := featurepkg.LogsGet(ctx, di.ID)
+	lines, err := GetLogLines(ctx, di.ID)
 	if err != nil {
 		return nil, fmt.Errorf("get logs: %w", err)
 	}
 
-	return &model.RolloutLog{
+	return &RolloutLog{
 		ID:          di.ID,
 		TenantName:  di.TenantName,
 		Environment: di.EnvironmentName,

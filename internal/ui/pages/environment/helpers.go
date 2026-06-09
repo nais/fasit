@@ -243,7 +243,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 				if di.ID.String() != page.ExpandedLogID {
 					continue
 				}
-				lines, err := featurepkg.LogsGet(ctx, di.ID)
+				lines, err := uidata.GetLogLines(ctx, di.ID)
 				if err != nil {
 					break
 				}
@@ -522,7 +522,7 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *featurepkg.Featu
 	if err != nil {
 		return nil
 	}
-	lines, err := featurepkg.LogsGet(ctx, di.ID)
+	lines, err := uidata.GetLogLines(ctx, di.ID)
 	if err != nil {
 		return nil
 	}

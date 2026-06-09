@@ -20,7 +20,6 @@ import (
 	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 type ctxKey int
@@ -506,7 +505,7 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 		FeatureAssignmentID: &di.FeatureAssignmentID,
 		FeatureName:         di.FeatureName,
 		FeatureVersion:      di.FeatureVersion,
-		Status:              model.DeployStatus(di.Status),
+		Status:              DeployStatus(di.Status),
 		Hash:                di.Hash,
 		Created:             di.Created,
 		LastModified:        di.Created,
@@ -531,7 +530,7 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 		FeatureAssignmentID: &di.FeatureAssignmentID,
 		FeatureName:         di.FeatureName,
 		FeatureVersion:      di.FeatureVersion,
-		Status:              model.DeployStatus(di.Status),
+		Status:              DeployStatus(di.Status),
 		Hash:                di.Hash,
 		Created:             di.Created,
 		LastModified:        di.Created,
@@ -568,7 +567,7 @@ func ListRecentDeployInstructions(ctx context.Context, envID uuid.UUID, featureN
 			byDiid[r.Diid] = d
 			order = append(order, r.Diid)
 		}
-		d.Status = model.DeployStatus(r.Status)
+		d.Status = DeployStatus(r.Status)
 		d.LastModified = r.Created
 	}
 

@@ -35,6 +35,7 @@ type Querier interface {
 	ListLatestDecisions(ctx context.Context) ([]ListLatestDecisionsRow, error)
 	ListLatestDeploys(ctx context.Context) ([]ListLatestDeploysRow, error)
 	ListLatestFeatureAssignments(ctx context.Context) ([]ListLatestFeatureAssignmentsRow, error)
+	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error
 	TimeoutPendingDeploys(ctx context.Context) error
 }

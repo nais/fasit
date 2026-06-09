@@ -19,7 +19,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
-	commonmodel "github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/model"
 )
 
 var ErrFeatureNotFound = fmt.Errorf("feature not found")
@@ -257,7 +257,7 @@ func mostSpecificPerFeature(deps []*FeatureAssignment) []*FeatureAssignment {
 	return ret
 }
 
-func createFeatureAssignment(ctx context.Context, feat *featurepkg.Feature, description *string, githubRef *commonmodel.GitHubCommit, target environment.Labels) (uuid.UUID, error) {
+func createFeatureAssignment(ctx context.Context, feat *featurepkg.Feature, description *string, githubRef *model.GitHubCommit, target environment.Labels) (uuid.UUID, error) {
 	details, err := featurepkg.ParseTemplateDetails(feat.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)

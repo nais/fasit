@@ -49,11 +49,3 @@ type FeatureDatum struct {
 	Timeout       int64
 	TplDetails    []byte
 }
-
-type Log struct {
-	ID                int64
-	DeployInstruction uuid.UUID
-	Time              time.Time
-	Message           string
-	Kind              string
-}

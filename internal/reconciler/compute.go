@@ -18,7 +18,6 @@ import (
 	"github.com/nais/fasit/internal/errs"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/graph/model"
 )
 
 func (r *Reconciler) computeActions(snap *snapshot) []DeployDecision {
@@ -175,7 +174,7 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 
 	// Check against latest instruction.
 	if instr, ok := snap.latestInstr[env.ID][dep.Feature.Name]; ok {
-		if model.DeployStatus(instr.Status).IsInProgress() {
+		if featurepkg.DeployStatus(instr.Status).IsInProgress() {
 			base.Action = ActionSkipInProgress
 			base.Message = "deployment is already in progress"
 			return base

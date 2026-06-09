@@ -11,7 +11,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	commonmodel "github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/model"
 )
 
 type Seeder struct {
@@ -145,9 +145,9 @@ func (s *Seeder) ChartDownloader() featureassignment.ChartDownloaderFunc {
 
 // fakeGitHubCommit produces a deterministic, realistic-looking commit SHA for seed
 // deployments so the UI can render a sensible GitHub link in local dev.
-func fakeGitHubCommit(name, version string) *commonmodel.GitHubCommit {
+func fakeGitHubCommit(name, version string) *model.GitHubCommit {
 	sum := sha256.Sum256([]byte(name + "@" + version))
-	return &commonmodel.GitHubCommit{
+	return &model.GitHubCommit{
 		Owner: "nais",
 		Repo:  name,
 		Ref:   hex.EncodeToString(sum[:20]),

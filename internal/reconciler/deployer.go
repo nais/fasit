@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 	"go.opentelemetry.io/otel/attribute"
@@ -106,7 +106,7 @@ func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []DeployDecision)
 			FeatureAssignmentID: item.res.FeatureAssignmentID,
 			FeatureName:         item.res.Feature.Name,
 			FeatureVersion:      item.res.Feature.Version,
-			Status:              model.DeployStatusSent.String(),
+			Status:              feature.DeployStatusSent.String(),
 			Hash:                item.res.Hash,
 			Vals:                item.vals,
 		})

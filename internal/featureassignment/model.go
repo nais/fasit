@@ -9,14 +9,14 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment/featureassignmentsql"
-	commonmodel "github.com/nais/fasit/internal/model"
+	"github.com/nais/fasit/internal/model"
 )
 
 type CreateFeatureAssignment struct {
 	Chart       string
 	Version     string
 	Description *string
-	Commit      *commonmodel.GitHubCommit
+	Commit      *model.GitHubCommit
 	Target      environment.Labels
 }
 

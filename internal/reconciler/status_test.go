@@ -3,11 +3,11 @@ package reconciler
 import (
 	"testing"
 
-	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/feature"
 )
 
 // renderState is what the UI ultimately shows: the derived token, uppercased.
-func renderState(disabled bool, deploy model.DeployStatus, action Action) string {
+func renderState(disabled bool, deploy feature.DeployStatus, action Action) string {
 	return NormalizeStatus(deriveState(disabled, deploy, action))
 }
 
@@ -18,17 +18,17 @@ func renderState(disabled bool, deploy model.DeployStatus, action Action) string
 // correlated per event — each case below is named for the rung that decides it.
 func TestDeriveState(t *testing.T) {
 	const (
-		noDeploy   = model.DeployStatusUnknown
-		sent       = model.DeployStatusSent
-		installing = model.DeployStatusInstalling
-		deployed   = model.DeployStatusDeployed
-		failed     = model.DeployStatusFailed
+		noDeploy   = feature.DeployStatusUnknown
+		sent       = feature.DeployStatusSent
+		installing = feature.DeployStatusInstalling
+		deployed   = feature.DeployStatusDeployed
+		failed     = feature.DeployStatusFailed
 	)
 
 	tests := []struct {
 		name     string
 		disabled bool
-		deploy   model.DeployStatus
+		deploy   feature.DeployStatus
 		action   Action
 		want     string
 	}{
