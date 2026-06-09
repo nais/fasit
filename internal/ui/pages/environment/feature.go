@@ -346,6 +346,7 @@ func statusTab(page *FeaturePage) g.Node {
 	return h.Div(h.Class("tab-content-wrapper env-feature-status"),
 		statusReconcileSection(page),
 		statusDeploysSection(page),
+		statusDecisionsSection(page),
 	)
 }
 
@@ -434,7 +435,6 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 				),
 				h.Td(components.Status(strings.ToUpper(string(di.Status)))),
 				h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
-				h.Td(h.Title(view.FormatTime(di.LastModified)), g.Text(view.RelativeTime(di.LastModified))),
 				h.Td(logLink),
 			),
 		}
@@ -446,7 +446,7 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 				logContent = h.P(h.Class("text-muted"), g.Text("No logs available."))
 			}
 			nodes = append(nodes, h.Tr(h.Class("log-row"),
-				h.Td(g.Attr("colspan", "5"), logContent),
+				h.Td(g.Attr("colspan", "4"), logContent),
 			))
 		}
 		return g.Group(nodes)
@@ -457,8 +457,7 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 			h.THead(h.Tr(
 				h.Th(g.Text("Version")),
 				h.Th(g.Text("Status")),
-				h.Th(g.Text("Created")),
-				h.Th(g.Text("Last modified")),
+				h.Th(g.Text("When")),
 				h.Th(),
 			)),
 			h.TBody(g.Group(rows)),
@@ -469,6 +468,59 @@ func statusDeploysSection(page *FeaturePage) g.Node {
 			),
 		),
 	)
+}
+
+// statusDecisionsSection renders the reconciler decision history for this
+// feature×environment. A decision_log row exists only when the decision changed,
+// so it surfaces skip/failure reasons (missing-deps, disabled, ...) that never
+// produce a deploy and are therefore invisible in the deploy history above.
+func statusDecisionsSection(page *FeaturePage) g.Node {
+	if len(page.DecisionHistory) == 0 {
+		return nil
+	}
+
+	rows := g.Map(page.DecisionHistory, func(d *reconciler.DecisionLogEntry) g.Node {
+		msg := d.Message
+		if msg == "" {
+			msg = "—"
+		}
+		return h.Tr(
+			h.Td(decisionActionBadge(d.Action)),
+			h.Td(g.Text(d.FeatureVersion)),
+			h.Td(g.Text(msg)),
+			h.Td(h.Title(view.FormatTime(d.Created)), g.Text(view.RelativeTime(d.Created))),
+		)
+	})
+
+	return h.Section(h.Class("status-section"),
+		h.H3(g.Text("Decisions")),
+		h.Table(h.Class("table table-compact"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Action")),
+				h.Th(g.Text("Version")),
+				h.Th(g.Text("Message")),
+				h.Th(g.Text("When")),
+			)),
+			h.TBody(g.Group(rows)),
+		),
+	)
+}
+
+// decisionActionBadge renders a reconciler Action as a coloured pill: failures
+// red, blocking skips muted, in-progress pending, deploy/unchanged success.
+func decisionActionBadge(action string) g.Node {
+	cls := "text-muted"
+	switch action {
+	case "missing-deps", "missing-config", "render-error":
+		cls = "status-error"
+	case "disabled", "unhealthy":
+		cls = "status-disabled"
+	case "in-progress":
+		cls = "status-pending"
+	case "deploy", "unchanged":
+		cls = "status-success"
+	}
+	return h.Span(h.Class(cls), g.Text(action))
 }
 
 func overviewTab(page *FeaturePage) g.Node {

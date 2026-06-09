@@ -39,6 +39,7 @@ type FeaturePage struct {
 	WinningAssignment       *featureassignment.FeatureAssignment
 	RecentDeployHistory     []*featurepkg.DeployInstruction
 	DeployLogsByInstruction map[string][]LogLine
+	DecisionHistory         []*reconciler.DecisionLogEntry
 	ExpandedLogID           string
 	ShowAllDeploys          bool
 }
@@ -236,6 +237,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 			page.ShowAllDeploys = true // already showing everything
 		}
 		page.DeployLogsByInstruction = map[string][]LogLine{}
+		page.DecisionHistory, _ = reconciler.ListDecisionLog(ctx, env.ID, featureName)
 		if page.ExpandedLogID != "" {
 			for _, di := range page.RecentDeployHistory {
 				if di.ID.String() != page.ExpandedLogID {

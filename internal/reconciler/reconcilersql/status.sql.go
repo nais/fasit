@@ -10,6 +10,68 @@ import (
 	"github.com/google/uuid"
 )
 
+const listDecisionLog = `-- name: ListDecisionLog :many
+SELECT
+	id,
+	feature_assignment_id,
+	feature_version,
+	action,
+	message,
+	created
+FROM
+	decision_log
+WHERE
+	environment_id = $1::UUID
+	AND feature_name = $2::TEXT
+ORDER BY
+	created DESC,
+	id DESC
+LIMIT 50
+`
+
+type ListDecisionLogParams struct {
+	EnvironmentID uuid.UUID
+	FeatureName   string
+}
+
+type ListDecisionLogRow struct {
+	ID                  int64
+	FeatureAssignmentID uuid.UUID
+	FeatureVersion      string
+	Action              string
+	Message             string
+	Created             time.Time
+}
+
+// Decision history for a feature in an environment, newest first. Rows exist
+// only for cycles where the decision changed.
+func (q *Queries) ListDecisionLog(ctx context.Context, arg ListDecisionLogParams) ([]ListDecisionLogRow, error) {
+	rows, err := q.db.Query(ctx, listDecisionLog, arg.EnvironmentID, arg.FeatureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDecisionLogRow{}
+	for rows.Next() {
+		var i ListDecisionLogRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FeatureAssignmentID,
+			&i.FeatureVersion,
+			&i.Action,
+			&i.Message,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDecisionStatuses = `-- name: ListDecisionStatuses :many
 SELECT
 	environment_id,
