@@ -227,7 +227,7 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 				h.TBody(g.Group(g.Map(sortedEnvRows, func(r *envRow) g.Node {
 					return h.Tr(
 						h.Td(g.Text(r.TenantName)),
-						h.Td(h.A(h.Href("/tenants/"+r.TenantName+"/envs/"+r.EnvironmentName+"/"+d.Feature.Name), g.Text(r.EnvironmentName))),
+						h.Td(h.A(h.Href("/features/"+d.Feature.Name+"/envs/"+r.TenantName+"/"+r.EnvironmentName), g.Text(r.EnvironmentName))),
 						h.Td(components.Status(r.State)),
 						h.Td(g.Text(r.Message)),
 						h.Td(timeWithTitle(r.LastModified)),
