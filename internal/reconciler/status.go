@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/featureassignment"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 )
 
@@ -35,22 +36,44 @@ func NormalizeStatus(s string) string {
 	return strings.ToUpper(s)
 }
 
-// deriveState collapses the three raw signals into a single display status. The
-// disabled-feature membership takes precedence, then the deploy rollout state,
-// then the latest reconciler decision interpreted via the Action vocabulary.
-func deriveState(deployStatus string, action Action, disabled bool) string {
+// deriveState collapses the two append-only logs into a single display status.
+//
+// The decision log and the deploy log are independent streams that are never
+// correlated per event; instead each owns the question it can answer. The
+// decision log is authoritative for pre-deploy state (disabled, unhealthy,
+// render/dependency failures); the deploy log is authoritative for the lifecycle
+// of the last sync that was actually shipped. deriveState picks between them with
+// a fixed precedence ladder rather than trying to match a decision to a deploy:
+//
+//  1. disabled-feature membership           -> DISABLED
+//  2. deploy lifecycle in progress          -> SENT / INSTALLING   (a live sync; let it finish)
+//  3. reconciler currently blocked          -> UNHEALTHY / FAILED   (desired state cannot proceed)
+//  4. terminal deploy outcome exists        -> DEPLOYED / FAILED    (the deploy log is the truth)
+//  5. never produced a deploy yet           -> derive from the decision alone
+//
+// Rung 2 sits above rung 3 deliberately: an in-flight deploy is shown until it
+// terminates even if the latest desired state no longer renders; once it
+// terminates, rung 3 surfaces the blocker.
+func deriveState(disabled bool, deploy model.DeployStatus, action Action) string {
 	switch {
 	case disabled:
-		return "DISABLED"
-	case deployStatus != "":
-		return deployStatus
+		return "disabled"
+	case deploy.IsInProgress():
+		return string(deploy) // sent / installing
+	case action == ActionSkipUnhealthy:
+		return "unhealthy"
+	case action.IsFailure():
+		return "failed"
+	case deploy == model.DeployStatusDeployed, deploy == model.DeployStatusFailed:
+		return string(deploy) // deployed / failed
 	}
+
+	// No deploy has ever shipped for this feature×environment; the decision is
+	// the only signal.
 	switch action {
 	case ActionSkipDisabled:
-		return "DISABLED"
-	case ActionFailMissingDeps, ActionFailMissingConfig, ActionFailRender:
-		return "failed"
-	case ActionSkipUnhealthy, ActionSkipInProgress, ActionDeploy:
+		return "disabled"
+	case ActionSkipInProgress, ActionDeploy:
 		return "pending"
 	case ActionSkipUnchanged:
 		return "deployed"
@@ -147,7 +170,7 @@ func joinReconcileSignals(
 		dep := depByEnv[envID]
 		disabledAt, isDisabled := disabledAtByEnv[envID]
 
-		state := deriveState(dep.Status, Action(dec.Action), isDisabled)
+		state := deriveState(isDisabled, model.DeployStatus(dep.Status), Action(dec.Action))
 		lastModified := latestTime(dec.Created, dep.Created, disabledAt)
 		statuses[i] = &FeatureReconcileStatus{
 			State:               FeatureReconcileStatusState(NormalizeStatus(state)),

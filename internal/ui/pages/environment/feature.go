@@ -345,8 +345,29 @@ func reconcilePopover(page *FeaturePage) g.Node {
 func statusTab(page *FeaturePage) g.Node {
 	return h.Div(h.Class("tab-content-wrapper env-feature-status"),
 		statusReconcileSection(page),
+		statusProblemSection(page),
 		statusDeploysSection(page),
 		statusDecisionsSection(page),
+	)
+}
+
+// statusProblemSection surfaces the reconciler's reason when the feature is in a
+// state the user can act on (failed render, missing config/dependencies, or an
+// unhealthy agent). The message carries the actionable detail, e.g. which chart
+// fields or dependencies are missing.
+func statusProblemSection(page *FeaturePage) g.Node {
+	if page.StatusMessage == "" {
+		return nil
+	}
+	switch page.Status {
+	case "FAILED", "UNHEALTHY":
+	default:
+		return nil
+	}
+	return h.Section(h.Class("status-section"),
+		h.H3(g.Text("Needs attention")),
+		h.Div(components.Status(page.Status)),
+		h.Div(h.Class("reconcile-reason"), g.Text(page.StatusMessage)),
 	)
 }
 

@@ -39,6 +39,7 @@ type MetadataItem struct {
 type environmentFeatureRow struct {
 	Name           string
 	Status         string
+	StatusMessage  string
 	Version        string
 	LastSuccessful time.Time
 }
@@ -182,8 +183,9 @@ func loadEnvironmentFeatureRows(ctx context.Context, env *envpkg.Environment) ([
 		row := environmentFeatureRow{Name: feature.Name, Status: "UNKNOWN"}
 		if !env.Reconcile || feature.FeatureDisabled {
 			row.Status = "DISABLED"
-		} else if status, _, err := reconciler.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
+		} else if status, msg, err := reconciler.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
 			row.Status = reconciler.NormalizeStatus(status)
+			row.StatusMessage = msg
 		}
 		if latest, err := featurepkg.GetLatestDeployInstruction(ctx, env.ID, feature.Name); err == nil && latest != nil {
 			row.Version = latest.FeatureVersion
@@ -446,9 +448,13 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 					h.Th(h.Title("When the latest successful deploy instruction completed"), g.Text("Deployed")),
 				)),
 				h.TBody(g.Group(g.Map(features, func(feature environmentFeatureRow) g.Node {
+					statusCell := h.Td(components.Status(feature.Status))
+					if feature.StatusMessage != "" {
+						statusCell = h.Td(h.Title(feature.StatusMessage), components.Status(feature.Status))
+					}
 					return h.Tr(
 						h.Td(h.A(h.Href("/features/"+feature.Name+"/envs/"+tenantName+"/"+environmentName), g.Text(feature.Name))),
-						h.Td(components.Status(feature.Status)),
+						statusCell,
 						h.Td(textOrMuted(feature.Version, "unknown")),
 						h.Td(timeOrNever(feature.LastSuccessful)),
 					)
