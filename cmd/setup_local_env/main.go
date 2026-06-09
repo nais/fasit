@@ -377,14 +377,28 @@ func main() {
 		"hookd":           "GitHub deployment webhook handler",
 	}
 
+	featureDependencies := map[string][]string{
+		"console":         {"naiserator"},
+		"v13s":            {"dependencytrack"},
+		"hookd":           {"console"},
+		"unleash":         {"aivenator"},
+		"dependencytrack": {"naiserator"},
+		"replicator":      {"naiserator"},
+		"kyverno":         {"naiserator"},
+		"aivenator":       {"unleash"},
+	}
+
 	addAssignment := func(name, version string, target environment.Labels, kinds []environment.EnvironmentKind) {
-		seeder.AddAssignmentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name], featureDescriptions[name])
+		seeder.AddAssignmentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name], featureDescriptions[name], featureDependencies[name]...)
 	}
 
 	naiseratorV := newVersion()
 	naiseratorOldV := newVersion()
+	naiseratorOld2V := newVersion()
 	v13sV := newVersion()
 	consoleV := newVersion()
+	consoleOldV := newVersion()
+	consoleOld2V := newVersion()
 	unleashV := newVersion()
 	replicatorV := newVersion()
 	dependencytrackV := newVersion()
@@ -394,13 +408,16 @@ func main() {
 	unleashDevV := newVersion()
 	kyvernoV := newVersion()
 	kyvernoOldV := newVersion()
+	kyvernoOld2V := newVersion()
 
-	// Seed older versions first — these will be automatically deactivated when
-	// the current versions are deployed to the same target, exercising the
-	// Seed older versions that get deactivated, exercising the
-	// deactivation flow in local dev.
+	// Seed older versions first; they get deactivated when the current versions
+	// are deployed to the same target, exercising the deactivation flow locally.
+	addAssignment("naiserator", naiseratorOld2V, environment.Labels{"kind": "tenant"}, tenantOnly)
 	addAssignment("naiserator", naiseratorOldV, environment.Labels{"kind": "tenant"}, tenantOnly)
+	addAssignment("kyverno", kyvernoOld2V, environment.Labels{}, all)
 	addAssignment("kyverno", kyvernoOldV, environment.Labels{}, all)
+	addAssignment("console", consoleOld2V, environment.Labels{"kind": "management"}, managementOnly)
+	addAssignment("console", consoleOldV, environment.Labels{"kind": "management"}, managementOnly)
 
 	addAssignment("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly)
 	addAssignment("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly)
@@ -486,7 +503,7 @@ func main() {
 	// and make the audit tab useful during local development.
 	{
 		// Simulate different actors performing actions
-		actors := []string{"johnny@nais.io", "kim@nais.io", "system:naisd", "setup_local_env"}
+		actors := []string{"johnny@nais.io", "terje@nais.io", "system:naisd", "setup_local_env"}
 
 		// Enable a previously disabled feature (re-enable dependencytrack in a different env)
 		devNaisDev := envID("dev-nais", "dev")

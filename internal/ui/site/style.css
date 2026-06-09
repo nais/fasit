@@ -778,6 +778,11 @@ nav .user {
 .cell-outlier .source-label {
   color: inherit;
 }
+.cell-consensus a,
+.cell-outlier a {
+  color: inherit;
+  text-decoration: underline;
+}
 
 /* Merged env-feature heading: latest deploy + problem, shown in the card header */
 .deploy-version {
@@ -1990,6 +1995,112 @@ a:hover .status-badge {
     color-mix(in srgb, var(--status-error, #e53e3e) 40%, transparent);
   color: var(--status-error, #e53e3e);
   margin-bottom: 0.75rem;
+}
+.active-pill {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-success, #36b37e) 15%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--status-success, #36b37e) 40%, transparent);
+  color: var(--status-success, #36b37e);
+}
+.table tr.version-inactive td {
+  opacity: 0.5;
+}
+.table tr.version-inactive td a {
+  color: inherit;
+}
+.version-instance-group {
+  margin-bottom: 1.25rem;
+}
+.version-instance-group h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+}
+.version-meta {
+  margin-bottom: 2rem;
+}
+.table td.deps-value {
+  padding: 0.5rem 0.9rem;
+}
+.card pre.yaml-inline {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-page);
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.version-collapsible {
+  margin: 0.75rem 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-surface);
+}
+.version-collapsible > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 4px;
+}
+.version-collapsible[open] > summary {
+  border-bottom: 1px solid var(--border);
+  border-radius: 4px 4px 0 0;
+}
+.version-collapsible > summary:hover {
+  background: var(--bg-surface-hover);
+}
+.version-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+.version-collapsible > summary::before {
+  content: ">";
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  transition: transform 0.12s ease;
+}
+.version-collapsible[open] > summary::before {
+  transform: rotate(90deg);
+}
+.version-collapsible > summary::after {
+  content: "Expand";
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.version-collapsible[open] > summary::after {
+  content: "Collapse";
+}
+.version-collapsible > summary h2 {
+  display: inline;
+  margin: 0;
+  font-size: 1rem;
+}
+.version-collapsible > .code-block {
+  margin: 0;
+  border: none;
+  border-radius: 0 0 4px 4px;
+  background: var(--bg-page);
+}
+.yaml-highlight .yaml-key {
+  color: var(--accent) !important;
+}
+.yaml-highlight .yaml-string {
+  color: var(--status-success) !important;
+}
+.yaml-highlight .yaml-number,
+.yaml-highlight .yaml-bool {
+  color: var(--status-warning) !important;
+}
+.yaml-highlight .yaml-comment {
+  color: var(--text-faint) !important;
 }
 
 /* Tenant avatar */

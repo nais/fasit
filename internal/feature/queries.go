@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"slices"
 	"text/template"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -461,6 +462,48 @@ func FeatureByName(ctx context.Context, name string) (*Feature, error) {
 		return nil, fmt.Errorf("get latest feature data for %q: %w", name, err)
 	}
 	return featureFromSQL(f.FeatureDatum)
+}
+
+func FeatureByNameVersion(ctx context.Context, name, version string) (*Feature, error) {
+	f, err := querier(ctx).FeatureDataByVersion(ctx, featuresql.FeatureDataByVersionParams{
+		FeatureName: name,
+		Version:     version,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get feature data for %q version %q: %w", name, version, err)
+	}
+	return featureFromSQL(f.FeatureDatum)
+}
+
+type FeatureVersion struct {
+	Version     string
+	Description string
+	Source      string
+	LastUpdated time.Time
+}
+
+func FeatureVersions(ctx context.Context, name string) ([]FeatureVersion, error) {
+	rows, err := querier(ctx).FeatureVersionRows(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("list versions for %q: %w", name, err)
+	}
+	ret := make([]FeatureVersion, len(rows))
+	for i, row := range rows {
+		ret[i] = FeatureVersion{
+			Version:     row.Version,
+			Description: row.Description,
+			Source:      row.Source,
+			LastUpdated: asTime(row.LastUpdated),
+		}
+	}
+	return ret, nil
+}
+
+func asTime(v any) time.Time {
+	if t, ok := v.(time.Time); ok {
+		return t
+	}
+	return time.Time{}
 }
 
 type FeatureIndexRow struct {

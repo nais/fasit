@@ -14,6 +14,7 @@ func FeatureSidebar(featureName, activeTab, activeTenant, activeEnvironment stri
 		h.Div(h.Class("nav"),
 			h.Ul(
 				featureNavItem("/features/"+featureName, "Overview", activeTab == "overview"),
+				featureNavItem("/features/"+featureName+"/versions", "Versions", activeTab == "versions"),
 				featureNavItem("/features/"+featureName+"/assignments", "Assignments", activeTab == "assignments"),
 				featureNavItem("/features/"+featureName+"/config", "Config", activeTab == "config"),
 			),

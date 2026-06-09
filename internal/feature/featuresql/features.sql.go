@@ -7,6 +7,44 @@ import (
 	"context"
 )
 
+const featureDataByVersion = `-- name: FeatureDataByVersion :one
+SELECT
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
+FROM
+	feature_data fd
+WHERE
+	fd.name = $1
+	AND fd.version = $2
+`
+
+type FeatureDataByVersionParams struct {
+	FeatureName string
+	Version     string
+}
+
+type FeatureDataByVersionRow struct {
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) FeatureDataByVersion(ctx context.Context, arg FeatureDataByVersionParams) (FeatureDataByVersionRow, error) {
+	row := q.db.QueryRow(ctx, featureDataByVersion, arg.FeatureName, arg.Version)
+	var i FeatureDataByVersionRow
+	err := row.Scan(
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+	)
+	return i, err
+}
+
 const featureDataCreate = `-- name: FeatureDataCreate :exec
 INSERT INTO feature_data(
 	name,
@@ -132,6 +170,63 @@ func (q *Queries) FeatureNames(ctx context.Context) ([]string, error) {
 			return nil, err
 		}
 		items = append(items, feature_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const featureVersionRows = `-- name: FeatureVersionRows :many
+SELECT
+	fd.name,
+	fd.version,
+	fd.description,
+	fd.source,
+	MAX(fa.created) AS last_updated
+FROM
+	feature_data fd
+	LEFT JOIN feature_assignments fa ON fa.feature_name = fd.name
+		AND fa.version = fd.version
+WHERE
+	fd.name = $1
+GROUP BY
+	fd.name,
+	fd.version,
+	fd.description,
+	fd.source
+ORDER BY
+	last_updated DESC NULLS LAST,
+	fd.version DESC
+`
+
+type FeatureVersionRowsRow struct {
+	Name        string
+	Version     string
+	Description string
+	Source      string
+	LastUpdated interface{}
+}
+
+func (q *Queries) FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error) {
+	rows, err := q.db.Query(ctx, featureVersionRows, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeatureVersionRowsRow{}
+	for rows.Next() {
+		var i FeatureVersionRowsRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Version,
+			&i.Description,
+			&i.Source,
+			&i.LastUpdated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

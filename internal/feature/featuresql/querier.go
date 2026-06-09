@@ -26,9 +26,11 @@ type Querier interface {
 	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
 	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
 	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
+	FeatureDataByVersion(ctx context.Context, arg FeatureDataByVersionParams) (FeatureDataByVersionRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error)
 	FeatureNames(ctx context.Context) ([]string, error)
+	FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error)
 	// Deploy state is derived from deploy_log. Per-environment current state comes
 	// from the deploy_status view (latest row per environment x feature). Deploy
 	// history (one entry per deploy) is grouped by diid in Go from ListDeployLog.

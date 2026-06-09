@@ -56,6 +56,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features", features.IndexHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
 	r.Get("/features/{feature}/assignments", features.DeploySpecsHandler(s.renderPage))
+	r.Get("/features/{feature}/versions", features.VersionsTabHandler(s.renderPage))
+	r.Get("/features/{feature}/versions/{version}", features.VersionDetailHandler(s.renderPage))
 	r.Get("/features/{feature}/config", features.ConfigTabHandler(s.renderPage))
 	r.Get("/features/{feature}/config-compare/{key}", features.ConfigCompareHandler())
 	r.Get("/features/{feature}/envs/{tenant}/{env}", environment.FeatureContextTabHandler(s.renderPage, "status"))

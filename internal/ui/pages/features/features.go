@@ -31,14 +31,17 @@ import (
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type DetailPage struct {
-	Breadcrumbs    []breadcrumb.Crumb
-	Features       []view.FeatureNav
-	CurrentFeature *featurepkg.Feature
-	FeatureEnvs    []featureenvs.Environment
-	AssignmentEnvs []AssignmentEnvStatus
-	RecentActivity []*audit.Entry
-	ActiveTab      string
-	ConfigItems    []components.ConfigItem
+	Breadcrumbs     []breadcrumb.Crumb
+	Features        []view.FeatureNav
+	CurrentFeature  *featurepkg.Feature
+	FeatureEnvs     []featureenvs.Environment
+	AssignmentEnvs  []AssignmentEnvStatus
+	RecentActivity  []*audit.Entry
+	ActiveTab       string
+	ConfigItems     []components.ConfigItem
+	Versions        []featurepkg.FeatureVersion
+	VersionEnvs     map[string][]featureenvs.Environment
+	IsVersionDetail bool
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -475,6 +478,12 @@ func detailPage(data *DetailPage) g.Node {
 		content = assignmentSpecsContent(data)
 	case "config":
 		content = globalConfigContent(data)
+	case "versions":
+		if data.IsVersionDetail {
+			content = versionDetailContent(data)
+		} else {
+			content = versionsListContent(data)
+		}
 	default:
 		content = assignmentDetailContent(data)
 	}

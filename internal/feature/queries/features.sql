@@ -39,6 +39,37 @@ ORDER BY
 	d.created DESC
 LIMIT 1;
 
+-- name: FeatureDataByVersion :one
+SELECT
+	sqlc.embed(fd)
+FROM
+	feature_data fd
+WHERE
+	fd.name = @feature_name
+	AND fd.version = @version;
+
+-- name: FeatureVersionRows :many
+SELECT
+	fd.name,
+	fd.version,
+	fd.description,
+	fd.source,
+	MAX(fa.created) AS last_updated
+FROM
+	feature_data fd
+	LEFT JOIN feature_assignments fa ON fa.feature_name = fd.name
+		AND fa.version = fd.version
+WHERE
+	fd.name = @feature_name
+GROUP BY
+	fd.name,
+	fd.version,
+	fd.description,
+	fd.source
+ORDER BY
+	last_updated DESC NULLS LAST,
+	fd.version DESC;
+
 -- name: FeatureNames :many
 SELECT DISTINCT
 	feature_name

@@ -19,6 +19,8 @@ type Environment struct {
 	TenantName           string
 	TenantSlug           string
 	EnvironmentName      string
+	Version              string
+	AssignmentID         string
 	Enabled              bool
 	DisableReason        string
 	EnvReconcileDisabled bool
@@ -57,6 +59,8 @@ func LoadEnvironments(ctx context.Context, feature *featurepkg.Feature) []Enviro
 			TenantName:           env.tenantName,
 			TenantSlug:           env.tenantName,
 			EnvironmentName:      env.env.Name,
+			Version:              winner.Feature.Version,
+			AssignmentID:         winner.ID.String(),
 			Enabled:              !disabled,
 			EnvReconcileDisabled: !env.env.Reconcile,
 			Status:               "UNKNOWN",
