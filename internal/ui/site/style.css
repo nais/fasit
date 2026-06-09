@@ -774,6 +774,10 @@ nav .user {
 .cell-outlier {
   color: color-mix(in srgb, var(--text-heading) 55%, var(--status-warning) 45%);
 }
+.cell-consensus .source-label,
+.cell-outlier .source-label {
+  color: inherit;
+}
 
 /* Merged env-feature heading: latest deploy + problem, shown in the card header */
 .deploy-version {
