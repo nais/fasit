@@ -73,16 +73,13 @@ func ColumnConsensus(values []string) []Emphasis {
 }
 
 // ConsensusCell wraps a cell's content with the emphasis decided by
-// ColumnConsensus. Outliers get an accent plus a marker (a non-color cue so the
-// deviation is visible without relying on color alone); consensus values are
-// muted; EmphasisNone leaves the content untouched.
+// ColumnConsensus. Consensus values are muted so the column recedes; outliers
+// keep full-strength text so they stand out by contrast. EmphasisNone leaves the
+// content untouched.
 func ConsensusCell(e Emphasis, content ...g.Node) g.Node {
 	switch e {
 	case EmphasisOutlier:
-		return h.Span(append([]g.Node{
-			h.Class("cell-outlier"),
-			h.Span(h.Class("cell-outlier-marker"), g.Text("\u2022 ")),
-		}, content...)...)
+		return h.Span(append([]g.Node{h.Class("cell-outlier")}, content...)...)
 	case EmphasisConsensus:
 		return h.Span(append([]g.Node{h.Class("cell-consensus")}, content...)...)
 	default:

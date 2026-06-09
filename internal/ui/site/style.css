@@ -779,11 +779,7 @@ nav .user {
   color: var(--text-muted);
 }
 .cell-outlier {
-  color: var(--status-warning);
-  font-weight: 600;
-}
-.cell-outlier-marker {
-  color: var(--status-warning);
+  color: var(--text-heading);
 }
 
 /* Status tab */
