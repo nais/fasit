@@ -145,6 +145,7 @@ func ValidateFields(f *Feature, envKind environment.EnvironmentKind, values []Me
 			break
 		}
 	}
+	slices.Sort(missing)
 	return missing
 }
 
