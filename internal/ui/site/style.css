@@ -779,7 +779,7 @@ nav .user {
   color: var(--text-muted);
 }
 .cell-outlier {
-  color: var(--text-heading);
+  color: color-mix(in srgb, var(--text-heading) 55%, var(--status-warning) 45%);
 }
 
 /* Status tab */
