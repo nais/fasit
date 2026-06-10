@@ -116,10 +116,10 @@ func globalConfigContent(data *DetailPage) g.Node {
 
 func globalConfigurableTable(featureName string, items []components.ConfigItem) g.Node {
 	if len(items) == 0 {
-		return h.Div(h.H2(g.Text("Configuration")), h.P(h.Class("text-muted"), g.Text("No configurable values.")))
+		return h.Div(h.H2(g.Text("Global configuration")), h.P(h.Class("text-muted"), g.Text("No configurable values.")))
 	}
 	return h.Div(
-		h.H2(g.Text("Configuration")),
+		h.H2(g.Text("Global configuration")),
 		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "feature-global-config"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
