@@ -5,6 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 
+export FASIT_FAKE_NAISD=true
 air \
   --build.cmd "go build -o ./tmp/main ./cmd/fasit" \
   --build.bin "./tmp/main" \
