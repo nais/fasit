@@ -99,7 +99,7 @@ func ResourceHref(e *audit.Entry) string {
 			feature := e.ObjectID[:i]
 			key := e.ObjectID[i+1:]
 			if e.EnvironmentID != nil && e.TenantName != "" && e.EnvironmentName != "" {
-				return "/tenants/" + e.TenantName + "/envs/" + e.EnvironmentName + "/features/" + feature + "/config#config-" + key
+				return "/features/" + feature + "/envs/" + e.TenantName + "/" + e.EnvironmentName + "/config#config-" + key
 			}
 			return "/features/" + feature + "/config#config-" + key
 		}

@@ -179,7 +179,7 @@ func TestEnvConfigResourceLinkGoesToEnvConfigTab(t *testing.T) {
 	}
 
 	href := ResourceHref(e)
-	if href != "/tenants/nav/envs/dev/features/myapp/config#config-port" {
+	if href != "/features/myapp/envs/nav/dev/config#config-port" {
 		t.Errorf("href = %q, want link to env config tab with anchor", href)
 	}
 }
