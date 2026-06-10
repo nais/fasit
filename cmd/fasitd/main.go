@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/nais/fasit/internal/fasitd"
+	"github.com/nais/fasit/internal/fasitd/daemon"
 	"github.com/nais/fasit/internal/fasitd/protogen"
 	"github.com/nais/fasit/internal/helm"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -72,7 +72,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 
 	client := protogen.NewFasitdClient(conn)
 
-	opts := fasitd.AgentOptions{
+	opts := daemon.AgentOptions{
 		Tenant:      cfg.TenantName,
 		Environment: cfg.Env,
 		Version:     Version,
@@ -88,7 +88,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		opts.ReleaseInterval = 15 * time.Minute
 	}
 
-	agent := fasitd.NewAgent(client, opts, log)
+	agent := daemon.NewAgent(client, opts, log)
 
 	for {
 		if err := agent.Run(ctx); err != nil {

@@ -1,4 +1,4 @@
-package fasitd
+package daemon
 
 import (
 	"context"
