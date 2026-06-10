@@ -1014,6 +1014,10 @@ nav .user {
   color: var(--status-error);
 }
 
+.status-warning {
+  color: var(--status-warning);
+}
+
 .status-pending {
   color: var(--status-pending);
 }

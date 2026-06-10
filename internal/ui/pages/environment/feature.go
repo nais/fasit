@@ -505,13 +505,14 @@ func decisionHistoryPopover(page *FeaturePage) g.Node {
 	)
 }
 
-// decisionActionBadge renders a reconciler Action as a coloured pill: failures
-// red, blocking skips muted, in-progress pending, deploy/unchanged success.
+// decisionActionBadge renders a reconciler Action as a coloured pill:
+// precondition failures yellow, blocking skips muted, in-progress pending,
+// deploy/unchanged success.
 func decisionActionBadge(action string) g.Node {
 	cls := "text-muted"
 	switch action {
 	case "missing-deps", "missing-config", "render-error":
-		cls = "status-error"
+		cls = "status-warning"
 	case "disabled", "unhealthy":
 		cls = "status-disabled"
 	case "in-progress":

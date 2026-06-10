@@ -130,16 +130,15 @@ func instancesCell(envs []featureenvs.Environment) g.Node {
 	}
 	healthy := 0
 	worstClass := ""
+	severity := map[string]int{"status-disabled": 1, "status-pending": 2, "status-warning": 3, "status-error": 4}
 	for _, env := range envs {
 		class := components.StatusClass(env.Status)
 		if class == "status-success" {
 			healthy++
 			continue
 		}
-		if worstClass != "status-error" {
-			if class == "status-error" || worstClass == "" {
-				worstClass = class
-			}
+		if severity[class] > severity[worstClass] {
+			worstClass = class
 		}
 	}
 	count := g.Textf("%d/%d", healthy, total)
@@ -150,6 +149,8 @@ func instancesCell(envs []featureenvs.Environment) g.Node {
 	switch worstClass {
 	case "status-error":
 		icon = "\u2717"
+	case "status-warning":
+		icon = "\u26a0"
 	case "status-pending":
 		icon = "\u23f3"
 	default:
