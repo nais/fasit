@@ -163,9 +163,9 @@ func (h *HttpHandler) GetTenants(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(tenants); err != nil {
-		http.Error(w, "unable to convert data to JSON", http.StatusInternalServerError)
-		return
+		h.log.With("err", err).Error("encode GetTenants response")
 	}
 }
 
