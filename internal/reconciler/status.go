@@ -60,35 +60,50 @@ func NormalizeStatus(s string) string {
 // Rung 2 sits above rung 3 deliberately: an in-flight deploy is shown until it
 // terminates even if the latest desired state no longer renders; once it
 // terminates, rung 3 surfaces the blocker.
-func deriveState(deploy feature.DeployStatus, action Action) string {
+//
+// The returned stateSource names which log the displayed state came from, so
+// callers can timestamp the status with the event that actually produced it:
+// the decision time for decision-owned states, the deploy time for deploy-owned
+// states. Without this, re-enabling a feature (a fresh decision, no new deploy)
+// would make a long-standing DEPLOYED status look like it just deployed.
+func deriveState(deploy feature.DeployStatus, action Action) (string, stateSource) {
 	switch {
 	case action == ActionSkipDisabled:
-		return "disabled"
+		return "disabled", sourceDecision
 	case deploy.IsInProgress():
-		return string(deploy) // sent / installing
+		return string(deploy), sourceDeploy // sent / installing
 	case action == ActionSkipUnhealthy:
-		return "unhealthy"
+		return "unhealthy", sourceDecision
 	case action == ActionFailMissingDeps:
-		return "missing-deps"
+		return "missing-deps", sourceDecision
 	case action == ActionFailMissingConfig:
-		return "missing-config"
+		return "missing-config", sourceDecision
 	case action == ActionFailRender:
-		return "render-error"
+		return "render-error", sourceDecision
 	case deploy == feature.DeployStatusDeployed, deploy == feature.DeployStatusFailed:
-		return string(deploy) // deployed / failed
+		return string(deploy), sourceDeploy // deployed / failed
 	}
 
 	// No deploy has ever shipped for this feature×environment; the decision is
-	// the only signal.
+	// the only signal, so it also owns the timestamp.
 	switch action {
 	case ActionSkipInProgress, ActionDeploy:
-		return "pending"
+		return "pending", sourceDecision
 	case ActionSkipUnchanged:
-		return "deployed"
+		return "deployed", sourceDecision
 	default:
-		return "unknown"
+		return "unknown", sourceDecision
 	}
 }
+
+// stateSource identifies which append-only log a derived state (and thus its
+// timestamp) came from.
+type stateSource int
+
+const (
+	sourceDecision stateSource = iota
+	sourceDeploy
+)
 
 // decisionSignal and deploySignal are the per-environment inputs to
 // joinReconcileSignals, decoupled from the generated row types so the
@@ -190,8 +205,9 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 	return "", "", nil
 }
 
-// joinReconcileSignals joins the three raw per-environment signals by
-// environment and derives the effective reconcile status for each.
+// joinReconcileSignals joins the two raw per-environment signals (latest
+// decision, latest deploy) by environment and derives the effective reconcile
+// status for each.
 func joinReconcileSignals(
 	featureAssignmentID uuid.UUID,
 	decisions []decisionSignal,
@@ -228,8 +244,11 @@ func joinReconcileSignals(
 		dec := decByEnv[envID]
 		dep := depByEnv[envID]
 
-		state := deriveState(feature.DeployStatus(dep.status), dec.action)
-		lastModified := latestTime(dec.created, dep.created)
+		state, src := deriveState(feature.DeployStatus(dep.status), dec.action)
+		lastModified := dec.created
+		if src == sourceDeploy {
+			lastModified = dep.created
+		}
 		statuses[i] = &FeatureReconcileStatus{
 			State:               FeatureReconcileStatusState(NormalizeStatus(state)),
 			Message:             dec.message,
@@ -241,14 +260,4 @@ func joinReconcileSignals(
 	}
 
 	return statuses
-}
-
-func latestTime(ts ...time.Time) time.Time {
-	var latest time.Time
-	for _, t := range ts {
-		if t.After(latest) {
-			latest = t
-		}
-	}
-	return latest
 }
