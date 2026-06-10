@@ -53,72 +53,54 @@ func (q *Queries) GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFe
 	return i, err
 }
 
-const listTenantEnvironments = `-- name: ListTenantEnvironments :many
+const listTenantsWithEnvironments = `-- name: ListTenantsWithEnvironments :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	t.id, t.name, t.description, t.created, t.last_modified, t.ci,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels,
+	ev.value AS gcp_project_id
 FROM
-	environments
-WHERE
-	tenant_id = $1
-ORDER BY
-	name
+	tenants t
+	JOIN environments e ON e.tenant_id = t.id
+	LEFT JOIN environment_values ev ON ev.environment_id = e.id
+		AND ev.key = 'project_id'
+		AND ev.secret = FALSE
+	ORDER BY
+		t.name,
+		e.name
 `
 
-func (q *Queries) ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
-	rows, err := q.db.Query(ctx, listTenantEnvironments, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Environment{}
-	for rows.Next() {
-		var i Environment
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Name,
-			&i.Kind,
-			&i.Description,
-			&i.Created,
-			&i.LastModified,
-			&i.Reconcile,
-			&i.Labels,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type ListTenantsWithEnvironmentsRow struct {
+	Tenant       Tenant
+	Environment  Environment
+	GcpProjectID []byte
 }
 
-const listTenants = `-- name: ListTenants :many
-SELECT
-	id, name, description, created, last_modified, ci
-FROM
-	tenants
-ORDER BY
-	name
-`
-
-func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
-	rows, err := q.db.Query(ctx, listTenants)
+func (q *Queries) ListTenantsWithEnvironments(ctx context.Context) ([]ListTenantsWithEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, listTenantsWithEnvironments)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Tenant{}
+	items := []ListTenantsWithEnvironmentsRow{}
 	for rows.Next() {
-		var i Tenant
+		var i ListTenantsWithEnvironmentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Created,
-			&i.LastModified,
-			&i.Ci,
+			&i.Tenant.ID,
+			&i.Tenant.Name,
+			&i.Tenant.Description,
+			&i.Tenant.Created,
+			&i.Tenant.LastModified,
+			&i.Tenant.Ci,
+			&i.Environment.ID,
+			&i.Environment.TenantID,
+			&i.Environment.Name,
+			&i.Environment.Kind,
+			&i.Environment.Description,
+			&i.Environment.Created,
+			&i.Environment.LastModified,
+			&i.Environment.Reconcile,
+			&i.Environment.Labels,
+			&i.GcpProjectID,
 		); err != nil {
 			return nil, err
 		}

@@ -131,36 +131,42 @@ func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.R
 }
 
 func (h *HttpHandler) GetTenants(w http.ResponseWriter, req *http.Request) {
-	rows, err := h.querier.ListTenants(req.Context())
+	rows, err := h.querier.ListTenantsWithEnvironments(req.Context())
 	if err != nil {
 		http.Error(w, "unable to list tenants", http.StatusInternalServerError)
 		return
 	}
 
-	tenants := make([]Tenant, len(rows))
-	for i, row := range rows {
-		envs, err := h.querier.ListTenantEnvironments(req.Context(), row.ID)
-		if err != nil {
-			http.Error(w, "unable to list tenant environments", http.StatusInternalServerError)
-			return
+	var tenants []Tenant
+	tenantIndex := make(map[uuid.UUID]int)
+	for _, row := range rows {
+		var gcpProjectID *string
+		if len(row.GcpProjectID) > 0 {
+			var value string
+			if err := json.Unmarshal(row.GcpProjectID, &value); err != nil {
+				http.Error(w, "unable to decode GCP project ID", http.StatusInternalServerError)
+				return
+			}
+			gcpProjectID = &value
 		}
 
-		tenants[i] = Tenant{
-			ID:   row.ID,
-			Name: row.Name,
-			Environments: func(envs []sqlgen.Environment) []Environment {
-				ret := make([]Environment, len(envs))
-				for i, e := range envs {
-					ret[i] = Environment{
-						ID:     e.ID,
-						Name:   e.Name,
-						Kind:   e.Kind,
-						Labels: e.Labels,
-					}
-				}
-				return ret
-			}(envs),
+		i, ok := tenantIndex[row.Tenant.ID]
+		if !ok {
+			i = len(tenants)
+			tenantIndex[row.Tenant.ID] = i
+			tenants = append(tenants, Tenant{
+				ID:   row.Tenant.ID,
+				Name: row.Tenant.Name,
+			})
 		}
+
+		tenants[i].Environments = append(tenants[i].Environments, Environment{
+			ID:           row.Environment.ID,
+			Name:         row.Environment.Name,
+			Kind:         row.Environment.Kind,
+			Labels:       row.Environment.Labels,
+			GcpProjectID: gcpProjectID,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
