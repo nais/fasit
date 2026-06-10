@@ -24,6 +24,13 @@ import (
 
 var ErrFeatureNotFound = fmt.Errorf("feature not found")
 
+type ChartDownloaderFunc func(chartURL, version string) (*featurepkg.Feature, error)
+
+// ChartDownloader is a function that downloads a chart and returns a Feature model. It can be overridden for testing purposes.
+var ChartDownloader = func(chartURL, version string) (*featurepkg.Feature, error) {
+	return featurepkg.FromChart(chartURL, version)
+}
+
 func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) {
 	feat, err := ChartDownloader(in.Chart, in.Version)
 	if err != nil {
