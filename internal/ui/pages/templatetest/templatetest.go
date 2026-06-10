@@ -222,6 +222,7 @@ func templateReference(hasFeature bool) g.Node {
 		{".Env.name", ""},
 		{".Env.labels", ""},
 		{".Tenant.Name", ""},
+		{".Fasit.IAPAudience", ""},
 		{".Envs", ""},
 		{".Kind", ""},
 		{".Management", ""},

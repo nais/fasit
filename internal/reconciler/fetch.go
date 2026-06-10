@@ -282,6 +282,9 @@ func (r *Reconciler) buildEnvValues(ctx context.Context, envRows []reconcilersql
 				Tenant: featurepkg.ComputedTenant{
 					Name: tenantNames[tenantID],
 				},
+				Fasit: featurepkg.ComputedFasit{
+					IAPAudience: featurepkg.IAPAudience(),
+				},
 			}
 
 			// Env is the target environment's own values.

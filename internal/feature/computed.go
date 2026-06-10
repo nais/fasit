@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"text/template"
 
 	"github.com/nais/fasit/internal/environment"
@@ -25,11 +26,37 @@ type ComputedTenant struct {
 	Name string
 }
 
+// ComputedFasit holds information about the Fasit instance managing the feature.
+type ComputedFasit struct {
+	// IAPAudience is the Identity-Aware Proxy audience of this Fasit instance,
+	// e.g. so a feature like fasitd can authenticate calls back to Fasit.
+	IAPAudience string
+}
+
+// fasitIAPAudience is the process-wide Fasit IAP audience exposed to feature
+// templates via .Fasit.IAPAudience. It is set once at startup with
+// SetIAPAudience before any rendering happens.
+var fasitIAPAudience atomic.Value // string
+
+// InitializeTemplateVars records the process-wide Fasit IAP audience surfaced to
+// feature templates as .Fasit.IAPAudience.
+func InitializeTemplateVars(aud string) {
+	fasitIAPAudience.Store(aud)
+}
+
+// IAPAudience returns the process-wide Fasit IAP audience, or "" if unset.
+func IAPAudience() string {
+	aud, _ := fasitIAPAudience.Load().(string)
+	return aud
+}
+
 type ComputedValues struct {
 	// Kind is the kind of environment the feature is deployed to.
 	Kind environment.EnvironmentKind
 	// Tenant is information about the tenant that owns the cluster the feature is deployed to.
 	Tenant ComputedTenant
+	// Fasit is information about the Fasit instance managing the feature.
+	Fasit ComputedFasit
 	// Management is information about the management cluster for the tenant.
 	Management map[string]any
 	// Env contains information about the cluster the feature is deployed to.

@@ -18,6 +18,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/fakeagent"
 	"github.com/nais/fasit/internal/fasitd"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
@@ -76,6 +77,8 @@ func Run(ctx context.Context) error {
 	if err := database.RegisterPoolMetrics(meter, pool); err != nil {
 		return fmt.Errorf("error registering pool metrics: %w", err)
 	}
+
+	feature.InitializeTemplateVars(cfg.IAPAudience)
 
 	loadContext, err := contextloader.NewLoaderFunc(pool, log)
 	if err != nil {

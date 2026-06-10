@@ -241,6 +241,7 @@ func cloneComputedValues(mv *ComputedValues) *ComputedValues {
 	clone := &ComputedValues{
 		Kind:   mv.Kind,
 		Tenant: mv.Tenant,
+		Fasit:  mv.Fasit,
 	}
 	clone.Env = cloneStringAnyMap(mv.Env)
 	clone.Management = cloneStringAnyMap(mv.Management)
@@ -381,6 +382,9 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 		Kind: env.Kind,
 		Tenant: ComputedTenant{
 			Name: tenant.Name,
+		},
+		Fasit: ComputedFasit{
+			IAPAudience: IAPAudience(),
 		},
 	}
 
