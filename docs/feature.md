@@ -70,8 +70,8 @@ values:
       type: string
       # secret defines that the value should be stored as a secret in Fasit.
       secret: true
-      # required defines if the field is required or not.
-      required: true
+    # required defines if the field is required or not.
+    required: true
   cluster:
     displayName: Cluster name
     # computed defines a value that will be computed by Fasit. Usually this utilizes values stored in Fasit by Terraform.
