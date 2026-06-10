@@ -52,3 +52,80 @@ func (q *Queries) GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFe
 	)
 	return i, err
 }
+
+const listTenantEnvironments = `-- name: ListTenantEnvironments :many
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+FROM
+	environments
+WHERE
+	tenant_id = $1
+ORDER BY
+	name
+`
+
+func (q *Queries) ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
+	rows, err := q.db.Query(ctx, listTenantEnvironments, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Environment{}
+	for rows.Next() {
+		var i Environment
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Kind,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Reconcile,
+			&i.Labels,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTenants = `-- name: ListTenants :many
+SELECT
+	id, name, description, created, last_modified, ci
+FROM
+	tenants
+ORDER BY
+	name
+`
+
+func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
+	rows, err := q.db.Query(ctx, listTenants)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tenant{}
+	for rows.Next() {
+		var i Tenant
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Ci,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

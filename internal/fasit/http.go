@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/api"
 	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/server"
 	"go.opentelemetry.io/otel/metric"
 )
 
 func newHTTPServer(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, cfg *Config, meter metric.Meter, log *slog.Logger) (*http.Server, error) {
-	router, err := server.SetupRouter(ctx, loadContext, pool, cfg.IAPAudience, cfg.InsecureSkipProxy, meter, log, Version)
+	router, err := api.SetupRouter(ctx, loadContext, pool, cfg.IAPAudience, cfg.InsecureSkipProxy, meter, log, Version)
 	if err != nil {
 		return nil, fmt.Errorf("setting up router: %w", err)
 	}

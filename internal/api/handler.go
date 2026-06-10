@@ -130,6 +130,45 @@ func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.R
 	reconciler.TriggerReconcile()
 }
 
+func (h *HttpHandler) GetTenants(w http.ResponseWriter, req *http.Request) {
+	rows, err := h.querier.ListTenants(req.Context())
+	if err != nil {
+		http.Error(w, "unable to list tenants", http.StatusInternalServerError)
+		return
+	}
+
+	tenants := make([]Tenant, len(rows))
+	for i, row := range rows {
+		envs, err := h.querier.ListTenantEnvironments(req.Context(), row.ID)
+		if err != nil {
+			http.Error(w, "unable to list tenant environments", http.StatusInternalServerError)
+			return
+		}
+
+		tenants[i] = Tenant{
+			ID:   row.ID,
+			Name: row.Name,
+			Environments: func(envs []sqlgen.Environment) []Environment {
+				ret := make([]Environment, len(envs))
+				for i, e := range envs {
+					ret[i] = Environment{
+						ID:     e.ID,
+						Name:   e.Name,
+						Kind:   e.Kind,
+						Labels: e.Labels,
+					}
+				}
+				return ret
+			}(envs),
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(tenants); err != nil {
+		http.Error(w, "unable to convert data to JSON", http.StatusInternalServerError)
+		return
+	}
+}
+
 func (h *HttpHandler) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {
 	if h.AllowAll {
 		return "mockassignment", true

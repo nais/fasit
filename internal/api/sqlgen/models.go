@@ -9,6 +9,18 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
+type Environment struct {
+	ID           uuid.UUID
+	TenantID     uuid.UUID
+	Name         string
+	Kind         types.EnvironmentKind
+	Description  *string
+	Created      time.Time
+	LastModified time.Time
+	Reconcile    bool
+	Labels       types.EnvironmentLabels
+}
+
 type FeatureAssignment struct {
 	ID          uuid.UUID
 	FeatureName string
@@ -32,4 +44,13 @@ type FeatureDatum struct {
 	DefaultValues []byte
 	Timeout       int64
 	TplDetails    []byte
+}
+
+type Tenant struct {
+	ID           uuid.UUID
+	Name         string
+	Description  *string
+	Created      time.Time
+	LastModified time.Time
+	Ci           bool
 }
