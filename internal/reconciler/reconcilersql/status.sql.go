@@ -10,6 +10,103 @@ import (
 	"github.com/google/uuid"
 )
 
+const listAllDecisionStatuses = `-- name: ListAllDecisionStatuses :many
+SELECT
+	feature_assignment_id,
+	environment_id,
+	action,
+	message,
+	created
+FROM
+	decision_status
+ORDER BY
+	feature_assignment_id ASC,
+	environment_id ASC
+`
+
+type ListAllDecisionStatusesRow struct {
+	FeatureAssignmentID uuid.UUID
+	EnvironmentID       uuid.UUID
+	Action              string
+	Message             string
+	Created             time.Time
+}
+
+// Latest reconciler decision per environment for every feature assignment.
+// Grouped by feature_assignment_id in Go (AllReconcileStatuses) to avoid a
+// per-assignment query fan-out.
+func (q *Queries) ListAllDecisionStatuses(ctx context.Context) ([]ListAllDecisionStatusesRow, error) {
+	rows, err := q.db.Query(ctx, listAllDecisionStatuses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllDecisionStatusesRow{}
+	for rows.Next() {
+		var i ListAllDecisionStatusesRow
+		if err := rows.Scan(
+			&i.FeatureAssignmentID,
+			&i.EnvironmentID,
+			&i.Action,
+			&i.Message,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllDeployStatuses = `-- name: ListAllDeployStatuses :many
+SELECT
+	feature_assignment_id,
+	environment_id,
+	status,
+	created
+FROM
+	deploy_status
+ORDER BY
+	feature_assignment_id ASC,
+	environment_id ASC
+`
+
+type ListAllDeployStatusesRow struct {
+	FeatureAssignmentID uuid.UUID
+	EnvironmentID       uuid.UUID
+	Status              string
+	Created             time.Time
+}
+
+// Latest deploy rollout state per environment for every feature assignment.
+func (q *Queries) ListAllDeployStatuses(ctx context.Context) ([]ListAllDeployStatusesRow, error) {
+	rows, err := q.db.Query(ctx, listAllDeployStatuses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllDeployStatusesRow{}
+	for rows.Next() {
+		var i ListAllDeployStatusesRow
+		if err := rows.Scan(
+			&i.FeatureAssignmentID,
+			&i.EnvironmentID,
+			&i.Status,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDecisionLog = `-- name: ListDecisionLog :many
 SELECT
 	id,
@@ -151,47 +248,6 @@ func (q *Queries) ListDeployStatuses(ctx context.Context, featureAssignmentID uu
 	for rows.Next() {
 		var i ListDeployStatusesRow
 		if err := rows.Scan(&i.EnvironmentID, &i.Status, &i.Created); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listDisabledEnvironments = `-- name: ListDisabledEnvironments :many
-SELECT
-	e.id AS environment_id,
-	df.disabled_at
-FROM
-	environments e
-	JOIN disabled_features df ON df.environment_id = e.id
-	JOIN feature_assignments d ON df.feature = d.feature_name
-WHERE
-	e.labels @> d.target
-	AND d.id = $1::UUID
-ORDER BY
-	environment_id ASC
-`
-
-type ListDisabledEnvironmentsRow struct {
-	EnvironmentID uuid.UUID
-	DisabledAt    time.Time
-}
-
-// Environments the assignment targets where the feature is disabled.
-func (q *Queries) ListDisabledEnvironments(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDisabledEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, listDisabledEnvironments, featureAssignmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListDisabledEnvironmentsRow{}
-	for rows.Next() {
-		var i ListDisabledEnvironmentsRow
-		if err := rows.Scan(&i.EnvironmentID, &i.DisabledAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

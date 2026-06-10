@@ -232,6 +232,7 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 			http.Error(w, "Failed to toggle feature state: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		reconciler.TriggerReconcile()
 		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
 	}
 }

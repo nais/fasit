@@ -27,19 +27,33 @@ WHERE
 ORDER BY
 	environment_id ASC;
 
--- name: ListDisabledEnvironments :many
--- Environments the assignment targets where the feature is disabled.
+-- name: ListAllDecisionStatuses :many
+-- Latest reconciler decision per environment for every feature assignment.
+-- Grouped by feature_assignment_id in Go (AllReconcileStatuses) to avoid a
+-- per-assignment query fan-out.
 SELECT
-	e.id AS environment_id,
-	df.disabled_at
+	feature_assignment_id,
+	environment_id,
+	action,
+	message,
+	created
 FROM
-	environments e
-	JOIN disabled_features df ON df.environment_id = e.id
-	JOIN feature_assignments d ON df.feature = d.feature_name
-WHERE
-	e.labels @> d.target
-	AND d.id = @feature_assignment_id::UUID
+	decision_status
 ORDER BY
+	feature_assignment_id ASC,
+	environment_id ASC;
+
+-- name: ListAllDeployStatuses :many
+-- Latest deploy rollout state per environment for every feature assignment.
+SELECT
+	feature_assignment_id,
+	environment_id,
+	status,
+	created
+FROM
+	deploy_status
+ORDER BY
+	feature_assignment_id ASC,
 	environment_id ASC;
 
 -- name: ListRecentDeploys :many

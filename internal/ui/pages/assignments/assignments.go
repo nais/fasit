@@ -25,9 +25,15 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
+		statusesByID, err := reconciler.AllReconcileStatuses(r.Context())
+		if err != nil {
+			http.Error(w, "Failed to load assignment statuses", http.StatusInternalServerError)
+			return
+		}
+
 		rows := make([]Summary, 0, len(fas))
 		for _, fa := range fas {
-			statuses, _ := reconciler.ReconcileStatuses(r.Context(), fa.ID)
+			statuses := statusesByID[fa.ID]
 
 			states := make(model.FeatureReconcileStatusStates, len(statuses))
 			for i, s := range statuses {

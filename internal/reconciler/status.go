@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
-	"github.com/nais/fasit/internal/reconciler/reconcilersql"
 )
 
 // FeatureReconcileStatus is the effective reconcile status of a feature
@@ -45,18 +44,25 @@ func NormalizeStatus(s string) string {
 // of the last sync that was actually shipped. deriveState picks between them with
 // a fixed precedence ladder rather than trying to match a decision to a deploy:
 //
-//  1. disabled-feature membership           -> DISABLED
+//  1. reconciler skipped because disabled   -> DISABLED
 //  2. deploy lifecycle in progress          -> SENT / INSTALLING   (a live sync; let it finish)
 //  3. reconciler currently blocked          -> UNHEALTHY / MISSING-DEPS / MISSING-CONFIG / RENDER-ERROR (desired state cannot proceed)
 //  4. terminal deploy outcome exists        -> DEPLOYED / FAILED    (the deploy log is the truth)
 //  5. never produced a deploy yet           -> derive from the decision alone
 //
+// Disabled (rung 1) is read from the latest decision (ActionSkipDisabled) rather
+// than a separate disabled-features lookup: the reconciler only decides for the
+// winning assignment per environment, so keying off the decision keeps the
+// signal correctly scoped to that winner. Disabling triggers a reconcile, so the
+// decision log reflects it promptly. Rung 1 sits above the terminal deploy
+// outcome (rung 4) so a disable surfaces over a prior successful deploy.
+//
 // Rung 2 sits above rung 3 deliberately: an in-flight deploy is shown until it
 // terminates even if the latest desired state no longer renders; once it
 // terminates, rung 3 surfaces the blocker.
-func deriveState(disabled bool, deploy feature.DeployStatus, action Action) string {
+func deriveState(deploy feature.DeployStatus, action Action) string {
 	switch {
-	case disabled:
+	case action == ActionSkipDisabled:
 		return "disabled"
 	case deploy.IsInProgress():
 		return string(deploy) // sent / installing
@@ -75,8 +81,6 @@ func deriveState(disabled bool, deploy feature.DeployStatus, action Action) stri
 	// No deploy has ever shipped for this feature×environment; the decision is
 	// the only signal.
 	switch action {
-	case ActionSkipDisabled:
-		return "disabled"
 	case ActionSkipInProgress, ActionDeploy:
 		return "pending"
 	case ActionSkipUnchanged:
@@ -86,10 +90,25 @@ func deriveState(disabled bool, deploy feature.DeployStatus, action Action) stri
 	}
 }
 
+// decisionSignal and deploySignal are the per-environment inputs to
+// joinReconcileSignals, decoupled from the generated row types so the
+// single-assignment and batch read paths can share the join logic.
+type decisionSignal struct {
+	envID   uuid.UUID
+	action  Action
+	message string
+	created time.Time
+}
+
+type deploySignal struct {
+	envID   uuid.UUID
+	status  string
+	created time.Time
+}
+
 // ReconcileStatuses returns the effective reconcile status per environment for a
-// feature assignment. It reads three simple per-table signals (latest decision,
-// deploy rollout state, disabled-feature membership) and joins them by
-// environment in Go.
+// feature assignment. It reads the latest decision and deploy rollout state per
+// environment and joins them in Go.
 func ReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*FeatureReconcileStatus, error) {
 	q := querier(ctx)
 	decisions, err := q.ListDecisionStatuses(ctx, featureAssignmentID)
@@ -100,11 +119,55 @@ func ReconcileStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]*F
 	if err != nil {
 		return nil, fmt.Errorf("list deploy statuses: %w", err)
 	}
-	disabled, err := q.ListDisabledEnvironments(ctx, featureAssignmentID)
-	if err != nil {
-		return nil, fmt.Errorf("list disabled environments: %w", err)
+
+	ds := make([]decisionSignal, len(decisions))
+	for i, d := range decisions {
+		ds[i] = decisionSignal{envID: d.EnvironmentID, action: Action(d.Action), message: d.Message, created: d.Created}
 	}
-	return joinReconcileSignals(featureAssignmentID, decisions, deploys, disabled), nil
+	dp := make([]deploySignal, len(deploys))
+	for i, d := range deploys {
+		dp[i] = deploySignal{envID: d.EnvironmentID, status: d.Status, created: d.Created}
+	}
+	return joinReconcileSignals(featureAssignmentID, ds, dp), nil
+}
+
+// AllReconcileStatuses returns the effective reconcile status per environment for
+// every feature assignment, keyed by feature assignment id. It reads the
+// decision and deploy state for all assignments in two queries and joins them in
+// Go, avoiding the per-assignment query fan-out of calling ReconcileStatuses in
+// a loop.
+func AllReconcileStatuses(ctx context.Context) (map[uuid.UUID][]*FeatureReconcileStatus, error) {
+	q := querier(ctx)
+	decisions, err := q.ListAllDecisionStatuses(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list all decision statuses: %w", err)
+	}
+	deploys, err := q.ListAllDeployStatuses(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list all deploy statuses: %w", err)
+	}
+
+	decByFA := make(map[uuid.UUID][]decisionSignal)
+	for _, d := range decisions {
+		decByFA[d.FeatureAssignmentID] = append(decByFA[d.FeatureAssignmentID],
+			decisionSignal{envID: d.EnvironmentID, action: Action(d.Action), message: d.Message, created: d.Created})
+	}
+	depByFA := make(map[uuid.UUID][]deploySignal)
+	for _, d := range deploys {
+		depByFA[d.FeatureAssignmentID] = append(depByFA[d.FeatureAssignmentID],
+			deploySignal{envID: d.EnvironmentID, status: d.Status, created: d.Created})
+	}
+
+	out := make(map[uuid.UUID][]*FeatureReconcileStatus, len(decByFA))
+	for faID, ds := range decByFA {
+		out[faID] = joinReconcileSignals(faID, ds, depByFA[faID])
+	}
+	for faID, dp := range depByFA {
+		if _, ok := out[faID]; !ok {
+			out[faID] = joinReconcileSignals(faID, nil, dp)
+		}
+	}
+	return out, nil
 }
 
 // FeatureStatusForEnvironment returns the reconcile status of the winning
@@ -131,21 +194,16 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 // environment and derives the effective reconcile status for each.
 func joinReconcileSignals(
 	featureAssignmentID uuid.UUID,
-	decisions []reconcilersql.ListDecisionStatusesRow,
-	deploys []reconcilersql.ListDeployStatusesRow,
-	disabled []reconcilersql.ListDisabledEnvironmentsRow,
+	decisions []decisionSignal,
+	deploys []deploySignal,
 ) []*FeatureReconcileStatus {
-	decByEnv := make(map[uuid.UUID]reconcilersql.ListDecisionStatusesRow, len(decisions))
+	decByEnv := make(map[uuid.UUID]decisionSignal, len(decisions))
 	for _, d := range decisions {
-		decByEnv[d.EnvironmentID] = d
+		decByEnv[d.envID] = d
 	}
-	depByEnv := make(map[uuid.UUID]reconcilersql.ListDeployStatusesRow, len(deploys))
+	depByEnv := make(map[uuid.UUID]deploySignal, len(deploys))
 	for _, d := range deploys {
-		depByEnv[d.EnvironmentID] = d
-	}
-	disabledAtByEnv := make(map[uuid.UUID]time.Time, len(disabled))
-	for _, d := range disabled {
-		disabledAtByEnv[d.EnvironmentID] = d.DisabledAt
+		depByEnv[d.envID] = d
 	}
 
 	envIDs := make([]uuid.UUID, 0, len(decByEnv))
@@ -163,22 +221,18 @@ func joinReconcileSignals(
 	for id := range depByEnv {
 		addEnv(id)
 	}
-	for id := range disabledAtByEnv {
-		addEnv(id)
-	}
 	sort.Slice(envIDs, func(i, j int) bool { return envIDs[i].String() < envIDs[j].String() })
 
 	statuses := make([]*FeatureReconcileStatus, len(envIDs))
 	for i, envID := range envIDs {
 		dec := decByEnv[envID]
 		dep := depByEnv[envID]
-		disabledAt, isDisabled := disabledAtByEnv[envID]
 
-		state := deriveState(isDisabled, feature.DeployStatus(dep.Status), Action(dec.Action))
-		lastModified := latestTime(dec.Created, dep.Created, disabledAt)
+		state := deriveState(feature.DeployStatus(dep.status), dec.action)
+		lastModified := latestTime(dec.created, dep.created)
 		statuses[i] = &FeatureReconcileStatus{
 			State:               FeatureReconcileStatusState(NormalizeStatus(state)),
-			Message:             dec.Message,
+			Message:             dec.message,
 			LastModified:        lastModified,
 			Created:             lastModified,
 			FeatureAssignmentID: featureAssignmentID,

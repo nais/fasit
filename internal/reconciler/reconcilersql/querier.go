@@ -14,6 +14,12 @@ type Querier interface {
 	AppendDeploys(ctx context.Context, arg []AppendDeploysParams) (int64, error)
 	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	LatestDeployByDIID(ctx context.Context, diid uuid.UUID) (LatestDeployByDIIDRow, error)
+	// Latest reconciler decision per environment for every feature assignment.
+	// Grouped by feature_assignment_id in Go (AllReconcileStatuses) to avoid a
+	// per-assignment query fan-out.
+	ListAllDecisionStatuses(ctx context.Context) ([]ListAllDecisionStatusesRow, error)
+	// Latest deploy rollout state per environment for every feature assignment.
+	ListAllDeployStatuses(ctx context.Context) ([]ListAllDeployStatusesRow, error)
 	ListAllEnvConfigs(ctx context.Context) ([]ListAllEnvConfigsRow, error)
 	ListAllEnvironmentValues(ctx context.Context) ([]ListAllEnvironmentValuesRow, error)
 	ListAllGlobalConfigs(ctx context.Context) ([]ListAllGlobalConfigsRow, error)
@@ -28,8 +34,6 @@ type Querier interface {
 	// Latest deploy rollout state per environment for a feature assignment.
 	ListDeployStatuses(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDeployStatusesRow, error)
 	ListDeployedFeatures(ctx context.Context) ([]ListDeployedFeaturesRow, error)
-	// Environments the assignment targets where the feature is disabled.
-	ListDisabledEnvironments(ctx context.Context, featureAssignmentID uuid.UUID) ([]ListDisabledEnvironmentsRow, error)
 	ListDisabledFeatures(ctx context.Context) ([]ListDisabledFeaturesRow, error)
 	ListHealthStatuses(ctx context.Context) ([]HealthStatus, error)
 	ListLatestDecisions(ctx context.Context) ([]ListLatestDecisionsRow, error)
