@@ -20,7 +20,6 @@ type Querier interface {
 	ListFeatureAssignmentsByFeature(ctx context.Context, featureName string) ([]ListFeatureAssignmentsByFeatureRow, error)
 	ListFeatureAssignmentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureAssignmentsForEnvironmentRow, error)
 	ListFeatureAssignmentsForFeatureInEnvironment(ctx context.Context, arg ListFeatureAssignmentsForFeatureInEnvironmentParams) ([]ListFeatureAssignmentsForFeatureInEnvironmentRow, error)
-	ListRecentFeatureAssignments(ctx context.Context) ([]ListRecentFeatureAssignmentsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

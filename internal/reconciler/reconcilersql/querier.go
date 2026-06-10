@@ -35,6 +35,9 @@ type Querier interface {
 	ListLatestDecisions(ctx context.Context) ([]ListLatestDecisionsRow, error)
 	ListLatestDeploys(ctx context.Context) ([]ListLatestDeploysRow, error)
 	ListLatestFeatureAssignments(ctx context.Context) ([]ListLatestFeatureAssignmentsRow, error)
+	// Recent deploy log rows, newest first. Per-instruction deduplication and
+	// aggregation by feature version happen in Go (ListRecentDeploys).
+	ListRecentDeploys(ctx context.Context, lim int32) ([]ListRecentDeploysRow, error)
 	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error
 	TimeoutPendingDeploys(ctx context.Context) error

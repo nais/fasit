@@ -103,24 +103,6 @@ func ListAll(ctx context.Context) ([]*FeatureAssignment, error) {
 	return ret, nil
 }
 
-func ListRecent(ctx context.Context) ([]*FeatureAssignment, error) {
-	rows, err := querier(ctx).ListRecentFeatureAssignments(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*FeatureAssignment, len(rows))
-	for i, row := range rows {
-		assignment, err := featureAssignmentFromSQL(row.FeatureAssignment, row.FeatureDatum)
-		if err != nil {
-			return nil, fmt.Errorf("make feature assignment: %w", err)
-		}
-		ret[i] = assignment
-	}
-
-	return ret, nil
-}
-
 func ListByFeature(ctx context.Context, featureName string) ([]*FeatureAssignment, error) {
 	rows, err := querier(ctx).ListFeatureAssignmentsByFeature(ctx, featureName)
 	if err != nil {

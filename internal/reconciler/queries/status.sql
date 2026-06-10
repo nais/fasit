@@ -42,6 +42,23 @@ WHERE
 ORDER BY
 	environment_id ASC;
 
+-- name: ListRecentDeploys :many
+-- Recent deploy log rows, newest first. Per-instruction deduplication and
+-- aggregation by feature version happen in Go (ListRecentDeploys).
+SELECT
+	diid,
+	feature_name,
+	feature_version,
+	status,
+	feature_assignment_id,
+	created
+FROM
+	deploy_log
+ORDER BY
+	created DESC,
+	id DESC
+LIMIT @lim::INT;
+
 -- name: ListDecisionLog :many
 -- Decision history for a feature in an environment, newest first. Rows exist
 -- only for cycles where the decision changed.

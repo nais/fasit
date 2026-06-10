@@ -16,7 +16,6 @@ import (
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
-	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -46,41 +45,25 @@ type DetailPage struct {
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fas, _ := featureassignment.ListRecent(r.Context())
+		deploys, _ := reconciler.ListRecentDeploys(r.Context(), 10)
 		audits, _ := audit.ListRecent(r.Context(), 200)
 		assignmentActors := assignmentActorsByID(audits)
 
-		var assignmentRows []assignmentRow
-		for _, fa := range fas {
-			statuses, err := reconciler.ReconcileStatuses(r.Context(), fa.ID)
-			if err != nil || len(statuses) == 0 {
-				assignmentRows = append(assignmentRows, assignmentRow{
-					FeatureName:  fa.Feature.Name,
-					Version:      fa.Feature.Version,
-					Status:       "UNKNOWN",
-					Created:      fa.Created,
-					AssignmentID: fa.ID.String(),
-					Actor:        assignmentActors[fa.ID.String()],
-				})
-			} else {
-				for _, s := range statuses {
-					assignmentRows = append(assignmentRows, assignmentRow{
-						FeatureName:  fa.Feature.Name,
-						Version:      fa.Feature.Version,
-						Status:       string(s.State),
-						Created:      fa.Created,
-						AssignmentID: fa.ID.String(),
-						Actor:        assignmentActors[fa.ID.String()],
-					})
-				}
-			}
+		rows := make([]deployRow, 0, len(deploys))
+		for _, d := range deploys {
+			rows = append(rows, deployRow{
+				FeatureName: d.FeatureName,
+				Version:     d.FeatureVersion,
+				Total:       d.Total,
+				Deployed:    d.Deployed,
+				Failed:      d.Failed,
+				Pending:     d.Pending,
+				When:        d.LastDeploy,
+				Actor:       assignmentActors[d.FeatureAssignmentID.String()],
+			})
 		}
 
-		sort.Slice(assignmentRows, func(i, j int) bool {
-			return assignmentRows[i].Created.After(assignmentRows[j].Created)
-		})
-
-		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(assignmentRows, audits), HideHeaderSearch: true})
+		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(rows, audits), HideHeaderSearch: true})
 	}
 }
 
@@ -156,12 +139,12 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 	}
 }
 
-func listPage(fas []assignmentRow, audits []*audit.Entry) g.Node {
+func listPage(rows []deployRow, audits []*audit.Entry) g.Node {
 	return h.Div(h.Class("container"),
 		h.Main(h.Class("main-content landing-page"),
 			landingSearch(),
 			components.CardCompact(
-				recentAssignments(fas),
+				recentAssignments(rows),
 			),
 			components.CardCompact(
 				recentActivity(audits),
@@ -265,13 +248,15 @@ func featureRowKebab(feature featureIndexRow, idx int) g.Node {
 	})
 }
 
-type assignmentRow struct {
-	FeatureName  string
-	Version      string
-	Status       string
-	Created      time.Time
-	AssignmentID string
-	Actor        string
+type deployRow struct {
+	FeatureName string
+	Version     string
+	Total       int
+	Deployed    int
+	Failed      int
+	Pending     int
+	When        time.Time
+	Actor       string
 }
 
 func assignmentActorsByID(audits []*audit.Entry) map[string]string {
@@ -291,55 +276,20 @@ func assignmentActorsByID(audits []*audit.Entry) map[string]string {
 	return ret
 }
 
-func recentAssignments(rows []assignmentRow) g.Node {
+func recentAssignments(rows []deployRow) g.Node {
 	if len(rows) == 0 {
-		return h.P(h.Class("text-muted"), g.Text("No assignments."))
+		return h.P(h.Class("text-muted"), g.Text("No deployments."))
 	}
 
-	// Aggregate by feature+version
-	type aggKey struct{ feature, version string }
-	type aggRow struct {
-		FeatureName string
-		Version     string
-		Statuses    []string
-		Latest      time.Time
-		Actor       string
-	}
-	seen := make(map[aggKey]*aggRow)
-	var ordered []aggKey
-	for _, r := range rows {
-		k := aggKey{r.FeatureName, r.Version}
-		if agg, ok := seen[k]; ok {
-			agg.Statuses = append(agg.Statuses, r.Status)
-			if r.Created.After(agg.Latest) {
-				agg.Latest = r.Created
-				agg.Actor = r.Actor
-			}
-		} else {
-			seen[k] = &aggRow{
-				FeatureName: r.FeatureName,
-				Version:     r.Version,
-				Statuses:    []string{r.Status},
-				Latest:      r.Created,
-				Actor:       r.Actor,
-			}
-			ordered = append(ordered, k)
-		}
-	}
-
-	if len(ordered) > 10 {
-		ordered = ordered[:10]
-	}
-	tableRows := make([]g.Node, 0, len(ordered))
-	for i, k := range ordered {
-		agg := seen[k]
+	tableRows := make([]g.Node, 0, len(rows))
+	for i, r := range rows {
 		tableRows = append(tableRows, h.Tr(
-			h.Td(h.A(h.Href("/features/"+agg.FeatureName), g.Text(agg.FeatureName))),
-			h.Td(h.Class("text-muted"), g.Text(agg.Version)),
-			h.Td(renderAggStatus(agg.Statuses)),
-			h.Td(view.ActorName(agg.Actor)),
-			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(agg.Latest)), g.Text(view.RelativeTime(agg.Latest))),
-			h.Td(h.Class("table-kebab-cell"), assignmentRowKebab(agg.Actor, i)),
+			h.Td(h.A(h.Href("/features/"+r.FeatureName), g.Text(r.FeatureName))),
+			h.Td(h.Class("text-muted"), g.Text(r.Version)),
+			h.Td(deployRollupStatus(r)),
+			h.Td(view.ActorName(r.Actor)),
+			h.Td(h.Class("text-muted text-right"), h.Title(view.FormatTime(r.When)), g.Text(view.RelativeTime(r.When))),
+			h.Td(h.Class("table-kebab-cell"), assignmentRowKebab(r.Actor, i)),
 		))
 	}
 
@@ -358,6 +308,33 @@ func recentAssignments(rows []assignmentRow) g.Node {
 		),
 		h.Div(h.Class("section-link-row"), h.A(h.Href("/assignments"), h.Class("link-muted"), g.Text("All assignments →"))),
 	})
+}
+
+// deployRollupStatus renders a feature version's rollout across environments:
+// a green check when every instance is deployed, otherwise a breakdown of the
+// deployed/failed/pending counts coloured by the most severe outcome.
+func deployRollupStatus(r deployRow) g.Node {
+	if r.Total > 0 && r.Deployed == r.Total {
+		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("\u2713")), g.Text(" Deployed")})
+	}
+	var parts []string
+	if r.Deployed > 0 {
+		parts = append(parts, fmt.Sprintf("%d deployed", r.Deployed))
+	}
+	if r.Failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failed", r.Failed))
+	}
+	if r.Pending > 0 {
+		parts = append(parts, fmt.Sprintf("%d pending", r.Pending))
+	}
+	if other := r.Total - r.Deployed - r.Failed - r.Pending; other > 0 {
+		parts = append(parts, fmt.Sprintf("%d unknown", other))
+	}
+	class, icon := "status-pending", "\u23f3"
+	if r.Failed > 0 {
+		class, icon = "status-error", "\u2717"
+	}
+	return g.Group([]g.Node{h.Span(h.Class(class), g.Text(icon)), g.Text(" " + strings.Join(parts, ", "))})
 }
 
 func assignmentRowKebab(actor string, idx int) g.Node {
@@ -412,61 +389,6 @@ func recentActivity(audits []*audit.Entry) g.Node {
 		),
 		h.Div(h.Class("section-link-row"), h.A(h.Href("/auditlog"), h.Class("link-muted"), g.Text("All activity →"))),
 	})
-}
-
-type aggStatus struct {
-	class string // "status-success", "status-pending", "status-error"
-	label string
-}
-
-func computeAggStatus(statuses []string) aggStatus {
-	var failed, deployed, pending, total int
-	for _, s := range statuses {
-		total++
-		switch strings.ToUpper(s) {
-		case "FAILED", "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR":
-			failed++
-		case "DEPLOYED", "DISABLED":
-			deployed++
-		case "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK", "CREATED":
-			pending++
-		}
-	}
-	if deployed == total {
-		return aggStatus{"status-success", "Deployed"}
-	}
-	if failed == 0 {
-		return aggStatus{"status-pending", fmt.Sprintf("%d/%d deployed", deployed, total)}
-	}
-	var parts []string
-	if deployed > 0 {
-		parts = append(parts, fmt.Sprintf("%d deployed", deployed))
-	}
-	if failed > 0 {
-		parts = append(parts, fmt.Sprintf("%d failed", failed))
-	}
-	if pending > 0 {
-		parts = append(parts, fmt.Sprintf("%d pending", pending))
-	}
-	other := total - deployed - failed - pending
-	if other > 0 {
-		parts = append(parts, fmt.Sprintf("%d unknown", other))
-	}
-	return aggStatus{"status-error", strings.Join(parts, ", ")}
-}
-
-func renderAggStatus(statuses []string) g.Node {
-	s := computeAggStatus(statuses)
-	var icon string
-	switch s.class {
-	case "status-success":
-		icon = "\u2713"
-	case "status-pending":
-		icon = "\u23f3"
-	case "status-error":
-		icon = "\u2717"
-	}
-	return g.Group([]g.Node{h.Span(h.Class(s.class), g.Text(icon)), g.Text(" " + s.label)})
 }
 
 func detailPage(data *DetailPage) g.Node {

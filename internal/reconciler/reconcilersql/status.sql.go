@@ -201,3 +201,57 @@ func (q *Queries) ListDisabledEnvironments(ctx context.Context, featureAssignmen
 	}
 	return items, nil
 }
+
+const listRecentDeploys = `-- name: ListRecentDeploys :many
+SELECT
+	diid,
+	feature_name,
+	feature_version,
+	status,
+	feature_assignment_id,
+	created
+FROM
+	deploy_log
+ORDER BY
+	created DESC,
+	id DESC
+LIMIT $1::INT
+`
+
+type ListRecentDeploysRow struct {
+	Diid                uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	FeatureAssignmentID uuid.UUID
+	Created             time.Time
+}
+
+// Recent deploy log rows, newest first. Per-instruction deduplication and
+// aggregation by feature version happen in Go (ListRecentDeploys).
+func (q *Queries) ListRecentDeploys(ctx context.Context, lim int32) ([]ListRecentDeploysRow, error) {
+	rows, err := q.db.Query(ctx, listRecentDeploys, lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRecentDeploysRow{}
+	for rows.Next() {
+		var i ListRecentDeploysRow
+		if err := rows.Scan(
+			&i.Diid,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.FeatureAssignmentID,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

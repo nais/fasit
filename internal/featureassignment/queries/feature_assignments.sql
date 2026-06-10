@@ -129,18 +129,6 @@ ORDER BY
 	d.target,
 	d.created DESC;
 
--- name: ListRecentFeatureAssignments :many
-SELECT
-	sqlc.embed(d),
-	sqlc.embed(fd)
-FROM
-	feature_assignments d
-	JOIN feature_data fd ON d.feature_name = fd.name
-		AND d.version = fd.version
-	ORDER BY
-		d.created DESC
-	LIMIT 50;
-
 -- name: DeactivateActiveFeatureAssignmentForTarget :exec
 UPDATE
 	feature_assignments

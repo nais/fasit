@@ -9,94 +9,6 @@ import (
 	"github.com/nais/fasit/internal/audit"
 )
 
-func TestComputeAggStatus(t *testing.T) {
-	tests := []struct {
-		name      string
-		statuses  []string
-		wantClass string
-		wantLabel string
-	}{
-		{
-			name:      "all deployed",
-			statuses:  []string{"DEPLOYED", "DEPLOYED", "DEPLOYED"},
-			wantClass: "status-success",
-			wantLabel: "Deployed",
-		},
-		{
-			name:      "single deployed",
-			statuses:  []string{"DEPLOYED"},
-			wantClass: "status-success",
-			wantLabel: "Deployed",
-		},
-		{
-			name:      "in progress no failures",
-			statuses:  []string{"DEPLOYED", "DEPLOYED", "PENDING"},
-			wantClass: "status-pending",
-			wantLabel: "2/3 deployed",
-		},
-		{
-			name:      "all pending",
-			statuses:  []string{"PENDING", "PENDING", "PENDING"},
-			wantClass: "status-pending",
-			wantLabel: "0/3 deployed",
-		},
-		{
-			name:      "mixed with failures",
-			statuses:  []string{"DEPLOYED", "DEPLOYED", "FAILED", "PENDING"},
-			wantClass: "status-error",
-			wantLabel: "2 deployed, 1 failed, 1 pending",
-		},
-		{
-			name:      "some failed rest deployed",
-			statuses:  []string{"DEPLOYED", "DEPLOYED", "DEPLOYED", "FAILED"},
-			wantClass: "status-error",
-			wantLabel: "3 deployed, 1 failed",
-		},
-		{
-			name:      "all failed",
-			statuses:  []string{"FAILED", "FAILED", "FAILED"},
-			wantClass: "status-error",
-			wantLabel: "3 failed",
-		},
-		{
-			name:      "pending install variant",
-			statuses:  []string{"DEPLOYED", "PENDING-INSTALL"},
-			wantClass: "status-pending",
-			wantLabel: "1/2 deployed",
-		},
-		{
-			name:      "unknown statuses counted",
-			statuses:  []string{"DEPLOYED", "DEPLOYED", "SOMETHING_ELSE"},
-			wantClass: "status-pending",
-			wantLabel: "2/3 deployed",
-		},
-		{
-			name:      "disabled counts as deployed",
-			statuses:  []string{"DEPLOYED", "DEPLOYED", "DISABLED"},
-			wantClass: "status-success",
-			wantLabel: "Deployed",
-		},
-		{
-			name:      "realistic: 15 deployed 2 failed 1 pending",
-			statuses:  repeat("DEPLOYED", 15, "FAILED", 2, "PENDING", 1),
-			wantClass: "status-error",
-			wantLabel: "15 deployed, 2 failed, 1 pending",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := computeAggStatus(tt.statuses)
-			if got.class != tt.wantClass {
-				t.Errorf("class: got %q, want %q", got.class, tt.wantClass)
-			}
-			if got.label != tt.wantLabel {
-				t.Errorf("label: got %q, want %q", got.label, tt.wantLabel)
-			}
-		})
-	}
-}
-
 func TestFeatureIndexTableSourceKebabMenu(t *testing.T) {
 	var buf bytes.Buffer
 	err := featureIndexTable([]featureIndexRow{{
@@ -149,13 +61,13 @@ func TestDeploymentActorsByID(t *testing.T) {
 
 func TestRecentDeploymentsRendersActor(t *testing.T) {
 	var buf bytes.Buffer
-	err := recentAssignments([]assignmentRow{{
-		FeatureName:  "kyverno",
-		Version:      "2026-05-27-abc",
-		Status:       "DEPLOYED",
-		Created:      time.Now(),
-		AssignmentID: "dep-1",
-		Actor:        "tronghn@nais/fasit/123456789",
+	err := recentAssignments([]deployRow{{
+		FeatureName: "kyverno",
+		Version:     "2026-05-27-abc",
+		Total:       1,
+		Deployed:    1,
+		When:        time.Now(),
+		Actor:       "tronghn@nais/fasit/123456789",
 	}}).Render(&buf)
 	if err != nil {
 		t.Fatal(err)
@@ -170,14 +82,43 @@ func TestRecentDeploymentsRendersActor(t *testing.T) {
 	}
 }
 
-func repeat(args ...any) []string {
-	var out []string
-	for i := 0; i < len(args); i += 2 {
-		s := args[i].(string)
-		n := args[i+1].(int)
-		for range n {
-			out = append(out, s)
-		}
+func TestRecentDeploymentsRollupStatus(t *testing.T) {
+	var buf bytes.Buffer
+	err := recentAssignments([]deployRow{{
+		FeatureName: "kyverno",
+		Version:     "2026-05-27-abc",
+		Total:       4,
+		Deployed:    2,
+		Failed:      1,
+		Pending:     1,
+		When:        time.Now(),
+	}}).Render(&buf)
+	if err != nil {
+		t.Fatal(err)
 	}
-	return out
+	html := buf.String()
+	if !strings.Contains(html, "2 deployed, 1 failed, 1 pending") {
+		t.Fatalf("rollup should break down counts, got %s", html)
+	}
+	if !strings.Contains(html, "status-error") {
+		t.Fatalf("rollup with a failure should use the error class, got %s", html)
+	}
+}
+
+func TestRecentDeploymentsAllDeployed(t *testing.T) {
+	var buf bytes.Buffer
+	err := recentAssignments([]deployRow{{
+		FeatureName: "kyverno",
+		Version:     "2026-05-27-abc",
+		Total:       3,
+		Deployed:    3,
+		When:        time.Now(),
+	}}).Render(&buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	html := buf.String()
+	if !strings.Contains(html, "Deployed") || !strings.Contains(html, "status-success") {
+		t.Fatalf("all-deployed rollup should render a success status, got %s", html)
+	}
 }
