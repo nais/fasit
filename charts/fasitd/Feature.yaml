@@ -1,0 +1,47 @@
+environmentKinds:
+  - tenant
+  - management
+  - onprem
+values:
+  env:
+    displayName: Env
+    computed:
+      template: "{{.Env.name}}"
+  envProjectId:
+    displayName: Env project id
+    computed:
+      template: "{{.Env.project_id}}"
+  fasitAddress:
+    displayName: Fasit fasitd gRPC address
+    config:
+      type: string
+  iapAudience:
+    displayName: IAP audience (OAuth client ID)
+    config:
+      type: string
+  insecure:
+    displayName: Connect without TLS/IAP (local/dev only)
+    config:
+      type: string
+  https_proxy:
+    displayName: HTTPS proxy
+    config:
+      type: string
+    ignoreKind:
+      - tenant
+      - management
+  no_proxy:
+    displayName: No proxy
+    config:
+      type: string
+    ignoreKind:
+      - tenant
+      - management
+  image.tag:
+    displayName: Image tag
+    config:
+      type: string
+  tenantName:
+    displayName: Tenant name
+    computed:
+      template: "{{.Tenant.Name}}"

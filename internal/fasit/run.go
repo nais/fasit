@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/fakeagent"
+	"github.com/nais/fasit/internal/fasitd"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
@@ -126,7 +127,25 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	go rec.Run(ctx, 1*time.Minute, deployer)
+	fasitdServer, err := fasitd.NewServer(pool, loadContext, meter, log)
+	if err != nil {
+		return fmt.Errorf("creating fasitd server: %w", err)
+	}
+	fasitdDeployer, err := fasitd.NewDeployer(pool, fasitdServer, meter, log)
+	if err != nil {
+		return fmt.Errorf("creating fasitd deployer: %w", err)
+	}
+
+	go func() {
+		if err := runFasitdGRPC(ctx, fasitdServer, cfg, log); err != nil {
+			log.With("err", err).Error("running fasitd GRPC server")
+		}
+	}()
+
+	// naisd over Pub/Sub stays canonical; fasitd shadows the same decisions.
+	deployers := reconciler.NewMultiDeployer(deployer, log, fasitdDeployer)
+
+	go rec.Run(ctx, 1*time.Minute, deployers)
 
 	if fakeAgent != nil {
 		go fakeAgent.ReportHealth(ctx, 30*time.Second)
@@ -202,6 +221,29 @@ func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddr
 	}
 
 	s := provider.NewGrpcServer(loadContext)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error { return s.Serve(lis) })
+	g.Go(func() error {
+		<-ctx.Done()
+		s.GracefulStop()
+		return nil
+	})
+
+	return g.Wait()
+}
+
+func runFasitdGRPC(ctx context.Context, srv *fasitd.Server, cfg *Config, log *slog.Logger) error {
+	s, err := fasitd.NewGrpcServer(srv, cfg.IAPAudience, cfg.InsecureSkipProxy)
+	if err != nil {
+		return fmt.Errorf("creating fasitd grpc server: %w", err)
+	}
+
+	log.With("addr", cfg.FasitdGRPCBindAddress).Info("fasitd GRPC serving")
+	lis, err := net.Listen("tcp", cfg.FasitdGRPCBindAddress)
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return s.Serve(lis) })

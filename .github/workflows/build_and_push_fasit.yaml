@@ -5,10 +5,14 @@ on:
       - main
     paths-ignore:
       - "charts/naisd/**"
+      - "charts/fasitd/**"
       - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_naisd.yaml"
+      - ".github/workflows/build_and_push_fasitd.yaml"
       - ".github/workflows/dependabot-auto-merge.yaml"
       - ".github/workflows/push_*.yaml"
+      - "cmd/fasitd/**"
+      - "internal/fasitd/**"
       - "schema/jsonschema/**"
       - "cmd/generate_schema/**"
   pull_request:

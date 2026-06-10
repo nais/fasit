@@ -15,3 +15,10 @@ protoc \
   ./schema/protobuf/fasit.proto \
   --go_out=. \
   --go-grpc_out=.
+
+mkdir -p internal/fasitd/protogen
+protoc \
+  -I schema/protobuf/ \
+  ./schema/protobuf/fasitd.proto \
+  --go_out=. \
+  --go-grpc_out=.

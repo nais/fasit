@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+option go_package = "internal/fasitd/protogen;protogen";
+
+// Fasitd is the long-lived session protocol between a fasitd agent and Fasit.
+// A single bidirectional stream per agent carries commands from Fasit and
+// reports (command lifecycle, helm logs, release inventory) from the agent.
+// The session's liveness is itself the agent's health signal.
+service Fasitd {
+  rpc Connect(stream AgentMessage) returns (stream ServerMessage) {}
+}
+
+// AgentMessage is anything the agent sends to Fasit over the session.
+message AgentMessage {
+  oneof message {
+    Register register = 1;
+    CommandAck ack = 2;
+    CommandStatus status = 3;
+    LogBatch logs = 4;
+    ReleaseInventory releases = 5;
+  }
+}
+
+// ServerMessage is anything Fasit sends to the agent over the session.
+message ServerMessage {
+  oneof message {
+    Command command = 1;
+  }
+}
+
+// Register is the first message an agent must send. It declares which
+// environment the session belongs to and the agent's version/capabilities.
+message Register {
+  string tenant = 1;
+  string environment = 2;
+  string fasitd_version = 3;
+  uint32 protocol_version = 4;
+}
+
+// Command instructs the agent to install/upgrade or uninstall a feature.
+// The payload mirrors Fasit's internal DeployInstruction.
+message Command {
+  string diid = 1;
+  string name = 2;
+  string version = 3;
+  string chart = 4;
+  string config_hash = 5;
+  int64 timeout_ms = 6;
+  bytes values = 7;
+  bool uninstall = 8;
+}
+
+// CommandAck signals the agent has received a command and started handling it.
+message CommandAck {
+  string diid = 1;
+}
+
+// CommandStatus reports a lifecycle transition for a command.
+message CommandStatus {
+  string diid = 1;
+  string status = 2;
+  string config_hash = 3;
+  string error = 4;
+}
+
+message LogLine {
+  int64 time_unix_nano = 1;
+  string msg = 2;
+  string kind = 3;
+}
+
+message LogBatch {
+  string diid = 1;
+  repeated LogLine lines = 2;
+}
+
+message Release {
+  string name = 1;
+  string version = 2;
+  string status = 3;
+  int32 revision = 4;
+  int64 last_deployed_unix = 5;
+}
+
+message ReleaseInventory {
+  int64 created_unix = 1;
+  repeated Release releases = 2;
+}
