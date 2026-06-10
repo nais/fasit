@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
 	envpkg "github.com/nais/fasit/internal/environment"
@@ -178,9 +177,6 @@ func (s *Server) appendStatus(ctx context.Context, diidStr, statusStr, msg strin
 		Status:  statusStr,
 		Message: msg,
 	}); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
 		return fmt.Errorf("append command status: %w", err)
 	}
 	return nil
