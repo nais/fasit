@@ -1,0 +1,12 @@
+apiVersion: v2
+name: fasitd
+description: Maintains a long-lived gRPC session to Fasit and (during dry-run) reports what would be deployed
+
+sources:
+  - https://github.com/nais/fasit/tree/main/charts/fasitd
+
+type: application
+
+version: 0.1.0
+
+appVersion: "0.1.0"

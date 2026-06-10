@@ -52,7 +52,6 @@ func New(pool *pgxpool.Pool, meter metric.Meter, log *slog.Logger) (*Reconciler,
 // Run starts the reconcile loop, writing results via the given writer.
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration, deployer Deployer) {
 	for {
-		r.log.Info("reconciling")
 		desiredState, err := r.ComputeDesiredState(ctx)
 		if err != nil {
 			r.log.With("err", err).Error("reconcile")
@@ -63,7 +62,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration, deployer D
 			} else if err := deployer.Deploy(ctx, desiredState.Results); err != nil {
 				r.log.With("err", err).Error("deploy")
 			}
-			r.log.With("io", time.Since(ioStart)).Info("decisions deployed")
+			r.log.With("io", time.Since(ioStart)).Debug("decisions deployed")
 		}
 
 		select {
@@ -161,7 +160,7 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 	fetchDur := time.Since(fetchStart)
 
 	r.log.With("num_envs", len(snap.environments),
-		"num_assignments", len(snap.assignments)).Info("reconciling tenant environments")
+		"num_assignments", len(snap.assignments)).Debug("reconciling tenant environments")
 
 	computeStart := time.Now()
 	decisions := r.computeActions(snap)
@@ -174,12 +173,12 @@ func (r *Reconciler) ComputeDesiredState(ctx context.Context) (*DesiredState, er
 		}
 	}
 	r.log.With("total_decisions", len(decisions),
-		"deploy_count", deployCount).Info("compute complete")
+		"deploy_count", deployCount).Debug("compute complete")
 
 	totalDur := time.Since(loopStart)
 	r.log.With("fetch", fetchDur,
 		"compute", computeDur,
-		"total", totalDur).Info("reconcile complete")
+		"total", totalDur).Debug("reconcile complete")
 
 	r.reconcileLoopTime.Record(ctx, totalDur.Milliseconds())
 	return &DesiredState{

@@ -108,3 +108,11 @@ sql:
         !!merge <<: *default_go
         package: "reconcilersql"
         out: "internal/reconciler/reconcilersql"
+  - name: "Fasitd SQL"
+    !!merge <<: *default_domain
+    queries: "internal/fasitd/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "fasitdsql"
+        out: "internal/fasitd/fasitdsql"

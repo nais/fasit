@@ -43,6 +43,14 @@ The compute stage's verdict for one (assignment, environment) in a cycle: an act
 The lifecycle state of a deploy instruction: sent → installing → deployed/failed. `sent` is set by the Deployer when it publishes to naisd; `installing` is reported by naisd as it starts Helm; `deployed`/`failed` are the terminal states reported back by naisd. Recorded in `deploy_log`; the latest entry per feature×environment is the current rollout state.
 _Avoid_: deploy status, reconcile status (the legacy merged field)
 
+**Fasitd session**:
+A long-lived gRPC connection from one `fasitd` instance to Fasit for receiving commands and reporting back status, logs, and release inventory; the session's liveness is itself the `fasitd` health signal.
+_Avoid_: subscription
+
+**Fasitd command**:
+A deploy or uninstall command sent to `fasitd`. During dry-run it is recorded separately from the canonical naisd rollout and may fail independently without blocking the real deployment.
+_Avoid_: shadow command, dry-run deploy, shadow deploy
+
 **Reconciler**:
 The background loop that compares desired state (assignments × environments) against actual state (latest deploy instructions) and emits new deploy instructions where the rendered helm values have changed. Runs in two stages: a pure **compute** stage that produces a decision per (assignment, environment), and a **Deployer** stage that applies them.
 
@@ -60,6 +68,7 @@ _Avoid_: dispatcher, applier (earlier names for this stage)
 - The **Reconciler** produces a **Deploy instruction** for each (assignment, environment) pair whose rendered helm values have changed
 - The compute stage emits one **Decision** per (assignment, environment); the **Deployer** applies it
 - The displayed status of a feature×environment is two complementary signals: its **Rollout status** (from `deploy_log`) and its latest **Decision** (from `decision_log`)
+- A **Fasitd session** belongs to exactly one environment and carries zero or more **Fasitd commands** over time
 
 ## Example dialogue
 
@@ -72,3 +81,4 @@ _Avoid_: dispatcher, applier (earlier names for this stage)
 ## Flagged ambiguities
 
 - "secret" was used to mean both "a config/env value declared as secret" and "a computed value whose output depends on a secret input." Resolved: the input property is **secret** (on config/env values); the derived property on computed values is **secret taint**.
+- "subscription" was used for both Pub/Sub subscriptions and the long-lived gRPC connection from `fasitd` to Fasit. Resolved: the gRPC connection is a **Fasitd session**.
