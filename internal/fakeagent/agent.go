@@ -241,7 +241,6 @@ func (a *Agent) Receive(ctx context.Context, f func(ctx context.Context, msg mes
 // environment as having no naisd and refuses to deploy. ctx must carry the
 // context-loader queriers.
 func (a *Agent) ReportHealth(ctx context.Context, interval time.Duration) {
-	first := true
 	for {
 		envs, err := envpkg.ListTenantEnvironments(ctx, false)
 		if err != nil {
@@ -253,12 +252,6 @@ func (a *Agent) ReportHealth(ctx context.Context, interval time.Duration) {
 					continue
 				}
 				a.send(key, message.StatusTypeHealth, message.Health{ReportedAt: time.Now()})
-			}
-			if first {
-				first = false
-				// Nudge the reconciler so deploys don't wait a full cycle for the
-				// freshly-reported health to be persisted.
-				time.AfterFunc(interval/2, reconciler.TriggerReconcile)
 			}
 		}
 

@@ -145,7 +145,11 @@ func Run(ctx context.Context) error {
 	// naisd over Pub/Sub stays canonical; fasitd shadows the same decisions.
 	deployers := reconciler.NewMultiDeployer(deployer, log, fasitdDeployer)
 
-	go rec.Run(ctx, 1*time.Minute, deployers)
+	reconcileInterval := 1 * time.Minute
+	if cfg.LocalFakeNaisd {
+		reconcileInterval = 5 * time.Second
+	}
+	go rec.Run(ctx, reconcileInterval, deployers)
 
 	if fakeAgent != nil {
 		go fakeAgent.ReportHealth(ctx, 30*time.Second)
