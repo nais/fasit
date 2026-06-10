@@ -1,14 +1,53 @@
 {{- if .Capabilities.APIVersions.Has "networking.gke.io/v1" }}
+{{- $parts := splitList ":" .Values.fasitAddress }}
+{{- $host := index $parts 0 }}
+{{- $port := "443" }}
+{{- if gt (len $parts) 1 }}{{ $port = index $parts 1 }}{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-dns
+  labels:
+    {{- include "fasitd.labels" . | nindent 4 }}
 spec:
-  egress:
-  - {}
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
   - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchExpressions:
+        - key: k8s-app
+          operator: In
+          values:
+          - kube-dns
+          - node-local-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.gke.io/v1
+kind: FQDNNetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-fasit
+  labels:
+    {{- include "fasitd.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  egress:
+  - to:
+    - fqdns:
+      - {{ $host | quote }}
+    ports:
+    - protocol: TCP
+      port: {{ $port | int }}
 {{- end }}
