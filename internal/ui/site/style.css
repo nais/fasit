@@ -1376,6 +1376,45 @@ nav .user {
   max-height: 60vh;
   overflow: auto;
 }
+.deploy-history-list {
+  display: flex;
+  flex-direction: column;
+}
+.deploy-history-item {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.deploy-history-item:last-child {
+  border-bottom: 0;
+}
+.deploy-history-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.25rem;
+  cursor: pointer;
+  list-style: none;
+}
+.deploy-history-summary::-webkit-details-marker {
+  display: none;
+}
+.deploy-history-when {
+  margin-left: auto;
+}
+.deploy-log-toggle {
+  color: var(--accent);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.deploy-history-item:not([open]) .deploy-log-toggle::after {
+  content: " \25be";
+}
+.deploy-history-item[open] .deploy-log-toggle::after {
+  content: " \25b4";
+}
+.deploy-history-item > .popover-scroll,
+.deploy-history-empty {
+  margin: 0 0 0.6rem;
+}
 [popover] h3 {
   margin: 0 0 0.5rem 0;
 }

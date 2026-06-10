@@ -40,6 +40,8 @@ type FeaturePage struct {
 	WinningAssignment   *featureassignment.FeatureAssignment
 	Release             *featurepkg.Release
 	RecentDeployHistory []*featurepkg.DeployInstruction
+	DeployLogs          map[uuid.UUID][]LogLine
+	ExpandedLogID       string
 	DecisionHistory     []*reconciler.DecisionLogEntry
 }
 
@@ -218,6 +220,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 			page.WinningAssignment = dep
 		}
 		page.RecentDeployHistory, _ = featurepkg.ListRecentDeployInstructions(ctx, env.ID, featureName, 50)
+		page.DeployLogs = loadDeployLogs(ctx, page.RecentDeployHistory)
 		page.Release, _ = naisdstatus.GetReleaseStatus(ctx, env.ID, featureName)
 		page.DecisionHistory, _ = reconciler.ListDecisionLog(ctx, env.ID, featureName)
 	} else {
@@ -486,4 +489,23 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *featurepkg.Featu
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
 	}
 	return ret
+}
+
+// loadDeployLogs fetches the Helm log lines for each deploy instruction so the
+// deploy-history popover can expand them per entry. Deploys without logs are
+// omitted from the map.
+func loadDeployLogs(ctx context.Context, history []*featurepkg.DeployInstruction) map[uuid.UUID][]LogLine {
+	logs := make(map[uuid.UUID][]LogLine, len(history))
+	for _, di := range history {
+		lines, err := uidata.GetLogLines(ctx, di.ID)
+		if err != nil || len(lines) == 0 {
+			continue
+		}
+		converted := make([]LogLine, len(lines))
+		for i, line := range lines {
+			converted[i] = LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message}
+		}
+		logs[di.ID] = converted
+	}
+	return logs
 }

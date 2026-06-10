@@ -281,6 +281,30 @@ document.addEventListener("DOMContentLoaded", () => {
   sortableTables().forEach(replaySavedSort);
 });
 
+// Auto-open the deploy history popover when ?logs=<id> is present. The matching
+// entry is expanded server-side. Drop the ?logs param once the popover closes
+// so reloads/back-navigation don't reopen it.
+function openDeployHistoryFromQuery() {
+  const popover = document.getElementById("deploy-history");
+  if (!popover) return;
+  popover.addEventListener("toggle", (e) => {
+    if (e.newState !== "closed") return;
+    const url = new URL(location.href);
+    if (!url.searchParams.has("logs")) return;
+    url.searchParams.delete("logs");
+    history.replaceState(history.state, "", url);
+  });
+  if (!new URLSearchParams(location.search).has("logs")) return;
+  if (typeof popover.showPopover === "function") {
+    try { popover.showPopover(); } catch {}
+  }
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", openDeployHistoryFromQuery);
+} else {
+  openDeployHistoryFromQuery();
+}
+
 // Kebab menu toggle
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-kebab-toggle]");

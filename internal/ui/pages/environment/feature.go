@@ -33,6 +33,7 @@ func FeatureContextTabHandler(renderPage RenderPage, activeTab string) http.Hand
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		data.ExpandedLogID = r.URL.Query().Get("logs")
 
 		renderPage(w, r, layout.Props{
 			Title:       data.Feature.Name + " / " + data.Tenant.Name + " / " + data.Environment.Name,
@@ -309,6 +310,15 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
+	if len(page.RecentDeployHistory) > 0 {
+		items = append(items,
+			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "deploy-history"),
+				g.Raw(components.IconRedeploy),
+				g.Text("Deploy history"),
+			),
+		)
+	}
+
 	if len(page.DecisionHistory) > 0 {
 		items = append(items,
 			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "decision-history"),
@@ -367,14 +377,9 @@ func lastDeployInline(page *FeaturePage) g.Node {
 		logToggle = h.Button(h.Type("button"), h.Class("btn-link"), g.Attr("popovertarget", "deploy-logs"), g.Text("Logs"))
 	}
 
-	var history g.Node
-	if len(page.RecentDeployHistory) > 1 {
-		history = h.Button(h.Type("button"), h.Class("btn-link"), g.Attr("popovertarget", "deploy-history"), g.Text("View history \u2192"))
-	}
-
 	rel := page.Release
 	if rel == nil {
-		return h.Span(h.Class("heading-group text-muted"), g.Text("No release reported."), logToggle, history)
+		return h.Span(h.Class("heading-group text-muted"), g.Text("No release reported."), logToggle)
 	}
 
 	return h.Span(h.Class("heading-group"),
@@ -382,7 +387,6 @@ func lastDeployInline(page *FeaturePage) g.Node {
 		components.Status(strings.ToUpper(rel.Status)),
 		h.Span(h.Class("text-muted"), h.Title(view.FormatTime(rel.LastDeployed)), g.Text(view.RelativeTime(rel.LastDeployed))),
 		logToggle,
-		history,
 	)
 }
 
@@ -396,30 +400,50 @@ func deployLogsPopover(page *FeaturePage) g.Node {
 }
 
 // deployHistoryPopover shows the full deploy history for this feature×environment
-// in a kebab/heading-toggled popover, keeping the heading itself to just the
-// latest deploy.
+// in a kebab-toggled popover. Each entry expands to reveal that deploy's Helm
+// logs.
 func deployHistoryPopover(page *FeaturePage) g.Node {
 	if len(page.RecentDeployHistory) == 0 {
 		return nil
 	}
-	rows := g.Map(page.RecentDeployHistory, func(di *featurepkg.DeployInstruction) g.Node {
-		return h.Tr(
-			h.Td(h.Span(h.Class("deploy-version"), g.Text(di.FeatureVersion))),
-			h.Td(components.Status(strings.ToUpper(string(di.Status)))),
-			h.Td(h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
-		)
-	})
-	return components.Popover("deploy-history", "popover-wide", "Deploy history",
-		h.Div(h.Class("popover-scroll"),
-			h.Table(h.Class("table table-compact"),
-				h.THead(h.Tr(
-					h.Th(g.Text("Version")),
-					h.Th(g.Text("Status")),
-					h.Th(g.Text("When")),
-				)),
-				h.TBody(g.Group(rows)),
+	items := make([]g.Node, len(page.RecentDeployHistory))
+	expandIndex := 0
+	if page.ExpandedLogID != "" {
+		expandIndex = -1
+		for i, di := range page.RecentDeployHistory {
+			if di.ID.String() == page.ExpandedLogID {
+				expandIndex = i
+				break
+			}
+		}
+		if expandIndex == -1 {
+			expandIndex = 0
+		}
+	}
+	for i, di := range page.RecentDeployHistory {
+		lines := page.DeployLogs[di.ID]
+		var body g.Node
+		if len(lines) > 0 {
+			body = h.Div(h.Class("popover-scroll"), logBlock(lines))
+		} else {
+			body = h.P(h.Class("text-muted deploy-history-empty"), g.Text("No Helm logs for this deploy."))
+		}
+		attrs := []g.Node{h.Class("deploy-history-item")}
+		if i == expandIndex {
+			attrs = append(attrs, g.Attr("open"))
+		}
+		items[i] = h.Details(append(attrs,
+			h.Summary(h.Class("deploy-history-summary"),
+				h.Span(h.Class("deploy-version"), g.Text(di.FeatureVersion)),
+				components.Status(strings.ToUpper(string(di.Status))),
+				h.Span(h.Class("text-muted deploy-history-when"), h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
+				h.Span(h.Class("deploy-log-toggle"), g.Text("Helm logs")),
 			),
-		),
+			body,
+		)...)
+	}
+	return components.Popover("deploy-history", "popover-wide", "Deploy history",
+		h.Div(h.Class("deploy-history-list"), g.Group(items)),
 	)
 }
 
