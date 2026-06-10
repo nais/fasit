@@ -312,6 +312,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 		if cfg.Value != nil {
 			item.DisplayName = cfg.Value.DisplayName
 			item.Description = cfg.Value.Description
+			item.Required = cfg.Value.Required
 			if cfg.Value.Config != nil {
 				item.Type = strings.ToUpper(cfg.Value.Config.Type.String())
 				item.IsSecret = cfg.Value.Config.Secret

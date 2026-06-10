@@ -80,6 +80,7 @@ func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]com
 func populateFromValue(item *components.ConfigItem, val featurepkg.Value) {
 	item.DisplayName = val.DisplayName
 	item.Description = val.Description
+	item.Required = val.Required
 	if val.Config != nil {
 		item.IsConfigurable = true
 		item.IsSecret = val.Config.Secret

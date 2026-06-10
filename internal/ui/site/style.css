@@ -1187,6 +1187,17 @@ nav .user {
 .config-warning {
   border-left: 3px solid var(--status-warning);
 }
+.config-required-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 400;
+  border-radius: 3px;
+  background: var(--btn-bg);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
 .config-orphaned {
   opacity: 0.6;
   border-left: 3px solid var(--status-error);

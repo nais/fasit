@@ -24,6 +24,7 @@ type ConfigItem struct {
 	IsComputed     bool
 	IsConfigurable bool
 	IsOrphaned     bool
+	Required       bool
 	Template       string
 	MappedCount    int
 	FallbackValue  string
@@ -36,6 +37,9 @@ func ConfigKeyCell(item ConfigItem) g.Node {
 		label = item.DisplayName
 	}
 	children := []g.Node{h.Strong(g.Text(label))}
+	if item.Required {
+		children = append(children, g.Text(" "), h.Span(h.Class("config-required-badge"), g.Text("required")))
+	}
 	if item.Description != "" {
 		children = append(children, h.Br(), h.Small(h.Class("text-muted"), g.Text(item.Description)))
 	}
