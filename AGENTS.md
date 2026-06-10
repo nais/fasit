@@ -8,6 +8,7 @@ Multi-tenant feature management platform. Manages OCI Helm charts ("features") a
 cmd/
   fasit/           → Main backend (REST API + UI server + workers)
   naisd/           → Agent binary (runs in tenant clusters, executes Helm)
+  fasitd/          → Agent binary using a long-lived gRPC session to Fasit (dry-run alongside naisd)
   setup_local_env/ → Seeds local dev database
   generate_schema/ → Generates JSON schema for Feature.yaml
 
@@ -22,6 +23,7 @@ internal/
   workers/         → Background job scheduler (receiver + scheduler)
   message/         → Pub/Sub message types and publishers
   naisd/           → naisd agent logic: Helm execution, self-upgrade
+  fasitd/          → fasitd gRPC session: server (session registry, ingest), shadow Deployer, IAP stream auth, agent client
   naisdstatus/     → naisd heartbeat/status tracking
   provider/        → OCI chart provider (registry interaction)
   integration/     → gRPC server for naisd communication
@@ -46,7 +48,7 @@ New queries go in the domain package that owns the data (`internal/featureassign
 
 `mise run generate` runs: sqlc, protoc.
 
-Never edit files in: `featureassignmentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`.
+Never edit files in: `featureassignmentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`, `fasitdsql/`, `*/protogen/`.
 
 ## Build & Run
 

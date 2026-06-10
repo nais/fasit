@@ -95,3 +95,17 @@ A deploy instruction is an immutable record telling a naisd agent to install or 
 - Self-upgrades when Fasit publishes a new naisd version
 
 naisd is the only component that needs cluster access. Fasit itself never talks directly to Kubernetes.
+
+## fasitd
+
+**fasitd** is an experimental replacement for the naisd transport. Instead of
+receiving deploy instructions over Pub/Sub, a fasitd agent keeps a long-lived
+gRPC **session** open to Fasit and receives **commands** on that stream, reporting
+status, logs, and release inventory back the same way.
+
+It currently runs in **dry-run**: Fasit shadows every real deploy decision as a
+fasitd command (without executing Helm) so the new transport can be validated
+alongside the canonical naisd rollout. Its results live in separate `fasitd_*`
+tables and never affect the real rollout state.
+
+See [fasitd](fasitd.md) for the full design and code map.

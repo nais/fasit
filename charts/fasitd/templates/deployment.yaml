@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fasitd.fullname" . }}
+  labels:
+    {{- include "fasitd.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "fasitd.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "fasitd.selectorLabels" . | nindent 8 }}
+        tenant: {{ .Values.tenantName }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fasitd.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: NAIS_SA_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
+          {{ if .Values.no_proxy }}
+            - name: NO_PROXY
+              value: {{ .Values.no_proxy }}
+          {{ end }}
+          {{ if .Values.https_proxy }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.https_proxy }}
+          {{ end }}
+          args:
+            - --production
+            - --tenant-name
+            - {{ .Values.tenantName }}
+            - --env
+            - {{ .Values.env }}
+            - --fasit-address
+            - {{ .Values.fasitAddress }}
+            - --iap-audience
+            - {{ .Values.iapAudience }}
+            - --insecure={{ .Values.insecure }}
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
