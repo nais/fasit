@@ -33,7 +33,7 @@ spec:
     - protocol: TCP
       port: 53
 ---
-apiVersion: networking.gke.io/v1
+apiVersion: networking.gke.io/v1alpha3
 kind: FQDNNetworkPolicy
 metadata:
   name: {{ .Release.Name }}-fasit
