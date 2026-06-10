@@ -18,3 +18,7 @@ func (s *Server) PageJS(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Favicon(w http.ResponseWriter, r *http.Request) {
 	s.serveFile(w, r, "favicon.ico")
 }
+
+func (s *Server) FaviconSVG(w http.ResponseWriter, r *http.Request) {
+	s.serveFile(w, r, "favicon.svg")
+}

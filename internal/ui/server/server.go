@@ -20,6 +20,7 @@ var mime = map[string]string{
 	".css":  "text/css",
 	".html": "text/html",
 	".ico":  "image/x-icon",
+	".svg":  "image/svg+xml",
 	"":      "text/plain",
 }
 
@@ -41,7 +42,7 @@ func New(siteFS fs.FS, meter metric.Meter, appVersion string) *Server {
 
 func computeAssetVersion(siteFS fs.FS) string {
 	h := sha256.New()
-	for _, file := range []string{"site/style.css", "site/site.js", "site/assignments.js", "site/reconciler.js", "site/favicon.ico"} {
+	for _, file := range []string{"site/style.css", "site/site.js", "site/assignments.js", "site/reconciler.js", "site/favicon.ico", "site/favicon.svg"} {
 		f, err := siteFS.Open(file)
 		if err != nil {
 			continue

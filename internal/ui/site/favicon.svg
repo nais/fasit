@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Fasit">
+	<rect width="32" height="32" rx="7" fill="#111"/>
+	<rect x="8" y="11.5" width="16" height="3.5" rx="1.75" fill="#2563eb"/>
+	<rect x="8" y="17.5" width="16" height="3.5" rx="1.75" fill="#2563eb"/>
+</svg>

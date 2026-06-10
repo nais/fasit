@@ -46,6 +46,7 @@ func Page(props Props) g.Node {
 		Head: []g.Node{
 			h.Meta(h.Name("viewport"), h.Content("width=1024")),
 			h.Meta(h.Name("color-scheme"), h.Content("dark light")),
+			h.Link(h.Rel("icon"), h.Type("image/svg+xml"), h.Href("/favicon.svg"+v)),
 			h.Link(h.Rel("icon"), h.Href("/favicon.ico"+v)),
 			h.Script(g.Raw(`(function(){var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t})()`)),
 			h.StyleEl(g.Raw(`html{background:#1a1a1a;color:#ddd}html[data-theme="light"]{background:#f5f5f5;color:#333}`)),

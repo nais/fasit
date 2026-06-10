@@ -30,6 +30,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/assignments.js", s.PageJS)
 	r.Get("/reconciler.js", s.PageJS)
 	r.Get("/favicon.ico", s.Favicon)
+	r.Get("/favicon.svg", s.FaviconSVG)
 
 	r.Get("/", features.ListHandler(s.renderPage))
 	r.Get("/environments", environments.Handler(s.renderPage))
