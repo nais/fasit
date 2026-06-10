@@ -11,6 +11,10 @@ values:
     displayName: Environment name
     computed:
       template: "{{.Env.name}}"
+  envProjectId:
+    displayName: Env project id
+    computed:
+      template: "{{.Env.project_id}}"
   iapAudience:
     displayName: IAP audience (OAuth client ID)
     computed:
