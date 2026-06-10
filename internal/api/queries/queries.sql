@@ -9,21 +9,18 @@ FROM
 WHERE
 	d.id = @id::UUID;
 
--- name: ListTenants :many
+-- name: ListTenantsWithEnvironments :many
 SELECT
-	*
+	sqlc.embed(t),
+	sqlc.embed(e),
+	ev.value AS gcp_project_id
 FROM
-	tenants
-ORDER BY
-	name;
-
--- name: ListTenantEnvironments :many
-SELECT
-	*
-FROM
-	environments
-WHERE
-	tenant_id = @tenant_id
-ORDER BY
-	name;
+	tenants t
+	JOIN environments e ON e.tenant_id = t.id
+	LEFT JOIN environment_values ev ON ev.environment_id = e.id
+		AND ev.key = 'project_id'
+		AND ev.secret = FALSE
+	ORDER BY
+		t.name,
+		e.name;
 

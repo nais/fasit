@@ -60,8 +60,9 @@ type Tenant struct {
 	Environments []Environment `json:"environments"`
 }
 type Environment struct {
-	ID     uuid.UUID               `json:"id"`
-	Name   string                  `json:"name"`
-	Kind   types.EnvironmentKind   `json:"kind"`
-	Labels types.EnvironmentLabels `json:"labels"`
+	ID           uuid.UUID               `json:"id"`
+	Name         string                  `json:"name"`
+	Kind         types.EnvironmentKind   `json:"kind"`
+	Labels       types.EnvironmentLabels `json:"labels"`
+	GcpProjectID *string                 `json:"gcp_project_id"`
 }
