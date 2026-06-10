@@ -1,16 +1,9 @@
-# Default values for fasitd.
-# This is a YAML-formatted file.
-
 tenantName:
 env:
-envProjectId:
 # fasitAddress is the Fasit fasitd gRPC endpoint (behind Google IAP in production).
-fasitAddress: ""
+fasitAddress: fasitd.nais.io:4445
 # iapAudience is the OAuth client ID of the IAP-protected backend.
 iapAudience: ""
-# insecure connects without TLS/IAP; only for local development.
-insecure: "false"
-
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/fasitd
   pullPolicy: IfNotPresent

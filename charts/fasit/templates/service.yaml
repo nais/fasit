@@ -16,6 +16,10 @@ spec:
     port: 4444
     protocol: TCP
     targetPort: grpc
+  - name: grpc-fasitd
+    port: 4445
+    protocol: TCP
+    targetPort: grpc-fasitd
   selector:
     {{- include "fasit.selectorLabels" . | nindent 4 }}
   sessionAffinity: None

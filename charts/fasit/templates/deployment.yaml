@@ -32,6 +32,8 @@ spec:
               containerPort: 8080
             - name: grpc
               containerPort: 4444
+            - name: grpc-fasitd
+              containerPort: 4445
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

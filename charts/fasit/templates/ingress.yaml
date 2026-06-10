@@ -44,3 +44,30 @@ spec:
                   name: http
             path: /
             pathType: Prefix
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "fasit.fullname" . }}-fasitd
+  labels: {{- include "fasit.labels" . | nindent 4 }}
+  annotations:
+    haproxy.org/backend-config-snippet: |
+      retries 2
+      default-server proto h2 no-check
+      timeout tunnnel 30s
+      http-reuse never
+    haproxy.org/timeout-server: "86400s"
+spec:
+  ingressClassName:{{ .Values.fasitdEndpoint.ingressClassName }}
+  rules:
+    - host: {{ .Values.fasitdEndpoint.ingressHost | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "fasit.fullname" . }}
+                port:
+                  name: grpc-fasitd
