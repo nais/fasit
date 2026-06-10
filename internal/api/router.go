@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nais/fasit/internal/api"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/ui"
@@ -30,13 +29,14 @@ func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool
 	router.Use(contextMiddleware(loadContext))
 	router.Handle("/metrics", promhttp.Handler())
 
-	deploy, err := api.NewHttpHandler(ctx, pool, log)
+	handler, err := NewHttpHandler(ctx, pool, log)
 	if err != nil {
 		return nil, fmt.Errorf("error creating deployment http handler: %w", err)
 	}
-	deploy.AllowAll = insecureSkipProxy
-	router.Post("/github/deployment", deploy.CreateFeatureAssignment)
-	router.Get("/github/deployment/{id}", deploy.GetFeatureAssignment)
+	handler.AllowAll = insecureSkipProxy
+	router.Post("/github/deployment", handler.CreateFeatureAssignment)
+	router.Get("/github/deployment/{id}", handler.GetFeatureAssignment)
+	router.Get("/api/tenants", handler.GetTenants)
 	uiServer := uiserver.New(ui.SiteFS, meter, appVersion)
 	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil

@@ -8,6 +8,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/api/sqlgen"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/model"
 )
@@ -51,4 +52,16 @@ type CreateFeatureAssignmentRequest struct {
 	Ref         *model.GitHubCommit `json:"ref"`
 	Global      bool                `json:"global"`
 	Target      environment.Labels  `json:"target"`
+}
+
+type Tenant struct {
+	ID           uuid.UUID     `json:"id"`
+	Name         string        `json:"name"`
+	Environments []Environment `json:"environments"`
+}
+type Environment struct {
+	ID     uuid.UUID               `json:"id"`
+	Name   string                  `json:"name"`
+	Kind   types.EnvironmentKind   `json:"kind"`
+	Labels types.EnvironmentLabels `json:"labels"`
 }

@@ -10,6 +10,8 @@ import (
 
 type Querier interface {
 	GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFeatureAssignmentRow, error)
+	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
+	ListTenants(ctx context.Context) ([]Tenant, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -9,3 +9,21 @@ FROM
 WHERE
 	d.id = @id::UUID;
 
+-- name: ListTenants :many
+SELECT
+	*
+FROM
+	tenants
+ORDER BY
+	name;
+
+-- name: ListTenantEnvironments :many
+SELECT
+	*
+FROM
+	environments
+WHERE
+	tenant_id = @tenant_id
+ORDER BY
+	name;
+
