@@ -16,6 +16,7 @@ tool (
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.20.2
+	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/pubsub v1.50.2
 	cloud.google.com/go/pubsub/v2 v2.5.1
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.14
@@ -41,6 +42,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.55.0
+	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/api v0.275.0
 	google.golang.org/grpc v1.80.0
@@ -59,7 +61,6 @@ require (
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/auth v0.20.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
-	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.8.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
@@ -253,7 +254,6 @@ require (
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20251209150349-8475f28825e9 // indirect
 	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/telemetry v0.0.0-20260409153401-be6f6cb8b1fa // indirect
 	golang.org/x/term v0.43.0 // indirect
