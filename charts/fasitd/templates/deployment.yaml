@@ -56,7 +56,6 @@ spec:
             - {{ .Values.fasitAddress }}
             - --iap-audience
             - {{ .Values.iapAudience }}
-            - --insecure={{ .Values.insecure }}
           volumeMounts:
           - mountPath: /tmp
             name: tmp

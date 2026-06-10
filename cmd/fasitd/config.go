@@ -16,6 +16,6 @@ func DefaultConfig() Config {
 		BindAddress:  ":8080",
 		LogLevel:     "info",
 		FasitAddress: "localhost:4445",
-		Insecure:     true,
+		Insecure:     false,
 	}
 }
