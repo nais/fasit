@@ -13,8 +13,8 @@ values:
       template: "{{.Env.name}}"
   iapAudience:
     displayName: IAP audience (OAuth client ID)
-    config:
-      type: string
+    computed:
+      template: "{{.Fasit.IAPAudience}}"
   https_proxy:
     displayName: HTTPS proxy
     config:
