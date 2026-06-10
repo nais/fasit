@@ -89,12 +89,12 @@ func versionsListContent(data *DetailPage) g.Node {
 		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-versions"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Version")),
-				h.Th(g.Text("Description")),
 				h.Th(g.Text("Instances")),
 				h.Th(g.Text("Last updated")),
 			)),
 			h.TBody(g.Group(g.Map(data.Versions, func(v featurepkg.FeatureVersion) g.Node {
-				instances := len(data.VersionEnvs[v.Version])
+				envs := data.VersionEnvs[v.Version]
+				instances := len(envs)
 				rowAttrs := []g.Node{}
 				if instances == 0 {
 					rowAttrs = append(rowAttrs, h.Class("version-inactive"))
@@ -104,8 +104,7 @@ func versionsListContent(data *DetailPage) g.Node {
 						h.A(h.Href("/features/"+featureName+"/versions/"+v.Version), g.Text(v.Version)),
 						activePill(instances),
 					)),
-					h.Td(h.Class("text-muted"), g.Text(v.Description)),
-					h.Td(g.Text(strconv.Itoa(instances))),
+					h.Td(instancesCell(envs)),
 					lastDeployedCell(v.LastUpdated, "text-muted"),
 				)
 				return h.Tr(rowAttrs...)
@@ -119,6 +118,45 @@ func activePill(instances int) g.Node {
 		return nil
 	}
 	return h.Span(h.Class("active-pill"), g.Text("Active"))
+}
+
+// instancesCell shows healthy/total instances with a symbol for the most
+// critical status present: green when all healthy, otherwise the symbol of the
+// worst status (error outranks pending).
+func instancesCell(envs []featureenvs.Environment) g.Node {
+	total := len(envs)
+	if total == 0 {
+		return h.Span(h.Class("text-muted"), g.Text("none"))
+	}
+	healthy := 0
+	worstClass := ""
+	for _, env := range envs {
+		class := components.StatusClass(env.Status)
+		if class == "status-success" {
+			healthy++
+			continue
+		}
+		if worstClass != "status-error" {
+			if class == "status-error" || worstClass == "" {
+				worstClass = class
+			}
+		}
+	}
+	count := g.Textf("%d/%d", healthy, total)
+	if healthy == total {
+		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("\u2713")), g.Text(" "), count})
+	}
+	var icon string
+	switch worstClass {
+	case "status-error":
+		icon = "\u2717"
+	case "status-pending":
+		icon = "\u23f3"
+	default:
+		icon = "\u25cb"
+		worstClass = "status-disabled"
+	}
+	return g.Group([]g.Node{h.Span(h.Class(worstClass), g.Text(icon)), g.Text(" "), count})
 }
 
 func versionDetailContent(data *DetailPage) g.Node {
