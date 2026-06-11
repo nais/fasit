@@ -16,7 +16,6 @@ fullnameOverride: ""
 
 serviceAccount:
   create: true
-  gcpServiceAccount: ""
   annotations: {}
   name: ""
 

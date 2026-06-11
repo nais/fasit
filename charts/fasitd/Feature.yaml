@@ -19,10 +19,6 @@ values:
     displayName: IAP audience (OAuth client ID)
     computed:
       template: "{{.Fasit.IAPAudience}}"
-  serviceAccount.gcpServiceAccount:
-    displayName: Fasitd GCP service account email
-    computed:
-      template: "{{.Env.fasitd_serviceaccount_email}}"
   https_proxy:
     displayName: HTTPS proxy
     config:
