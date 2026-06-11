@@ -9,14 +9,14 @@ values:
     displayName: Ingress domain for the apiserver proxy hosts
     computed:
       template: "external.{{.Tenant.Name}}.cloud.nais.io"
-  # upstreams is the list of on-prem apiserver hosts to expose. Each entry is
-  # reachable from Fasit under
-  # https://<second-label>-apiserver-oidc.<ingressDomain>, e.g.
-  # apiserver.dev-fss.nais.io -> https://dev-fss-apiserver-oidc.external.nav.cloud.nais.io
+  # upstreams is the list of on-prem apiserver hosts to expose, derived from the
+  # tenant's on-prem environments. Each entry is reachable from Fasit under
+  # https://<second-label>-apiserver-oidc.<ingressDomain>, e.g. the on-prem env
+  # "dev-fss" -> apiserver.dev-fss.nais.io -> dev-fss-apiserver-oidc.external.nav.cloud.nais.io
   upstreams:
     displayName: Upstream apiserver hosts
-    config:
-      type: string_array
+    computed:
+      template: '[{{ range $i, $e := filter "kind" "onprem" .Envs }}{{ if $i }},{{ end }}"apiserver.{{ $e.name }}.nais.io"{{ end }}]'
   image.tag:
     displayName: Image tag
     config:
