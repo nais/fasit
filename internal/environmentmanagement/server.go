@@ -111,11 +111,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 	}
 
 	return &protogen.CreateEnvironmentResponse{
-		Environment: &protogen.Environment{
-			Id:       env.ID.String(),
-			TenantId: tenant.ID.String(),
-			Name:     env.Name,
-		},
+		Environment: environmentToProto(env),
 	}, nil
 }
 
@@ -165,11 +161,37 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	return &protogen.Environment{
-		Id:       env.ID.String(),
-		TenantId: tenantID.String(),
-		Name:     env.Name,
-	}, nil
+	return environmentToProto(env), nil
+}
+
+func (s *server) SetEnvironmentOIDC(ctx context.Context, in *protogen.SetEnvironmentOIDCRequest) (*protogen.SetEnvironmentOIDCResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
+	environmentID, err := uuid.Parse(in.EnvironmentId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
+	}
+
+	if _, err := s.querier.GetEnvironment(ctx, environmentID); err != nil {
+		return nil, status.Error(codes.NotFound, "Environment not found")
+	}
+
+	issuer := optionalString(in.OidcIssuer)
+	discovery := optionalString(in.OidcDiscoveryUrl)
+	if err := s.querier.SetEnvironmentOIDC(ctx, sqlgen.SetEnvironmentOIDCParams{
+		ID:               environmentID,
+		OidcIssuer:       issuer,
+		OidcDiscoveryUrl: discovery,
+	}); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	env, err := s.querier.GetEnvironment(ctx, environmentID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &protogen.SetEnvironmentOIDCResponse{Environment: environmentToProto(env)}, nil
 }
 
 func (s *server) SetEnvironmentValue(ctx context.Context, in *protogen.SetEnvironmentValueRequest) (*protogen.SetEnvironmentValueResponse, error) {
@@ -281,4 +303,28 @@ func toEnvironmentKind(kind protogen.EnvironmentKind) (types.EnvironmentKind, er
 	}
 
 	return "", status.Error(codes.InvalidArgument, "Invalid Environment kind")
+}
+
+func optionalString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func environmentToProto(env sqlgen.Environment) *protogen.Environment {
+	return &protogen.Environment{
+		Id:               env.ID.String(),
+		TenantId:         env.TenantID.String(),
+		Name:             env.Name,
+		OidcIssuer:       derefString(env.OidcIssuer),
+		OidcDiscoveryUrl: derefString(env.OidcDiscoveryUrl),
+	}
 }

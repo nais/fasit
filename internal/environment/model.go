@@ -12,15 +12,17 @@ import (
 type Labels map[string]string
 
 type Environment struct {
-	ID           uuid.UUID         `json:"id"`
-	Name         string            `json:"name"`
-	Description  *string           `json:"description"`
-	Created      time.Time         `json:"created"`
-	LastModified time.Time         `json:"lastModified"`
-	Kind         EnvironmentKind   `json:"kind"`
-	Reconcile    bool              `json:"reconciled"`
-	TenantID     uuid.UUID         `json:"tenantID"`
-	Labels       map[string]string `json:"labels"`
+	ID               uuid.UUID         `json:"id"`
+	Name             string            `json:"name"`
+	Description      *string           `json:"description"`
+	Created          time.Time         `json:"created"`
+	LastModified     time.Time         `json:"lastModified"`
+	Kind             EnvironmentKind   `json:"kind"`
+	Reconcile        bool              `json:"reconciled"`
+	TenantID         uuid.UUID         `json:"tenantID"`
+	Labels           map[string]string `json:"labels"`
+	OIDCIssuer       *string           `json:"oidcIssuer"`
+	OIDCDiscoveryURL *string           `json:"oidcDiscoveryURL"`
 }
 
 type EnvironmentKind string
@@ -60,15 +62,17 @@ type EnvironmentLabel struct {
 
 func environmentFromSQL(e environmentsql.Environment) *Environment {
 	return &Environment{
-		ID:           e.ID,
-		Name:         e.Name,
-		Description:  e.Description,
-		Created:      e.Created,
-		LastModified: e.LastModified,
-		Kind:         EnvironmentKind(e.Kind),
-		TenantID:     e.TenantID,
-		Reconcile:    e.Reconcile,
-		Labels:       e.Labels,
+		ID:               e.ID,
+		Name:             e.Name,
+		Description:      e.Description,
+		Created:          e.Created,
+		LastModified:     e.LastModified,
+		Kind:             EnvironmentKind(e.Kind),
+		TenantID:         e.TenantID,
+		Reconcile:        e.Reconcile,
+		Labels:           e.Labels,
+		OIDCIssuer:       e.OidcIssuer,
+		OIDCDiscoveryURL: e.OidcDiscoveryUrl,
 	}
 }
 

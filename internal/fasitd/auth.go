@@ -65,15 +65,26 @@ func NewStreamInterceptor(loadContext contextloader.LoaderFunc, audience string,
 // eviction; providers are created once per issuer here and never invalidated.
 var providerCache sync.Map
 
-func getOIDCVerifier(ctx context.Context, issuer, audience string) (*oidc.IDTokenVerifier, error) {
-	if p, ok := providerCache.Load(issuer); ok {
+func getOIDCVerifier(ctx context.Context, issuer, discoveryURL, audience string) (*oidc.IDTokenVerifier, error) {
+	cacheKey := issuer + "\x00" + discoveryURL
+	if p, ok := providerCache.Load(cacheKey); ok {
 		return p.(*oidc.Provider).Verifier(&oidc.Config{ClientID: audience}), nil
 	}
-	provider, err := oidc.NewProvider(ctx, issuer)
+
+	// When discovery is served via a proxy, the URL we fetch from differs from
+	// the issuer claim embedded in the token. InsecureIssuerURLContext keeps the
+	// expected issuer for validation while allowing discovery from discoveryURL.
+	discoverFrom := issuer
+	if discoveryURL != "" {
+		ctx = oidc.InsecureIssuerURLContext(ctx, issuer)
+		discoverFrom = discoveryURL
+	}
+
+	provider, err := oidc.NewProvider(ctx, discoverFrom)
 	if err != nil {
 		return nil, fmt.Errorf("create oidc provider: %w", err)
 	}
-	providerCache.Store(issuer, provider)
+	providerCache.Store(cacheKey, provider)
 	return provider.Verifier(&oidc.Config{ClientID: audience}), nil
 }
 
@@ -94,12 +105,15 @@ func validateKSAToken(ctx context.Context, loadContext contextloader.LoaderFunc,
 		return status.Errorf(codes.NotFound, "unknown environment: %v", err)
 	}
 
-	issuerVal, err := envpkg.GetEnvironmentValue(reqCtx, env.ID, "apiserver_oidc_issuer", false)
-	if err != nil {
-		return status.Errorf(codes.FailedPrecondition, "missing apiserver_oidc_issuer for environment: %v", err)
+	if env.OIDCIssuer == nil || *env.OIDCIssuer == "" {
+		return status.Error(codes.FailedPrecondition, "environment has no OIDC issuer configured")
+	}
+	discoveryURL := ""
+	if env.OIDCDiscoveryURL != nil {
+		discoveryURL = *env.OIDCDiscoveryURL
 	}
 
-	verifier, err := getOIDCVerifier(reqCtx, string(issuerVal.Value), audience)
+	verifier, err := getOIDCVerifier(reqCtx, *env.OIDCIssuer, discoveryURL, audience)
 	if err != nil {
 		return status.Errorf(codes.Internal, "configure oidc verifier: %v", err)
 	}

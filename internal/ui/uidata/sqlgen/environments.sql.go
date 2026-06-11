@@ -11,7 +11,7 @@ import (
 
 const listTenantEnvironments = `-- name: ListTenantEnvironments :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 FROM
 	environments
 WHERE
@@ -44,6 +44,8 @@ func (q *Queries) ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID
 			&i.LastModified,
 			&i.Reconcile,
 			&i.Labels,
+			&i.OidcIssuer,
+			&i.OidcDiscoveryUrl,
 		); err != nil {
 			return nil, err
 		}

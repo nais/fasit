@@ -24,7 +24,7 @@ VALUES (
 	$4,
 	$5)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 `
 
 type CreateEnvironmentParams struct {
@@ -54,6 +54,8 @@ func (q *Queries) CreateEnvironment(ctx context.Context, arg CreateEnvironmentPa
 		&i.LastModified,
 		&i.Reconcile,
 		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
 	)
 	return i, err
 }
@@ -106,7 +108,7 @@ func (q *Queries) DeleteEnvironmentValue(ctx context.Context, arg DeleteEnvironm
 
 const getEnvironment = `-- name: GetEnvironment :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 FROM
 	environments
 WHERE
@@ -126,13 +128,15 @@ func (q *Queries) GetEnvironment(ctx context.Context, id uuid.UUID) (Environment
 		&i.LastModified,
 		&i.Reconcile,
 		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
 	)
 	return i, err
 }
 
 const getEnvironmentByName = `-- name: GetEnvironmentByName :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 FROM
 	environments
 WHERE
@@ -158,6 +162,8 @@ func (q *Queries) GetEnvironmentByName(ctx context.Context, arg GetEnvironmentBy
 		&i.LastModified,
 		&i.Reconcile,
 		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
 	)
 	return i, err
 }
@@ -328,6 +334,27 @@ type SetEnvironmentLabelsParams struct {
 
 func (q *Queries) SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error {
 	_, err := q.db.Exec(ctx, setEnvironmentLabels, arg.Labels, arg.ID)
+	return err
+}
+
+const setEnvironmentOIDC = `-- name: SetEnvironmentOIDC :exec
+UPDATE
+	environments
+SET
+	oidc_issuer = $1,
+	oidc_discovery_url = $2
+WHERE
+	id = $3
+`
+
+type SetEnvironmentOIDCParams struct {
+	OidcIssuer       *string
+	OidcDiscoveryUrl *string
+	ID               uuid.UUID
+}
+
+func (q *Queries) SetEnvironmentOIDC(ctx context.Context, arg SetEnvironmentOIDCParams) error {
+	_, err := q.db.Exec(ctx, setEnvironmentOIDC, arg.OidcIssuer, arg.OidcDiscoveryUrl, arg.ID)
 	return err
 }
 

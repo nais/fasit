@@ -537,13 +537,15 @@ func (x *GetEnvironmentRequest) GetName() string {
 }
 
 type Environment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	TenantId      string                 `protobuf:"bytes,2,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Labels        []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	TenantId         string                 `protobuf:"bytes,2,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Name             string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Labels           []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
+	OidcIssuer       string                 `protobuf:"bytes,5,opt,name=oidc_issuer,json=oidcIssuer,proto3" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl string                 `protobuf:"bytes,6,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Environment) Reset() {
@@ -602,6 +604,20 @@ func (x *Environment) GetLabels() []*EnvironmentLabel {
 		return x.Labels
 	}
 	return nil
+}
+
+func (x *Environment) GetOidcIssuer() string {
+	if x != nil {
+		return x.OidcIssuer
+	}
+	return ""
+}
+
+func (x *Environment) GetOidcDiscoveryUrl() string {
+	if x != nil {
+		return x.OidcDiscoveryUrl
+	}
+	return ""
 }
 
 type CreateEnvironmentResponse struct {
@@ -760,6 +776,110 @@ func (x *SetEnvironmentValueResponse) GetSuccess() bool {
 	return false
 }
 
+type SetEnvironmentOIDCRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	EnvironmentId    string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	OidcIssuer       string                 `protobuf:"bytes,2,opt,name=oidc_issuer,json=oidcIssuer,proto3" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl string                 `protobuf:"bytes,3,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetEnvironmentOIDCRequest) Reset() {
+	*x = SetEnvironmentOIDCRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEnvironmentOIDCRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEnvironmentOIDCRequest) ProtoMessage() {}
+
+func (x *SetEnvironmentOIDCRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEnvironmentOIDCRequest.ProtoReflect.Descriptor instead.
+func (*SetEnvironmentOIDCRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *SetEnvironmentOIDCRequest) GetEnvironmentId() string {
+	if x != nil {
+		return x.EnvironmentId
+	}
+	return ""
+}
+
+func (x *SetEnvironmentOIDCRequest) GetOidcIssuer() string {
+	if x != nil {
+		return x.OidcIssuer
+	}
+	return ""
+}
+
+func (x *SetEnvironmentOIDCRequest) GetOidcDiscoveryUrl() string {
+	if x != nil {
+		return x.OidcDiscoveryUrl
+	}
+	return ""
+}
+
+type SetEnvironmentOIDCResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Environment   *Environment           `protobuf:"bytes,1,opt,name=environment,proto3" json:"environment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEnvironmentOIDCResponse) Reset() {
+	*x = SetEnvironmentOIDCResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEnvironmentOIDCResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEnvironmentOIDCResponse) ProtoMessage() {}
+
+func (x *SetEnvironmentOIDCResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEnvironmentOIDCResponse.ProtoReflect.Descriptor instead.
+func (*SetEnvironmentOIDCResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SetEnvironmentOIDCResponse) GetEnvironment() *Environment {
+	if x != nil {
+		return x.Environment
+	}
+	return nil
+}
+
 type GetEnvironmentValueRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
@@ -770,7 +890,7 @@ type GetEnvironmentValueRequest struct {
 
 func (x *GetEnvironmentValueRequest) Reset() {
 	*x = GetEnvironmentValueRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -782,7 +902,7 @@ func (x *GetEnvironmentValueRequest) String() string {
 func (*GetEnvironmentValueRequest) ProtoMessage() {}
 
 func (x *GetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -795,7 +915,7 @@ func (x *GetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
 func (*GetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{13}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetEnvironmentValueRequest) GetEnvironmentId() string {
@@ -827,7 +947,7 @@ type EnvironmentValue struct {
 
 func (x *EnvironmentValue) Reset() {
 	*x = EnvironmentValue{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -839,7 +959,7 @@ func (x *EnvironmentValue) String() string {
 func (*EnvironmentValue) ProtoMessage() {}
 
 func (x *EnvironmentValue) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -852,7 +972,7 @@ func (x *EnvironmentValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnvironmentValue.ProtoReflect.Descriptor instead.
 func (*EnvironmentValue) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{14}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *EnvironmentValue) GetEnvironmentId() string {
@@ -913,7 +1033,7 @@ type ListEnvironmentValuesRequest struct {
 
 func (x *ListEnvironmentValuesRequest) Reset() {
 	*x = ListEnvironmentValuesRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +1045,7 @@ func (x *ListEnvironmentValuesRequest) String() string {
 func (*ListEnvironmentValuesRequest) ProtoMessage() {}
 
 func (x *ListEnvironmentValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1058,7 @@ func (x *ListEnvironmentValuesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEnvironmentValuesRequest.ProtoReflect.Descriptor instead.
 func (*ListEnvironmentValuesRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{15}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListEnvironmentValuesRequest) GetKey() string {
@@ -957,7 +1077,7 @@ type ListEnvironmentValuesResponse struct {
 
 func (x *ListEnvironmentValuesResponse) Reset() {
 	*x = ListEnvironmentValuesResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -969,7 +1089,7 @@ func (x *ListEnvironmentValuesResponse) String() string {
 func (*ListEnvironmentValuesResponse) ProtoMessage() {}
 
 func (x *ListEnvironmentValuesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -982,7 +1102,7 @@ func (x *ListEnvironmentValuesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEnvironmentValuesResponse.ProtoReflect.Descriptor instead.
 func (*ListEnvironmentValuesResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{16}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListEnvironmentValuesResponse) GetValues() []*EnvironmentValue {
@@ -1002,7 +1122,7 @@ type DeleteEnvironmentValueRequest struct {
 
 func (x *DeleteEnvironmentValueRequest) Reset() {
 	*x = DeleteEnvironmentValueRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1014,7 +1134,7 @@ func (x *DeleteEnvironmentValueRequest) String() string {
 func (*DeleteEnvironmentValueRequest) ProtoMessage() {}
 
 func (x *DeleteEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1027,7 +1147,7 @@ func (x *DeleteEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEnvironmentValueRequest.ProtoReflect.Descriptor instead.
 func (*DeleteEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{17}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *DeleteEnvironmentValueRequest) GetEnvironmentId() string {
@@ -1053,7 +1173,7 @@ type DeleteEnvironmentValueResponse struct {
 
 func (x *DeleteEnvironmentValueResponse) Reset() {
 	*x = DeleteEnvironmentValueResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1065,7 +1185,7 @@ func (x *DeleteEnvironmentValueResponse) String() string {
 func (*DeleteEnvironmentValueResponse) ProtoMessage() {}
 
 func (x *DeleteEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1198,7 @@ func (x *DeleteEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEnvironmentValueResponse.ProtoReflect.Descriptor instead.
 func (*DeleteEnvironmentValueResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{18}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
@@ -1119,12 +1239,15 @@ const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"H\n" +
 	"\x15GetEnvironmentRequest\x12\x1b\n" +
 	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"y\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xc8\x01\n" +
 	"\vEnvironment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\ttenant_id\x18\x02 \x01(\tR\btenantId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12)\n" +
-	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\"K\n" +
+	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\x12\x1f\n" +
+	"\voidc_issuer\x18\x05 \x01(\tR\n" +
+	"oidcIssuer\x12,\n" +
+	"\x12oidc_discovery_url\x18\x06 \x01(\tR\x10oidcDiscoveryUrl\"K\n" +
 	"\x19CreateEnvironmentResponse\x12.\n" +
 	"\venvironment\x18\x01 \x01(\v2\f.EnvironmentR\venvironment\"\x83\x01\n" +
 	"\x1aSetEnvironmentValueRequest\x12%\n" +
@@ -1133,7 +1256,14 @@ const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\x05value\x18\x03 \x01(\fR\x05value\x12\x16\n" +
 	"\x06secret\x18\x04 \x01(\bR\x06secret\"7\n" +
 	"\x1bSetEnvironmentValueResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"U\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x91\x01\n" +
+	"\x19SetEnvironmentOIDCRequest\x12%\n" +
+	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x1f\n" +
+	"\voidc_issuer\x18\x02 \x01(\tR\n" +
+	"oidcIssuer\x12,\n" +
+	"\x12oidc_discovery_url\x18\x03 \x01(\tR\x10oidcDiscoveryUrl\"L\n" +
+	"\x1aSetEnvironmentOIDCResponse\x12.\n" +
+	"\venvironment\x18\x01 \x01(\v2\f.EnvironmentR\venvironment\"U\n" +
 	"\x1aGetEnvironmentValueRequest\x12%\n" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\"\xe2\x01\n" +
@@ -1164,13 +1294,14 @@ const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\n" +
 	"\x06ONPREM\x10\x03\x12\n" +
 	"\n" +
-	"\x06LEGACY\x10\x042\xa4\x05\n" +
+	"\x06LEGACY\x10\x042\xf5\x05\n" +
 	"\x05Fasit\x12=\n" +
 	"\fCreateTenant\x12\x14.CreateTenantRequest\x1a\x15.CreateTenantResponse\"\x00\x12)\n" +
 	"\tGetTenant\x12\x11.GetTenantRequest\x1a\a.Tenant\"\x00\x12L\n" +
 	"\x11CreateEnvironment\x12\x19.CreateEnvironmentRequest\x1a\x1a.CreateEnvironmentResponse\"\x00\x128\n" +
 	"\x0eGetEnvironment\x12\x16.GetEnvironmentRequest\x1a\f.Environment\"\x00\x12R\n" +
-	"\x13SetEnvironmentValue\x12\x1b.SetEnvironmentValueRequest\x1a\x1c.SetEnvironmentValueResponse\"\x00\x12G\n" +
+	"\x13SetEnvironmentValue\x12\x1b.SetEnvironmentValueRequest\x1a\x1c.SetEnvironmentValueResponse\"\x00\x12O\n" +
+	"\x12SetEnvironmentOIDC\x12\x1a.SetEnvironmentOIDCRequest\x1a\x1b.SetEnvironmentOIDCResponse\"\x00\x12G\n" +
 	"\x13GetEnvironmentValue\x12\x1b.GetEnvironmentValueRequest\x1a\x11.EnvironmentValue\"\x00\x12X\n" +
 	"\x15ListEnvironmentValues\x12\x1d.ListEnvironmentValuesRequest\x1a\x1e.ListEnvironmentValuesResponse\"\x00\x12[\n" +
 	"\x16DeleteEnvironmentValue\x12\x1e.DeleteEnvironmentValueRequest\x1a\x1f.DeleteEnvironmentValueResponse\"\x00\x12U\n" +
@@ -1189,7 +1320,7 @@ func file_schema_protobuf_fasit_proto_rawDescGZIP() []byte {
 }
 
 var file_schema_protobuf_fasit_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_schema_protobuf_fasit_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_schema_protobuf_fasit_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_schema_protobuf_fasit_proto_goTypes = []any{
 	(EnvironmentKind)(0),                   // 0: EnvironmentKind
 	(*CreateTenantRequest)(nil),            // 1: CreateTenantRequest
@@ -1205,12 +1336,14 @@ var file_schema_protobuf_fasit_proto_goTypes = []any{
 	(*CreateEnvironmentResponse)(nil),      // 11: CreateEnvironmentResponse
 	(*SetEnvironmentValueRequest)(nil),     // 12: SetEnvironmentValueRequest
 	(*SetEnvironmentValueResponse)(nil),    // 13: SetEnvironmentValueResponse
-	(*GetEnvironmentValueRequest)(nil),     // 14: GetEnvironmentValueRequest
-	(*EnvironmentValue)(nil),               // 15: EnvironmentValue
-	(*ListEnvironmentValuesRequest)(nil),   // 16: ListEnvironmentValuesRequest
-	(*ListEnvironmentValuesResponse)(nil),  // 17: ListEnvironmentValuesResponse
-	(*DeleteEnvironmentValueRequest)(nil),  // 18: DeleteEnvironmentValueRequest
-	(*DeleteEnvironmentValueResponse)(nil), // 19: DeleteEnvironmentValueResponse
+	(*SetEnvironmentOIDCRequest)(nil),      // 14: SetEnvironmentOIDCRequest
+	(*SetEnvironmentOIDCResponse)(nil),     // 15: SetEnvironmentOIDCResponse
+	(*GetEnvironmentValueRequest)(nil),     // 16: GetEnvironmentValueRequest
+	(*EnvironmentValue)(nil),               // 17: EnvironmentValue
+	(*ListEnvironmentValuesRequest)(nil),   // 18: ListEnvironmentValuesRequest
+	(*ListEnvironmentValuesResponse)(nil),  // 19: ListEnvironmentValuesResponse
+	(*DeleteEnvironmentValueRequest)(nil),  // 20: DeleteEnvironmentValueRequest
+	(*DeleteEnvironmentValueResponse)(nil), // 21: DeleteEnvironmentValueResponse
 }
 var file_schema_protobuf_fasit_proto_depIdxs = []int32{
 	4,  // 0: CreateTenantResponse.tenant:type_name -> Tenant
@@ -1220,30 +1353,33 @@ var file_schema_protobuf_fasit_proto_depIdxs = []int32{
 	10, // 4: SetEnvironmentLabelsResponse.environment:type_name -> Environment
 	8,  // 5: Environment.labels:type_name -> EnvironmentLabel
 	10, // 6: CreateEnvironmentResponse.environment:type_name -> Environment
-	15, // 7: ListEnvironmentValuesResponse.values:type_name -> EnvironmentValue
-	1,  // 8: Fasit.CreateTenant:input_type -> CreateTenantRequest
-	2,  // 9: Fasit.GetTenant:input_type -> GetTenantRequest
-	5,  // 10: Fasit.CreateEnvironment:input_type -> CreateEnvironmentRequest
-	9,  // 11: Fasit.GetEnvironment:input_type -> GetEnvironmentRequest
-	12, // 12: Fasit.SetEnvironmentValue:input_type -> SetEnvironmentValueRequest
-	14, // 13: Fasit.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
-	16, // 14: Fasit.ListEnvironmentValues:input_type -> ListEnvironmentValuesRequest
-	18, // 15: Fasit.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
-	6,  // 16: Fasit.SetEnvironmentLabels:input_type -> SetEnvironmentLabelsRequest
-	3,  // 17: Fasit.CreateTenant:output_type -> CreateTenantResponse
-	4,  // 18: Fasit.GetTenant:output_type -> Tenant
-	11, // 19: Fasit.CreateEnvironment:output_type -> CreateEnvironmentResponse
-	10, // 20: Fasit.GetEnvironment:output_type -> Environment
-	13, // 21: Fasit.SetEnvironmentValue:output_type -> SetEnvironmentValueResponse
-	15, // 22: Fasit.GetEnvironmentValue:output_type -> EnvironmentValue
-	17, // 23: Fasit.ListEnvironmentValues:output_type -> ListEnvironmentValuesResponse
-	19, // 24: Fasit.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
-	7,  // 25: Fasit.SetEnvironmentLabels:output_type -> SetEnvironmentLabelsResponse
-	17, // [17:26] is the sub-list for method output_type
-	8,  // [8:17] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	10, // 7: SetEnvironmentOIDCResponse.environment:type_name -> Environment
+	17, // 8: ListEnvironmentValuesResponse.values:type_name -> EnvironmentValue
+	1,  // 9: Fasit.CreateTenant:input_type -> CreateTenantRequest
+	2,  // 10: Fasit.GetTenant:input_type -> GetTenantRequest
+	5,  // 11: Fasit.CreateEnvironment:input_type -> CreateEnvironmentRequest
+	9,  // 12: Fasit.GetEnvironment:input_type -> GetEnvironmentRequest
+	12, // 13: Fasit.SetEnvironmentValue:input_type -> SetEnvironmentValueRequest
+	14, // 14: Fasit.SetEnvironmentOIDC:input_type -> SetEnvironmentOIDCRequest
+	16, // 15: Fasit.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
+	18, // 16: Fasit.ListEnvironmentValues:input_type -> ListEnvironmentValuesRequest
+	20, // 17: Fasit.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
+	6,  // 18: Fasit.SetEnvironmentLabels:input_type -> SetEnvironmentLabelsRequest
+	3,  // 19: Fasit.CreateTenant:output_type -> CreateTenantResponse
+	4,  // 20: Fasit.GetTenant:output_type -> Tenant
+	11, // 21: Fasit.CreateEnvironment:output_type -> CreateEnvironmentResponse
+	10, // 22: Fasit.GetEnvironment:output_type -> Environment
+	13, // 23: Fasit.SetEnvironmentValue:output_type -> SetEnvironmentValueResponse
+	15, // 24: Fasit.SetEnvironmentOIDC:output_type -> SetEnvironmentOIDCResponse
+	17, // 25: Fasit.GetEnvironmentValue:output_type -> EnvironmentValue
+	19, // 26: Fasit.ListEnvironmentValues:output_type -> ListEnvironmentValuesResponse
+	21, // 27: Fasit.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
+	7,  // 28: Fasit.SetEnvironmentLabels:output_type -> SetEnvironmentLabelsResponse
+	19, // [19:29] is the sub-list for method output_type
+	9,  // [9:19] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_schema_protobuf_fasit_proto_init() }
@@ -1258,7 +1394,7 @@ func file_schema_protobuf_fasit_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_schema_protobuf_fasit_proto_rawDesc), len(file_schema_protobuf_fasit_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

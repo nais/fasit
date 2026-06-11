@@ -24,7 +24,7 @@ VALUES (
 	$4,
 	$5)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 `
 
 type CreateEnvironmentParams struct {
@@ -54,13 +54,15 @@ func (q *Queries) CreateEnvironment(ctx context.Context, arg CreateEnvironmentPa
 		&i.LastModified,
 		&i.Reconcile,
 		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
 	)
 	return i, err
 }
 
 const getEnvironment = `-- name: GetEnvironment :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 FROM
 	environments
 WHERE
@@ -80,13 +82,15 @@ func (q *Queries) GetEnvironment(ctx context.Context, id uuid.UUID) (Environment
 		&i.LastModified,
 		&i.Reconcile,
 		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
 	)
 	return i, err
 }
 
 const getEnvironmentByName = `-- name: GetEnvironmentByName :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 FROM
 	environments
 WHERE
@@ -112,6 +116,8 @@ func (q *Queries) GetEnvironmentByName(ctx context.Context, arg GetEnvironmentBy
 		&i.LastModified,
 		&i.Reconcile,
 		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
 	)
 	return i, err
 }
@@ -134,7 +140,7 @@ func (q *Queries) GetEnvironmentLabels(ctx context.Context, id uuid.UUID) (types
 
 const listEnvironments = `-- name: ListEnvironments :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 FROM
 	environments
 WHERE
@@ -167,6 +173,8 @@ func (q *Queries) ListEnvironments(ctx context.Context, tenantID uuid.UUID) ([]E
 			&i.LastModified,
 			&i.Reconcile,
 			&i.Labels,
+			&i.OidcIssuer,
+			&i.OidcDiscoveryUrl,
 		); err != nil {
 			return nil, err
 		}

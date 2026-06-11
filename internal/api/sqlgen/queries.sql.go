@@ -56,7 +56,7 @@ func (q *Queries) GetFeatureAssignment(ctx context.Context, id uuid.UUID) (GetFe
 const listTenantsWithEnvironments = `-- name: ListTenantsWithEnvironments :many
 SELECT
 	t.id, t.name, t.description, t.created, t.last_modified, t.ci,
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels, e.oidc_issuer, e.oidc_discovery_url,
 	ev.value AS gcp_project_id
 FROM
 	tenants t
@@ -100,6 +100,8 @@ func (q *Queries) ListTenantsWithEnvironments(ctx context.Context) ([]ListTenant
 			&i.Environment.LastModified,
 			&i.Environment.Reconcile,
 			&i.Environment.Labels,
+			&i.Environment.OidcIssuer,
+			&i.Environment.OidcDiscoveryUrl,
 			&i.GcpProjectID,
 		); err != nil {
 			return nil, err

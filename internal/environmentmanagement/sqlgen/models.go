@@ -10,15 +10,17 @@ import (
 )
 
 type Environment struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	Name         string
-	Kind         types.EnvironmentKind
-	Description  *string
-	Created      time.Time
-	LastModified time.Time
-	Reconcile    bool
-	Labels       types.EnvironmentLabels
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	Name             string
+	Kind             types.EnvironmentKind
+	Description      *string
+	Created          time.Time
+	LastModified     time.Time
+	Reconcile        bool
+	Labels           types.EnvironmentLabels
+	OidcIssuer       *string
+	OidcDiscoveryUrl *string
 }
 
 type Tenant struct {

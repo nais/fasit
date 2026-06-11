@@ -89,7 +89,7 @@ func (q *Queries) GetTenantByName(ctx context.Context, name string) (Tenant, err
 
 const listTenantEnvironments = `-- name: ListTenantEnvironments :many
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels, e.oidc_issuer, e.oidc_discovery_url,
 	t.name AS tenant_name
 FROM
 	environments e
@@ -107,16 +107,18 @@ ORDER BY
 `
 
 type ListTenantEnvironmentsRow struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	Name         string
-	Kind         types.EnvironmentKind
-	Description  *string
-	Created      time.Time
-	LastModified time.Time
-	Reconcile    bool
-	Labels       types.EnvironmentLabels
-	TenantName   string
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	Name             string
+	Kind             types.EnvironmentKind
+	Description      *string
+	Created          time.Time
+	LastModified     time.Time
+	Reconcile        bool
+	Labels           types.EnvironmentLabels
+	OidcIssuer       *string
+	OidcDiscoveryUrl *string
+	TenantName       string
 }
 
 func (q *Queries) ListTenantEnvironments(ctx context.Context, all bool) ([]ListTenantEnvironmentsRow, error) {
@@ -138,6 +140,8 @@ func (q *Queries) ListTenantEnvironments(ctx context.Context, all bool) ([]ListT
 			&i.LastModified,
 			&i.Reconcile,
 			&i.Labels,
+			&i.OidcIssuer,
+			&i.OidcDiscoveryUrl,
 			&i.TenantName,
 		); err != nil {
 			return nil, err
