@@ -112,6 +112,6 @@ jobs:
           version: ${{ needs.build_push_oidcproxy_chart.outputs.version }}
           targets: |
             [
-              {"target":{"tenant":"ci-nais"}, "wait": true},
-              {"target":{"tenant":"nav"} }
+              {"target":{"tenant":"ci-nais", "kind":"management"}, "wait": true},
+              {"target":{"tenant":"nav", "kind":"management"} }
             ]
