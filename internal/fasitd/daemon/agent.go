@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/fasitd/protogen"
+	"google.golang.org/grpc/metadata"
 	"helm.sh/helm/v3/pkg/release"
 )
 
@@ -47,6 +48,10 @@ func NewAgent(client protogen.FasitdClient, opts AgentOptions, log *slog.Logger)
 
 // Run opens the session and blocks until the stream closes or ctx is cancelled.
 func (a *Agent) Run(ctx context.Context) error {
+	ctx = metadata.AppendToOutgoingContext(ctx,
+		"x-fasit-tenant", a.opts.Tenant,
+		"x-fasit-environment", a.opts.Environment,
+	)
 	stream, err := a.client.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("open session: %w", err)

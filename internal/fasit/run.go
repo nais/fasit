@@ -140,7 +140,7 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		if err := runFasitdGRPC(ctx, fasitdServer, cfg, log); err != nil {
+		if err := runFasitdGRPC(ctx, fasitdServer, loadContext, cfg, log); err != nil {
 			log.With("err", err).Error("running fasitd GRPC server")
 		}
 	}()
@@ -240,8 +240,8 @@ func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddr
 	return g.Wait()
 }
 
-func runFasitdGRPC(ctx context.Context, srv *fasitd.Server, cfg *Config, log *slog.Logger) error {
-	s, err := fasitd.NewGrpcServer(srv, cfg.IAPAudience, cfg.InsecureSkipProxy)
+func runFasitdGRPC(ctx context.Context, srv *fasitd.Server, loadContext contextloader.LoaderFunc, cfg *Config, log *slog.Logger) error {
+	s, err := fasitd.NewGrpcServer(srv, loadContext, cfg.IAPAudience, cfg.InsecureSkipProxy)
 	if err != nil {
 		return fmt.Errorf("creating fasitd grpc server: %w", err)
 	}
