@@ -1,8 +1,8 @@
 tenantName:
 env:
 envProjectId:
-# fasitAddress is the Fasit fasitd gRPC endpoint (behind Google IAP in production).
-fasitAddress: fasitd.nais.io:4445
+# fasitAddress is the Fasit fasitd gRPC endpoint (behind a load balancer on 443 in production).
+fasitAddress: fasitd.nais.io:443
 # iapAudience is the OAuth client ID of the IAP-protected backend.
 iapAudience: ""
 image:
