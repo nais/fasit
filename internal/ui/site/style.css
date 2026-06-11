@@ -1230,6 +1230,31 @@ nav .user {
   table-layout: fixed;
   width: 100%;
 }
+.config-table-env {
+  table-layout: fixed;
+  width: 100%;
+}
+.config-table-env th:nth-child(1),
+.config-table-env td:nth-child(1) {
+  width: 30%;
+  word-break: break-word;
+}
+.config-table-env th:nth-child(2),
+.config-table-env td:nth-child(2) {
+  width: auto;
+  word-break: break-word;
+}
+.config-table-env th:nth-child(3),
+.config-table-env td:nth-child(3) {
+  width: 11rem;
+}
+.config-table-env th:nth-child(4),
+.config-table-env td:nth-child(4) {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: top;
+}
 .config-table th:nth-child(1),
 .config-table td:nth-child(1) {
   width: 30%;
@@ -1298,21 +1323,139 @@ nav .user {
   margin-left: 0.25rem;
 }
 
-.value-readonly {
-  display: block;
+.config-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.config-section-header h3 {
+  margin: 0;
+}
+.config-section-header h3 {
+  margin: 0;
+}
+.config-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.config-section-actions .btn-small {
+  margin-left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.btn-icon {
+  width: 0.85em;
+  height: 0.85em;
+  flex: none;
+}
+.config-edit-actions {
+  display: none;
+  gap: 0.5rem;
+  margin: 0;
+}
+.config-save-btn {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.config-value-edit {
+  display: none;
+}
+.bulk-value-input {
   width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.4rem 0.5rem;
-  background: var(--bg-subtle, transparent);
-  border: 1px solid var(--border, var(--border-strong));
+  max-width: 28rem;
+  padding: 0.3rem 0.45rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: inherit;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+textarea.bulk-value-input {
+  resize: vertical;
+  font-family: var(--font-mono, monospace);
+}
+.config-editable-section.editing .config-value-display {
+  display: none;
+}
+.config-editable-section.editing .config-value-edit {
+  display: block;
+}
+.config-editable-section.editing .config-edit-toggle {
+  display: none;
+}
+.config-editable-section.editing .config-edit-actions {
+  display: flex;
+}
+.config-editable-section.editing .config-kebab-col {
+  visibility: hidden;
+}
+
+.value-empty {
+  color: var(--text-faint);
+  font-style: italic;
+}
+.value-readonly,
+.card pre.value-readonly {
+  display: block;
+  margin: 0;
+  padding: 0;
+  max-height: 14rem;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--text-primary);
   font-family: var(--font-mono, monospace);
   font-size: 0.85em;
   line-height: 1.35;
-  resize: vertical;
   white-space: pre;
   overflow: auto;
+}
+.value-readonly code {
+  font: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
+}
+.source-badge {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+.source-env-set {
+  color: var(--accent);
+  font-weight: 600;
+}
+.config-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--status-error);
+  font-size: 0.75rem;
+  line-height: 1;
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  margin-left: 0.6rem;
+  cursor: pointer;
+}
+.config-clear-btn::before {
+  content: "\00d7";
+  font-size: 0.95em;
+}
+.config-clear-btn:hover {
+  background: var(--status-error);
+  border-color: var(--status-error);
+  color: #fff;
+}
+.config-editable-section.editing .config-clear-btn {
+  display: none;
 }
 
 .value-editor-toolbar {

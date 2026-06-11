@@ -54,6 +54,65 @@ func ConfigValueCell(item ConfigItem) g.Node {
 	return h.Td(ValueDisplay(item.Value, item.Type))
 }
 
+// Bulk edit form field names. Per-row fields are namespaced by config key so a
+// single form can carry edits for many rows. BulkKeysField enumerates which
+// rows are present (one value per editable row).
+const BulkKeysField = "keys"
+
+func BulkValueField(key string) string { return "value:" + key }
+func BulkOrigField(key string) string  { return "orig:" + key }
+func BulkTypeField(key string) string  { return "type:" + key }
+func BulkIDField(key string) string    { return "id:" + key }
+
+// BulkConfigCell renders the value <td> for a row in a table that supports
+// inline bulk editing. It contains both the read-only value display and a
+// hidden editor (shown via the .editing class on an ancestor). All editor
+// inputs are associated with the form identified by formID via the form
+// attribute, so they can live outside that <form> element (avoiding nested
+// forms from the per-row popovers). idForUpdate is the existing env-override
+// config id, or empty when the row would create a new override.
+func BulkConfigCell(formID, idForUpdate string, item ConfigItem) g.Node {
+	hidden := func(name, value string) g.Node {
+		return h.Input(h.Type("hidden"), h.Name(name), h.Value(value), g.Attr("form", formID))
+	}
+	display := ValueDisplay(item.Value, item.Type)
+	if strings.TrimSpace(item.Value) == "" {
+		display = h.Span(h.Class("value-empty"), g.Text("<not set>"))
+	} else if item.IsSecret {
+		display = h.Span(h.Class("text-muted"), g.Text("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"))
+	}
+	return h.Td(
+		h.Div(h.Class("config-value-display"), display),
+		h.Div(h.Class("config-value-edit"),
+			bulkValueWidget(formID, item),
+			hidden(BulkKeysField, item.Key),
+			hidden(BulkTypeField(item.Key), item.Type),
+			hidden(BulkOrigField(item.Key), item.Value),
+			hidden(BulkIDField(item.Key), idForUpdate),
+		),
+	)
+}
+
+func bulkValueWidget(formID string, item ConfigItem) g.Node {
+	name := BulkValueField(item.Key)
+	switch strings.ToUpper(item.Type) {
+	case "BOOL":
+		return h.Select(h.Name(name), g.Attr("form", formID), h.Class("bulk-value-input"),
+			Option("true", item.Value), Option("false", item.Value))
+	case "INT":
+		return h.Input(h.Type("text"), g.Attr("inputmode", "numeric"), h.Name(name),
+			h.Value(item.Value), g.Attr("form", formID), h.Class("bulk-value-input"))
+	default:
+		if IsMultilineValue(item.Value) {
+			rows := min(max(strings.Count(item.Value, "\n")+1, 2), 12)
+			return h.Textarea(h.Name(name), g.Attr("form", formID), h.Class("bulk-value-input"),
+				h.Rows(fmt.Sprintf("%d", rows)), g.Text(item.Value))
+		}
+		return h.Input(h.Type("text"), h.Name(name), h.Value(item.Value), g.Attr("form", formID),
+			h.Class("bulk-value-input"))
+	}
+}
+
 // ComputedValueCell renders a <td> with a computed value (template + rendered output).
 func ComputedValueCell(item ConfigItem) g.Node {
 	if item.IsSecret {
@@ -185,31 +244,39 @@ func ConfigEditPopover(popoverID, action, title, submitLabel string, item Config
 	})
 }
 
-// ConfigDeletePopover renders a delete confirmation popover.
-func ConfigDeletePopover(popoverID, action, message, fallbackValue string) g.Node {
+// ConfigDeletePopover renders a delete confirmation popover with an inline ✕
+// trigger button (used in the per-row actions column on the global config page).
+func ConfigDeletePopover(popoverID, action, title, confirmLabel, message, fallbackValue string) g.Node {
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon delete-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
-		Popover(popoverID, "", "Remove Configuration",
-			h.P(g.Text(message)),
-			g.If(fallbackValue != "", fallbackValueNode(fallbackValue)),
-			h.Form(h.Method("POST"), h.Action(action),
-				PopoverActions(
-					h.Button(h.Type("submit"), g.Text("Remove")),
-				),
+		ConfigDeleteConfirm(popoverID, action, title, confirmLabel, message, fallbackValue),
+	})
+}
+
+// ConfigDeleteConfirm renders just the delete confirmation popover, without a
+// trigger button. Callers provide their own trigger via popovertarget=popoverID
+// (e.g. a kebab menu item).
+func ConfigDeleteConfirm(popoverID, action, title, confirmLabel, message, fallbackValue string) g.Node {
+	return Popover(popoverID, "", title,
+		g.If(message != "", h.P(g.Text(message))),
+		g.If(fallbackValue != "", fallbackValueNode(fallbackValue)),
+		h.Form(h.Method("POST"), h.Action(action),
+			PopoverActions(
+				h.Button(h.Type("submit"), g.Text(confirmLabel)),
 			),
 		),
-	})
+	)
 }
 
 func fallbackValueNode(v string) g.Node {
 	if strings.Contains(v, "\n") {
 		return g.Group([]g.Node{
-			h.P(h.Strong(g.Text("Value after removal:"))),
+			h.P(h.Strong(g.Text("Reverts to:"))),
 			h.Pre(g.Text(v)),
 		})
 	}
 	return h.P(
-		h.Strong(g.Text("Value after removal: ")),
+		h.Strong(g.Text("Reverts to: ")),
 		h.Code(g.Text(v)),
 	)
 }
@@ -223,15 +290,10 @@ func Option(value, current string) g.Node {
 	return h.Option(append(attrs, g.Text(value))...)
 }
 
-// ReadonlyValueTextarea renders a read-only textarea for multiline values.
+// ReadonlyValueTextarea renders a read-only, non-editable block for multiline
+// values. It is intentionally not a form control so it doesn't look editable.
 func ReadonlyValueTextarea(value string) g.Node {
-	rows := max(min(strings.Count(value, "\n")+1, 10), 2)
-	return h.Textarea(
-		g.Attr("readonly", ""),
-		h.Class("value-readonly"),
-		h.Rows(fmt.Sprintf("%d", rows)),
-		g.Text(value),
-	)
+	return h.Pre(h.Class("value-readonly"), h.Code(g.Text(value)))
 }
 
 // IsMultilineValue returns true if the string contains newlines.

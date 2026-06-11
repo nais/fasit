@@ -205,49 +205,108 @@ func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 		t.Error("Configuration should render before Computed")
 	}
 
-	if !strings.Contains(html, `source-label">helm value`) {
-		t.Error("configurable item without override should be tagged 'helm value'")
+	if !strings.Contains(html, `>values.yaml<`) {
+		t.Error("configurable item without override should be tagged 'values.yaml'")
 	}
-	if !strings.Contains(html, `source-label">mapping`) {
-		t.Error("computed item should be tagged 'mapping'")
+	if !strings.Contains(html, `>computed<`) {
+		t.Error("computed item should be tagged 'computed'")
 	}
 	if !strings.Contains(html, `data-no-sort`) {
 		t.Error("actions column should be marked non-sortable")
 	}
 }
 
-func TestOverviewTab_SourceLabels(t *testing.T) {
+func TestSourceBadge(t *testing.T) {
 	t.Parallel()
-	feat := &feature.Feature{
-		Name: "f",
-		FeatureYAML: feature.FeatureYAML{
-			Values: feature.Values{
-				"a": {Config: &feature.Config{Type: feature.ConfigTypeString}},
-				"b": {Config: &feature.Config{Type: feature.ConfigTypeString}},
-			},
+	tests := []struct {
+		name string
+		item FeatureConfigItem
+		// want is the rendered source label text.
+		want string
+		// wantEnvEmphasis asserts whether the "set in this environment" styling applies.
+		wantEnvEmphasis bool
+	}{
+		{
+			name:            "environment override is emphasised",
+			item:            FeatureConfigItem{Source: string(feature.ConfigSourceEnv), Value: "v"},
+			want:            "env config",
+			wantEnvEmphasis: true,
+		},
+		{
+			name: "global config row",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceGlobal), Value: "v"},
+			want: "global config",
+		},
+		{
+			name: "chart default with a value",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceHelm), Value: "warn"},
+			want: "values.yaml",
+		},
+		{
+			name: "unset key, empty value",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceHelm), Value: ""},
+			want: "none",
+		},
+		{
+			name: "unset key, empty array",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceHelm), Value: "[]"},
+			want: "none",
+		},
+		{
+			name: "computed default is overridable",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceHelm), Value: "x", IsComputed: true, IsConfigurable: true},
+			want: "computed default",
+		},
+		{
+			name: "pure computed cannot be overridden",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceHelm), Value: "x", IsComputed: true},
+			want: "computed",
+		},
+		{
+			name: "computed takes precedence over empty value",
+			item: FeatureConfigItem{Source: string(feature.ConfigSourceHelm), Value: "", IsComputed: true},
+			want: "computed",
 		},
 	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			var buf bytes.Buffer
+			if err := sourceBadge(tc.item).Render(&buf); err != nil {
+				t.Fatalf("render: %v", err)
+			}
+			html := buf.String()
+			if !strings.Contains(html, ">"+tc.want+"<") {
+				t.Errorf("label = %q, want it to contain %q", html, tc.want)
+			}
+			if got := strings.Contains(html, "source-env-set"); got != tc.wantEnvEmphasis {
+				t.Errorf("env emphasis = %v, want %v (%q)", got, tc.wantEnvEmphasis, html)
+			}
+		})
+	}
+}
+
+func TestSourceCell_ClearOnlyForEnvOverride(t *testing.T) {
+	t.Parallel()
 	page := &FeaturePage{
 		TenantSlug:  "t",
 		Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
-		Feature: &FeatureDetail{
-			Feature: feat,
-			Enabled: true,
-			ConfigItems: []FeatureConfigItem{
-				{Key: "a", Value: "x", Source: string(feature.ConfigSourceHelm), Type: "STRING", IsConfigurable: true},
-				{Key: "b", Value: "y", Source: string(feature.ConfigSourceEnv), Type: "STRING", IsConfigurable: true, ID: "00000000-0000-0000-0000-000000000001"},
-			},
-		},
+		Feature:     &FeatureDetail{Feature: &feature.Feature{Name: "f"}},
 	}
-	var buf bytes.Buffer
-	if err := overviewTab(page).Render(&buf); err != nil {
-		t.Fatalf("render: %v", err)
+	envItem := FeatureConfigItem{Key: "k", Source: string(feature.ConfigSourceEnv), Value: "v", ID: "00000000-0000-0000-0000-000000000001"}
+	helmItem := FeatureConfigItem{Key: "k", Source: string(feature.ConfigSourceHelm), Value: "v"}
+
+	var envBuf, helmBuf bytes.Buffer
+	if err := sourceCell(page, envItem).Render(&envBuf); err != nil {
+		t.Fatalf("render env: %v", err)
 	}
-	html := buf.String()
-	if !strings.Contains(html, `>env config<`) {
-		t.Error("env-override item should display 'env config' source pill")
+	if err := sourceCell(page, helmItem).Render(&helmBuf); err != nil {
+		t.Fatalf("render helm: %v", err)
 	}
-	if !strings.Contains(html, `>helm value<`) {
-		t.Error("non-overridden item should display 'helm value' source pill")
+	if !strings.Contains(envBuf.String(), ">Clear<") {
+		t.Error("env override should render an inline Clear control")
+	}
+	if strings.Contains(helmBuf.String(), ">Clear<") {
+		t.Error("non-override row must not render a Clear control")
 	}
 }

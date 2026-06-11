@@ -184,6 +184,90 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 	}
 }
 
+func BatchUpdateConfigHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		tenant, err := envpkg.GetTenantByName(r.Context(), chi.URLParam(r, "tenant"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		featureName := chi.URLParam(r, "feature")
+		feat, err := featureassignment.FeatureForEnvironment(r.Context(), env.ID, featureName)
+		if err != nil {
+			status := http.StatusInternalServerError
+			if errors.Is(err, featureassignment.ErrFeatureNotFound) {
+				status = http.StatusNotFound
+			}
+			http.Error(w, "Failed to get feature: "+err.Error(), status)
+			return
+		}
+
+		changed := 0
+		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
+			for _, key := range r.PostForm[components.BulkKeysField] {
+				newValue := r.PostFormValue(components.BulkValueField(key))
+				if newValue == r.PostFormValue(components.BulkOrigField(key)) {
+					continue
+				}
+				value, err := components.ParseConfigValue(newValue, r.PostFormValue(components.BulkTypeField(key)), "raw")
+				if err != nil {
+					return fmt.Errorf("%s: invalid value format: %w", key, err)
+				}
+				raw, err := json.Marshal(value)
+				if err != nil {
+					return fmt.Errorf("%s: encode value: %w", key, err)
+				}
+
+				if id := r.PostFormValue(components.BulkIDField(key)); id != "" {
+					configID, err := uuid.Parse(id)
+					if err != nil {
+						return fmt.Errorf("%s: invalid configuration id: %w", key, err)
+					}
+					if _, err := featurepkg.ConfigEnvUpdate(ctx, configID, featurepkg.UpdateConfiguration{Value: raw}); err != nil {
+						return fmt.Errorf("%s: %w", key, err)
+					}
+				} else {
+					secret := false
+					if v, ok := feat.Values[key]; ok && v.Config != nil {
+						secret = v.Config.Secret
+					}
+					if _, err := featurepkg.ConfigEnvCreate(ctx, featurepkg.NewConfiguration{
+						EnvironmentID: &env.ID,
+						Feature:       featureName,
+						Key:           key,
+						Value:         raw,
+						Secret:        secret,
+					}); err != nil {
+						return fmt.Errorf("%s: %w", key, err)
+					}
+				}
+				changed++
+			}
+			return nil
+		})
+		if err != nil {
+			http.Error(w, "Failed to update configuration: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if changed > 0 {
+			reconciler.TriggerReconcile()
+		}
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+	}
+}
+
 func ToggleFeatureStateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
@@ -569,12 +653,27 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 	if len(items) == 0 {
 		return h.Div(h.H2(g.Text("Configuration")), h.P(h.Class("text-muted"), g.Text("No configurable values.")))
 	}
-	return h.Div(
+	const formID = "config-batch-form"
+	basePath := featureBasePathForPage(page)
+	header := h.Div(h.Class("config-section-header"),
 		h.H3(g.Text("Configuration")),
-		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "env-feature-config-configurable"),
+		h.Div(h.Class("config-section-actions"),
+			h.Button(h.Type("button"), h.Class("btn-small config-edit-toggle"),
+				g.Attr("data-config-edit-toggle", ""),
+				g.Raw(`<svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5l2 2L6 12l-2.5.5.5-2.5 7.5-7.5z"/></svg>`),
+				h.Span(g.Text("Edit values"))),
+			h.Form(h.ID(formID), h.Method("POST"), h.Action(basePath+"/config/batch"),
+				h.Class("config-edit-actions"),
+				h.Button(h.Type("submit"), h.Class("btn-small config-save-btn"), g.Text("Save changes")),
+				h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("data-config-edit-cancel", ""), g.Text("Cancel")),
+			),
+		),
+	)
+	return h.Div(h.Class("config-editable-section"),
+		header,
+		h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config-configurable"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
-				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
@@ -582,11 +681,14 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				valDef := page.Feature.Values[item.Key]
 				warn := valDef.Required && item.Source == string(featurepkg.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
+				idForUpdate := ""
+				if item.Source == string(featurepkg.ConfigSourceEnv) {
+					idForUpdate = item.ID
+				}
 				return h.Tr(h.ID("config-"+item.Key), g.If(warn, h.Class("config-warning")),
 					components.ConfigKeyCell(item),
-					components.ConfigActionsCell(configActionsCell(page, item)),
-					components.ConfigValueCell(item),
-					sourceLabelCell(item),
+					components.BulkConfigCell(formID, idForUpdate, item),
+					sourceCell(page, item),
 					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key)),
 				)
 			})))),
@@ -599,10 +701,9 @@ func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 	}
 	return h.Div(
 		h.H3(g.Text("Computed")),
-		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "env-feature-config-computed"),
+		h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config-computed"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
-				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
@@ -618,7 +719,6 @@ func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 				}
 				return h.Tr(
 					components.ConfigKeyCell(item),
-					components.ConfigActionsCell(),
 					components.ComputedValueCell(item),
 					sourceLabelCell(item),
 					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key, extraKebab...)),
@@ -628,21 +728,46 @@ func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 }
 
 func sourceLabelCell(item FeatureConfigItem) g.Node {
-	return h.Td(h.Span(h.Class("source-label"), g.Text(sourceLabel(item))))
+	return h.Td(sourceBadge(item))
 }
 
-func sourceLabel(item FeatureConfigItem) string {
+// sourceCell renders the source for a configurable row. Environment-level
+// overrides are emphasized (to signal the value was set in this view) and get
+// an inline Clear control that reverts to the default. The Clear control is
+// hidden while in edit mode.
+func sourceCell(page *FeaturePage, item FeatureConfigItem) g.Node {
+	if item.Source != string(featurepkg.ConfigSourceEnv) {
+		return sourceLabelCell(item)
+	}
+	popoverID := "clear-" + item.ID
+	action := featureBasePathForPage(page) + "/config/delete/" + item.ID
+	return h.Td(
+		sourceBadge(item),
+		h.Button(h.Type("button"), h.Class("config-clear-btn"), g.Attr("popovertarget", popoverID),
+			h.Title("Clear this value and revert to the default"), g.Text("Clear")),
+		components.ConfigDeleteConfirm(popoverID, action, "Clear value", "Clear", "", item.FallbackValue),
+	)
+}
+
+func sourceBadge(item FeatureConfigItem) g.Node {
+	cls, label, title := "source-badge", "values.yaml", "Chart default from values.yaml"
 	switch item.Source {
 	case string(featurepkg.ConfigSourceEnv):
-		return "env config"
+		cls, label, title = "source-badge source-env-set", "env config", "Set for this environment"
 	case string(featurepkg.ConfigSourceGlobal):
-		return "global config"
+		label, title = "global config", "Set for all environments (feature config)"
 	default:
 		if item.IsComputed {
-			return "mapping"
+			if item.IsConfigurable {
+				label, title = "computed default", "Default is computed from a template \u2014 set a value to override it"
+			} else {
+				label, title = "computed", "Computed from a template"
+			}
+		} else if isEmptyConfigValue(item.Value) {
+			label, title = "none", "No value set \u2014 the chart declares this config but provides no default"
 		}
-		return "helm value"
 	}
+	return h.Span(h.Class(cls), h.Title(title), g.Text(label))
 }
 
 func logBlock(lines []LogLine) g.Node {
@@ -700,40 +825,6 @@ func labelPills(labels map[string]string) g.Node {
 		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
 	}
 	return g.Group(pills)
-}
-
-func configActionsCell(page *FeaturePage, item FeatureConfigItem) g.Node {
-	basePath := featureBasePathForPage(page)
-	if item.Source == string(featurepkg.ConfigSourceEnv) {
-		return g.Group([]g.Node{
-			components.ConfigEditPopover(
-				"edit-"+item.ID,
-				basePath+"/config/edit/"+item.ID,
-				"Edit Configuration", "Save changes",
-				item,
-				h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type)),
-			),
-			deleteOverrideButton(page, item),
-		})
-	}
-	return components.ConfigEditPopover(
-		"override-"+item.Key,
-		basePath+"/config/override",
-		"Override Configuration", "Save override",
-		item,
-		h.Input(h.Type("hidden"), h.Name("key"), h.Value(item.Key)),
-		h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type)),
-	)
-}
-
-func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
-	action := featureBasePathForPage(page) + "/config/delete/" + item.ID
-	return components.ConfigDeletePopover(
-		"delete-"+item.ID,
-		action,
-		fmt.Sprintf("Remove the environment override for %s?", item.Key),
-		item.FallbackValue,
-	)
 }
 
 func featureBasePath(r *http.Request) string {

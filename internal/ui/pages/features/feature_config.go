@@ -189,11 +189,11 @@ func orphanedConfigTable(featureName string, items []components.ConfigItem) g.No
 }
 
 func globalSourceLabel(item components.ConfigItem) g.Node {
-	label := "helm value"
+	label, title := "values.yaml", "Chart default from values.yaml"
 	if item.Source == string(featurepkg.ConfigSourceGlobal) {
-		label = "global config"
+		label, title = "global config", "Set for all environments (feature config)"
 	}
-	return h.Td(h.Span(h.Class("source-label"), g.Text(label)))
+	return h.Td(h.Span(h.Class("source-label"), h.Title(title), g.Text(label)))
 }
 
 func globalConfigActionsCell(featureName string, item components.ConfigItem) g.Node {
@@ -226,6 +226,8 @@ func globalDeleteButton(featureName string, item components.ConfigItem) g.Node {
 	return components.ConfigDeletePopover(
 		"delete-"+item.ID,
 		"/features/"+featureName+"/config/"+item.ID+"/delete",
+		"Remove Configuration",
+		"Remove",
 		fmt.Sprintf("Remove global config for %s?", item.Key),
 		item.FallbackValue,
 	)

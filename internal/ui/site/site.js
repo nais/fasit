@@ -324,6 +324,24 @@ document.addEventListener("click", (e) => {
   for (const m of document.querySelectorAll(".kebab-menu.open")) { m.classList.remove("open"); }
 });
 
+// Config bulk-edit mode: toggle inline value editors on the Configuration
+// section. Editors submit via a single batch form (associated by the form
+// attribute), so changes apply atomically as one deploy.
+document.addEventListener("click", (e) => {
+  const toggle = e.target.closest("[data-config-edit-toggle]");
+  if (toggle) {
+    toggle.closest(".config-editable-section")?.classList.add("editing");
+    return;
+  }
+  const cancel = e.target.closest("[data-config-edit-cancel]");
+  if (cancel) {
+    const section = cancel.closest(".config-editable-section");
+    section?.classList.remove("editing");
+    section?.querySelector(".config-edit-actions")?.reset?.();
+    return;
+  }
+});
+
 // Expand/collapse all <details> matching [data-expand-all="<class>"]
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-expand-all]");
