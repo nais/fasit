@@ -4,7 +4,7 @@ ingressDomain: ""
 # upstreams is the list of on-prem apiserver hosts to expose.
 upstreams: []
 
-ingressClassName: nais-ingress-external
+ingressClassName: external-haproxy
 
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/oidcproxy

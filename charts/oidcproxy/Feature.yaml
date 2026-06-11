@@ -8,10 +8,11 @@ values:
   ingressDomain:
     displayName: Ingress domain for the apiserver proxy hosts
     computed:
-      template: "apiserver-proxy.{{.Tenant.Name}}.cloud.nais.io"
+      template: "external.{{.Tenant.Name}}.cloud.nais.io"
   # upstreams is the list of on-prem apiserver hosts to expose. Each entry is
-  # reachable from Fasit under https://<second-label>.<ingressDomain>, e.g.
-  # apiserver.dev-fss.nais.io -> https://dev-fss.apiserver-proxy.nav.cloud.nais.io
+  # reachable from Fasit under
+  # https://<second-label>-apiserver-oidc.<ingressDomain>, e.g.
+  # apiserver.dev-fss.nais.io -> https://dev-fss-apiserver-oidc.external.nav.cloud.nais.io
   upstreams:
     displayName: Upstream apiserver hosts
     config:

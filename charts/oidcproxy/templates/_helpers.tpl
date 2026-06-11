@@ -73,8 +73,9 @@ label, e.g. apiserver.dev-fss.nais.io -> dev-fss.
 {{- end }}
 
 {{/*
-Predictable ingress host for an upstream apiserver host.
+Predictable ingress host for an upstream apiserver host, e.g.
+apiserver.dev-fss.nais.io -> dev-fss-apiserver-oidc.external.nav.cloud.nais.io
 */}}
 {{- define "oidcproxy.ingressHost" -}}
-{{- printf "%s.%s" (include "oidcproxy.upstreamName" .upstream) .domain -}}
+{{- printf "%s-apiserver-oidc.%s" (include "oidcproxy.upstreamName" .upstream) .domain -}}
 {{- end }}
