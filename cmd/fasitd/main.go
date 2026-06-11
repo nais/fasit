@@ -124,7 +124,7 @@ func dialOptions(ctx context.Context) ([]grpc.DialOption, error) {
 // When fasitd is exposed to the internet, we authenticate using the raw KSA
 // token as a JWT, with the audience verified by fasit.
 func ksaTokenSource(audience string) (credentials.PerRPCCredentials, error) {
-	const tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	const tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token" // #nosec G101 -- filesystem path to the projected token, not a credential
 	return oauth.NewJWTAccessFromFile(tokenPath)
 }
 

@@ -43,7 +43,10 @@ func newHandler(routes []route, log *slog.Logger) (http.Handler, error) {
 			http.Error(w, "unknown host", http.StatusNotFound)
 			return
 		}
-		rp.ServeHTTP(w, r)
+		// The upstream is not derived from the request: rp is selected from a
+		// fixed, configured allowlist of hosts and forwards to a preconfigured
+		// upstream, so the request cannot redirect the proxy elsewhere.
+		rp.ServeHTTP(w, r) // #nosec G704 -- upstream is a fixed configured allowlist, not request-derived
 	})
 	return mux, nil
 }
