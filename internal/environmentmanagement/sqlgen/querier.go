@@ -19,7 +19,7 @@ type Querier interface {
 	GetTenantByName(ctx context.Context, name string) (Tenant, error)
 	ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error)
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
-	UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) error
+	UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) (Environment, error)
 }
 
 var _ Querier = (*Queries)(nil)

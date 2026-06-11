@@ -120,23 +120,24 @@ func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvir
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	if err := s.querier.UpdateEnvironment(ctx, sqlgen.UpdateEnvironmentParams{
+	updated, err := s.querier.UpdateEnvironment(ctx, sqlgen.UpdateEnvironmentParams{
 		ID:               env.ID,
 		Labels:           labelsToDB(in.Labels),
 		OidcIssuer:       in.OidcIssuer,
 		OidcDiscoveryUrl: in.OidcDiscoveryUrl,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &protogen.UpdateEnvironmentResponse{
 		Environment: &protogen.Environment{
-			Id:               env.ID.String(),
-			TenantId:         env.TenantID.String(),
-			Name:             env.Name,
-			Labels:           labelsToProto(env.Labels),
-			OidcIssuer:       env.OidcIssuer,
-			OidcDiscoveryUrl: env.OidcDiscoveryUrl,
+			Id:               updated.ID.String(),
+			TenantId:         updated.TenantID.String(),
+			Name:             updated.Name,
+			Labels:           labelsToProto(updated.Labels),
+			OidcIssuer:       updated.OidcIssuer,
+			OidcDiscoveryUrl: updated.OidcDiscoveryUrl,
 		},
 	}, nil
 }

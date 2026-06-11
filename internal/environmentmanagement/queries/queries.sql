@@ -52,7 +52,7 @@ FROM
 WHERE
 	id = @id;
 
--- name: UpdateEnvironment :exec
+-- name: UpdateEnvironment :one
 UPDATE
 	environments
 SET
@@ -60,7 +60,9 @@ SET
 	oidc_issuer = @oidc_issuer,
 	oidc_discovery_url = @oidc_discovery_url
 WHERE
-	id = @id;
+	id = @id
+RETURNING
+	*;
 
 -- name: GetEnvironmentByName :one
 SELECT

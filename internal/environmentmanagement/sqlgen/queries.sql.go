@@ -362,7 +362,7 @@ func (q *Queries) SetEnvironmentValue(ctx context.Context, arg SetEnvironmentVal
 	return err
 }
 
-const updateEnvironment = `-- name: UpdateEnvironment :exec
+const updateEnvironment = `-- name: UpdateEnvironment :one
 UPDATE
 	environments
 SET
@@ -371,6 +371,8 @@ SET
 	oidc_discovery_url = $3
 WHERE
 	id = $4
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 `
 
 type UpdateEnvironmentParams struct {
@@ -380,12 +382,26 @@ type UpdateEnvironmentParams struct {
 	ID               uuid.UUID
 }
 
-func (q *Queries) UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) error {
-	_, err := q.db.Exec(ctx, updateEnvironment,
+func (q *Queries) UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, updateEnvironment,
 		arg.Labels,
 		arg.OidcIssuer,
 		arg.OidcDiscoveryUrl,
 		arg.ID,
 	)
-	return err
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Reconcile,
+		&i.Labels,
+		&i.OidcIssuer,
+		&i.OidcDiscoveryUrl,
+	)
+	return i, err
 }
