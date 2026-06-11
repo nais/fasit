@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,12 +14,15 @@ import (
 	"github.com/nais/fasit/internal/fasitd/protogen"
 	"github.com/nais/fasit/internal/helm"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"google.golang.org/api/idtoken"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/impersonate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/credentials/oauth"
 	"k8s.io/client-go/rest"
+
+	"cloud.google.com/go/compute/metadata"
 )
 
 // Version is set at build time via ldflags.
@@ -111,13 +115,32 @@ func dialOptions(ctx context.Context) ([]grpc.DialOption, error) {
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 	}
 	if cfg.IAPAudience != "" {
-		ts, err := idtoken.NewTokenSource(ctx, cfg.IAPAudience)
+		ts, err := iapTokenSource(ctx, cfg.IAPAudience)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, grpc.WithPerRPCCredentials(oauth.TokenSource{TokenSource: ts}))
 	}
 	return opts, nil
+}
+
+// iapTokenSource mints the OIDC ID token used to authenticate through Google
+// IAP. The GKE metadata identity endpoint mints the token as the federated
+// Kubernetes SA principal, which GKE does not honor for getOpenIdToken.
+// Instead we impersonate the bound GSA: ADC first obtains a normal access
+// token as that GSA (Workload Identity), then calls IAM Credentials
+// generateIdToken targeting the same GSA (self-impersonation), so the call is
+// authorized as the GSA itself.
+func iapTokenSource(ctx context.Context, audience string) (oauth2.TokenSource, error) {
+	email, err := metadata.EmailWithContext(ctx, "default")
+	if err != nil {
+		return nil, fmt.Errorf("resolve workload identity service account: %w", err)
+	}
+	return impersonate.IDTokenSource(ctx, impersonate.IDTokenConfig{
+		TargetPrincipal: email,
+		Audience:        audience,
+		IncludeEmail:    true,
+	})
 }
 
 func newLogger(level string) *slog.Logger {
