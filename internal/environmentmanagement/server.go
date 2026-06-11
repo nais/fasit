@@ -160,6 +160,7 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 			Id:               env.ID.String(),
 			TenantId:         env.TenantID.String(),
 			Name:             env.Name,
+			Labels:           labelsToProto(env.Labels),
 			OidcIssuer:       env.OidcIssuer,
 			OidcDiscoveryUrl: env.OidcDiscoveryUrl,
 		},
