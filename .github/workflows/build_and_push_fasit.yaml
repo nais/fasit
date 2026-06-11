@@ -6,6 +6,8 @@ on:
     paths-ignore:
       - "charts/naisd/**"
       - "charts/fasitd/**"
+      - "charts/oidcproxy/**"
+      - "cmd/oidcproxy/**"
       - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_naisd.yaml"
       - ".github/workflows/build_and_push_fasitd.yaml"

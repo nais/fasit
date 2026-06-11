@@ -1,0 +1,22 @@
+{{- if .Capabilities.APIVersions.Has "networking.gke.io/v1alpha3" }}
+{{- $top := . }}
+apiVersion: networking.gke.io/v1alpha3
+kind: FQDNNetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-upstreams
+  labels:
+    {{- include "oidcproxy.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  egress:
+  - to:
+    - fqdns:
+      {{- range .Values.upstreams }}
+      - {{ . | quote }}
+      {{- end }}
+    ports:
+    - protocol: TCP
+      port: 443
+{{- end }}

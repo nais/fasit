@@ -1,0 +1,22 @@
+environmentKinds:
+  - management
+values:
+  tenantName:
+    displayName: Tenant name
+    computed:
+      template: "{{.Tenant.Name}}"
+  ingressDomain:
+    displayName: Ingress domain for the apiserver proxy hosts
+    computed:
+      template: "apiserver-proxy.{{.Tenant.Name}}.cloud.nais.io"
+  # upstreams is the list of on-prem apiserver hosts to expose. Each entry is
+  # reachable from Fasit under https://<second-label>.<ingressDomain>, e.g.
+  # apiserver.dev-fss.nais.io -> https://dev-fss.apiserver-proxy.nav.cloud.nais.io
+  upstreams:
+    displayName: Upstream apiserver hosts
+    config:
+      type: string_array
+  image.tag:
+    displayName: Image tag
+    config:
+      type: string
