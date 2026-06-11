@@ -22,6 +22,7 @@ func TestEnvironmentPageRendersSideMenuAndBreadcrumbs(t *testing.T) {
 		nil,
 		nil,
 		"",
+		"",
 		[]environmentFeatureRow{{Name: "kyverno", Status: "DEPLOYED", Version: "1.2.3"}},
 		[]*feature.Release{{Name: "kyverno", Status: "deployed", Version: "1.2.3", Revision: 7}},
 		environmentHealth{ReportedAt: time.Now(), HasReport: true},
@@ -53,6 +54,7 @@ func TestEnvironmentDetailsRendersNaisdHealthAsCallout(t *testing.T) {
 	node := environmentDetailsCard(
 		&Environment{Environment: &environment2.Environment{Name: "dev"}},
 		nil,
+		"",
 		"",
 		environmentHealth{ReportedAt: time.Now(), HasReport: true},
 	)

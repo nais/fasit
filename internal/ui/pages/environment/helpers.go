@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/auth"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
@@ -145,6 +147,17 @@ func gcpProjectIDFromValues(values []*envpkg.EnvironmentValue) string {
 		}
 	}
 	return ""
+}
+
+// gcpProjectHref builds the GCP console link for a project, pinning it to the
+// logged-in user via the authuser query param so the link opens in the right
+// Google session.
+func gcpProjectHref(projectID, userEmail string) string {
+	href := "https://console.cloud.google.com/welcome?project=" + projectID
+	if userEmail != "" && userEmail != auth.LocalDevEmail && strings.Contains(userEmail, "@") {
+		href += "&authuser=" + url.QueryEscape(userEmail)
+	}
+	return href
 }
 
 func featureBreadcrumbs(tenant *envpkg.Tenant, env *envpkg.Environment, featureName string) []breadcrumb.Crumb {

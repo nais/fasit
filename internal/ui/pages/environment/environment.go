@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/auth"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -133,7 +134,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 				breadcrumb.Environments(),
 				tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
 				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-			}, activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues), featureRows, releases, health),
+			}, activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues), auth.GetEmail(r.Context()), featureRows, releases, health),
 		})
 	}
 }
@@ -219,13 +220,13 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 	return environmentHealth{ReportedAt: health.ReportedAt, HasReport: true}, nil
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*featurepkg.Release, health environmentHealth) g.Node {
-	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, health)
+func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, userEmail string, features []environmentFeatureRow, releases []*featurepkg.Release, health environmentHealth) g.Node {
+	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, userEmail, health)
 	return h.Div(h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab),
 		components.Breadcrumbs(breadcrumbs, summaryNodes...),
 		h.Main(h.Class("main-content"),
-			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, features, releases, health),
+			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, features, releases, health),
 		),
 	)
 }
@@ -255,7 +256,7 @@ func environmentNavItem(href, label string, active bool) g.Node {
 	return h.Li(h.A(append(attrs, g.Text(label))...))
 }
 
-func environmentSummaryNodes(environment *Environment, labels map[string]string, gcpProjectID string, health environmentHealth) []g.Node {
+func environmentSummaryNodes(environment *Environment, labels map[string]string, gcpProjectID string, userEmail string, health environmentHealth) []g.Node {
 	var items []g.Node
 
 	// Labels
@@ -271,7 +272,7 @@ func environmentSummaryNodes(environment *Environment, labels map[string]string,
 	if gcpProjectID != "" {
 		items = append(items, h.A(
 			h.Class("env-header-item env-header-link"),
-			h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+			h.Href(gcpProjectHref(gcpProjectID, userEmail)),
 			h.Target("_blank"),
 			g.Attr("rel", "noopener noreferrer"),
 			g.Attr("title", "Open GCP project"),
@@ -297,7 +298,7 @@ func environmentSummaryNodes(environment *Environment, labels map[string]string,
 	return []g.Node{h.Div(h.Class("env-header-actions"), g.Group(items))}
 }
 
-func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, features []environmentFeatureRow, releases []*featurepkg.Release, health environmentHealth) g.Node {
+func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, userEmail string, features []environmentFeatureRow, releases []*featurepkg.Release, health environmentHealth) g.Node {
 	switch activeTab {
 	case environmentTabValues:
 		return environmentValuesCard(envValues, valueRefs)
@@ -306,7 +307,7 @@ func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment 
 	case environmentTabHelm:
 		return helmReleasesCard(releases)
 	case environmentTabDetails:
-		return environmentDetailsCard(environment, labels, gcpProjectID, health)
+		return environmentDetailsCard(environment, labels, gcpProjectID, userEmail, health)
 	default:
 		return environmentFeaturesCard(tenant.Name, environment.Name, features)
 	}
@@ -361,7 +362,7 @@ func naisdHealthBucket(health environmentHealth, now time.Time) (string, string)
 	}
 }
 
-func environmentDetailsCard(environment *Environment, labels map[string]string, gcpProjectID string, health environmentHealth) g.Node {
+func environmentDetailsCard(environment *Environment, labels map[string]string, gcpProjectID string, userEmail string, health environmentHealth) g.Node {
 	return h.Div(h.Class("card"),
 		h.Div(h.Class("card-body"),
 			h.Div(h.Class("environment-details-list"),
@@ -378,7 +379,7 @@ func environmentDetailsCard(environment *Environment, labels map[string]string, 
 						g.Text(gcpProjectID),
 						g.Text(" "),
 						h.A(
-							h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+							h.Href(gcpProjectHref(gcpProjectID, userEmail)),
 							g.Attr("target", "_blank"),
 							g.Attr("rel", "noopener noreferrer"),
 							g.Attr("title", "Open GCP project "+gcpProjectID),
