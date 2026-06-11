@@ -1,4 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "networking.gke.io/v1alpha3" }}
+{{- if and (.Capabilities.APIVersions.Has "networking.gke.io/v1alpha3") (gt (len .Values.upstreams) 0) }}
 {{- $top := . }}
 apiVersion: networking.gke.io/v1alpha3
 kind: FQDNNetworkPolicy
