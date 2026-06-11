@@ -37,6 +37,8 @@ message CreateEnvironmentRequest {
 message UpdateEnvironmentRequest {
   string environment_id = 1;
   repeated EnvironmentLabel labels = 2;
+  optional string oidc_issuer = 3;
+  optional string oidc_discovery_url = 4;
 }
 
 message EnvironmentLabel {
@@ -54,6 +56,8 @@ message EnvironmentResponse {
   string tenant_id = 2;
   string name = 3;
   repeated EnvironmentLabel labels = 4;
+  string oidc_issuer = 5;
+  string oidc_discovery_url = 6;
 }
 
 enum EnvironmentKind {

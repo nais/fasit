@@ -24,7 +24,6 @@ const (
 	Fasit_CreateEnvironment_FullMethodName      = "/Fasit/CreateEnvironment"
 	Fasit_GetEnvironment_FullMethodName         = "/Fasit/GetEnvironment"
 	Fasit_SetEnvironmentValue_FullMethodName    = "/Fasit/SetEnvironmentValue"
-	Fasit_SetEnvironmentOIDC_FullMethodName     = "/Fasit/SetEnvironmentOIDC"
 	Fasit_GetEnvironmentValue_FullMethodName    = "/Fasit/GetEnvironmentValue"
 	Fasit_ListEnvironmentValues_FullMethodName  = "/Fasit/ListEnvironmentValues"
 	Fasit_DeleteEnvironmentValue_FullMethodName = "/Fasit/DeleteEnvironmentValue"
@@ -40,7 +39,6 @@ type FasitClient interface {
 	CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*CreateEnvironmentResponse, error)
 	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error)
 	SetEnvironmentValue(ctx context.Context, in *SetEnvironmentValueRequest, opts ...grpc.CallOption) (*SetEnvironmentValueResponse, error)
-	SetEnvironmentOIDC(ctx context.Context, in *SetEnvironmentOIDCRequest, opts ...grpc.CallOption) (*SetEnvironmentOIDCResponse, error)
 	GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValue, error)
 	ListEnvironmentValues(ctx context.Context, in *ListEnvironmentValuesRequest, opts ...grpc.CallOption) (*ListEnvironmentValuesResponse, error)
 	DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error)
@@ -105,16 +103,6 @@ func (c *fasitClient) SetEnvironmentValue(ctx context.Context, in *SetEnvironmen
 	return out, nil
 }
 
-func (c *fasitClient) SetEnvironmentOIDC(ctx context.Context, in *SetEnvironmentOIDCRequest, opts ...grpc.CallOption) (*SetEnvironmentOIDCResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetEnvironmentOIDCResponse)
-	err := c.cc.Invoke(ctx, Fasit_SetEnvironmentOIDC_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *fasitClient) GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValue, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnvironmentValue)
@@ -164,7 +152,6 @@ type FasitServer interface {
 	CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*CreateEnvironmentResponse, error)
 	GetEnvironment(context.Context, *GetEnvironmentRequest) (*Environment, error)
 	SetEnvironmentValue(context.Context, *SetEnvironmentValueRequest) (*SetEnvironmentValueResponse, error)
-	SetEnvironmentOIDC(context.Context, *SetEnvironmentOIDCRequest) (*SetEnvironmentOIDCResponse, error)
 	GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValue, error)
 	ListEnvironmentValues(context.Context, *ListEnvironmentValuesRequest) (*ListEnvironmentValuesResponse, error)
 	DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error)
@@ -193,9 +180,6 @@ func (UnimplementedFasitServer) GetEnvironment(context.Context, *GetEnvironmentR
 }
 func (UnimplementedFasitServer) SetEnvironmentValue(context.Context, *SetEnvironmentValueRequest) (*SetEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetEnvironmentValue not implemented")
-}
-func (UnimplementedFasitServer) SetEnvironmentOIDC(context.Context, *SetEnvironmentOIDCRequest) (*SetEnvironmentOIDCResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetEnvironmentOIDC not implemented")
 }
 func (UnimplementedFasitServer) GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValue, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValue not implemented")
@@ -320,24 +304,6 @@ func _Fasit_SetEnvironmentValue_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Fasit_SetEnvironmentOIDC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetEnvironmentOIDCRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FasitServer).SetEnvironmentOIDC(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Fasit_SetEnvironmentOIDC_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FasitServer).SetEnvironmentOIDC(ctx, req.(*SetEnvironmentOIDCRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Fasit_GetEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetEnvironmentValueRequest)
 	if err := dec(in); err != nil {
@@ -436,10 +402,6 @@ var Fasit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetEnvironmentValue",
 			Handler:    _Fasit_SetEnvironmentValue_Handler,
-		},
-		{
-			MethodName: "SetEnvironmentOIDC",
-			Handler:    _Fasit_SetEnvironmentOIDC_Handler,
 		},
 		{
 			MethodName: "GetEnvironmentValue",

@@ -19,7 +19,6 @@ type Querier interface {
 	GetTenantByName(ctx context.Context, name string) (Tenant, error)
 	ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error)
 	SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error
-	SetEnvironmentOIDC(ctx context.Context, arg SetEnvironmentOIDCParams) error
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
 }
 

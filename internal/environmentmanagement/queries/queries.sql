@@ -56,15 +56,6 @@ SET
 WHERE
 	id = @id;
 
--- name: SetEnvironmentOIDC :exec
-UPDATE
-	environments
-SET
-	oidc_issuer = @oidc_issuer,
-	oidc_discovery_url = @oidc_discovery_url
-WHERE
-	id = @id;
-
 -- name: GetEnvironmentByName :one
 SELECT
 	*

@@ -25,6 +25,7 @@ type Querier interface {
 	ListTenantEnvironments(ctx context.Context, all bool) ([]ListTenantEnvironmentsRow, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)
 	SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error
+	SetEnvironmentOIDC(ctx context.Context, arg SetEnvironmentOIDCParams) error
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
 }
 

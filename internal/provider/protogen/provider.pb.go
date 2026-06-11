@@ -285,11 +285,13 @@ func (x *CreateEnvironmentRequest) GetLabels() []*EnvironmentLabel {
 }
 
 type UpdateEnvironmentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
-	Labels        []*EnvironmentLabel    `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	EnvironmentId    string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	Labels           []*EnvironmentLabel    `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty"`
+	OidcIssuer       *string                `protobuf:"bytes,3,opt,name=oidc_issuer,json=oidcIssuer,proto3,oneof" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl *string                `protobuf:"bytes,4,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3,oneof" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *UpdateEnvironmentRequest) Reset() {
@@ -334,6 +336,20 @@ func (x *UpdateEnvironmentRequest) GetLabels() []*EnvironmentLabel {
 		return x.Labels
 	}
 	return nil
+}
+
+func (x *UpdateEnvironmentRequest) GetOidcIssuer() string {
+	if x != nil && x.OidcIssuer != nil {
+		return *x.OidcIssuer
+	}
+	return ""
+}
+
+func (x *UpdateEnvironmentRequest) GetOidcDiscoveryUrl() string {
+	if x != nil && x.OidcDiscoveryUrl != nil {
+		return *x.OidcDiscoveryUrl
+	}
+	return ""
 }
 
 type EnvironmentLabel struct {
@@ -441,13 +457,15 @@ func (x *GetEnvironmentRequest) GetName() string {
 }
 
 type EnvironmentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	TenantId      string                 `protobuf:"bytes,2,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Labels        []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	TenantId         string                 `protobuf:"bytes,2,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Name             string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Labels           []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
+	OidcIssuer       string                 `protobuf:"bytes,5,opt,name=oidc_issuer,json=oidcIssuer,proto3" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl string                 `protobuf:"bytes,6,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *EnvironmentResponse) Reset() {
@@ -506,6 +524,20 @@ func (x *EnvironmentResponse) GetLabels() []*EnvironmentLabel {
 		return x.Labels
 	}
 	return nil
+}
+
+func (x *EnvironmentResponse) GetOidcIssuer() string {
+	if x != nil {
+		return x.OidcIssuer
+	}
+	return ""
+}
+
+func (x *EnvironmentResponse) GetOidcDiscoveryUrl() string {
+	if x != nil {
+		return x.OidcDiscoveryUrl
+	}
+	return ""
 }
 
 type CreateOrUpdateEnvironmentValueRequest struct {
@@ -964,21 +996,29 @@ const file_provider_proto_rawDesc = "" +
 	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12$\n" +
 	"\x04kind\x18\x03 \x01(\x0e2\x10.EnvironmentKindR\x04kind\x12)\n" +
-	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\"l\n" +
+	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\"\xec\x01\n" +
 	"\x18UpdateEnvironmentRequest\x12%\n" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12)\n" +
-	"\x06labels\x18\x02 \x03(\v2\x11.EnvironmentLabelR\x06labels\":\n" +
+	"\x06labels\x18\x02 \x03(\v2\x11.EnvironmentLabelR\x06labels\x12$\n" +
+	"\voidc_issuer\x18\x03 \x01(\tH\x00R\n" +
+	"oidcIssuer\x88\x01\x01\x121\n" +
+	"\x12oidc_discovery_url\x18\x04 \x01(\tH\x01R\x10oidcDiscoveryUrl\x88\x01\x01B\x0e\n" +
+	"\f_oidc_issuerB\x15\n" +
+	"\x13_oidc_discovery_url\":\n" +
 	"\x10EnvironmentLabel\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"H\n" +
 	"\x15GetEnvironmentRequest\x12\x1b\n" +
 	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x81\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xd0\x01\n" +
 	"\x13EnvironmentResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\ttenant_id\x18\x02 \x01(\tR\btenantId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12)\n" +
-	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\"\x8e\x01\n" +
+	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\x12\x1f\n" +
+	"\voidc_issuer\x18\x05 \x01(\tR\n" +
+	"oidcIssuer\x12,\n" +
+	"\x12oidc_discovery_url\x18\x06 \x01(\tR\x10oidcDiscoveryUrl\"\x8e\x01\n" +
 	"%CreateOrUpdateEnvironmentValueRequest\x12%\n" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
@@ -1097,6 +1137,7 @@ func file_provider_proto_init() {
 	if File_provider_proto != nil {
 		return
 	}
+	file_provider_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

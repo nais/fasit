@@ -88,14 +88,12 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &protogen.EnvironmentResponse{
-		Id:       env.ID.String(),
-		TenantId: tenant.ID.String(),
-		Name:     env.Name,
-	}, nil
+	return environmentToProto(env), nil
 }
 
 func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvironmentRequest) (*protogen.EnvironmentResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
 	environmentID, err := uuid.Parse(in.EnvironmentId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
@@ -115,11 +113,18 @@ func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &protogen.EnvironmentResponse{
-		Id:       env.ID.String(),
-		TenantId: env.TenantID.String(),
-		Name:     env.Name,
-	}, nil
+	if in.OidcIssuer != nil || in.OidcDiscoveryUrl != nil {
+		if err := environment.SetOIDC(ctx, env.ID, in.OidcIssuer, in.OidcDiscoveryUrl); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	env, err = environment.Get(ctx, environmentID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return environmentToProto(env), nil
 }
 
 func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironmentRequest) (*protogen.EnvironmentResponse, error) {
@@ -133,11 +138,7 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	return &protogen.EnvironmentResponse{
-		Id:       env.ID.String(),
-		TenantId: tenantID.String(),
-		Name:     env.Name,
-	}, nil
+	return environmentToProto(env), nil
 }
 
 func (s *server) CreateOrUpdateEnvironmentValue(ctx context.Context, in *protogen.CreateOrUpdateEnvironmentValueRequest) (*protogen.CreateOrUpdateEnvironmentValueResponse, error) {
@@ -240,4 +241,21 @@ func toEnvironmentKind(kind protogen.EnvironmentKind) (environment.EnvironmentKi
 	}
 
 	return "", status.Error(codes.InvalidArgument, "Invalid Environment kind")
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func environmentToProto(env *environment.Environment) *protogen.EnvironmentResponse {
+	return &protogen.EnvironmentResponse{
+		Id:               env.ID.String(),
+		TenantId:         env.TenantID.String(),
+		Name:             env.Name,
+		OidcIssuer:       derefString(env.OIDCIssuer),
+		OidcDiscoveryUrl: derefString(env.OIDCDiscoveryURL),
+	}
 }

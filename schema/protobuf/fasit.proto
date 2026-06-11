@@ -8,7 +8,6 @@ service Fasit {
   rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse) {}
   rpc GetEnvironment(GetEnvironmentRequest) returns (Environment) {}
   rpc SetEnvironmentValue(SetEnvironmentValueRequest) returns (SetEnvironmentValueResponse) {}
-  rpc SetEnvironmentOIDC(SetEnvironmentOIDCRequest) returns (SetEnvironmentOIDCResponse) {}
   rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValue) {}
   rpc ListEnvironmentValues(ListEnvironmentValuesRequest) returns (ListEnvironmentValuesResponse) {}
   rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest) returns (DeleteEnvironmentValueResponse) {}
@@ -64,8 +63,6 @@ message Environment {
   string tenant_id = 2;
   string name = 3;
   repeated EnvironmentLabel labels = 4;
-  string oidc_issuer = 5;
-  string oidc_discovery_url = 6;
 }
 
 message CreateEnvironmentResponse {
@@ -89,16 +86,6 @@ message SetEnvironmentValueRequest {
 
 message SetEnvironmentValueResponse {
   bool success = 1;
-}
-
-message SetEnvironmentOIDCRequest {
-  string environment_id = 1;
-  string oidc_issuer = 2;
-  string oidc_discovery_url = 3;
-}
-
-message SetEnvironmentOIDCResponse {
-  Environment environment = 1;
 }
 
 message GetEnvironmentValueRequest {

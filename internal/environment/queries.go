@@ -89,6 +89,26 @@ func GetLabels(ctx context.Context, environmentID uuid.UUID) (Labels, error) {
 	return Labels(labels), nil
 }
 
+// SetOIDC sets the OIDC issuer and discovery URL used to validate KSA tokens
+// presented by fasitd agents in this environment. A nil pointer clears the
+// stored value.
+func SetOIDC(ctx context.Context, environmentID uuid.UUID, issuer, discoveryURL *string) error {
+	if err := querier(ctx).SetEnvironmentOIDC(ctx, environmentsql.SetEnvironmentOIDCParams{
+		ID:               environmentID,
+		OidcIssuer:       issuer,
+		OidcDiscoveryUrl: discoveryURL,
+	}); err != nil {
+		return err
+	}
+
+	return audit.Create(ctx, audit.CreateParams{
+		Action:        audit.ActionUpdated,
+		ObjectType:    audit.ObjectTypeEnvironment,
+		ObjectID:      "oidc",
+		EnvironmentID: &environmentID,
+	})
+}
+
 func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
 		err := querier(ctx).SetEnvironmentValue(ctx, environmentsql.SetEnvironmentValueParams{
