@@ -76,146 +76,6 @@ func (EnvironmentKind) EnumDescriptor() ([]byte, []int) {
 	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{0}
 }
 
-type CreateTenantRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Description   *string                `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateTenantRequest) Reset() {
-	*x = CreateTenantRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateTenantRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateTenantRequest) ProtoMessage() {}
-
-func (x *CreateTenantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateTenantRequest.ProtoReflect.Descriptor instead.
-func (*CreateTenantRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *CreateTenantRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *CreateTenantRequest) GetDescription() string {
-	if x != nil && x.Description != nil {
-		return *x.Description
-	}
-	return ""
-}
-
-type GetTenantRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetTenantRequest) Reset() {
-	*x = GetTenantRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetTenantRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetTenantRequest) ProtoMessage() {}
-
-func (x *GetTenantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetTenantRequest.ProtoReflect.Descriptor instead.
-func (*GetTenantRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *GetTenantRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type CreateTenantResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tenant        *Tenant                `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateTenantResponse) Reset() {
-	*x = CreateTenantResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateTenantResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateTenantResponse) ProtoMessage() {}
-
-func (x *CreateTenantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateTenantResponse.ProtoReflect.Descriptor instead.
-func (*CreateTenantResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *CreateTenantResponse) GetTenant() *Tenant {
-	if x != nil {
-		return x.Tenant
-	}
-	return nil
-}
-
 type Tenant struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -226,7 +86,7 @@ type Tenant struct {
 
 func (x *Tenant) Reset() {
 	*x = Tenant{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[3]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -238,7 +98,7 @@ func (x *Tenant) String() string {
 func (*Tenant) ProtoMessage() {}
 
 func (x *Tenant) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[3]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -251,7 +111,7 @@ func (x *Tenant) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tenant.ProtoReflect.Descriptor instead.
 func (*Tenant) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{3}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Tenant) GetId() string {
@@ -268,287 +128,21 @@ func (x *Tenant) GetName() string {
 	return ""
 }
 
-type CreateEnvironmentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TenantId      string                 `protobuf:"bytes,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Kind          EnvironmentKind        `protobuf:"varint,3,opt,name=kind,proto3,enum=EnvironmentKind" json:"kind,omitempty"`
-	Labels        []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateEnvironmentRequest) Reset() {
-	*x = CreateEnvironmentRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateEnvironmentRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateEnvironmentRequest) ProtoMessage() {}
-
-func (x *CreateEnvironmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateEnvironmentRequest.ProtoReflect.Descriptor instead.
-func (*CreateEnvironmentRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *CreateEnvironmentRequest) GetTenantId() string {
-	if x != nil {
-		return x.TenantId
-	}
-	return ""
-}
-
-func (x *CreateEnvironmentRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *CreateEnvironmentRequest) GetKind() EnvironmentKind {
-	if x != nil {
-		return x.Kind
-	}
-	return EnvironmentKind_UNKNOWN
-}
-
-func (x *CreateEnvironmentRequest) GetLabels() []*EnvironmentLabel {
-	if x != nil {
-		return x.Labels
-	}
-	return nil
-}
-
-type SetEnvironmentLabelsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
-	Labels        []*EnvironmentLabel    `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetEnvironmentLabelsRequest) Reset() {
-	*x = SetEnvironmentLabelsRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetEnvironmentLabelsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetEnvironmentLabelsRequest) ProtoMessage() {}
-
-func (x *SetEnvironmentLabelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetEnvironmentLabelsRequest.ProtoReflect.Descriptor instead.
-func (*SetEnvironmentLabelsRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *SetEnvironmentLabelsRequest) GetEnvironmentId() string {
-	if x != nil {
-		return x.EnvironmentId
-	}
-	return ""
-}
-
-func (x *SetEnvironmentLabelsRequest) GetLabels() []*EnvironmentLabel {
-	if x != nil {
-		return x.Labels
-	}
-	return nil
-}
-
-type SetEnvironmentLabelsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Environment   *Environment           `protobuf:"bytes,1,opt,name=environment,proto3" json:"environment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetEnvironmentLabelsResponse) Reset() {
-	*x = SetEnvironmentLabelsResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetEnvironmentLabelsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetEnvironmentLabelsResponse) ProtoMessage() {}
-
-func (x *SetEnvironmentLabelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetEnvironmentLabelsResponse.ProtoReflect.Descriptor instead.
-func (*SetEnvironmentLabelsResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *SetEnvironmentLabelsResponse) GetEnvironment() *Environment {
-	if x != nil {
-		return x.Environment
-	}
-	return nil
-}
-
-type EnvironmentLabel struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EnvironmentLabel) Reset() {
-	*x = EnvironmentLabel{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EnvironmentLabel) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EnvironmentLabel) ProtoMessage() {}
-
-func (x *EnvironmentLabel) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EnvironmentLabel.ProtoReflect.Descriptor instead.
-func (*EnvironmentLabel) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *EnvironmentLabel) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-func (x *EnvironmentLabel) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
-type GetEnvironmentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TenantId      string                 `protobuf:"bytes,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetEnvironmentRequest) Reset() {
-	*x = GetEnvironmentRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetEnvironmentRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetEnvironmentRequest) ProtoMessage() {}
-
-func (x *GetEnvironmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetEnvironmentRequest.ProtoReflect.Descriptor instead.
-func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *GetEnvironmentRequest) GetTenantId() string {
-	if x != nil {
-		return x.TenantId
-	}
-	return ""
-}
-
-func (x *GetEnvironmentRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
 type Environment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	TenantId      string                 `protobuf:"bytes,2,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Labels        []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	TenantId         string                 `protobuf:"bytes,2,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Name             string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Labels           []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
+	OidcIssuer       *string                `protobuf:"bytes,5,opt,name=oidc_issuer,json=oidcIssuer,proto3,oneof" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl *string                `protobuf:"bytes,6,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3,oneof" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Environment) Reset() {
 	*x = Environment{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[9]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -560,7 +154,7 @@ func (x *Environment) String() string {
 func (*Environment) ProtoMessage() {}
 
 func (x *Environment) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[9]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +167,7 @@ func (x *Environment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Environment.ProtoReflect.Descriptor instead.
 func (*Environment) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{9}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Environment) GetId() string {
@@ -604,210 +198,68 @@ func (x *Environment) GetLabels() []*EnvironmentLabel {
 	return nil
 }
 
-type CreateEnvironmentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Environment   *Environment           `protobuf:"bytes,1,opt,name=environment,proto3" json:"environment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateEnvironmentResponse) Reset() {
-	*x = CreateEnvironmentResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateEnvironmentResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateEnvironmentResponse) ProtoMessage() {}
-
-func (x *CreateEnvironmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateEnvironmentResponse.ProtoReflect.Descriptor instead.
-func (*CreateEnvironmentResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *CreateEnvironmentResponse) GetEnvironment() *Environment {
-	if x != nil {
-		return x.Environment
-	}
-	return nil
-}
-
-type SetEnvironmentValueRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
-	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Value         []byte                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
-	Secret        bool                   `protobuf:"varint,4,opt,name=secret,proto3" json:"secret,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetEnvironmentValueRequest) Reset() {
-	*x = SetEnvironmentValueRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetEnvironmentValueRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetEnvironmentValueRequest) ProtoMessage() {}
-
-func (x *SetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
-func (*SetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *SetEnvironmentValueRequest) GetEnvironmentId() string {
-	if x != nil {
-		return x.EnvironmentId
+func (x *Environment) GetOidcIssuer() string {
+	if x != nil && x.OidcIssuer != nil {
+		return *x.OidcIssuer
 	}
 	return ""
 }
 
-func (x *SetEnvironmentValueRequest) GetKey() string {
+func (x *Environment) GetOidcDiscoveryUrl() string {
+	if x != nil && x.OidcDiscoveryUrl != nil {
+		return *x.OidcDiscoveryUrl
+	}
+	return ""
+}
+
+type EnvironmentLabel struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnvironmentLabel) Reset() {
+	*x = EnvironmentLabel{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnvironmentLabel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnvironmentLabel) ProtoMessage() {}
+
+func (x *EnvironmentLabel) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnvironmentLabel.ProtoReflect.Descriptor instead.
+func (*EnvironmentLabel) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EnvironmentLabel) GetKey() string {
 	if x != nil {
 		return x.Key
 	}
 	return ""
 }
 
-func (x *SetEnvironmentValueRequest) GetValue() []byte {
+func (x *EnvironmentLabel) GetValue() string {
 	if x != nil {
 		return x.Value
-	}
-	return nil
-}
-
-func (x *SetEnvironmentValueRequest) GetSecret() bool {
-	if x != nil {
-		return x.Secret
-	}
-	return false
-}
-
-type SetEnvironmentValueResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetEnvironmentValueResponse) Reset() {
-	*x = SetEnvironmentValueResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetEnvironmentValueResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetEnvironmentValueResponse) ProtoMessage() {}
-
-func (x *SetEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetEnvironmentValueResponse.ProtoReflect.Descriptor instead.
-func (*SetEnvironmentValueResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *SetEnvironmentValueResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-type GetEnvironmentValueRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
-	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetEnvironmentValueRequest) Reset() {
-	*x = GetEnvironmentValueRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetEnvironmentValueRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetEnvironmentValueRequest) ProtoMessage() {}
-
-func (x *GetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
-func (*GetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *GetEnvironmentValueRequest) GetEnvironmentId() string {
-	if x != nil {
-		return x.EnvironmentId
-	}
-	return ""
-}
-
-func (x *GetEnvironmentValueRequest) GetKey() string {
-	if x != nil {
-		return x.Key
 	}
 	return ""
 }
@@ -827,7 +279,7 @@ type EnvironmentValue struct {
 
 func (x *EnvironmentValue) Reset() {
 	*x = EnvironmentValue{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -839,7 +291,7 @@ func (x *EnvironmentValue) String() string {
 func (*EnvironmentValue) ProtoMessage() {}
 
 func (x *EnvironmentValue) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -852,7 +304,7 @@ func (x *EnvironmentValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnvironmentValue.ProtoReflect.Descriptor instead.
 func (*EnvironmentValue) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{14}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EnvironmentValue) GetEnvironmentId() string {
@@ -904,6 +356,629 @@ func (x *EnvironmentValue) GetTenantName() string {
 	return ""
 }
 
+// CreateTenant
+type CreateTenantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description   *string                `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTenantRequest) Reset() {
+	*x = CreateTenantRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTenantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTenantRequest) ProtoMessage() {}
+
+func (x *CreateTenantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTenantRequest.ProtoReflect.Descriptor instead.
+func (*CreateTenantRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateTenantRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateTenantRequest) GetDescription() string {
+	if x != nil && x.Description != nil {
+		return *x.Description
+	}
+	return ""
+}
+
+type CreateTenantResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tenant        *Tenant                `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTenantResponse) Reset() {
+	*x = CreateTenantResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTenantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTenantResponse) ProtoMessage() {}
+
+func (x *CreateTenantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTenantResponse.ProtoReflect.Descriptor instead.
+func (*CreateTenantResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateTenantResponse) GetTenant() *Tenant {
+	if x != nil {
+		return x.Tenant
+	}
+	return nil
+}
+
+// GetTenant
+type GetTenantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTenantRequest) Reset() {
+	*x = GetTenantRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTenantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTenantRequest) ProtoMessage() {}
+
+func (x *GetTenantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTenantRequest.ProtoReflect.Descriptor instead.
+func (*GetTenantRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetTenantRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type GetTenantResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tenant        *Tenant                `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTenantResponse) Reset() {
+	*x = GetTenantResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTenantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTenantResponse) ProtoMessage() {}
+
+func (x *GetTenantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTenantResponse.ProtoReflect.Descriptor instead.
+func (*GetTenantResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetTenantResponse) GetTenant() *Tenant {
+	if x != nil {
+		return x.Tenant
+	}
+	return nil
+}
+
+// CreateEnvironment
+type CreateEnvironmentRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	TenantId         string                 `protobuf:"bytes,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Kind             EnvironmentKind        `protobuf:"varint,3,opt,name=kind,proto3,enum=EnvironmentKind" json:"kind,omitempty"`
+	Labels           []*EnvironmentLabel    `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty"`
+	OidcIssuer       *string                `protobuf:"bytes,5,opt,name=oidc_issuer,json=oidcIssuer,proto3,oneof" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl *string                `protobuf:"bytes,6,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3,oneof" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CreateEnvironmentRequest) Reset() {
+	*x = CreateEnvironmentRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateEnvironmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateEnvironmentRequest) ProtoMessage() {}
+
+func (x *CreateEnvironmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateEnvironmentRequest.ProtoReflect.Descriptor instead.
+func (*CreateEnvironmentRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CreateEnvironmentRequest) GetTenantId() string {
+	if x != nil {
+		return x.TenantId
+	}
+	return ""
+}
+
+func (x *CreateEnvironmentRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateEnvironmentRequest) GetKind() EnvironmentKind {
+	if x != nil {
+		return x.Kind
+	}
+	return EnvironmentKind_UNKNOWN
+}
+
+func (x *CreateEnvironmentRequest) GetLabels() []*EnvironmentLabel {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *CreateEnvironmentRequest) GetOidcIssuer() string {
+	if x != nil && x.OidcIssuer != nil {
+		return *x.OidcIssuer
+	}
+	return ""
+}
+
+func (x *CreateEnvironmentRequest) GetOidcDiscoveryUrl() string {
+	if x != nil && x.OidcDiscoveryUrl != nil {
+		return *x.OidcDiscoveryUrl
+	}
+	return ""
+}
+
+type CreateEnvironmentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Environment   *Environment           `protobuf:"bytes,1,opt,name=environment,proto3" json:"environment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateEnvironmentResponse) Reset() {
+	*x = CreateEnvironmentResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateEnvironmentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateEnvironmentResponse) ProtoMessage() {}
+
+func (x *CreateEnvironmentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateEnvironmentResponse.ProtoReflect.Descriptor instead.
+func (*CreateEnvironmentResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CreateEnvironmentResponse) GetEnvironment() *Environment {
+	if x != nil {
+		return x.Environment
+	}
+	return nil
+}
+
+// GetEnvironment
+type GetEnvironmentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TenantId      string                 `protobuf:"bytes,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEnvironmentRequest) Reset() {
+	*x = GetEnvironmentRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEnvironmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEnvironmentRequest) ProtoMessage() {}
+
+func (x *GetEnvironmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEnvironmentRequest.ProtoReflect.Descriptor instead.
+func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetEnvironmentRequest) GetTenantId() string {
+	if x != nil {
+		return x.TenantId
+	}
+	return ""
+}
+
+func (x *GetEnvironmentRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type GetEnvironmentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Environment   *Environment           `protobuf:"bytes,1,opt,name=environment,proto3" json:"environment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEnvironmentResponse) Reset() {
+	*x = GetEnvironmentResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEnvironmentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEnvironmentResponse) ProtoMessage() {}
+
+func (x *GetEnvironmentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEnvironmentResponse.ProtoReflect.Descriptor instead.
+func (*GetEnvironmentResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetEnvironmentResponse) GetEnvironment() *Environment {
+	if x != nil {
+		return x.Environment
+	}
+	return nil
+}
+
+// SetEnvironmentValue
+type SetEnvironmentValueRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Value         []byte                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	Secret        bool                   `protobuf:"varint,4,opt,name=secret,proto3" json:"secret,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEnvironmentValueRequest) Reset() {
+	*x = SetEnvironmentValueRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEnvironmentValueRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEnvironmentValueRequest) ProtoMessage() {}
+
+func (x *SetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
+func (*SetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SetEnvironmentValueRequest) GetEnvironmentId() string {
+	if x != nil {
+		return x.EnvironmentId
+	}
+	return ""
+}
+
+func (x *SetEnvironmentValueRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *SetEnvironmentValueRequest) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+func (x *SetEnvironmentValueRequest) GetSecret() bool {
+	if x != nil {
+		return x.Secret
+	}
+	return false
+}
+
+type SetEnvironmentValueResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEnvironmentValueResponse) Reset() {
+	*x = SetEnvironmentValueResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEnvironmentValueResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEnvironmentValueResponse) ProtoMessage() {}
+
+func (x *SetEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEnvironmentValueResponse.ProtoReflect.Descriptor instead.
+func (*SetEnvironmentValueResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *SetEnvironmentValueResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+// GetEnvironmentValue
+type GetEnvironmentValueRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEnvironmentValueRequest) Reset() {
+	*x = GetEnvironmentValueRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEnvironmentValueRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEnvironmentValueRequest) ProtoMessage() {}
+
+func (x *GetEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEnvironmentValueRequest.ProtoReflect.Descriptor instead.
+func (*GetEnvironmentValueRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetEnvironmentValueRequest) GetEnvironmentId() string {
+	if x != nil {
+		return x.EnvironmentId
+	}
+	return ""
+}
+
+func (x *GetEnvironmentValueRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type GetEnvironmentValueResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	EnvironmentValue *EnvironmentValue      `protobuf:"bytes,1,opt,name=environment_value,json=environmentValue,proto3" json:"environment_value,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetEnvironmentValueResponse) Reset() {
+	*x = GetEnvironmentValueResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEnvironmentValueResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEnvironmentValueResponse) ProtoMessage() {}
+
+func (x *GetEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEnvironmentValueResponse.ProtoReflect.Descriptor instead.
+func (*GetEnvironmentValueResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetEnvironmentValueResponse) GetEnvironmentValue() *EnvironmentValue {
+	if x != nil {
+		return x.EnvironmentValue
+	}
+	return nil
+}
+
+// ListEnvironmentValues
 type ListEnvironmentValuesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -913,7 +988,7 @@ type ListEnvironmentValuesRequest struct {
 
 func (x *ListEnvironmentValuesRequest) Reset() {
 	*x = ListEnvironmentValuesRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +1000,7 @@ func (x *ListEnvironmentValuesRequest) String() string {
 func (*ListEnvironmentValuesRequest) ProtoMessage() {}
 
 func (x *ListEnvironmentValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[15]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1013,7 @@ func (x *ListEnvironmentValuesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEnvironmentValuesRequest.ProtoReflect.Descriptor instead.
 func (*ListEnvironmentValuesRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{15}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListEnvironmentValuesRequest) GetKey() string {
@@ -957,7 +1032,7 @@ type ListEnvironmentValuesResponse struct {
 
 func (x *ListEnvironmentValuesResponse) Reset() {
 	*x = ListEnvironmentValuesResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -969,7 +1044,7 @@ func (x *ListEnvironmentValuesResponse) String() string {
 func (*ListEnvironmentValuesResponse) ProtoMessage() {}
 
 func (x *ListEnvironmentValuesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[16]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -982,7 +1057,7 @@ func (x *ListEnvironmentValuesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEnvironmentValuesResponse.ProtoReflect.Descriptor instead.
 func (*ListEnvironmentValuesResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{16}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListEnvironmentValuesResponse) GetValues() []*EnvironmentValue {
@@ -992,6 +1067,7 @@ func (x *ListEnvironmentValuesResponse) GetValues() []*EnvironmentValue {
 	return nil
 }
 
+// DeleteEnvironmentValue
 type DeleteEnvironmentValueRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EnvironmentId string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
@@ -1002,7 +1078,7 @@ type DeleteEnvironmentValueRequest struct {
 
 func (x *DeleteEnvironmentValueRequest) Reset() {
 	*x = DeleteEnvironmentValueRequest{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1014,7 +1090,7 @@ func (x *DeleteEnvironmentValueRequest) String() string {
 func (*DeleteEnvironmentValueRequest) ProtoMessage() {}
 
 func (x *DeleteEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[17]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1027,7 +1103,7 @@ func (x *DeleteEnvironmentValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEnvironmentValueRequest.ProtoReflect.Descriptor instead.
 func (*DeleteEnvironmentValueRequest) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{17}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *DeleteEnvironmentValueRequest) GetEnvironmentId() string {
@@ -1053,7 +1129,7 @@ type DeleteEnvironmentValueResponse struct {
 
 func (x *DeleteEnvironmentValueResponse) Reset() {
 	*x = DeleteEnvironmentValueResponse{}
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1065,7 +1141,7 @@ func (x *DeleteEnvironmentValueResponse) String() string {
 func (*DeleteEnvironmentValueResponse) ProtoMessage() {}
 
 func (x *DeleteEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_protobuf_fasit_proto_msgTypes[18]
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1154,7 @@ func (x *DeleteEnvironmentValueResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEnvironmentValueResponse.ProtoReflect.Descriptor instead.
 func (*DeleteEnvironmentValueResponse) Descriptor() ([]byte, []int) {
-	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{18}
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
@@ -1088,44 +1164,175 @@ func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
 	return false
 }
 
+// UpdateEnvironment
+type UpdateEnvironmentRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	EnvironmentId    string                 `protobuf:"bytes,1,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	Labels           []*EnvironmentLabel    `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty"`
+	OidcIssuer       *string                `protobuf:"bytes,3,opt,name=oidc_issuer,json=oidcIssuer,proto3,oneof" json:"oidc_issuer,omitempty"`
+	OidcDiscoveryUrl *string                `protobuf:"bytes,4,opt,name=oidc_discovery_url,json=oidcDiscoveryUrl,proto3,oneof" json:"oidc_discovery_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *UpdateEnvironmentRequest) Reset() {
+	*x = UpdateEnvironmentRequest{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateEnvironmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateEnvironmentRequest) ProtoMessage() {}
+
+func (x *UpdateEnvironmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateEnvironmentRequest.ProtoReflect.Descriptor instead.
+func (*UpdateEnvironmentRequest) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *UpdateEnvironmentRequest) GetEnvironmentId() string {
+	if x != nil {
+		return x.EnvironmentId
+	}
+	return ""
+}
+
+func (x *UpdateEnvironmentRequest) GetLabels() []*EnvironmentLabel {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *UpdateEnvironmentRequest) GetOidcIssuer() string {
+	if x != nil && x.OidcIssuer != nil {
+		return *x.OidcIssuer
+	}
+	return ""
+}
+
+func (x *UpdateEnvironmentRequest) GetOidcDiscoveryUrl() string {
+	if x != nil && x.OidcDiscoveryUrl != nil {
+		return *x.OidcDiscoveryUrl
+	}
+	return ""
+}
+
+type UpdateEnvironmentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Environment   *Environment           `protobuf:"bytes,1,opt,name=environment,proto3" json:"environment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateEnvironmentResponse) Reset() {
+	*x = UpdateEnvironmentResponse{}
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateEnvironmentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateEnvironmentResponse) ProtoMessage() {}
+
+func (x *UpdateEnvironmentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_schema_protobuf_fasit_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateEnvironmentResponse.ProtoReflect.Descriptor instead.
+func (*UpdateEnvironmentResponse) Descriptor() ([]byte, []int) {
+	return file_schema_protobuf_fasit_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *UpdateEnvironmentResponse) GetEnvironment() *Environment {
+	if x != nil {
+		return x.Environment
+	}
+	return nil
+}
+
 var File_schema_protobuf_fasit_proto protoreflect.FileDescriptor
 
 const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\n" +
-	"\x1bschema/protobuf/fasit.proto\"`\n" +
-	"\x13CreateTenantRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
-	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01B\x0e\n" +
-	"\f_description\"&\n" +
-	"\x10GetTenantRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"7\n" +
-	"\x14CreateTenantResponse\x12\x1f\n" +
-	"\x06tenant\x18\x01 \x01(\v2\a.TenantR\x06tenant\",\n" +
+	"\x1bschema/protobuf/fasit.proto\",\n" +
 	"\x06Tenant\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x9c\x01\n" +
-	"\x18CreateEnvironmentRequest\x12\x1b\n" +
-	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12$\n" +
-	"\x04kind\x18\x03 \x01(\x0e2\x10.EnvironmentKindR\x04kind\x12)\n" +
-	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\"o\n" +
-	"\x1bSetEnvironmentLabelsRequest\x12%\n" +
-	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12)\n" +
-	"\x06labels\x18\x02 \x03(\v2\x11.EnvironmentLabelR\x06labels\"N\n" +
-	"\x1cSetEnvironmentLabelsResponse\x12.\n" +
-	"\venvironment\x18\x01 \x01(\v2\f.EnvironmentR\venvironment\":\n" +
-	"\x10EnvironmentLabel\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"H\n" +
-	"\x15GetEnvironmentRequest\x12\x1b\n" +
-	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"y\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xf9\x01\n" +
 	"\vEnvironment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\ttenant_id\x18\x02 \x01(\tR\btenantId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12)\n" +
-	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\"K\n" +
+	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\x12$\n" +
+	"\voidc_issuer\x18\x05 \x01(\tH\x00R\n" +
+	"oidcIssuer\x88\x01\x01\x121\n" +
+	"\x12oidc_discovery_url\x18\x06 \x01(\tH\x01R\x10oidcDiscoveryUrl\x88\x01\x01B\x0e\n" +
+	"\f_oidc_issuerB\x15\n" +
+	"\x13_oidc_discovery_url\":\n" +
+	"\x10EnvironmentLabel\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\xe2\x01\n" +
+	"\x10EnvironmentValue\x12%\n" +
+	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
+	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\fR\x05value\x12\x16\n" +
+	"\x06secret\x18\x04 \x01(\bR\x06secret\x12\x1b\n" +
+	"\ttenant_id\x18\x05 \x01(\tR\btenantId\x12)\n" +
+	"\x10environment_name\x18\x06 \x01(\tR\x0fenvironmentName\x12\x1f\n" +
+	"\vtenant_name\x18\a \x01(\tR\n" +
+	"tenantName\"`\n" +
+	"\x13CreateTenantRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
+	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01B\x0e\n" +
+	"\f_description\"7\n" +
+	"\x14CreateTenantResponse\x12\x1f\n" +
+	"\x06tenant\x18\x01 \x01(\v2\a.TenantR\x06tenant\"&\n" +
+	"\x10GetTenantRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"4\n" +
+	"\x11GetTenantResponse\x12\x1f\n" +
+	"\x06tenant\x18\x01 \x01(\v2\a.TenantR\x06tenant\"\x9c\x02\n" +
+	"\x18CreateEnvironmentRequest\x12\x1b\n" +
+	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12$\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x10.EnvironmentKindR\x04kind\x12)\n" +
+	"\x06labels\x18\x04 \x03(\v2\x11.EnvironmentLabelR\x06labels\x12$\n" +
+	"\voidc_issuer\x18\x05 \x01(\tH\x00R\n" +
+	"oidcIssuer\x88\x01\x01\x121\n" +
+	"\x12oidc_discovery_url\x18\x06 \x01(\tH\x01R\x10oidcDiscoveryUrl\x88\x01\x01B\x0e\n" +
+	"\f_oidc_issuerB\x15\n" +
+	"\x13_oidc_discovery_url\"K\n" +
 	"\x19CreateEnvironmentResponse\x12.\n" +
+	"\venvironment\x18\x01 \x01(\v2\f.EnvironmentR\venvironment\"H\n" +
+	"\x15GetEnvironmentRequest\x12\x1b\n" +
+	"\ttenant_id\x18\x01 \x01(\tR\btenantId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"H\n" +
+	"\x16GetEnvironmentResponse\x12.\n" +
 	"\venvironment\x18\x01 \x01(\v2\f.EnvironmentR\venvironment\"\x83\x01\n" +
 	"\x1aSetEnvironmentValueRequest\x12%\n" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
@@ -1136,16 +1343,9 @@ const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"U\n" +
 	"\x1aGetEnvironmentValueRequest\x12%\n" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
-	"\x03key\x18\x02 \x01(\tR\x03key\"\xe2\x01\n" +
-	"\x10EnvironmentValue\x12%\n" +
-	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
-	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\fR\x05value\x12\x16\n" +
-	"\x06secret\x18\x04 \x01(\bR\x06secret\x12\x1b\n" +
-	"\ttenant_id\x18\x05 \x01(\tR\btenantId\x12)\n" +
-	"\x10environment_name\x18\x06 \x01(\tR\x0fenvironmentName\x12\x1f\n" +
-	"\vtenant_name\x18\a \x01(\tR\n" +
-	"tenantName\"0\n" +
+	"\x03key\x18\x02 \x01(\tR\x03key\"]\n" +
+	"\x1bGetEnvironmentValueResponse\x12>\n" +
+	"\x11environment_value\x18\x01 \x01(\v2\x11.EnvironmentValueR\x10environmentValue\"0\n" +
 	"\x1cListEnvironmentValuesRequest\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\"J\n" +
 	"\x1dListEnvironmentValuesResponse\x12)\n" +
@@ -1154,7 +1354,17 @@ const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\":\n" +
 	"\x1eDeleteEnvironmentValueResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*R\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xec\x01\n" +
+	"\x18UpdateEnvironmentRequest\x12%\n" +
+	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12)\n" +
+	"\x06labels\x18\x02 \x03(\v2\x11.EnvironmentLabelR\x06labels\x12$\n" +
+	"\voidc_issuer\x18\x03 \x01(\tH\x00R\n" +
+	"oidcIssuer\x88\x01\x01\x121\n" +
+	"\x12oidc_discovery_url\x18\x04 \x01(\tH\x01R\x10oidcDiscoveryUrl\x88\x01\x01B\x0e\n" +
+	"\f_oidc_issuerB\x15\n" +
+	"\x13_oidc_discovery_url\"K\n" +
+	"\x19UpdateEnvironmentResponse\x12.\n" +
+	"\venvironment\x18\x01 \x01(\v2\f.EnvironmentR\venvironment*R\n" +
 	"\x0fEnvironmentKind\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1164,17 +1374,17 @@ const file_schema_protobuf_fasit_proto_rawDesc = "" +
 	"\n" +
 	"\x06ONPREM\x10\x03\x12\n" +
 	"\n" +
-	"\x06LEGACY\x10\x042\xa4\x05\n" +
+	"\x06LEGACY\x10\x042\xbc\x05\n" +
 	"\x05Fasit\x12=\n" +
-	"\fCreateTenant\x12\x14.CreateTenantRequest\x1a\x15.CreateTenantResponse\"\x00\x12)\n" +
-	"\tGetTenant\x12\x11.GetTenantRequest\x1a\a.Tenant\"\x00\x12L\n" +
-	"\x11CreateEnvironment\x12\x19.CreateEnvironmentRequest\x1a\x1a.CreateEnvironmentResponse\"\x00\x128\n" +
-	"\x0eGetEnvironment\x12\x16.GetEnvironmentRequest\x1a\f.Environment\"\x00\x12R\n" +
-	"\x13SetEnvironmentValue\x12\x1b.SetEnvironmentValueRequest\x1a\x1c.SetEnvironmentValueResponse\"\x00\x12G\n" +
-	"\x13GetEnvironmentValue\x12\x1b.GetEnvironmentValueRequest\x1a\x11.EnvironmentValue\"\x00\x12X\n" +
+	"\fCreateTenant\x12\x14.CreateTenantRequest\x1a\x15.CreateTenantResponse\"\x00\x124\n" +
+	"\tGetTenant\x12\x11.GetTenantRequest\x1a\x12.GetTenantResponse\"\x00\x12L\n" +
+	"\x11CreateEnvironment\x12\x19.CreateEnvironmentRequest\x1a\x1a.CreateEnvironmentResponse\"\x00\x12C\n" +
+	"\x0eGetEnvironment\x12\x16.GetEnvironmentRequest\x1a\x17.GetEnvironmentResponse\"\x00\x12R\n" +
+	"\x13SetEnvironmentValue\x12\x1b.SetEnvironmentValueRequest\x1a\x1c.SetEnvironmentValueResponse\"\x00\x12R\n" +
+	"\x13GetEnvironmentValue\x12\x1b.GetEnvironmentValueRequest\x1a\x1c.GetEnvironmentValueResponse\"\x00\x12X\n" +
 	"\x15ListEnvironmentValues\x12\x1d.ListEnvironmentValuesRequest\x1a\x1e.ListEnvironmentValuesResponse\"\x00\x12[\n" +
-	"\x16DeleteEnvironmentValue\x12\x1e.DeleteEnvironmentValueRequest\x1a\x1f.DeleteEnvironmentValueResponse\"\x00\x12U\n" +
-	"\x14SetEnvironmentLabels\x12\x1c.SetEnvironmentLabelsRequest\x1a\x1d.SetEnvironmentLabelsResponse\"\x00B2Z0internal/environmentmanagement/protogen;protogenb\x06proto3"
+	"\x16DeleteEnvironmentValue\x12\x1e.DeleteEnvironmentValueRequest\x1a\x1f.DeleteEnvironmentValueResponse\"\x00\x12L\n" +
+	"\x11UpdateEnvironment\x12\x19.UpdateEnvironmentRequest\x1a\x1a.UpdateEnvironmentResponse\"\x00B2Z0internal/environmentmanagement/protogen;protogenb\x06proto3"
 
 var (
 	file_schema_protobuf_fasit_proto_rawDescOnce sync.Once
@@ -1189,61 +1399,67 @@ func file_schema_protobuf_fasit_proto_rawDescGZIP() []byte {
 }
 
 var file_schema_protobuf_fasit_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_schema_protobuf_fasit_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_schema_protobuf_fasit_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_schema_protobuf_fasit_proto_goTypes = []any{
 	(EnvironmentKind)(0),                   // 0: EnvironmentKind
-	(*CreateTenantRequest)(nil),            // 1: CreateTenantRequest
-	(*GetTenantRequest)(nil),               // 2: GetTenantRequest
-	(*CreateTenantResponse)(nil),           // 3: CreateTenantResponse
-	(*Tenant)(nil),                         // 4: Tenant
-	(*CreateEnvironmentRequest)(nil),       // 5: CreateEnvironmentRequest
-	(*SetEnvironmentLabelsRequest)(nil),    // 6: SetEnvironmentLabelsRequest
-	(*SetEnvironmentLabelsResponse)(nil),   // 7: SetEnvironmentLabelsResponse
-	(*EnvironmentLabel)(nil),               // 8: EnvironmentLabel
-	(*GetEnvironmentRequest)(nil),          // 9: GetEnvironmentRequest
-	(*Environment)(nil),                    // 10: Environment
-	(*CreateEnvironmentResponse)(nil),      // 11: CreateEnvironmentResponse
-	(*SetEnvironmentValueRequest)(nil),     // 12: SetEnvironmentValueRequest
-	(*SetEnvironmentValueResponse)(nil),    // 13: SetEnvironmentValueResponse
-	(*GetEnvironmentValueRequest)(nil),     // 14: GetEnvironmentValueRequest
-	(*EnvironmentValue)(nil),               // 15: EnvironmentValue
-	(*ListEnvironmentValuesRequest)(nil),   // 16: ListEnvironmentValuesRequest
-	(*ListEnvironmentValuesResponse)(nil),  // 17: ListEnvironmentValuesResponse
-	(*DeleteEnvironmentValueRequest)(nil),  // 18: DeleteEnvironmentValueRequest
-	(*DeleteEnvironmentValueResponse)(nil), // 19: DeleteEnvironmentValueResponse
+	(*Tenant)(nil),                         // 1: Tenant
+	(*Environment)(nil),                    // 2: Environment
+	(*EnvironmentLabel)(nil),               // 3: EnvironmentLabel
+	(*EnvironmentValue)(nil),               // 4: EnvironmentValue
+	(*CreateTenantRequest)(nil),            // 5: CreateTenantRequest
+	(*CreateTenantResponse)(nil),           // 6: CreateTenantResponse
+	(*GetTenantRequest)(nil),               // 7: GetTenantRequest
+	(*GetTenantResponse)(nil),              // 8: GetTenantResponse
+	(*CreateEnvironmentRequest)(nil),       // 9: CreateEnvironmentRequest
+	(*CreateEnvironmentResponse)(nil),      // 10: CreateEnvironmentResponse
+	(*GetEnvironmentRequest)(nil),          // 11: GetEnvironmentRequest
+	(*GetEnvironmentResponse)(nil),         // 12: GetEnvironmentResponse
+	(*SetEnvironmentValueRequest)(nil),     // 13: SetEnvironmentValueRequest
+	(*SetEnvironmentValueResponse)(nil),    // 14: SetEnvironmentValueResponse
+	(*GetEnvironmentValueRequest)(nil),     // 15: GetEnvironmentValueRequest
+	(*GetEnvironmentValueResponse)(nil),    // 16: GetEnvironmentValueResponse
+	(*ListEnvironmentValuesRequest)(nil),   // 17: ListEnvironmentValuesRequest
+	(*ListEnvironmentValuesResponse)(nil),  // 18: ListEnvironmentValuesResponse
+	(*DeleteEnvironmentValueRequest)(nil),  // 19: DeleteEnvironmentValueRequest
+	(*DeleteEnvironmentValueResponse)(nil), // 20: DeleteEnvironmentValueResponse
+	(*UpdateEnvironmentRequest)(nil),       // 21: UpdateEnvironmentRequest
+	(*UpdateEnvironmentResponse)(nil),      // 22: UpdateEnvironmentResponse
 }
 var file_schema_protobuf_fasit_proto_depIdxs = []int32{
-	4,  // 0: CreateTenantResponse.tenant:type_name -> Tenant
-	0,  // 1: CreateEnvironmentRequest.kind:type_name -> EnvironmentKind
-	8,  // 2: CreateEnvironmentRequest.labels:type_name -> EnvironmentLabel
-	8,  // 3: SetEnvironmentLabelsRequest.labels:type_name -> EnvironmentLabel
-	10, // 4: SetEnvironmentLabelsResponse.environment:type_name -> Environment
-	8,  // 5: Environment.labels:type_name -> EnvironmentLabel
-	10, // 6: CreateEnvironmentResponse.environment:type_name -> Environment
-	15, // 7: ListEnvironmentValuesResponse.values:type_name -> EnvironmentValue
-	1,  // 8: Fasit.CreateTenant:input_type -> CreateTenantRequest
-	2,  // 9: Fasit.GetTenant:input_type -> GetTenantRequest
-	5,  // 10: Fasit.CreateEnvironment:input_type -> CreateEnvironmentRequest
-	9,  // 11: Fasit.GetEnvironment:input_type -> GetEnvironmentRequest
-	12, // 12: Fasit.SetEnvironmentValue:input_type -> SetEnvironmentValueRequest
-	14, // 13: Fasit.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
-	16, // 14: Fasit.ListEnvironmentValues:input_type -> ListEnvironmentValuesRequest
-	18, // 15: Fasit.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
-	6,  // 16: Fasit.SetEnvironmentLabels:input_type -> SetEnvironmentLabelsRequest
-	3,  // 17: Fasit.CreateTenant:output_type -> CreateTenantResponse
-	4,  // 18: Fasit.GetTenant:output_type -> Tenant
-	11, // 19: Fasit.CreateEnvironment:output_type -> CreateEnvironmentResponse
-	10, // 20: Fasit.GetEnvironment:output_type -> Environment
-	13, // 21: Fasit.SetEnvironmentValue:output_type -> SetEnvironmentValueResponse
-	15, // 22: Fasit.GetEnvironmentValue:output_type -> EnvironmentValue
-	17, // 23: Fasit.ListEnvironmentValues:output_type -> ListEnvironmentValuesResponse
-	19, // 24: Fasit.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
-	7,  // 25: Fasit.SetEnvironmentLabels:output_type -> SetEnvironmentLabelsResponse
-	17, // [17:26] is the sub-list for method output_type
-	8,  // [8:17] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	3,  // 0: Environment.labels:type_name -> EnvironmentLabel
+	1,  // 1: CreateTenantResponse.tenant:type_name -> Tenant
+	1,  // 2: GetTenantResponse.tenant:type_name -> Tenant
+	0,  // 3: CreateEnvironmentRequest.kind:type_name -> EnvironmentKind
+	3,  // 4: CreateEnvironmentRequest.labels:type_name -> EnvironmentLabel
+	2,  // 5: CreateEnvironmentResponse.environment:type_name -> Environment
+	2,  // 6: GetEnvironmentResponse.environment:type_name -> Environment
+	4,  // 7: GetEnvironmentValueResponse.environment_value:type_name -> EnvironmentValue
+	4,  // 8: ListEnvironmentValuesResponse.values:type_name -> EnvironmentValue
+	3,  // 9: UpdateEnvironmentRequest.labels:type_name -> EnvironmentLabel
+	2,  // 10: UpdateEnvironmentResponse.environment:type_name -> Environment
+	5,  // 11: Fasit.CreateTenant:input_type -> CreateTenantRequest
+	7,  // 12: Fasit.GetTenant:input_type -> GetTenantRequest
+	9,  // 13: Fasit.CreateEnvironment:input_type -> CreateEnvironmentRequest
+	11, // 14: Fasit.GetEnvironment:input_type -> GetEnvironmentRequest
+	13, // 15: Fasit.SetEnvironmentValue:input_type -> SetEnvironmentValueRequest
+	15, // 16: Fasit.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
+	17, // 17: Fasit.ListEnvironmentValues:input_type -> ListEnvironmentValuesRequest
+	19, // 18: Fasit.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
+	21, // 19: Fasit.UpdateEnvironment:input_type -> UpdateEnvironmentRequest
+	6,  // 20: Fasit.CreateTenant:output_type -> CreateTenantResponse
+	8,  // 21: Fasit.GetTenant:output_type -> GetTenantResponse
+	10, // 22: Fasit.CreateEnvironment:output_type -> CreateEnvironmentResponse
+	12, // 23: Fasit.GetEnvironment:output_type -> GetEnvironmentResponse
+	14, // 24: Fasit.SetEnvironmentValue:output_type -> SetEnvironmentValueResponse
+	16, // 25: Fasit.GetEnvironmentValue:output_type -> GetEnvironmentValueResponse
+	18, // 26: Fasit.ListEnvironmentValues:output_type -> ListEnvironmentValuesResponse
+	20, // 27: Fasit.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
+	22, // 28: Fasit.UpdateEnvironment:output_type -> UpdateEnvironmentResponse
+	20, // [20:29] is the sub-list for method output_type
+	11, // [11:20] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_schema_protobuf_fasit_proto_init() }
@@ -1251,14 +1467,17 @@ func file_schema_protobuf_fasit_proto_init() {
 	if File_schema_protobuf_fasit_proto != nil {
 		return
 	}
-	file_schema_protobuf_fasit_proto_msgTypes[0].OneofWrappers = []any{}
+	file_schema_protobuf_fasit_proto_msgTypes[1].OneofWrappers = []any{}
+	file_schema_protobuf_fasit_proto_msgTypes[4].OneofWrappers = []any{}
+	file_schema_protobuf_fasit_proto_msgTypes[8].OneofWrappers = []any{}
+	file_schema_protobuf_fasit_proto_msgTypes[20].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_schema_protobuf_fasit_proto_rawDesc), len(file_schema_protobuf_fasit_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   19,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

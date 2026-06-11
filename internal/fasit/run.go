@@ -13,15 +13,16 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environmentmanagement"
 	"github.com/nais/fasit/internal/fakeagent"
 	"github.com/nais/fasit/internal/fasitd"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
-	"github.com/nais/fasit/internal/provider"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/sethvargo/go-envconfig"
@@ -169,7 +170,7 @@ func Run(ctx context.Context) error {
 	go receiver.Run(ctx)
 
 	go func() {
-		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, log); err != nil {
+		if err := runGRPC(ctx, pool, cfg.GRPCBindAddress, log); err != nil {
 			log.With("err", err).Error("running GRPC server")
 		}
 	}()
@@ -220,14 +221,14 @@ func newLogger(level string) *slog.Logger {
 	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: lvl}))
 }
 
-func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, log *slog.Logger) error {
+func runGRPC(ctx context.Context, pool *pgxpool.Pool, bindAddress string, log *slog.Logger) error {
 	log.With("addr", bindAddress).Info("GRPC serving")
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	s := provider.NewGrpcServer(loadContext)
+	s := environmentmanagement.NewGrpcServer(pool)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return s.Serve(lis) })

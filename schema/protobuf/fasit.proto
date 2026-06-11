@@ -4,57 +4,18 @@ option go_package = "internal/environmentmanagement/protogen;protogen";
 
 service Fasit {
   rpc CreateTenant(CreateTenantRequest) returns (CreateTenantResponse) {}
-  rpc GetTenant(GetTenantRequest) returns (Tenant) {}
+  rpc GetTenant(GetTenantRequest) returns (GetTenantResponse) {}
   rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse) {}
-  rpc GetEnvironment(GetEnvironmentRequest) returns (Environment) {}
+  rpc GetEnvironment(GetEnvironmentRequest) returns (GetEnvironmentResponse) {}
   rpc SetEnvironmentValue(SetEnvironmentValueRequest) returns (SetEnvironmentValueResponse) {}
-  rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValue) {}
+  rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (GetEnvironmentValueResponse) {}
   rpc ListEnvironmentValues(ListEnvironmentValuesRequest) returns (ListEnvironmentValuesResponse) {}
   rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest) returns (DeleteEnvironmentValueResponse) {}
-  rpc SetEnvironmentLabels(SetEnvironmentLabelsRequest) returns (SetEnvironmentLabelsResponse) {}
-}
-
-message CreateTenantRequest {
-  string name = 1;
-  optional string description = 2;
-}
-
-message GetTenantRequest {
-  string name = 1;
-}
-
-message CreateTenantResponse {
-  Tenant tenant = 1;
+  rpc UpdateEnvironment(UpdateEnvironmentRequest) returns (UpdateEnvironmentResponse) {}
 }
 
 message Tenant {
   string id = 1;
-  string name = 2;
-}
-
-message CreateEnvironmentRequest {
-  string tenant_id = 1;
-  string name = 2;
-  EnvironmentKind kind = 3;
-  repeated EnvironmentLabel labels = 4;
-}
-
-message SetEnvironmentLabelsRequest {
-  string environment_id = 1;
-  repeated EnvironmentLabel labels = 2;
-}
-
-message SetEnvironmentLabelsResponse {
-  Environment environment = 1;
-}
-
-message EnvironmentLabel {
-  string key = 1;
-  string value = 2;
-}
-
-message GetEnvironmentRequest {
-  string tenant_id = 1;
   string name = 2;
 }
 
@@ -63,34 +24,13 @@ message Environment {
   string tenant_id = 2;
   string name = 3;
   repeated EnvironmentLabel labels = 4;
+  optional string oidc_issuer = 5;
+  optional string oidc_discovery_url = 6;
 }
 
-message CreateEnvironmentResponse {
-  Environment environment = 1;
-}
-
-enum EnvironmentKind {
-  UNKNOWN = 0;
-  MANAGEMENT = 1;
-  TENANT = 2;
-  ONPREM = 3;
-  LEGACY = 4;
-}
-
-message SetEnvironmentValueRequest {
-  string environment_id = 1;
-  string key = 2;
-  bytes value = 3;
-  bool secret = 4;
-}
-
-message SetEnvironmentValueResponse {
-  bool success = 1;
-}
-
-message GetEnvironmentValueRequest {
-  string environment_id = 1;
-  string key = 2;
+message EnvironmentLabel {
+  string key = 1;
+  string value = 2;
 }
 
 message EnvironmentValue {
@@ -103,6 +43,80 @@ message EnvironmentValue {
   string tenant_name = 7;
 }
 
+enum EnvironmentKind {
+  UNKNOWN = 0;
+  MANAGEMENT = 1;
+  TENANT = 2;
+  ONPREM = 3;
+  LEGACY = 4;
+}
+
+// CreateTenant
+message CreateTenantRequest {
+  string name = 1;
+  optional string description = 2;
+}
+
+message CreateTenantResponse {
+  Tenant tenant = 1;
+}
+
+// GetTenant
+message GetTenantRequest {
+  string name = 1;
+}
+
+message GetTenantResponse {
+  Tenant tenant = 1;
+}
+
+// CreateEnvironment
+message CreateEnvironmentRequest {
+  string tenant_id = 1;
+  string name = 2;
+  EnvironmentKind kind = 3;
+  repeated EnvironmentLabel labels = 4;
+  optional string oidc_issuer = 5;
+  optional string oidc_discovery_url = 6;
+}
+
+message CreateEnvironmentResponse {
+  Environment environment = 1;
+}
+
+// GetEnvironment
+message GetEnvironmentRequest {
+  string tenant_id = 1;
+  string name = 2;
+}
+
+message GetEnvironmentResponse {
+  Environment environment = 1;
+}
+
+// SetEnvironmentValue
+message SetEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+  bytes value = 3;
+  bool secret = 4;
+}
+
+message SetEnvironmentValueResponse {
+  bool success = 1;
+}
+
+// GetEnvironmentValue
+message GetEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+}
+
+message GetEnvironmentValueResponse {
+  EnvironmentValue environment_value = 1;
+}
+
+// ListEnvironmentValues
 message ListEnvironmentValuesRequest {
   string key = 1;
 }
@@ -111,6 +125,7 @@ message ListEnvironmentValuesResponse {
   repeated EnvironmentValue values = 1;
 }
 
+// DeleteEnvironmentValue
 message DeleteEnvironmentValueRequest {
   string environment_id = 1;
   string key = 2;
@@ -118,4 +133,16 @@ message DeleteEnvironmentValueRequest {
 
 message DeleteEnvironmentValueResponse {
   bool success = 1;
+}
+
+// UpdateEnvironment
+message UpdateEnvironmentRequest {
+  string environment_id = 1;
+  repeated EnvironmentLabel labels = 2;
+  optional string oidc_issuer = 3;
+  optional string oidc_discovery_url = 4;
+}
+
+message UpdateEnvironmentResponse {
+  Environment environment = 1;
 }

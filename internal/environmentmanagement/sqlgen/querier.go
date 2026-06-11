@@ -18,8 +18,8 @@ type Querier interface {
 	GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error)
 	GetTenantByName(ctx context.Context, name string) (Tenant, error)
 	ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error)
-	SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
+	UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) error
 }
 
 var _ Querier = (*Queries)(nil)

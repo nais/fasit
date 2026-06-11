@@ -204,24 +204,3 @@ func (q *Queries) SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLa
 	_, err := q.db.Exec(ctx, setEnvironmentLabels, arg.Labels, arg.ID)
 	return err
 }
-
-const setEnvironmentOIDC = `-- name: SetEnvironmentOIDC :exec
-UPDATE
-	environments
-SET
-	oidc_issuer = $1,
-	oidc_discovery_url = $2
-WHERE
-	id = $3
-`
-
-type SetEnvironmentOIDCParams struct {
-	OidcIssuer       *string
-	OidcDiscoveryUrl *string
-	ID               uuid.UUID
-}
-
-func (q *Queries) SetEnvironmentOIDC(ctx context.Context, arg SetEnvironmentOIDCParams) error {
-	_, err := q.db.Exec(ctx, setEnvironmentOIDC, arg.OidcIssuer, arg.OidcDiscoveryUrl, arg.ID)
-	return err
-}

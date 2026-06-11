@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/environmentmanagement/protogen"
 	"github.com/nais/fasit/internal/environmentmanagement/sqlgen"
@@ -20,20 +19,10 @@ type server struct {
 	querier sqlgen.Querier
 }
 
-func NewGrpcServer(loadContext contextloader.LoaderFunc, pool *pgxpool.Pool) *grpc.Server {
-	opts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(newContextInterceptor(loadContext)),
-	}
-	s := grpc.NewServer(opts...)
+func NewGrpcServer(pool *pgxpool.Pool) *grpc.Server {
+	s := grpc.NewServer()
 	protogen.RegisterFasitServer(s, &server{querier: sqlgen.New(pool)})
 	return s
-}
-
-func newContextInterceptor(loadContext contextloader.LoaderFunc) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = loadContext(ctx)
-		return handler(ctx, req)
-	}
 }
 
 func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.CreateTenantResponse, error) {
@@ -61,15 +50,17 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 	}, nil
 }
 
-func (s *server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (*protogen.Tenant, error) {
+func (s *server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (*protogen.GetTenantResponse, error) {
 	tenant, err := s.querier.GetTenantByName(ctx, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
 
-	return &protogen.Tenant{
-		Id:   tenant.ID.String(),
-		Name: tenant.Name,
+	return &protogen.GetTenantResponse{
+		Tenant: &protogen.Tenant{
+			Id:   tenant.ID.String(),
+			Name: tenant.Name,
+		},
 	}, nil
 }
 
@@ -95,16 +86,13 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, err
 	}
 
-	labels := types.EnvironmentLabels{}
-	for _, l := range in.Labels {
-		labels[l.Key] = l.Value
-	}
-
 	env, err := s.querier.CreateEnvironment(ctx, sqlgen.CreateEnvironmentParams{
-		Name:     in.Name,
-		TenantID: tenant.ID,
-		Kind:     kind,
-		Labels:   labels,
+		Name:             in.Name,
+		TenantID:         tenant.ID,
+		Kind:             kind,
+		Labels:           labelsToDB(in.Labels),
+		OidcIssuer:       in.OidcIssuer,
+		OidcDiscoveryUrl: in.OidcDiscoveryUrl,
 	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -119,7 +107,9 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 	}, nil
 }
 
-func (s *server) SetEnvironmentLabels(ctx context.Context, in *protogen.SetEnvironmentLabelsRequest) (*protogen.SetEnvironmentLabelsResponse, error) {
+func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvironmentRequest) (*protogen.UpdateEnvironmentResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
 	environmentID, err := uuid.Parse(in.EnvironmentId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
@@ -130,28 +120,28 @@ func (s *server) SetEnvironmentLabels(ctx context.Context, in *protogen.SetEnvir
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	labels := types.EnvironmentLabels{}
-	for _, l := range in.Labels {
-		labels[l.Key] = l.Value
-	}
-
-	if err := s.querier.SetEnvironmentLabels(ctx, sqlgen.SetEnvironmentLabelsParams{
-		ID:     env.ID,
-		Labels: labels,
+	if err := s.querier.UpdateEnvironment(ctx, sqlgen.UpdateEnvironmentParams{
+		ID:               env.ID,
+		Labels:           labelsToDB(in.Labels),
+		OidcIssuer:       in.OidcIssuer,
+		OidcDiscoveryUrl: in.OidcDiscoveryUrl,
 	}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &protogen.SetEnvironmentLabelsResponse{
+	return &protogen.UpdateEnvironmentResponse{
 		Environment: &protogen.Environment{
-			Id:       env.ID.String(),
-			TenantId: env.TenantID.String(),
-			Name:     env.Name,
+			Id:               env.ID.String(),
+			TenantId:         env.TenantID.String(),
+			Name:             env.Name,
+			Labels:           labelsToProto(env.Labels),
+			OidcIssuer:       env.OidcIssuer,
+			OidcDiscoveryUrl: env.OidcDiscoveryUrl,
 		},
 	}, nil
 }
 
-func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironmentRequest) (*protogen.Environment, error) {
+func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironmentRequest) (*protogen.GetEnvironmentResponse, error) {
 	tenantID, err := uuid.Parse(in.TenantId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
@@ -165,10 +155,14 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	return &protogen.Environment{
-		Id:       env.ID.String(),
-		TenantId: tenantID.String(),
-		Name:     env.Name,
+	return &protogen.GetEnvironmentResponse{
+		Environment: &protogen.Environment{
+			Id:               env.ID.String(),
+			TenantId:         env.TenantID.String(),
+			Name:             env.Name,
+			OidcIssuer:       env.OidcIssuer,
+			OidcDiscoveryUrl: env.OidcDiscoveryUrl,
+		},
 	}, nil
 }
 
@@ -192,7 +186,7 @@ func (s *server) SetEnvironmentValue(ctx context.Context, in *protogen.SetEnviro
 	return &protogen.SetEnvironmentValueResponse{Success: true}, nil
 }
 
-func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnvironmentValueRequest) (*protogen.EnvironmentValue, error) {
+func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnvironmentValueRequest) (*protogen.GetEnvironmentValueResponse, error) {
 	ctx = auth.SetEmail(ctx, "system:provider")
 
 	envID, err := uuid.Parse(in.EnvironmentId)
@@ -219,14 +213,16 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
 
-	return &protogen.EnvironmentValue{
-		EnvironmentId:   envID.String(),
-		Key:             ev.Key,
-		Value:           ev.Value,
-		Secret:          ev.Secret,
-		TenantId:        tenant.ID.String(),
-		TenantName:      tenant.Name,
-		EnvironmentName: env.Name,
+	return &protogen.GetEnvironmentValueResponse{
+		EnvironmentValue: &protogen.EnvironmentValue{
+			EnvironmentId:   envID.String(),
+			Key:             ev.Key,
+			Value:           ev.Value,
+			Secret:          ev.Secret,
+			TenantId:        tenant.ID.String(),
+			TenantName:      tenant.Name,
+			EnvironmentName: env.Name,
+		},
 	}, nil
 }
 
@@ -281,4 +277,25 @@ func toEnvironmentKind(kind protogen.EnvironmentKind) (types.EnvironmentKind, er
 	}
 
 	return "", status.Error(codes.InvalidArgument, "Invalid Environment kind")
+}
+
+func labelsToDB(labels []*protogen.EnvironmentLabel) types.EnvironmentLabels {
+	result := make(types.EnvironmentLabels)
+	for _, l := range labels {
+		result[l.Key] = l.Value
+	}
+
+	return result
+}
+
+func labelsToProto(labels types.EnvironmentLabels) []*protogen.EnvironmentLabel {
+	var result []*protogen.EnvironmentLabel
+	for k, v := range labels {
+		result = append(result, &protogen.EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	return result
 }

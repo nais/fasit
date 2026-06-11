@@ -16,23 +16,29 @@ INSERT INTO environments(
 	description,
 	tenant_id,
 	kind,
-	labels)
+	labels,
+	oidc_issuer,
+	oidc_discovery_url)
 VALUES (
 	$1,
 	$2,
 	$3,
 	$4,
-	$5)
+	$5,
+	$6,
+	$7)
 RETURNING
 	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels, oidc_issuer, oidc_discovery_url
 `
 
 type CreateEnvironmentParams struct {
-	Name        string
-	Description *string
-	TenantID    uuid.UUID
-	Kind        types.EnvironmentKind
-	Labels      types.EnvironmentLabels
+	Name             string
+	Description      *string
+	TenantID         uuid.UUID
+	Kind             types.EnvironmentKind
+	Labels           types.EnvironmentLabels
+	OidcIssuer       *string
+	OidcDiscoveryUrl *string
 }
 
 func (q *Queries) CreateEnvironment(ctx context.Context, arg CreateEnvironmentParams) (Environment, error) {
@@ -42,6 +48,8 @@ func (q *Queries) CreateEnvironment(ctx context.Context, arg CreateEnvironmentPa
 		arg.TenantID,
 		arg.Kind,
 		arg.Labels,
+		arg.OidcIssuer,
+		arg.OidcDiscoveryUrl,
 	)
 	var i Environment
 	err := row.Scan(
@@ -318,25 +326,6 @@ func (q *Queries) ListEnvironmentValuesForKey(ctx context.Context, key string) (
 	return items, nil
 }
 
-const setEnvironmentLabels = `-- name: SetEnvironmentLabels :exec
-UPDATE
-	environments
-SET
-	labels = $1
-WHERE
-	id = $2
-`
-
-type SetEnvironmentLabelsParams struct {
-	Labels types.EnvironmentLabels
-	ID     uuid.UUID
-}
-
-func (q *Queries) SetEnvironmentLabels(ctx context.Context, arg SetEnvironmentLabelsParams) error {
-	_, err := q.db.Exec(ctx, setEnvironmentLabels, arg.Labels, arg.ID)
-	return err
-}
-
 const setEnvironmentValue = `-- name: SetEnvironmentValue :exec
 INSERT INTO environment_values(
 	"environment_id",
@@ -369,6 +358,34 @@ func (q *Queries) SetEnvironmentValue(ctx context.Context, arg SetEnvironmentVal
 		arg.Key,
 		arg.Value,
 		arg.Secret,
+	)
+	return err
+}
+
+const updateEnvironment = `-- name: UpdateEnvironment :exec
+UPDATE
+	environments
+SET
+	labels = $1,
+	oidc_issuer = $2,
+	oidc_discovery_url = $3
+WHERE
+	id = $4
+`
+
+type UpdateEnvironmentParams struct {
+	Labels           types.EnvironmentLabels
+	OidcIssuer       *string
+	OidcDiscoveryUrl *string
+	ID               uuid.UUID
+}
+
+func (q *Queries) UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) error {
+	_, err := q.db.Exec(ctx, updateEnvironment,
+		arg.Labels,
+		arg.OidcIssuer,
+		arg.OidcDiscoveryUrl,
+		arg.ID,
 	)
 	return err
 }

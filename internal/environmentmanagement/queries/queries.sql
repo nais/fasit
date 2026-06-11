@@ -30,13 +30,17 @@ INSERT INTO environments(
 	description,
 	tenant_id,
 	kind,
-	labels)
+	labels,
+	oidc_issuer,
+	oidc_discovery_url)
 VALUES (
 	@name,
 	@description,
 	@tenant_id,
 	@kind,
-	@labels)
+	@labels,
+	@oidc_issuer,
+	@oidc_discovery_url)
 RETURNING
 	*;
 
@@ -48,11 +52,13 @@ FROM
 WHERE
 	id = @id;
 
--- name: SetEnvironmentLabels :exec
+-- name: UpdateEnvironment :exec
 UPDATE
 	environments
 SET
-	labels = @labels
+	labels = @labels,
+	oidc_issuer = @oidc_issuer,
+	oidc_discovery_url = @oidc_discovery_url
 WHERE
 	id = @id;
 
