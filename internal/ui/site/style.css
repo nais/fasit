@@ -746,7 +746,6 @@ nav .user {
 }
 .env-feature-overview {
   min-width: 0;
-  overflow-x: auto;
   padding-bottom: 0.25rem;
 }
 .activity-filter-badge {
