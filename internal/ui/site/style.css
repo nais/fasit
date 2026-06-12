@@ -1427,6 +1427,9 @@ textarea.bulk-value-input {
   color: var(--text-muted);
   font-size: 0.85em;
 }
+.config-row-computed > td {
+  background: var(--bg-inset);
+}
 .source-env-set {
   color: var(--accent);
   font-weight: 600;

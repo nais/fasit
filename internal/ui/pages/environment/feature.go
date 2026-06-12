@@ -619,8 +619,7 @@ func overviewTab(page *FeaturePage) g.Node {
 	}
 
 	return h.Div(h.Class("tab-content-wrapper env-feature-overview"),
-		configurableTable(page, configurable),
-		computedTable(page, computed),
+		configTable(page, configurable, computed),
 	)
 }
 
@@ -649,15 +648,15 @@ func envResourceNode(e *audit.Entry) g.Node {
 	return auditview.ResourceLink(e)
 }
 
-func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
-	if len(items) == 0 {
-		return h.Div(h.H2(g.Text("Configuration")), h.P(h.Class("text-muted"), g.Text("No configurable values.")))
+func configTable(page *FeaturePage, configurable, computed []FeatureConfigItem) g.Node {
+	if len(configurable) == 0 && len(computed) == 0 {
+		return h.Div(h.H3(g.Text("Configuration")), h.P(h.Class("text-muted"), g.Text("No configuration.")))
 	}
 	const formID = "config-batch-form"
 	basePath := featureBasePathForPage(page)
 	header := h.Div(h.Class("config-section-header"),
 		h.H3(g.Text("Configuration")),
-		h.Div(h.Class("config-section-actions"),
+		g.If(len(configurable) > 0, h.Div(h.Class("config-section-actions"),
 			h.Button(h.Type("button"), h.Class("btn-small config-edit-toggle"),
 				g.Attr("data-config-edit-toggle", ""),
 				g.Raw(`<svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5l2 2L6 12l-2.5.5.5-2.5 7.5-7.5z"/></svg>`),
@@ -667,63 +666,60 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 				h.Button(h.Type("submit"), h.Class("btn-small config-save-btn"), g.Text("Save changes")),
 				h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("data-config-edit-cancel", ""), g.Text("Cancel")),
 			),
-		),
+		)),
 	)
+
+	rows := make([]g.Node, 0, len(configurable)+len(computed))
+	for _, item := range configurable {
+		rows = append(rows, configurableRow(page, formID, item))
+	}
+	for _, item := range computed {
+		rows = append(rows, computedRow(page, item))
+	}
+
 	return h.Div(h.Class("config-editable-section"),
 		header,
-		h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config-configurable"),
+		h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
-			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
-				valDef := page.Feature.Values[item.Key]
-				warn := valDef.Required && item.Source == string(featurepkg.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
-				idForUpdate := ""
-				if item.Source == string(featurepkg.ConfigSourceEnv) {
-					idForUpdate = item.ID
-				}
-				return h.Tr(h.ID("config-"+item.Key), g.If(warn, h.Class("config-warning")),
-					components.ConfigKeyCell(item),
-					components.BulkConfigCell(formID, idForUpdate, item),
-					sourceCell(page, item),
-					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key)),
-				)
-			})))),
+			h.TBody(g.Group(rows)),
+		),
 	)
 }
 
-func computedTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
-	if len(items) == 0 {
-		return nil
+func configurableRow(page *FeaturePage, formID string, item FeatureConfigItem) g.Node {
+	valDef := page.Feature.Values[item.Key]
+	warn := valDef.Required && item.Source == string(featurepkg.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
+	idForUpdate := ""
+	if item.Source == string(featurepkg.ConfigSourceEnv) {
+		idForUpdate = item.ID
 	}
-	return h.Div(
-		h.H3(g.Text("Computed")),
-		h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config-computed"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Configuration Key")),
-				h.Th(g.Text("Value")),
-				h.Th(g.Text("Source")),
-				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
-			)),
-			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
-				var extraKebab []g.Node
-				if item.Template != "" {
-					testURL := "/template-test?feature=" + url.QueryEscape(page.Feature.Name) +
-						"&tenant=" + url.QueryEscape(page.TenantSlug) +
-						"&env=" + url.QueryEscape(page.Environment.Name) +
-						"&key=" + url.QueryEscape(item.Key)
-					extraKebab = append(extraKebab, h.A(h.Href(testURL), h.Class("kebab-item"), g.Text("Test template ↗")))
-				}
-				return h.Tr(
-					components.ConfigKeyCell(item),
-					components.ComputedValueCell(item),
-					sourceLabelCell(item),
-					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key, extraKebab...)),
-				)
-			})))),
+	return h.Tr(h.ID("config-"+item.Key), g.If(warn, h.Class("config-warning")),
+		components.ConfigKeyCell(item),
+		components.BulkConfigCell(formID, idForUpdate, item),
+		sourceCell(page, item),
+		h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key)),
+	)
+}
+
+func computedRow(page *FeaturePage, item FeatureConfigItem) g.Node {
+	var extraKebab []g.Node
+	if item.Template != "" {
+		testURL := "/template-test?feature=" + url.QueryEscape(page.Feature.Name) +
+			"&tenant=" + url.QueryEscape(page.TenantSlug) +
+			"&env=" + url.QueryEscape(page.Environment.Name) +
+			"&key=" + url.QueryEscape(item.Key)
+		extraKebab = append(extraKebab, h.A(h.Href(testURL), h.Class("kebab-item"), g.Text("Test template ↗")))
+	}
+	return h.Tr(h.ID("config-"+item.Key), h.Class("config-row-computed"),
+		components.ConfigKeyCell(item),
+		components.ComputedValueCell(item),
+		sourceLabelCell(item),
+		h.Td(h.Class("config-kebab-col"), components.ConfigKebab(page.Feature.Name, item.Key, extraKebab...)),
 	)
 }
 

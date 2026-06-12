@@ -162,7 +162,7 @@ func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
 	}
 }
 
-func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
+func TestOverviewTab_ConfigurableAndComputedShareOneTable(t *testing.T) {
 	t.Parallel()
 	feat := &feature.Feature{
 		Name: "test-feature",
@@ -193,16 +193,21 @@ func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 	}
 	html := buf.String()
 
-	configIdx := strings.Index(html, "Configuration")
-	computedIdx := strings.Index(html, "Computed")
-	if configIdx == -1 {
-		t.Fatal("Configuration heading should be present")
+	// One table only: a single THead, no separate "Computed" heading.
+	if n := strings.Count(html, "<thead"); n != 1 {
+		t.Errorf("want a single table header, got %d", n)
 	}
-	if computedIdx == -1 {
-		t.Fatal("Computed heading should be present")
+	if strings.Contains(html, "<h3>Computed</h3>") {
+		t.Error("computed items should no longer get their own section heading")
 	}
-	if configIdx >= computedIdx {
-		t.Error("Configuration should render before Computed")
+
+	// Computed rows are still present but carry the visual-cue class so they
+	// remain distinguishable from configurable rows.
+	if !strings.Contains(html, `id="config-replicas"`) {
+		t.Error("configurable item should render")
+	}
+	if !strings.Contains(html, `class="config-row-computed"`) {
+		t.Error("computed item should render with the config-row-computed cue class")
 	}
 
 	if !strings.Contains(html, `>values.yaml<`) {
