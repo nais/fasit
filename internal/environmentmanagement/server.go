@@ -1,3 +1,6 @@
+// Package environmentmanagement implements the gRPC server for environment management, mostly used from
+// github.com/nais/terraform-provider-fasit. It provides methods for managing tenants, environments, and environment
+// values.
 package environmentmanagement
 
 import (
