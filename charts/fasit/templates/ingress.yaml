@@ -51,12 +51,12 @@ metadata:
   name: {{ include "fasit.fullname" . }}-fasitd
   labels: {{- include "fasit.labels" . | nindent 4 }}
   annotations:
-    haproxy.org/backend-config-snippet: |
-      retries 2
-      default-server proto h2 no-check
-      timeout tunnnel 30s
-      http-reuse never
+    haproxy.org/server-proto: "h2"
+    haproxy.org/check: "disabled"
     haproxy.org/timeout-server: "86400s"
+    haproxy.org/backend-config-snippet: |
+      timeout tunnel 86400s
+      http-reuse never
 spec:
   ingressClassName: {{ .Values.fasitdEndpoint.ingressClassName | quote }}
   rules:
