@@ -2,7 +2,10 @@ package fasitd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -66,26 +69,68 @@ func NewStreamInterceptor(loadContext contextloader.LoaderFunc, audience string,
 var providerCache sync.Map
 
 func getOIDCVerifier(ctx context.Context, issuer, discoveryURL, audience string) (*oidc.IDTokenVerifier, error) {
-	cacheKey := issuer + "\x00" + discoveryURL
-	if p, ok := providerCache.Load(cacheKey); ok {
-		return p.(*oidc.Provider).Verifier(&oidc.Config{ClientID: audience}), nil
+	cfg := &oidc.Config{ClientID: audience}
+
+	// No explicit discovery URL: let go-oidc discover from the issuer. It appends
+	// /.well-known/openid-configuration to the issuer itself.
+	if discoveryURL == "" {
+		if p, ok := providerCache.Load(issuer); ok {
+			return p.(*oidc.Provider).Verifier(cfg), nil
+		}
+		provider, err := oidc.NewProvider(ctx, issuer)
+		if err != nil {
+			return nil, fmt.Errorf("discover from issuer: %w", err)
+		}
+		providerCache.Store(issuer, provider)
+		return provider.Verifier(cfg), nil
 	}
 
-	// When discovery is served via a proxy, the URL we fetch from differs from
-	// the issuer claim embedded in the token. InsecureIssuerURLContext keeps the
-	// expected issuer for validation while allowing discovery from discoveryURL.
-	discoverFrom := issuer
-	if discoveryURL != "" {
-		ctx = oidc.InsecureIssuerURLContext(ctx, issuer)
-		discoverFrom = discoveryURL
+	// Explicit discovery URL: it is the full discovery-document endpoint (e.g.
+	// served via oidcproxy), fetched verbatim. The token's iss is still validated
+	// against the configured issuer, which may differ from where we fetch keys.
+	if ks, ok := keySetCache.Load(discoveryURL); ok {
+		return oidc.NewVerifier(issuer, ks.(oidc.KeySet), cfg), nil
 	}
-
-	provider, err := oidc.NewProvider(ctx, discoverFrom)
+	keySet, err := remoteKeySetFromDiscovery(ctx, discoveryURL)
 	if err != nil {
-		return nil, fmt.Errorf("create oidc provider: %w", err)
+		return nil, err
 	}
-	providerCache.Store(cacheKey, provider)
-	return provider.Verifier(&oidc.Config{ClientID: audience}), nil
+	keySetCache.Store(discoveryURL, keySet)
+	return oidc.NewVerifier(issuer, keySet, cfg), nil
+}
+
+// keySetCache holds JWKS key sets keyed by their full discovery URL. The key
+// sets refresh themselves on their own background context.
+var keySetCache sync.Map
+
+func remoteKeySetFromDiscovery(ctx context.Context, discoveryURL string) (oidc.KeySet, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, discoveryURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build discovery request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req) // #nosec G704 -- discoveryURL is the environment's admin-configured oidc_discovery_url, not request-derived
+	if err != nil {
+		return nil, fmt.Errorf("fetch discovery document: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("discovery document %s: status %d: %s", discoveryURL, resp.StatusCode, body)
+	}
+
+	var doc struct {
+		JWKSURI string `json:"jwks_uri"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&doc); err != nil {
+		return nil, fmt.Errorf("decode discovery document: %w", err)
+	}
+	if doc.JWKSURI == "" {
+		return nil, fmt.Errorf("discovery document %s has no jwks_uri", discoveryURL)
+	}
+
+	// Background context: the cached key set lives for the process lifetime and
+	// must not be tied to the request that first created it.
+	return oidc.NewRemoteKeySet(context.Background(), doc.JWKSURI), nil
 }
 
 func validateKSAToken(ctx context.Context, loadContext contextloader.LoaderFunc, md metadata.MD, rawToken, audience string) error {
