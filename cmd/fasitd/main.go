@@ -83,7 +83,8 @@ func run(ctx context.Context, log *slog.Logger) error {
 			return err
 		}
 		opts.ReleaseLister = helm.New(kubeConfig, "nais-system", log.With("subsystem", "helm"))
-		opts.ReleaseInterval = 15 * time.Minute
+		// TODO: temporarily disable release reporting until we fix credentials error
+		opts.ReleaseInterval = 0 // 15 * time.Minute
 	}
 
 	agent := daemon.NewAgent(client, opts, log)
