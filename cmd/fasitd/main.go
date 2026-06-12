@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/credentials/oauth"
 	"k8s.io/client-go/rest"
 )
 
@@ -58,7 +57,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		}
 	}()
 
-	dialOpts, err := dialOptions(ctx)
+	dialOpts, err := dialOptions()
 	if err != nil {
 		return err
 	}
@@ -90,9 +89,8 @@ func run(ctx context.Context, log *slog.Logger) error {
 	agent := daemon.NewAgent(client, opts, log)
 
 	for {
-		if err := agent.Run(ctx); err != nil {
-			log.With("err", err).Warn("fasitd session ended")
-		}
+		err = agent.Run(ctx)
+		log.With("err", err).Warn("fasitd session ended")
 		select {
 		case <-ctx.Done():
 			return nil
@@ -101,7 +99,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	}
 }
 
-func dialOptions(ctx context.Context) ([]grpc.DialOption, error) {
+func dialOptions() ([]grpc.DialOption, error) {
 	if cfg.Insecure {
 		return []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, nil
 	}
@@ -109,23 +107,12 @@ func dialOptions(ctx context.Context) ([]grpc.DialOption, error) {
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 	}
-	if cfg.IAPAudience != "" {
-		ts, err := ksaTokenSource(cfg.IAPAudience)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, grpc.WithPerRPCCredentials(ts))
+	ksa, err := KSAPerRPCCredentials()
+	if err != nil {
+		return nil, err
 	}
+	opts = append(opts, grpc.WithPerRPCCredentials(ksa))
 	return opts, nil
-}
-
-// ksaTokenSource reads the mounted Kubernetes service account token and
-// exchanges it for an OIDC ID token by reading the bound token volume.
-// When fasitd is exposed to the internet, we authenticate using the raw KSA
-// token as a JWT, with the audience verified by fasit.
-func ksaTokenSource(audience string) (credentials.PerRPCCredentials, error) {
-	const tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token" // #nosec G101 -- filesystem path to the projected token, not a credential
-	return oauth.NewJWTAccessFromFile(tokenPath)
 }
 
 func newLogger(level string) *slog.Logger {
