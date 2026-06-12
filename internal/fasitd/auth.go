@@ -16,6 +16,7 @@ import (
 	"google.golang.org/api/idtoken"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
@@ -216,6 +217,14 @@ func NewGrpcServer(srv *Server, loadContext contextloader.LoaderFunc, audience s
 	}
 	s := grpc.NewServer(
 		grpc.ChainStreamInterceptor(NewStreamInterceptor(loadContext, audience, insecureSkipProxy)),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:    30 * time.Second,
+			Timeout: 10 * time.Second,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             10 * time.Second,
+			PermitWithoutStream: true,
+		}),
 	)
 	protogen.RegisterFasitdServer(s, srv)
 	return s, nil

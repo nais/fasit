@@ -18,6 +18,7 @@ message AgentMessage {
     CommandStatus status = 3;
     LogBatch logs = 4;
     ReleaseInventory releases = 5;
+    Heartbeat heartbeat = 6;
   }
 }
 
@@ -27,6 +28,10 @@ message ServerMessage {
     Command command = 1;
   }
 }
+
+// Heartbeat keeps the session stream warm so intermediaries (load balancers,
+// proxies) do not close the otherwise-idle connection. It carries no payload.
+message Heartbeat {}
 
 // Register is the first message an agent must send. It declares which
 // environment the session belongs to and the agent's version/capabilities.

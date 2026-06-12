@@ -31,6 +31,7 @@ type AgentMessage struct {
 	//	*AgentMessage_Status
 	//	*AgentMessage_Logs
 	//	*AgentMessage_Releases
+	//	*AgentMessage_Heartbeat
 	Message       isAgentMessage_Message `protobuf_oneof:"message"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -118,6 +119,15 @@ func (x *AgentMessage) GetReleases() *ReleaseInventory {
 	return nil
 }
 
+func (x *AgentMessage) GetHeartbeat() *Heartbeat {
+	if x != nil {
+		if x, ok := x.Message.(*AgentMessage_Heartbeat); ok {
+			return x.Heartbeat
+		}
+	}
+	return nil
+}
+
 type isAgentMessage_Message interface {
 	isAgentMessage_Message()
 }
@@ -142,6 +152,10 @@ type AgentMessage_Releases struct {
 	Releases *ReleaseInventory `protobuf:"bytes,5,opt,name=releases,proto3,oneof"`
 }
 
+type AgentMessage_Heartbeat struct {
+	Heartbeat *Heartbeat `protobuf:"bytes,6,opt,name=heartbeat,proto3,oneof"`
+}
+
 func (*AgentMessage_Register) isAgentMessage_Message() {}
 
 func (*AgentMessage_Ack) isAgentMessage_Message() {}
@@ -151,6 +165,8 @@ func (*AgentMessage_Status) isAgentMessage_Message() {}
 func (*AgentMessage_Logs) isAgentMessage_Message() {}
 
 func (*AgentMessage_Releases) isAgentMessage_Message() {}
+
+func (*AgentMessage_Heartbeat) isAgentMessage_Message() {}
 
 // ServerMessage is anything Fasit sends to the agent over the session.
 type ServerMessage struct {
@@ -219,6 +235,44 @@ type ServerMessage_Command struct {
 
 func (*ServerMessage_Command) isServerMessage_Message() {}
 
+// Heartbeat keeps the session stream warm so intermediaries (load balancers,
+// proxies) do not close the otherwise-idle connection. It carries no payload.
+type Heartbeat struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Heartbeat) Reset() {
+	*x = Heartbeat{}
+	mi := &file_fasitd_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Heartbeat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Heartbeat) ProtoMessage() {}
+
+func (x *Heartbeat) ProtoReflect() protoreflect.Message {
+	mi := &file_fasitd_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
+func (*Heartbeat) Descriptor() ([]byte, []int) {
+	return file_fasitd_proto_rawDescGZIP(), []int{2}
+}
+
 // Register is the first message an agent must send. It declares which
 // environment the session belongs to and the agent's version/capabilities.
 type Register struct {
@@ -233,7 +287,7 @@ type Register struct {
 
 func (x *Register) Reset() {
 	*x = Register{}
-	mi := &file_fasitd_proto_msgTypes[2]
+	mi := &file_fasitd_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +299,7 @@ func (x *Register) String() string {
 func (*Register) ProtoMessage() {}
 
 func (x *Register) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[2]
+	mi := &file_fasitd_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -258,7 +312,7 @@ func (x *Register) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Register.ProtoReflect.Descriptor instead.
 func (*Register) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{2}
+	return file_fasitd_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Register) GetTenant() string {
@@ -307,7 +361,7 @@ type Command struct {
 
 func (x *Command) Reset() {
 	*x = Command{}
-	mi := &file_fasitd_proto_msgTypes[3]
+	mi := &file_fasitd_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -319,7 +373,7 @@ func (x *Command) String() string {
 func (*Command) ProtoMessage() {}
 
 func (x *Command) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[3]
+	mi := &file_fasitd_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -332,7 +386,7 @@ func (x *Command) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Command.ProtoReflect.Descriptor instead.
 func (*Command) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{3}
+	return file_fasitd_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Command) GetDiid() string {
@@ -401,7 +455,7 @@ type CommandAck struct {
 
 func (x *CommandAck) Reset() {
 	*x = CommandAck{}
-	mi := &file_fasitd_proto_msgTypes[4]
+	mi := &file_fasitd_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -413,7 +467,7 @@ func (x *CommandAck) String() string {
 func (*CommandAck) ProtoMessage() {}
 
 func (x *CommandAck) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[4]
+	mi := &file_fasitd_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +480,7 @@ func (x *CommandAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandAck.ProtoReflect.Descriptor instead.
 func (*CommandAck) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{4}
+	return file_fasitd_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CommandAck) GetDiid() string {
@@ -449,7 +503,7 @@ type CommandStatus struct {
 
 func (x *CommandStatus) Reset() {
 	*x = CommandStatus{}
-	mi := &file_fasitd_proto_msgTypes[5]
+	mi := &file_fasitd_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -461,7 +515,7 @@ func (x *CommandStatus) String() string {
 func (*CommandStatus) ProtoMessage() {}
 
 func (x *CommandStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[5]
+	mi := &file_fasitd_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -474,7 +528,7 @@ func (x *CommandStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandStatus.ProtoReflect.Descriptor instead.
 func (*CommandStatus) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{5}
+	return file_fasitd_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CommandStatus) GetDiid() string {
@@ -516,7 +570,7 @@ type LogLine struct {
 
 func (x *LogLine) Reset() {
 	*x = LogLine{}
-	mi := &file_fasitd_proto_msgTypes[6]
+	mi := &file_fasitd_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -528,7 +582,7 @@ func (x *LogLine) String() string {
 func (*LogLine) ProtoMessage() {}
 
 func (x *LogLine) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[6]
+	mi := &file_fasitd_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -541,7 +595,7 @@ func (x *LogLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogLine.ProtoReflect.Descriptor instead.
 func (*LogLine) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{6}
+	return file_fasitd_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LogLine) GetTimeUnixNano() int64 {
@@ -575,7 +629,7 @@ type LogBatch struct {
 
 func (x *LogBatch) Reset() {
 	*x = LogBatch{}
-	mi := &file_fasitd_proto_msgTypes[7]
+	mi := &file_fasitd_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -587,7 +641,7 @@ func (x *LogBatch) String() string {
 func (*LogBatch) ProtoMessage() {}
 
 func (x *LogBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[7]
+	mi := &file_fasitd_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -600,7 +654,7 @@ func (x *LogBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogBatch.ProtoReflect.Descriptor instead.
 func (*LogBatch) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{7}
+	return file_fasitd_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *LogBatch) GetDiid() string {
@@ -630,7 +684,7 @@ type Release struct {
 
 func (x *Release) Reset() {
 	*x = Release{}
-	mi := &file_fasitd_proto_msgTypes[8]
+	mi := &file_fasitd_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -642,7 +696,7 @@ func (x *Release) String() string {
 func (*Release) ProtoMessage() {}
 
 func (x *Release) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[8]
+	mi := &file_fasitd_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -655,7 +709,7 @@ func (x *Release) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Release.ProtoReflect.Descriptor instead.
 func (*Release) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{8}
+	return file_fasitd_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Release) GetName() string {
@@ -703,7 +757,7 @@ type ReleaseInventory struct {
 
 func (x *ReleaseInventory) Reset() {
 	*x = ReleaseInventory{}
-	mi := &file_fasitd_proto_msgTypes[9]
+	mi := &file_fasitd_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -715,7 +769,7 @@ func (x *ReleaseInventory) String() string {
 func (*ReleaseInventory) ProtoMessage() {}
 
 func (x *ReleaseInventory) ProtoReflect() protoreflect.Message {
-	mi := &file_fasitd_proto_msgTypes[9]
+	mi := &file_fasitd_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -728,7 +782,7 @@ func (x *ReleaseInventory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseInventory.ProtoReflect.Descriptor instead.
 func (*ReleaseInventory) Descriptor() ([]byte, []int) {
-	return file_fasitd_proto_rawDescGZIP(), []int{9}
+	return file_fasitd_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ReleaseInventory) GetCreatedUnix() int64 {
@@ -749,17 +803,20 @@ var File_fasitd_proto protoreflect.FileDescriptor
 
 const file_fasitd_proto_rawDesc = "" +
 	"\n" +
-	"\ffasitd.proto\"\xdf\x01\n" +
+	"\ffasitd.proto\"\x8b\x02\n" +
 	"\fAgentMessage\x12'\n" +
 	"\bregister\x18\x01 \x01(\v2\t.RegisterH\x00R\bregister\x12\x1f\n" +
 	"\x03ack\x18\x02 \x01(\v2\v.CommandAckH\x00R\x03ack\x12(\n" +
 	"\x06status\x18\x03 \x01(\v2\x0e.CommandStatusH\x00R\x06status\x12\x1f\n" +
 	"\x04logs\x18\x04 \x01(\v2\t.LogBatchH\x00R\x04logs\x12/\n" +
-	"\breleases\x18\x05 \x01(\v2\x11.ReleaseInventoryH\x00R\breleasesB\t\n" +
+	"\breleases\x18\x05 \x01(\v2\x11.ReleaseInventoryH\x00R\breleases\x12*\n" +
+	"\theartbeat\x18\x06 \x01(\v2\n" +
+	".HeartbeatH\x00R\theartbeatB\t\n" +
 	"\amessage\"@\n" +
 	"\rServerMessage\x12$\n" +
 	"\acommand\x18\x01 \x01(\v2\b.CommandH\x00R\acommandB\t\n" +
-	"\amessage\"\x96\x01\n" +
+	"\amessage\"\v\n" +
+	"\tHeartbeat\"\x96\x01\n" +
 	"\bRegister\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12 \n" +
 	"\venvironment\x18\x02 \x01(\tR\venvironment\x12%\n" +
@@ -816,35 +873,37 @@ func file_fasitd_proto_rawDescGZIP() []byte {
 	return file_fasitd_proto_rawDescData
 }
 
-var file_fasitd_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_fasitd_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_fasitd_proto_goTypes = []any{
 	(*AgentMessage)(nil),     // 0: AgentMessage
 	(*ServerMessage)(nil),    // 1: ServerMessage
-	(*Register)(nil),         // 2: Register
-	(*Command)(nil),          // 3: Command
-	(*CommandAck)(nil),       // 4: CommandAck
-	(*CommandStatus)(nil),    // 5: CommandStatus
-	(*LogLine)(nil),          // 6: LogLine
-	(*LogBatch)(nil),         // 7: LogBatch
-	(*Release)(nil),          // 8: Release
-	(*ReleaseInventory)(nil), // 9: ReleaseInventory
+	(*Heartbeat)(nil),        // 2: Heartbeat
+	(*Register)(nil),         // 3: Register
+	(*Command)(nil),          // 4: Command
+	(*CommandAck)(nil),       // 5: CommandAck
+	(*CommandStatus)(nil),    // 6: CommandStatus
+	(*LogLine)(nil),          // 7: LogLine
+	(*LogBatch)(nil),         // 8: LogBatch
+	(*Release)(nil),          // 9: Release
+	(*ReleaseInventory)(nil), // 10: ReleaseInventory
 }
 var file_fasitd_proto_depIdxs = []int32{
-	2, // 0: AgentMessage.register:type_name -> Register
-	4, // 1: AgentMessage.ack:type_name -> CommandAck
-	5, // 2: AgentMessage.status:type_name -> CommandStatus
-	7, // 3: AgentMessage.logs:type_name -> LogBatch
-	9, // 4: AgentMessage.releases:type_name -> ReleaseInventory
-	3, // 5: ServerMessage.command:type_name -> Command
-	6, // 6: LogBatch.lines:type_name -> LogLine
-	8, // 7: ReleaseInventory.releases:type_name -> Release
-	0, // 8: Fasitd.Connect:input_type -> AgentMessage
-	1, // 9: Fasitd.Connect:output_type -> ServerMessage
-	9, // [9:10] is the sub-list for method output_type
-	8, // [8:9] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	3,  // 0: AgentMessage.register:type_name -> Register
+	5,  // 1: AgentMessage.ack:type_name -> CommandAck
+	6,  // 2: AgentMessage.status:type_name -> CommandStatus
+	8,  // 3: AgentMessage.logs:type_name -> LogBatch
+	10, // 4: AgentMessage.releases:type_name -> ReleaseInventory
+	2,  // 5: AgentMessage.heartbeat:type_name -> Heartbeat
+	4,  // 6: ServerMessage.command:type_name -> Command
+	7,  // 7: LogBatch.lines:type_name -> LogLine
+	9,  // 8: ReleaseInventory.releases:type_name -> Release
+	0,  // 9: Fasitd.Connect:input_type -> AgentMessage
+	1,  // 10: Fasitd.Connect:output_type -> ServerMessage
+	10, // [10:11] is the sub-list for method output_type
+	9,  // [9:10] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_fasitd_proto_init() }
@@ -858,6 +917,7 @@ func file_fasitd_proto_init() {
 		(*AgentMessage_Status)(nil),
 		(*AgentMessage_Logs)(nil),
 		(*AgentMessage_Releases)(nil),
+		(*AgentMessage_Heartbeat)(nil),
 	}
 	file_fasitd_proto_msgTypes[1].OneofWrappers = []any{
 		(*ServerMessage_Command)(nil),
@@ -868,7 +928,7 @@ func file_fasitd_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_fasitd_proto_rawDesc), len(file_fasitd_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"k8s.io/client-go/rest"
 )
 
@@ -101,12 +102,19 @@ func run(ctx context.Context, log *slog.Logger) error {
 }
 
 func dialOptions() ([]grpc.DialOption, error) {
+	keepaliveOpt := grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                30 * time.Second,
+		Timeout:             10 * time.Second,
+		PermitWithoutStream: true,
+	})
+
 	if cfg.Insecure {
-		return []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, nil
+		return []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), keepaliveOpt}, nil
 	}
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+		keepaliveOpt,
 	}
 	ksa, err := KSAPerRPCCredentials()
 	if err != nil {

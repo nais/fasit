@@ -161,6 +161,8 @@ func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *pro
 		return s.setReleases(ctx, sess.environmentID, m.Releases)
 	case *protogen.AgentMessage_Register:
 		return status.Error(codes.InvalidArgument, "duplicate register message")
+	case *protogen.AgentMessage_Heartbeat:
+		return nil
 	default:
 		s.log.Warn("unknown agent message")
 		return nil

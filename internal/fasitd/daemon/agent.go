@@ -14,6 +14,10 @@ import (
 
 const protocolVersion = 1
 
+// heartbeatInterval must stay comfortably below the smallest idle timeout of any
+// intermediary on the path (haproxy timeout-client defaults to 50s).
+const heartbeatInterval = 20 * time.Second
+
 // ReleaseLister lists the helm releases installed in the agent's environment.
 type ReleaseLister interface {
 	List() ([]*release.Release, error)
@@ -48,6 +52,8 @@ func NewAgent(client protogen.FasitdClient, opts AgentOptions, log *slog.Logger)
 
 // Run opens the session and blocks until the stream closes or ctx is cancelled.
 func (a *Agent) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	ctx = metadata.AppendToOutgoingContext(ctx,
 		"x-fasit-tenant", a.opts.Tenant,
 		"x-fasit-environment", a.opts.Environment,
@@ -77,6 +83,8 @@ func (a *Agent) Run(ctx context.Context) error {
 		return fmt.Errorf("register: %w", err)
 	}
 	a.log.With("tenant", a.opts.Tenant, "environment", a.opts.Environment).Info("fasitd session registered")
+
+	go a.heartbeatLoop(ctx, send)
 
 	if a.opts.ReleaseLister != nil && a.opts.ReleaseInterval > 0 {
 		go a.reportReleasesLoop(ctx, send)
@@ -119,6 +127,24 @@ func (a *Agent) handleCommand(send func(*protogen.AgentMessage) error, cmd *prot
 
 	// Dry-run: no Helm. Report terminal success meaning "dry-run succeeded".
 	return send(statusMsg(diid, "deployed", cmd.GetConfigHash(), ""))
+}
+
+func (a *Agent) heartbeatLoop(ctx context.Context, send func(*protogen.AgentMessage) error) {
+	ticker := time.NewTicker(heartbeatInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := send(&protogen.AgentMessage{
+				Message: &protogen.AgentMessage_Heartbeat{Heartbeat: &protogen.Heartbeat{}},
+			}); err != nil {
+				a.log.With("err", err).Warn("send heartbeat")
+				return
+			}
+		}
+	}
 }
 
 func (a *Agent) reportReleasesLoop(ctx context.Context, send func(*protogen.AgentMessage) error) {
