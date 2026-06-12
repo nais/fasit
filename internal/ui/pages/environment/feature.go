@@ -322,6 +322,63 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 	}
 }
 
+func RedeployHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tenant, err := envpkg.GetTenantByName(r.Context(), chi.URLParam(r, "tenant"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		env, err := envpkg.GetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		feature, err := featureassignment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
+		if err != nil {
+			status := http.StatusInternalServerError
+			if errors.Is(err, featureassignment.ErrFeatureNotFound) {
+				status = http.StatusNotFound
+			}
+			http.Error(w, "Failed to get feature: "+err.Error(), status)
+			return
+		}
+
+		rec := reconciler.FromContext(r.Context())
+		if rec == nil {
+			http.Error(w, "Reconciler unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		switch err := rec.Redeploy(r.Context(), env.ID, feature.Name); {
+		case err == nil:
+		case errors.Is(err, reconciler.ErrRedeployNotSettled),
+			errors.Is(err, reconciler.ErrRedeployTargetNotFound):
+			// The UI grays out redeploy unless it is allowed, so reaching here
+			// means the state changed between render and click. Bounce back to
+			// the feature page, which now reflects the current state.
+			http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+			return
+		default:
+			http.Error(w, "Failed to redeploy: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := audit.Create(r.Context(), audit.CreateParams{
+			Action:        audit.ActionRedeploy,
+			ObjectType:    audit.ObjectTypeFeature,
+			ObjectID:      feature.Name,
+			Feature:       feature.Name,
+			EnvironmentID: &env.ID,
+		}); err != nil {
+			http.Error(w, "Failed to record audit entry: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+	}
+}
+
 func featurePageContent(page *FeaturePage) g.Node {
 	merged := page.ActiveTab != "assignments"
 	var headerLeft, body g.Node
@@ -394,10 +451,29 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
+	if page.WinningAssignment != nil {
+		if isRedeployable(page) {
+			items = append(items,
+				h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "redeploy"),
+					g.Raw(components.IconRedeploy),
+					g.Text("Redeploy"),
+				),
+			)
+		} else {
+			items = append(items,
+				h.Button(h.Type("button"), h.Class("kebab-item kebab-item-disabled"), g.Attr("disabled", ""),
+					h.Title("Redeploy is only available when the feature is enabled and in a settled state (deployed or failed)"),
+					g.Raw(components.IconRedeploy),
+					g.Text("Redeploy"),
+				),
+			)
+		}
+	}
+
 	if len(page.RecentDeployHistory) > 0 {
 		items = append(items,
 			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "deploy-history"),
-				g.Raw(components.IconRedeploy),
+				g.Raw(components.IconHistory),
 				g.Text("Deploy history"),
 			),
 		)
@@ -412,11 +488,23 @@ func pageKebab(page *FeaturePage) g.Node {
 		)
 	}
 
-	return components.KebabWrap(kebabID, items, reconcilePopover(page), decisionHistoryPopover(page), deployHistoryPopover(page), deployLogsPopover(page))
+	return components.KebabWrap(kebabID, items, reconcilePopover(page), redeployPopover(page), decisionHistoryPopover(page), deployHistoryPopover(page), deployLogsPopover(page))
 }
 
 func reconcilePopover(page *FeaturePage) g.Node {
 	return components.ReconcilePopover("toggle-reconcile", featureBasePathForPage(page)+"/toggle-reconcile", page.Feature.Name, page.Environment.Name, page.Feature.Enabled, "")
+}
+
+func redeployPopover(page *FeaturePage) g.Node {
+	return components.RedeployPopover("redeploy", featureBasePathForPage(page)+"/redeploy", page.Feature.Name, page.Environment.Name, isRedeployable(page), "")
+}
+
+// isRedeployable reports whether a manual redeploy can be triggered now: the
+// feature must be enabled and in a settled, terminal state. This mirrors the
+// server-side gate in Reconciler.Redeploy (which only proceeds from
+// ActionSkipUnchanged); the handler re-checks, so a stale render is harmless.
+func isRedeployable(page *FeaturePage) bool {
+	return page.Feature.Enabled && (page.Status == "DEPLOYED" || page.Status == "FAILED")
 }
 
 // deployHeaderLeft is the left side of the merged page's header bar: any disabled

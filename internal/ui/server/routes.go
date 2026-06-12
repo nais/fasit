@@ -74,6 +74,7 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/features/{feature}/envs/{tenant}/{env}/config/override", environment.ConfigOverrideSubmitHandler())
 	r.Post("/features/{feature}/envs/{tenant}/{env}/config/batch", environment.BatchUpdateConfigHandler())
 	r.Post("/features/{feature}/envs/{tenant}/{env}/toggle-reconcile", environment.ToggleFeatureStateHandler())
+	r.Post("/features/{feature}/envs/{tenant}/{env}/redeploy", environment.RedeployHandler())
 	r.Post("/features/{feature}/config/{id}", features.UpdateGlobalConfigHandler())
 	r.Post("/features/{feature}/config/{id}/delete", features.DeleteGlobalConfigHandler())
 	r.Post("/features/{feature}/config/set", features.SetGlobalConfigHandler())

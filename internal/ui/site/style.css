@@ -2050,6 +2050,16 @@ a:hover .status-badge {
   background: var(--btn-bg);
   color: var(--text-heading);
 }
+.kebab-item-disabled,
+.kebab-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.kebab-item-disabled:hover,
+.kebab-item:disabled:hover {
+  background: none;
+  color: var(--text-secondary);
+}
 
 .assignment-overridden {
   cursor: pointer;

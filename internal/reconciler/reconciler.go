@@ -26,7 +26,18 @@ type Reconciler struct {
 	// streamMu guards against concurrent streaming reconciles.
 	streamMu sync.Mutex
 
+	// deployer is used by Redeploy for manual, user-triggered deploys. It is
+	// set via SetDeployer after construction because the deployer is wired up
+	// after the reconciler in run.go.
+	deployer Deployer
+
 	reconcileLoopTime metric.Int64Histogram
+}
+
+// SetDeployer sets the deployer used by Redeploy. Call once during wiring,
+// before serving requests.
+func (r *Reconciler) SetDeployer(d Deployer) {
+	r.deployer = d
 }
 
 // DesiredState holds the results and phase durations of a reconcile run.

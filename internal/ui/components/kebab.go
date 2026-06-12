@@ -39,6 +39,7 @@ const (
 	IconPlay     = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg> `
 	IconDocument = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1h8l4 4v10H2V1zm1 1v12h10V5.5L7.5 2H3zm2 5h6v1H5V7zm0 2h6v1H5V9zm0 2h4v1H5v-1z"/></svg> `
 	IconLogs     = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v12H2V2zm1 1v10h10V3H3zm1 2h8v1H4V5zm0 2h8v1H4V7zm0 2h5v1H4V9z"/></svg> `
+	IconHistory  = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.5 1.5"/></svg> `
 )
 
 // LokiLogsItem renders a kebab menu item linking to Loki.
