@@ -14,7 +14,7 @@ on:
       - ".github/workflows/dependabot-auto-merge.yaml"
       - ".github/workflows/push_*.yaml"
       - "cmd/fasitd/**"
-      - "internal/fasitd/**"
+      - "internal/fasitd/daemon/**"
       - "schema/jsonschema/**"
       - "cmd/generate_schema/**"
   pull_request:
