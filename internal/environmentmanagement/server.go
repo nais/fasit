@@ -1,11 +1,17 @@
+// Package environmentmanagement implements the gRPC server for environment management, mostly used from
+// github.com/nais/terraform-provider-fasit. It provides methods for managing tenants, environments, and environment
+// values.
 package environmentmanagement
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/environmentmanagement/protogen"
 	"github.com/nais/fasit/internal/environmentmanagement/sqlgen"
@@ -17,17 +23,20 @@ import (
 type server struct {
 	protogen.UnimplementedFasitServer
 	querier sqlgen.Querier
+	log     *slog.Logger
 }
 
-func NewGrpcServer(pool *pgxpool.Pool) *grpc.Server {
-	s := grpc.NewServer()
-	protogen.RegisterFasitServer(s, &server{querier: sqlgen.New(pool)})
+func NewGrpcServer(pool *pgxpool.Pool, loadContext contextloader.LoaderFunc, log *slog.Logger) *grpc.Server {
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			return handler(loadContext(ctx), req)
+		}),
+	)
+	protogen.RegisterFasitServer(s, &server{querier: sqlgen.New(pool), log: log})
 	return s
 }
 
 func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.CreateTenantResponse, error) {
-	// TODO: remember to add audit logs, in this func and other funcs in the server
-
 	ctx = auth.SetEmail(ctx, "system:provider")
 
 	if len(in.Name) < 2 {
@@ -41,6 +50,12 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	s.writeAudit(ctx, audit.CreateParams{
+		Action:     audit.ActionCreated,
+		ObjectType: audit.ObjectTypeTenant,
+		ObjectID:   tenant.ID.String(),
+	})
 
 	return &protogen.CreateTenantResponse{
 		Tenant: &protogen.Tenant{
@@ -98,6 +113,13 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	s.writeAudit(ctx, audit.CreateParams{
+		Action:        audit.ActionCreated,
+		ObjectType:    audit.ObjectTypeEnvironment,
+		ObjectID:      env.ID.String(),
+		EnvironmentID: &env.ID,
+	})
+
 	return &protogen.CreateEnvironmentResponse{
 		Environment: &protogen.Environment{
 			Id:       env.ID.String(),
@@ -129,6 +151,13 @@ func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvir
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	s.writeAudit(ctx, audit.CreateParams{
+		Action:        audit.ActionUpdated,
+		ObjectType:    audit.ObjectTypeEnvironment,
+		ObjectID:      updated.ID.String(),
+		EnvironmentID: &updated.ID,
+	})
 
 	return &protogen.UpdateEnvironmentResponse{
 		Environment: &protogen.Environment{
@@ -185,6 +214,14 @@ func (s *server) SetEnvironmentValue(ctx context.Context, in *protogen.SetEnviro
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	s.writeAudit(ctx, audit.CreateParams{
+		Action:        audit.ActionUpdated,
+		ObjectType:    audit.ObjectTypeEnvironmentValue,
+		ObjectID:      in.Key,
+		EnvironmentID: &envID,
+	})
+
 	return &protogen.SetEnvironmentValueResponse{Success: true}, nil
 }
 
@@ -256,16 +293,29 @@ func (s *server) ListEnvironmentValues(ctx context.Context, input *protogen.List
 func (s *server) DeleteEnvironmentValue(ctx context.Context, req *protogen.DeleteEnvironmentValueRequest) (*protogen.DeleteEnvironmentValueResponse, error) {
 	ctx = auth.SetEmail(ctx, "system:provider")
 
-	uid, err := uuid.Parse(req.EnvironmentId)
+	environmentID, err := uuid.Parse(req.EnvironmentId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	if err := s.querier.DeleteEnvironmentValue(ctx, sqlgen.DeleteEnvironmentValueParams{EnvironmentID: uid, Key: req.Key}); err != nil {
+	if err := s.querier.DeleteEnvironmentValue(ctx, sqlgen.DeleteEnvironmentValueParams{EnvironmentID: environmentID, Key: req.Key}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	s.writeAudit(ctx, audit.CreateParams{
+		Action:        audit.ActionDeleted,
+		ObjectType:    audit.ObjectTypeEnvironmentValue,
+		ObjectID:      req.Key,
+		EnvironmentID: &environmentID,
+	})
+
 	return &protogen.DeleteEnvironmentValueResponse{Success: true}, nil
+}
+
+func (s *server) writeAudit(ctx context.Context, params audit.CreateParams) {
+	if err := audit.Create(ctx, params); err != nil {
+		s.log.With("err", err).Error("failed to write audit log entry")
+	}
 }
 
 func toEnvironmentKind(kind protogen.EnvironmentKind) (types.EnvironmentKind, error) {

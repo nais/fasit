@@ -170,7 +170,7 @@ func Run(ctx context.Context) error {
 	go receiver.Run(ctx)
 
 	go func() {
-		if err := runGRPC(ctx, pool, cfg.GRPCBindAddress, log); err != nil {
+		if err := runGRPC(ctx, pool, loadContext, cfg.GRPCBindAddress, log); err != nil {
 			log.With("err", err).Error("running GRPC server")
 		}
 	}()
@@ -221,14 +221,14 @@ func newLogger(level string) *slog.Logger {
 	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: lvl}))
 }
 
-func runGRPC(ctx context.Context, pool *pgxpool.Pool, bindAddress string, log *slog.Logger) error {
+func runGRPC(ctx context.Context, pool *pgxpool.Pool, loadContext contextloader.LoaderFunc, bindAddress string, log *slog.Logger) error {
 	log.With("addr", bindAddress).Info("GRPC serving")
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	s := environmentmanagement.NewGrpcServer(pool)
+	s := environmentmanagement.NewGrpcServer(pool, loadContext, log)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return s.Serve(lis) })
