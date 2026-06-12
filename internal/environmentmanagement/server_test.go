@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environmentmanagement/protogen"
 	"github.com/nais/fasit/internal/ioconvenience"
@@ -28,7 +29,7 @@ func TestCreateTenant(t *testing.T) {
 	container := startPostgresContainer(ctx, t)
 
 	t.Run("creates a tenant", func(t *testing.T) {
-		c := newClient(ctx, t, container)
+		c, pool := newClientWithPool(ctx, t, container)
 
 		resp, err := c.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: "acme"})
 		if err != nil {
@@ -40,13 +41,17 @@ func TestCreateTenant(t *testing.T) {
 		if resp.GetTenant().GetId() == "" {
 			t.Error("expected a non-empty tenant id")
 		}
+
+		assertAudit(t, latestAudit(ctx, t, pool), audit.ActionCreated, audit.ObjectTypeTenant, resp.GetTenant().GetId())
 	})
 
 	t.Run("rejects a too-short name", func(t *testing.T) {
-		c := newClient(ctx, t, container)
+		c, pool := newClientWithPool(ctx, t, container)
 
 		_, err := c.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: "a"})
 		requireCode(t, err, codes.InvalidArgument)
+
+		assertNoAudit(ctx, t, pool)
 	})
 }
 
@@ -83,7 +88,7 @@ func TestCreateEnvironment(t *testing.T) {
 	container := startPostgresContainer(ctx, t)
 
 	t.Run("creates an environment", func(t *testing.T) {
-		c := newClient(ctx, t, container)
+		c, pool := newClientWithPool(ctx, t, container)
 		tenant := createTenant(ctx, t, c, "acme")
 
 		resp, err := c.CreateEnvironment(ctx, &protogen.CreateEnvironmentRequest{
@@ -100,6 +105,12 @@ func TestCreateEnvironment(t *testing.T) {
 		}
 		if resp.GetEnvironment().GetTenantId() != tenant.GetId() {
 			t.Errorf("tenant id = %q, want %q", resp.GetEnvironment().GetTenantId(), tenant.GetId())
+		}
+
+		got := latestAudit(ctx, t, pool)
+		assertAudit(t, got, audit.ActionCreated, audit.ObjectTypeEnvironment, resp.GetEnvironment().GetId())
+		if got.EnvironmentID == nil {
+			t.Error("expected EnvironmentID to be set")
 		}
 	})
 
@@ -223,7 +234,7 @@ func TestUpdateEnvironment(t *testing.T) {
 	container := startPostgresContainer(ctx, t)
 
 	t.Run("updates labels", func(t *testing.T) {
-		c := newClient(ctx, t, container)
+		c, pool := newClientWithPool(ctx, t, container)
 		tenant := createTenant(ctx, t, c, "acme")
 		env := createEnvironment(ctx, t, c, tenant.GetId(), "dev", &protogen.EnvironmentLabel{Key: "team", Value: "platform"})
 
@@ -238,6 +249,8 @@ func TestUpdateEnvironment(t *testing.T) {
 		if len(labels) != 1 || labels[0].GetKey() != "team" || labels[0].GetValue() != "infra" {
 			t.Errorf("labels = %v, want one team=infra label", labels)
 		}
+
+		assertAudit(t, latestAudit(ctx, t, pool), audit.ActionUpdated, audit.ObjectTypeEnvironment, env.GetId())
 	})
 
 	t.Run("rejects an invalid environment id", func(t *testing.T) {
@@ -264,7 +277,7 @@ func TestEnvironmentValues(t *testing.T) {
 	container := startPostgresContainer(ctx, t)
 
 	t.Run("set, get, overwrite and delete a value", func(t *testing.T) {
-		c := newClient(ctx, t, container)
+		c, pool := newClientWithPool(ctx, t, container)
 		tenant := createTenant(ctx, t, c, "acme")
 		env := createEnvironment(ctx, t, c, tenant.GetId(), "dev")
 
@@ -280,6 +293,8 @@ func TestEnvironmentValues(t *testing.T) {
 		if !setResp.GetSuccess() {
 			t.Error("expected success")
 		}
+
+		assertAudit(t, latestAudit(ctx, t, pool), audit.ActionUpdated, audit.ObjectTypeEnvironmentValue, "db_url")
 
 		got, err := c.GetEnvironmentValue(ctx, &protogen.GetEnvironmentValueRequest{
 			EnvironmentId: env.GetId(),
@@ -333,6 +348,8 @@ func TestEnvironmentValues(t *testing.T) {
 		if !delResp.GetSuccess() {
 			t.Error("expected delete success")
 		}
+
+		assertAudit(t, latestAudit(ctx, t, pool), audit.ActionDeleted, audit.ObjectTypeEnvironmentValue, "db_url")
 
 		if _, err := c.GetEnvironmentValue(ctx, &protogen.GetEnvironmentValueRequest{
 			EnvironmentId: env.GetId(),
@@ -442,18 +459,72 @@ func requireCode(t *testing.T, err error, want codes.Code) {
 	}
 }
 
+// latestAudit returns the most recent audit entry, failing the test if none exist.
+func latestAudit(ctx context.Context, t *testing.T, pool *pgxpool.Pool) *audit.Entry {
+	t.Helper()
+	entries, err := audit.ListRecent(auditContext(ctx, pool), 1)
+	if err != nil {
+		t.Fatalf("ListRecent: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatal("expected at least one audit entry, got none")
+	}
+	return entries[0]
+}
+
+// assertAudit checks that the entry was recorded by the provider with the expected action, object type and id.
+func assertAudit(t *testing.T, e *audit.Entry, action audit.Action, objectType audit.ObjectType, objectID string) {
+	t.Helper()
+	if e.Actor != "system:provider" {
+		t.Errorf("actor = %q, want %q", e.Actor, "system:provider")
+	}
+	if e.Action != action {
+		t.Errorf("action = %q, want %q", e.Action, action)
+	}
+	if e.ObjectType != objectType {
+		t.Errorf("object type = %q, want %q", e.ObjectType, objectType)
+	}
+	if e.ObjectID != objectID {
+		t.Errorf("object id = %q, want %q", e.ObjectID, objectID)
+	}
+}
+
+// assertNoAudit fails the test if any audit entries have been recorded.
+func assertNoAudit(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	entries, err := audit.ListRecent(auditContext(ctx, pool), 10)
+	if err != nil {
+		t.Fatalf("ListRecent: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("got %d audit entries, want 0", len(entries))
+	}
+}
+
 // newClient creates an isolated gRPC client backed by a freshly restored database. Each (sub-)test should call this to
 // get its own client so tests do not share state.
 func newClient(ctx context.Context, t *testing.T, container *postgres.PostgresContainer) protogen.FasitClient {
 	t.Helper()
-	return startGrpcServer(t, newPool(ctx, t, container))
+	c, _ := newClientWithPool(ctx, t, container)
+	return c
+}
+
+// newClientWithPool is like newClient but also returns the underlying pool so tests can inspect persisted state, such
+// as audit entries.
+func newClientWithPool(ctx context.Context, t *testing.T, container *postgres.PostgresContainer) (protogen.FasitClient, *pgxpool.Pool) {
+	t.Helper()
+	pool := newPool(ctx, t, container)
+	return startGrpcServer(t, pool), pool
 }
 
 // startGrpcServer initializes an in-memory gRPC server
 func startGrpcServer(t *testing.T, pool *pgxpool.Pool) protogen.FasitClient {
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
-	grpcServer := NewGrpcServer(pool)
+	loaderFunc := func(ctx context.Context) context.Context {
+		return audit.Register(ctx, pool, discardLogger())
+	}
+	grpcServer := NewGrpcServer(pool, loaderFunc, discardLogger())
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			panic(err)
@@ -543,4 +614,8 @@ func connectionString(ctx context.Context, t *testing.T, container *postgres.Pos
 		t.Fatalf("Error getting connection string: %v", err)
 	}
 	return dsn
+}
+
+func auditContext(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	return audit.Register(ctx, pool, discardLogger())
 }
