@@ -16,12 +16,24 @@ spec:
     port: 4444
     protocol: TCP
     targetPort: grpc
-  - name: grpc-fasitd
-    port: 4445
-    protocol: TCP
-    targetPort: grpc-fasitd
   selector:
     {{- include "fasit.selectorLabels" . | nindent 4 }}
   sessionAffinity: None
   type: LoadBalancer
   loadBalancerIP: 10.0.0.42
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "fasit.labels" . | nindent 4 }}
+  name: {{ include "fasit.fullname" . }}-grpc
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc-fasitd
+      port: 4445
+      protocol: TCP
+      targetPort: grpc-fasitd
+  selector:
+    {{- include "fasit.selectorLabels" . | nindent 4 }}

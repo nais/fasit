@@ -67,6 +67,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "fasit.fullname" . }}
+                name: {{ include "fasit.fullname" . }}-grpc
                 port:
                   name: grpc-fasitd

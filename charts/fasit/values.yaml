@@ -9,7 +9,7 @@ deployEndpoint:
   ingressClassName: "internal-haproxy"
 fasitdEndpoint:
   ingressHost: "fasitd.nais.io"
-  ingressClassName: "external-iap-haproxy"
+  ingressClassName: "external-haproxy"
 slackChannelFeatureAlerts: "nais-alerts-info"
 slackToken:
 
