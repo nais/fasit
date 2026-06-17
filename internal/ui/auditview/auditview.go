@@ -76,6 +76,9 @@ func ResourceLink(e *audit.Entry) g.Node {
 		} else {
 			nodes = append(nodes, h.A(h.Href(href), g.Text(label)))
 		}
+		if e.ObjectType == audit.ObjectTypeFeature && e.TenantName != "" && e.EnvironmentName != "" {
+			nodes = append(nodes, g.Text(" in "+e.TenantName+"/"+e.EnvironmentName))
+		}
 	}
 
 	return g.Group(nodes)
