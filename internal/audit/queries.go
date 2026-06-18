@@ -155,6 +155,9 @@ func ListRecent(ctx context.Context, limit int32) ([]*Entry, error) {
 	return ret, nil
 }
 
+// SearchRecent returns the most recent audit entries matching every term
+// (AND). Matching happens in SQL across the full history; the searchable text
+// mirrors what the audit table displays (see the SearchRecent query).
 func SearchRecent(ctx context.Context, terms []string, limit int32) ([]*Entry, error) {
 	rows, err := querier(ctx).SearchRecent(ctx, auditsql.SearchRecentParams{
 		Terms:    terms,

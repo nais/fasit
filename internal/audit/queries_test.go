@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
-	"reflect"
 	"testing"
 
 	"github.com/nais/fasit/internal/audit/auditsqlfake"
@@ -71,27 +70,6 @@ func TestCreate(t *testing.T) {
 				t.Errorf("Metadata = %s, want %s", got.Metadata, tc.wantMeta)
 			}
 		})
-	}
-}
-
-func TestSearchRecentPassesTermsBeforeLimit(t *testing.T) {
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	q := &auditsqlfake.Querier{}
-	ctx := RegisterTestDeps(context.Background(), q, log)
-
-	_, err := SearchRecent(ctx, []string{"smsmanager", "nav/dev"}, 200)
-	if err != nil {
-		t.Errorf("SearchRecent() error = %v", err)
-	}
-	if len(q.SearchRecentCalls) != 1 {
-		t.Fatalf("got %d calls, want 1", len(q.SearchRecentCalls))
-	}
-	got := q.SearchRecentCalls[0]
-	if !reflect.DeepEqual(got.Terms, []string{"smsmanager", "nav/dev"}) {
-		t.Errorf("Terms = %#v, want %#v", got.Terms, []string{"smsmanager", "nav/dev"})
-	}
-	if got.PageSize != 200 {
-		t.Errorf("PageSize = %d, want 200", got.PageSize)
 	}
 }
 

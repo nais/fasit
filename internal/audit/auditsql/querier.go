@@ -16,6 +16,11 @@ type Querier interface {
 	ListForFeatureInEnvironment(ctx context.Context, arg ListForFeatureInEnvironmentParams) ([]ListForFeatureInEnvironmentRow, error)
 	ListGlobalConfigForFeature(ctx context.Context, arg ListGlobalConfigForFeatureParams) ([]ListGlobalConfigForFeatureRow, error)
 	ListRecent(ctx context.Context, pageSize int32) ([]ListRecentRow, error)
+	// Each term must match (AND). The searchable text is built to mirror what the
+	// audit table renders: stored enum values plus their display labels
+	// (configuration->config, redeploy/triggered->redeployed, environment_value->
+	// env value, deployment->assignment), the live tenant/env name from the join,
+	// 'global' for env-less config, and the config value diff from metadata.
 	SearchRecent(ctx context.Context, arg SearchRecentParams) ([]SearchRecentRow, error)
 }
 
