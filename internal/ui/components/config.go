@@ -97,8 +97,11 @@ func bulkValueWidget(formID string, item ConfigItem) g.Node {
 	name := BulkValueField(item.Key)
 	switch strings.ToUpper(item.Type) {
 	case "BOOL":
-		return h.Select(h.Name(name), g.Attr("form", formID), h.Class("bulk-value-input"),
-			Option("true", item.Value), Option("false", item.Value))
+		opts := []g.Node{Option("true", item.Value), Option("false", item.Value)}
+		if strings.TrimSpace(item.Value) == "" {
+			opts = append([]g.Node{notSetOption()}, opts...)
+		}
+		return h.Select(h.Name(name), g.Attr("form", formID), h.Class("bulk-value-input"), g.Group(opts))
 	case "INT":
 		return h.Input(h.Type("text"), g.Attr("inputmode", "numeric"), h.Name(name),
 			h.Value(item.Value), g.Attr("form", formID), h.Class("bulk-value-input"))
@@ -168,9 +171,13 @@ func ValueDisplay(value, configType string) g.Node {
 func ConfigValueEditor(item ConfigItem, currentValue string) g.Node {
 	switch strings.ToUpper(item.Type) {
 	case "BOOL":
+		opts := []g.Node{Option("true", currentValue), Option("false", currentValue)}
+		if strings.TrimSpace(currentValue) == "" {
+			opts = append([]g.Node{notSetOption()}, opts...)
+		}
 		return g.Group([]g.Node{
 			h.Label(g.Text("Value")),
-			h.Select(h.Name("value"), Option("true", currentValue), Option("false", currentValue)),
+			h.Select(append([]g.Node{h.Name("value")}, opts...)...),
 		})
 	case "INT":
 		return g.Group([]g.Node{
@@ -279,6 +286,12 @@ func fallbackValueNode(v string) g.Node {
 		h.Strong(g.Text("Reverts to: ")),
 		h.Code(g.Text(v)),
 	)
+}
+
+// notSetOption renders the selected placeholder option for an unset value,
+// submitting an empty string so the bulk-save diff treats the row as unchanged.
+func notSetOption() g.Node {
+	return h.Option(h.Value(""), g.Attr("selected", "selected"), g.Text("(not set)"))
 }
 
 // Option renders a select option, marking it selected when it matches current.
