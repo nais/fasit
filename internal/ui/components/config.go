@@ -25,18 +25,23 @@ type ConfigItem struct {
 	IsConfigurable bool
 	IsOrphaned     bool
 	Required       bool
-	Template       string
-	MappedCount    int
-	FallbackValue  string
+	// HasValue is false when the value is unset (absent or null), distinguishing
+	// it from an explicitly set empty string.
+	HasValue      bool
+	Template      string
+	MappedCount   int
+	FallbackValue string
 }
 
 // ConfigKeyCell renders a <td> with the key, optional display name and description.
 func ConfigKeyCell(item ConfigItem) g.Node {
 	label := item.Key
+	strong := h.Strong(g.Text(label))
 	if item.DisplayName != "" {
 		label = item.DisplayName
+		strong = h.Strong(h.Title(item.Key), g.Text(label))
 	}
-	children := []g.Node{h.Strong(g.Text(label))}
+	children := []g.Node{strong}
 	if item.Required {
 		children = append(children, g.Text(" "), h.Span(h.Class("config-required-badge"), g.Text("required")))
 	}
@@ -76,10 +81,13 @@ func BulkConfigCell(formID, idForUpdate string, item ConfigItem) g.Node {
 		return h.Input(h.Type("hidden"), h.Name(name), h.Value(value), g.Attr("form", formID))
 	}
 	display := ValueDisplay(item.Value, item.Type)
-	if strings.TrimSpace(item.Value) == "" {
+	switch {
+	case !item.HasValue:
 		display = h.Span(h.Class("value-empty"), g.Text("<not set>"))
-	} else if item.IsSecret {
+	case item.IsSecret:
 		display = h.Span(h.Class("text-muted"), g.Text("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"))
+	case item.Value == "":
+		display = h.Span(h.Class("value-empty"), g.Text("(empty string)"))
 	}
 	return h.Td(
 		h.Div(h.Class("config-value-display"), display),
@@ -122,6 +130,12 @@ func ComputedValueCell(item ConfigItem) g.Node {
 		return h.Td(h.Span(h.Class("text-muted"), g.Text("••••••••")))
 	}
 	value := item.Value
+	if !item.HasValue {
+		return h.Td(h.Span(h.Class("value-empty"), h.Title(item.Template), g.Text("<not set>")))
+	}
+	if value == "" {
+		return h.Td(h.Span(h.Class("value-empty"), h.Title(item.Template), g.Text("(empty string)")))
+	}
 	if IsMultilineValue(value) {
 		return h.Td(
 			h.Code(h.Class("text-muted"), h.Title(item.Template), g.Text("computed")),

@@ -139,8 +139,8 @@ func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
 			Feature: feat,
 			Enabled: true,
 			ConfigItems: []FeatureConfigItem{
-				{Key: "safe", Value: "public-value", Source: string(feature.ConfigSourceHelm), IsComputed: true},
-				{Key: "secret", Value: "real-secret", Source: string(feature.ConfigSourceHelm), IsComputed: true, IsSecret: true},
+				{Key: "safe", Value: "public-value", HasValue: true, Source: string(feature.ConfigSourceHelm), IsComputed: true},
+				{Key: "secret", Value: "real-secret", HasValue: true, Source: string(feature.ConfigSourceHelm), IsComputed: true, IsSecret: true},
 			},
 		},
 	}
@@ -313,5 +313,59 @@ func TestSourceCell_ClearOnlyForEnvOverride(t *testing.T) {
 	}
 	if strings.Contains(helmBuf.String(), ">Clear<") {
 		t.Error("non-override row must not render a Clear control")
+	}
+}
+
+func TestOverviewTab_OrphanedKeyRendersStaleSection(t *testing.T) {
+	t.Parallel()
+	feat := &feature.Feature{
+		Name: "f",
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"authSignin": {DisplayName: "Auth service login URL", Required: true, Computed: &feature.Computed{Template: `"x"`}},
+			},
+		},
+	}
+	page := &FeaturePage{
+		TenantSlug:  "t",
+		Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
+		Feature: &FeatureDetail{
+			Feature: feat,
+			Enabled: true,
+			ConfigItems: []FeatureConfigItem{
+				{Key: "authSignin", DisplayName: "Auth service login URL", Value: "x", HasValue: true, Source: string(feature.ConfigSourceHelm), IsComputed: true},
+				{
+					Key:        "nais-ingress-haproxy.authSignin",
+					Value:      "https://example/oauth2/login",
+					HasValue:   true,
+					Source:     string(feature.ConfigSourceEnv),
+					IsOrphaned: true,
+					ID:         "00000000-0000-0000-0000-000000000009",
+				},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	if err := overviewTab(page).Render(&buf); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	html := buf.String()
+
+	if !strings.Contains(html, "Stale values") {
+		t.Error("orphaned key should produce a Stale values section")
+	}
+	if !strings.Contains(html, "nais-ingress-haproxy.authSignin") {
+		t.Error("stale row should show the raw key")
+	}
+	if !strings.Contains(html, "config-stale-badge") {
+		t.Error("stale row should carry the stale badge")
+	}
+	if !strings.Contains(html, "/config/delete/00000000-0000-0000-0000-000000000009") {
+		t.Error("stale row should offer the delete action for its env-override id")
+	}
+	// The orphan must not be rendered as the declared authSignin field.
+	if strings.Count(html, "Auth service login URL") != 1 {
+		t.Error("orphan must not reuse the declared field's display name")
 	}
 }

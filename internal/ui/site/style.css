@@ -1205,6 +1205,39 @@ nav .user {
   opacity: 0.6;
   border-left: 3px solid var(--status-error);
 }
+.config-stale-section {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--status-error);
+  border-left: 4px solid var(--status-error);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--status-error) 8%, transparent);
+}
+.config-stale-section h3 {
+  color: var(--status-error);
+  margin-top: 0;
+}
+.config-stale-section .table {
+  width: 100%;
+}
+.config-stale-section .config-clear-btn {
+  background: var(--status-error);
+  border-color: var(--status-error);
+  color: #fff;
+}
+.config-stale-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 3px;
+  background: var(--status-error);
+  color: var(--bg-page);
+  vertical-align: middle;
+}
 .edit-icon {
   color: var(--text-muted);
   text-decoration: none;

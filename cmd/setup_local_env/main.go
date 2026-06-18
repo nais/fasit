@@ -499,6 +499,28 @@ func main() {
 		}
 	}
 
+	// Seed a couple of orphaned env overrides: keys that are NOT declared in the
+	// feature's current Values (e.g. left over after a rename). These exercise the
+	// "Stale values" section on the environment feature page.
+	orphans := []struct {
+		tenant, env, feature, key string
+		value                     string
+	}{
+		{"dev-nais", "dev", "naiserator", "legacyApiToken", `"stale-should-be-deleted"`},
+		{"dev-nais", "dev", "naiserator", "old-subchart.endpoint", `"https://old.example/legacy"`},
+	}
+	for _, o := range orphans {
+		id := envID(o.tenant, o.env)
+		if _, err := feature.ConfigEnvCreate(ctx, feature.NewConfiguration{
+			EnvironmentID: &id,
+			Feature:       o.feature,
+			Key:           o.key,
+			Value:         json.RawMessage(o.value),
+		}); err != nil {
+			log.With("err", err, "feature", o.feature, "key", o.key, "tenant", o.tenant, "env", o.env).Error("seed orphan override")
+		}
+	}
+
 	// Seed additional audit log entries to exercise the full range of actions
 	// and make the audit tab useful during local development.
 	{

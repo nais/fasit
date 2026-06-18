@@ -698,16 +698,20 @@ func decisionActionBadge(action string) g.Node {
 func overviewTab(page *FeaturePage) g.Node {
 	configurable := make([]FeatureConfigItem, 0, len(page.Feature.ConfigItems))
 	computed := make([]FeatureConfigItem, 0, len(page.Feature.ConfigItems))
+	orphaned := make([]FeatureConfigItem, 0)
 	for _, item := range page.Feature.ConfigItems {
-		if item.IsConfigurable {
+		switch {
+		case item.IsOrphaned:
+			orphaned = append(orphaned, item)
+		case item.IsConfigurable:
 			configurable = append(configurable, item)
-		} else {
+		default:
 			computed = append(computed, item)
 		}
 	}
 
 	return h.Div(h.Class("tab-content-wrapper env-feature-overview"),
-		configTable(page, configurable, computed),
+		configTable(page, configurable, computed, orphaned),
 	)
 }
 
@@ -736,8 +740,8 @@ func envResourceNode(e *audit.Entry) g.Node {
 	return auditview.ResourceLink(e)
 }
 
-func configTable(page *FeaturePage, configurable, computed []FeatureConfigItem) g.Node {
-	if len(configurable) == 0 && len(computed) == 0 {
+func configTable(page *FeaturePage, configurable, computed, orphaned []FeatureConfigItem) g.Node {
+	if len(configurable) == 0 && len(computed) == 0 && len(orphaned) == 0 {
 		return h.Div(h.H3(g.Text("Configuration")), h.P(h.Class("text-muted"), g.Text("No configuration.")))
 	}
 	const formID = "config-batch-form"
@@ -765,16 +769,59 @@ func configTable(page *FeaturePage, configurable, computed []FeatureConfigItem) 
 		rows = append(rows, computedRow(page, item))
 	}
 
-	return h.Div(h.Class("config-editable-section"),
-		header,
-		h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config"),
+	return h.Div(
+		staleValuesSection(page, orphaned),
+		h.Div(h.Class("config-editable-section"),
+			header,
+			h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config"),
+				h.THead(h.Tr(
+					h.Th(g.Text("Configuration Key")),
+					h.Th(g.Text("Value")),
+					h.Th(g.Text("Source")),
+					h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
+				)),
+				h.TBody(g.Group(rows)),
+			),
+		),
+	)
+}
+
+func staleValuesSection(page *FeaturePage, items []FeatureConfigItem) g.Node {
+	if len(items) == 0 {
+		return nil
+	}
+	rows := make([]g.Node, 0, len(items))
+	for _, item := range items {
+		rows = append(rows, staleRow(page, item))
+	}
+	return h.Div(h.Class("config-stale-section"),
+		h.H3(g.Text("\u26a0 Stale values")),
+		h.P(h.Class("text-muted"),
+			g.Text("These keys are stored for this environment but are not declared in the current Feature.yaml \u2014 typically left over after a value was renamed or removed. They are ignored by the deploy and should be deleted.")),
+		h.Table(h.Class("table config-table-env"),
 			h.THead(h.Tr(
-				h.Th(g.Text("Configuration Key")),
+				h.Th(g.Text("Stale Key")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
-				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(rows)),
+		),
+	)
+}
+
+func staleRow(page *FeaturePage, item FeatureConfigItem) g.Node {
+	popoverID := "stale-del-" + item.ID
+	action := featureBasePathForPage(page) + "/config/delete/" + item.ID
+	return h.Tr(h.Class("config-row-stale"),
+		h.Td(h.Strong(g.Text(item.Key)), g.Text(" "),
+			h.Span(h.Class("config-stale-badge"), g.Text("stale"))),
+		components.ConfigValueCell(item),
+		h.Td(
+			sourceBadge(item),
+			h.Button(h.Type("button"), h.Class("config-clear-btn"), g.Attr("popovertarget", popoverID),
+				h.Title("Delete value"), g.Text("Delete")),
+			components.ConfigDeleteConfirm(popoverID, action, "Delete stale value", "Delete",
+				"This removes the stored value for \""+item.Key+"\". It is not declared in the current Feature.yaml.", ""),
 		),
 	)
 }

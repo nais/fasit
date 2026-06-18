@@ -132,16 +132,24 @@ func ValidateFields(f *Feature, envKind environment.EnvironmentKind, values []Me
 
 		parts, _ := featureutil.SmartDotSplit(field)
 		parent := mp
-		for _, part := range parts {
-			if p, ok := parent[part].(map[string]any); ok {
-				parent = p
+		for i, part := range parts {
+			v, ok := parent[part]
+			// A required field whose only value is nil (e.g. a computed
+			// template that rendered to nothing) is not considered set.
+			// An explicitly provided empty string lives in values above and
+			// is already treated as present.
+			if !ok || v == nil {
+				missing = append(missing, field)
+				break
+			}
+			if i == len(parts)-1 {
+				break
+			}
+			p, ok := v.(map[string]any)
+			if !ok {
 				continue
 			}
-			if _, ok := parent[part]; ok {
-				continue
-			}
-			missing = append(missing, field)
-			break
+			parent = p
 		}
 	}
 	slices.Sort(missing)

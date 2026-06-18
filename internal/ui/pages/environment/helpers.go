@@ -320,6 +320,8 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 			Key:         cfg.Key,
 			Source:      string(cfg.Source),
 			Value:       components.RawValueForDisplay(cfg.Content),
+			HasValue:    rawHasValue(cfg.Content),
+			IsOrphaned:  cfg.Value == nil,
 			MappedCount: countTemplateRefs(feat.Values, cfg.Key),
 		}
 		if cfg.Value != nil {
@@ -357,8 +359,9 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 			if item.Source == string(featurepkg.ConfigSourceEnv) {
 				continue
 			}
-			if v, ok := lookupHelmValue(rendered, item.Key); ok {
+			if v, found, hasVal := lookupHelmValue(rendered, item.Key); found {
 				items[i].Value = v
+				items[i].HasValue = hasVal
 			}
 		}
 	}
@@ -380,33 +383,46 @@ func countTemplateRefs(values featurepkg.Values, key string) int {
 	return count
 }
 
-func lookupHelmValue(m map[string]any, key string) (string, bool) {
+// rawHasValue reports whether raw represents an explicitly set value. An absent
+// value (empty raw) or a JSON null is not set; a JSON empty string "" is.
+func rawHasValue(raw json.RawMessage) bool {
+	if len(raw) == 0 {
+		return false
+	}
+	var v any
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return true
+	}
+	return v != nil
+}
+
+func lookupHelmValue(m map[string]any, key string) (string, bool, bool) {
 	keys, err := featureutil.SmartDotSplit(key)
 	if err != nil || len(keys) == 0 {
-		return "", false
+		return "", false, false
 	}
 	var cur any = m
 	for _, k := range keys {
 		mm, ok := cur.(map[string]any)
 		if !ok {
-			return "", false
+			return "", false, false
 		}
 		cur, ok = mm[k]
 		if !ok {
-			return "", false
+			return "", false, false
 		}
 	}
 	switch v := cur.(type) {
 	case string:
-		return v, true
+		return v, true, true
 	case nil:
-		return "", true
+		return "", true, false
 	default:
 		b, err := json.Marshal(v)
 		if err != nil {
-			return "", false
+			return "", false, false
 		}
-		return string(b), true
+		return string(b), true, true
 	}
 }
 

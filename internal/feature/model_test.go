@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature/featuresql"
 )
 
@@ -375,6 +377,63 @@ func TestDependencies_FindMissing(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.dep.FindMissing(tt.features); !cmp.Equal(tt.want, got) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
+			}
+		})
+	}
+}
+
+func TestValidateFields_RequiredNilVsEmptyString(t *testing.T) {
+	required := func() Value {
+		return Value{Required: true, Config: &Config{Type: ConfigTypeString}}
+	}
+	f := &Feature{FeatureYAML: FeatureYAML{Values: Values{
+		"authSignin": required(),
+		"nested.key": required(),
+	}}}
+
+	tests := []struct {
+		name   string
+		values []MergedConfigRow
+		mp     map[string]any
+		want   []string
+	}{
+		{
+			name:   "computed value rendered to nil is missing",
+			values: nil,
+			mp:     map[string]any{"authSignin": nil, "nested": map[string]any{"key": "x"}},
+			want:   []string{"authSignin"},
+		},
+		{
+			name:   "computed value rendered to empty string satisfies required",
+			values: nil,
+			mp:     map[string]any{"authSignin": "", "nested": map[string]any{"key": "x"}},
+			want:   nil,
+		},
+		{
+			name:   "user-set empty string satisfies required",
+			values: []MergedConfigRow{{Key: "authSignin"}},
+			mp:     map[string]any{"nested": map[string]any{"key": "x"}},
+			want:   nil,
+		},
+		{
+			name:   "nested nil leaf is missing",
+			values: nil,
+			mp:     map[string]any{"authSignin": "x", "nested": map[string]any{"key": nil}},
+			want:   []string{"nested.key"},
+		},
+		{
+			name:   "absent key is missing",
+			values: nil,
+			mp:     map[string]any{"authSignin": "x"},
+			want:   []string{"nested.key"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ValidateFields(f, environment.EnvironmentKindTenant, tt.values, tt.mp)
+			if !cmp.Equal(tt.want, got, cmpopts.EquateEmpty()) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got, cmpopts.EquateEmpty()))
 			}
 		})
 	}
