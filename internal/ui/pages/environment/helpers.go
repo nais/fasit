@@ -437,6 +437,11 @@ func loadEnvironmentAssignments(ctx context.Context, featureName string, envID u
 		return nil
 	}
 
+	statusesByFA, err := reconciler.AllReconcileStatuses(ctx)
+	if err != nil {
+		return nil
+	}
+
 	type candidate struct {
 		id      string
 		version string
@@ -455,12 +460,10 @@ func loadEnvironmentAssignments(ctx context.Context, featureName string, envID u
 		}
 
 		fallbackState := "UNKNOWN"
-		if statuses, err := reconciler.ReconcileStatuses(ctx, dep.ID); err == nil {
-			for _, s := range statuses {
-				if s.EnvironmentID == envID {
-					fallbackState = reconciler.NormalizeStatus(string(s.State))
-					break
-				}
+		for _, s := range statusesByFA[dep.ID] {
+			if s.EnvironmentID == envID {
+				fallbackState = reconciler.NormalizeStatus(string(s.State))
+				break
 			}
 		}
 		status := fallbackState
@@ -525,17 +528,24 @@ func loadFeatureLog(ctx context.Context, envID uuid.UUID, feat *featurepkg.Featu
 // deploy-history popover can expand them per entry. Deploys without logs are
 // omitted from the map.
 func loadDeployLogs(ctx context.Context, history []*featurepkg.DeployInstruction) map[uuid.UUID][]LogLine {
-	logs := make(map[uuid.UUID][]LogLine, len(history))
-	for _, di := range history {
-		lines, err := uidata.GetLogLines(ctx, di.ID)
-		if err != nil || len(lines) == 0 {
-			continue
-		}
+	if len(history) == 0 {
+		return map[uuid.UUID][]LogLine{}
+	}
+	ids := make([]uuid.UUID, len(history))
+	for i, di := range history {
+		ids[i] = di.ID
+	}
+	byID, err := uidata.GetLogLinesForDeployInstructions(ctx, ids)
+	if err != nil {
+		return map[uuid.UUID][]LogLine{}
+	}
+	logs := make(map[uuid.UUID][]LogLine, len(byID))
+	for id, lines := range byID {
 		converted := make([]LogLine, len(lines))
 		for i, line := range lines {
 			converted[i] = LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message}
 		}
-		logs[di.ID] = converted
+		logs[id] = converted
 	}
 	return logs
 }

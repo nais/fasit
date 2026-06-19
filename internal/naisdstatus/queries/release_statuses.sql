@@ -17,3 +17,13 @@ WHERE
 	environment_id = @environment_id
 	AND feature = @feature;
 
+-- name: ListReleaseStatusesForFeature :many
+SELECT
+	*
+FROM
+	release_statuses
+WHERE
+	feature = @feature
+ORDER BY
+	environment_id;
+

@@ -58,6 +58,29 @@ func ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]*featu
 	return releases, nil
 }
 
+// ReleaseStatusesForFeature returns the live Helm release state reported by
+// naisd for a feature across environments, keyed by environment id. One query
+// instead of one per environment.
+func ReleaseStatusesForFeature(ctx context.Context, featureName string) (map[uuid.UUID]*feature.Release, error) {
+	res, err := querier(ctx).ListReleaseStatusesForFeature(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]*feature.Release, len(res))
+	for _, r := range res {
+		out[r.EnvironmentID] = &feature.Release{
+			Name:         r.Feature,
+			Version:      r.Version,
+			Status:       r.Status,
+			Revision:     int(r.Revision),
+			LastDeployed: r.LastDeployed,
+			Created:      r.Created,
+			LastModified: r.LastModified,
+		}
+	}
+	return out, nil
+}
+
 // GetReleaseStatus returns the live Helm release state reported by naisd for a
 // single feature in an environment, or (nil, nil) when none has been reported.
 func GetReleaseStatus(ctx context.Context, environmentID uuid.UUID, featureName string) (*feature.Release, error) {

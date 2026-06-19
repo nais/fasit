@@ -46,6 +46,44 @@ func (q *Queries) LogsByDeployInstruction(ctx context.Context, deployInstruction
 	return items, nil
 }
 
+const logsByDeployInstructions = `-- name: LogsByDeployInstructions :many
+SELECT
+	id, deploy_instruction, time, message, kind
+FROM
+	logs
+WHERE
+	deploy_instruction = ANY ($1::UUID[])
+ORDER BY
+	deploy_instruction,
+	TIME ASC
+`
+
+func (q *Queries) LogsByDeployInstructions(ctx context.Context, deployInstructions []uuid.UUID) ([]Log, error) {
+	rows, err := q.db.Query(ctx, logsByDeployInstructions, deployInstructions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Log{}
+	for rows.Next() {
+		var i Log
+		if err := rows.Scan(
+			&i.ID,
+			&i.DeployInstruction,
+			&i.Time,
+			&i.Message,
+			&i.Kind,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const logsByID = `-- name: LogsByID :one
 SELECT
 	id, deploy_instruction, time, message, kind

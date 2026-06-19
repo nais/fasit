@@ -237,6 +237,64 @@ func (q *Queries) ListLatestDeployInstructionsForEnvironment(ctx context.Context
 	return items, nil
 }
 
+const listLatestDeployInstructionsForFeature = `-- name: ListLatestDeployInstructionsForFeature :many
+SELECT
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_status
+WHERE
+	feature_name = $1::TEXT
+ORDER BY
+	environment_id
+`
+
+type ListLatestDeployInstructionsForFeatureRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+}
+
+func (q *Queries) ListLatestDeployInstructionsForFeature(ctx context.Context, featureName string) ([]ListLatestDeployInstructionsForFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listLatestDeployInstructionsForFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLatestDeployInstructionsForFeatureRow{}
+	for rows.Next() {
+		var i ListLatestDeployInstructionsForFeatureRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.FeatureAssignmentID,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.Hash,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLatestDeployedForEnvironment = `-- name: ListLatestDeployedForEnvironment :many
 SELECT DISTINCT ON (feature_name)
 	diid AS id,
@@ -277,6 +335,66 @@ func (q *Queries) ListLatestDeployedForEnvironment(ctx context.Context, environm
 	items := []ListLatestDeployedForEnvironmentRow{}
 	for rows.Next() {
 		var i ListLatestDeployedForEnvironmentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.FeatureAssignmentID,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.Hash,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLatestDeployedForFeature = `-- name: ListLatestDeployedForFeature :many
+SELECT DISTINCT ON (environment_id)
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_log
+WHERE
+	feature_name = $1::TEXT
+	AND status = 'deployed'
+ORDER BY
+	environment_id,
+	created DESC
+`
+
+type ListLatestDeployedForFeatureRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+}
+
+func (q *Queries) ListLatestDeployedForFeature(ctx context.Context, featureName string) ([]ListLatestDeployedForFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listLatestDeployedForFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLatestDeployedForFeatureRow{}
+	for rows.Next() {
+		var i ListLatestDeployedForFeatureRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.EnvironmentID,

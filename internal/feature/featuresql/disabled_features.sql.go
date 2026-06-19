@@ -5,6 +5,7 @@ package featuresql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -23,6 +24,43 @@ type DisabledFeatureDeleteParams struct {
 func (q *Queries) DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error {
 	_, err := q.db.Exec(ctx, disabledFeatureDelete, arg.EnvironmentID, arg.Feature)
 	return err
+}
+
+const disabledFeatureEnvironments = `-- name: DisabledFeatureEnvironments :many
+SELECT
+	environment_id,
+	disabled_at
+FROM
+	disabled_features
+WHERE
+	feature = $1
+ORDER BY
+	environment_id
+`
+
+type DisabledFeatureEnvironmentsRow struct {
+	EnvironmentID uuid.UUID
+	DisabledAt    time.Time
+}
+
+func (q *Queries) DisabledFeatureEnvironments(ctx context.Context, feature string) ([]DisabledFeatureEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, disabledFeatureEnvironments, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DisabledFeatureEnvironmentsRow{}
+	for rows.Next() {
+		var i DisabledFeatureEnvironmentsRow
+		if err := rows.Scan(&i.EnvironmentID, &i.DisabledAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const disabledFeatureGet = `-- name: DisabledFeatureGet :one

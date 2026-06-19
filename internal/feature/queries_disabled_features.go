@@ -84,3 +84,18 @@ func FeatureDisabledAt(ctx context.Context, envID uuid.UUID, featureName string)
 	}
 	return row.DisabledAt, true, nil
 }
+
+// DisabledEnvironmentsForFeature returns, for a single feature, the set of
+// environments where it is disabled, keyed by environment id with the disabled
+// timestamp. One query instead of one per environment.
+func DisabledEnvironmentsForFeature(ctx context.Context, featureName string) (map[uuid.UUID]time.Time, error) {
+	rows, err := querier(ctx).DisabledFeatureEnvironments(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]time.Time, len(rows))
+	for _, r := range rows {
+		out[r.EnvironmentID] = r.DisabledAt
+	}
+	return out, nil
+}

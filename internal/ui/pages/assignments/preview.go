@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/ui/uidata"
 )
 
 type previewRequest struct {
@@ -26,30 +25,20 @@ func PreviewTargetsHandler() http.HandlerFunc {
 			return
 		}
 
-		tenants, err := uidata.ListTenants(r.Context())
+		tenantEnvs, err := environment.ListTenantEnvironments(r.Context(), false)
 		if err != nil {
-			http.Error(w, "failed to load tenants", http.StatusInternalServerError)
+			http.Error(w, "failed to load environments", http.StatusInternalServerError)
 			return
 		}
 
 		var matched []previewEnvironment
-		for _, tenant := range tenants {
-			envs, err := environment.List(r.Context(), tenant.ID)
-			if err != nil {
-				continue
-			}
-			for _, env := range envs {
-				labels, err := environment.GetLabels(r.Context(), env.ID)
-				if err != nil {
-					continue
-				}
-				if matchesLabels(labels, req.Labels) {
-					matched = append(matched, previewEnvironment{
-						Tenant:      tenant.Name,
-						Environment: env.Name,
-						Labels:      labels,
-					})
-				}
+		for _, te := range tenantEnvs {
+			if matchesLabels(te.Labels, req.Labels) {
+				matched = append(matched, previewEnvironment{
+					Tenant:      te.TenantName,
+					Environment: te.Name,
+					Labels:      te.Labels,
+				})
 			}
 		}
 

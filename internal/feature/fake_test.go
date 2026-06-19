@@ -46,6 +46,14 @@ func (f *fakeQuerier) ListLatestDeployedForEnvironment(ctx context.Context, envi
 	panic("not implemented")
 }
 
+func (f *fakeQuerier) ListLatestDeployInstructionsForFeature(ctx context.Context, featureName string) ([]featuresql.ListLatestDeployInstructionsForFeatureRow, error) {
+	panic("not implemented")
+}
+
+func (f *fakeQuerier) ListLatestDeployedForFeature(ctx context.Context, featureName string) ([]featuresql.ListLatestDeployedForFeatureRow, error) {
+	panic("not implemented")
+}
+
 func (f *fakeQuerier) ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error {
 	return f.configGlobalDeleteFunc(ctx, id)
 }
@@ -111,6 +119,10 @@ func (f *fakeQuerier) DisabledFeatureSet(context.Context, featuresql.DisabledFea
 }
 
 func (f *fakeQuerier) DisabledFeaturesByEnvironment(context.Context, uuid.UUID) ([]featuresql.DisabledFeature, error) {
+	panic("not implemented")
+}
+
+func (f *fakeQuerier) DisabledFeatureEnvironments(context.Context, string) ([]featuresql.DisabledFeatureEnvironmentsRow, error) {
 	panic("not implemented")
 }
 

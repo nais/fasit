@@ -12,6 +12,7 @@ type Querier interface {
 	GetNaisdHealthStatus(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	GetReleaseStatus(ctx context.Context, arg GetReleaseStatusParams) (ReleaseStatus, error)
 	ListReleaseStatuses(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
+	ListReleaseStatusesForFeature(ctx context.Context, feature string) ([]ReleaseStatus, error)
 	SetNaisdHealthStatus(ctx context.Context, arg SetNaisdHealthStatusParams) (HealthStatus, error)
 }
 

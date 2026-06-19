@@ -12,7 +12,6 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/reconciler"
-	"github.com/nais/fasit/internal/ui/uidata"
 )
 
 type Environment struct {
@@ -43,6 +42,11 @@ func LoadEnvironments(ctx context.Context, feature *featurepkg.Feature) []Enviro
 	winners := winningAssignments(assignments, targetedEnvs)
 	statusByAssignmentEnv := reconcileStatuses(ctx, assignments)
 
+	disabledByEnv, err := featurepkg.DisabledEnvironmentsForFeature(ctx, feature.Name)
+	if err != nil {
+		return []Environment{}
+	}
+
 	ret := make([]Environment, 0, len(winners))
 	for _, env := range targetedEnvs {
 		winner := winners[env.env.ID]
@@ -50,10 +54,7 @@ func LoadEnvironments(ctx context.Context, feature *featurepkg.Feature) []Enviro
 			continue
 		}
 
-		disabledAt, disabled, err := featurepkg.FeatureDisabledAt(ctx, env.env.ID, feature.Name)
-		if err != nil {
-			continue
-		}
+		disabledAt, disabled := disabledByEnv[env.env.ID]
 
 		status := Environment{
 			TenantName:           env.tenantName,
@@ -100,27 +101,18 @@ type envInfo struct {
 }
 
 func targetedEnvironments(ctx context.Context, feature *featurepkg.Feature) []envInfo {
-	tenants, err := uidata.ListTenants(ctx)
+	envs, err := envpkg.ListTenantEnvironments(ctx, false)
 	if err != nil {
 		return nil
 	}
 
 	var ret []envInfo
-	for _, tenant := range tenants {
-		envs, err := envpkg.List(ctx, tenant.ID)
-		if err != nil {
+	for _, te := range envs {
+		if !featureTargetsKind(feature.EnvironmentKinds, te.Kind) {
 			continue
 		}
-		for _, env := range envs {
-			if !featureTargetsKind(feature.EnvironmentKinds, env.Kind) {
-				continue
-			}
-			labels, err := envpkg.GetLabels(ctx, env.ID)
-			if err != nil {
-				continue
-			}
-			ret = append(ret, envInfo{env: env, tenantName: tenant.Name, labels: labels})
-		}
+		env := te.Environment
+		ret = append(ret, envInfo{env: &env, tenantName: te.TenantName, labels: te.Labels})
 	}
 	return ret
 }
@@ -143,12 +135,12 @@ func winningAssignments(assignments []*featureassignment.FeatureAssignment, envs
 
 func reconcileStatuses(ctx context.Context, assignments []*featureassignment.FeatureAssignment) map[string]*reconciler.FeatureReconcileStatus {
 	ret := map[string]*reconciler.FeatureReconcileStatus{}
+	statusesByFA, err := reconciler.AllReconcileStatuses(ctx)
+	if err != nil {
+		return ret
+	}
 	for _, fa := range assignments {
-		statuses, err := reconciler.ReconcileStatuses(ctx, fa.ID)
-		if err != nil {
-			continue
-		}
-		for _, status := range statuses {
+		for _, status := range statusesByFA[fa.ID] {
 			ret[fa.ID.String()+":"+status.EnvironmentID.String()] = status
 		}
 	}

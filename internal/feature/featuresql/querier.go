@@ -23,6 +23,7 @@ type Querier interface {
 	ConfigGlobalUpdate(ctx context.Context, arg ConfigGlobalUpdateParams) (ConfigurationsGlobal, error)
 	ConfigGlobalUpsert(ctx context.Context, arg ConfigGlobalUpsertParams) (ConfigurationsGlobal, error)
 	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
+	DisabledFeatureEnvironments(ctx context.Context, feature string) ([]DisabledFeatureEnvironmentsRow, error)
 	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
 	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
 	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
@@ -39,7 +40,9 @@ type Querier interface {
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
 	ListLatestDeployInstructionsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployInstructionsForEnvironmentRow, error)
+	ListLatestDeployInstructionsForFeature(ctx context.Context, featureName string) ([]ListLatestDeployInstructionsForFeatureRow, error)
 	ListLatestDeployedForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployedForEnvironmentRow, error)
+	ListLatestDeployedForFeature(ctx context.Context, featureName string) ([]ListLatestDeployedForFeatureRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)

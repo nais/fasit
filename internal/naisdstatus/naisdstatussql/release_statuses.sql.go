@@ -79,3 +79,43 @@ func (q *Queries) ListReleaseStatuses(ctx context.Context, environmentID uuid.UU
 	}
 	return items, nil
 }
+
+const listReleaseStatusesForFeature = `-- name: ListReleaseStatusesForFeature :many
+SELECT
+	environment_id, feature, version, status, revision, last_deployed, created, last_modified
+FROM
+	release_statuses
+WHERE
+	feature = $1
+ORDER BY
+	environment_id
+`
+
+func (q *Queries) ListReleaseStatusesForFeature(ctx context.Context, feature string) ([]ReleaseStatus, error) {
+	rows, err := q.db.Query(ctx, listReleaseStatusesForFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReleaseStatus{}
+	for rows.Next() {
+		var i ReleaseStatus
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Version,
+			&i.Status,
+			&i.Revision,
+			&i.LastDeployed,
+			&i.Created,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

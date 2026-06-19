@@ -82,6 +82,25 @@ func GetLogLines(ctx context.Context, deployInstructionID uuid.UUID) ([]*LogLine
 	return logLines, nil
 }
 
+// GetLogLinesForDeployInstructions fetches log lines for several deploy
+// instructions in a single query, keyed by deploy instruction id. Instructions
+// with no logs are absent from the map.
+func GetLogLinesForDeployInstructions(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*LogLine, error) {
+	if len(ids) == 0 {
+		return map[uuid.UUID][]*LogLine{}, nil
+	}
+	logs, err := querier(ctx).LogsByDeployInstructions(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID][]*LogLine)
+	for _, log := range logs {
+		line := logLineFromSQL(log)
+		out[log.DeployInstruction] = append(out[log.DeployInstruction], line)
+	}
+	return out, nil
+}
+
 func GetFeatureLog(ctx context.Context, featureAssignmentID, environmentID uuid.UUID) (*RolloutLog, error) {
 	di, err := querier(ctx).GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx, sqlgen.GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams{
 		FeatureAssignmentID: featureAssignmentID,

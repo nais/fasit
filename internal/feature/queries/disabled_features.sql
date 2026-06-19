@@ -34,3 +34,14 @@ WHERE
 ORDER BY
 	feature;
 
+-- name: DisabledFeatureEnvironments :many
+SELECT
+	environment_id,
+	disabled_at
+FROM
+	disabled_features
+WHERE
+	feature = @feature
+ORDER BY
+	environment_id;
+

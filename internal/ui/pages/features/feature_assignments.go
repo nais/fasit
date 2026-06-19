@@ -15,7 +15,6 @@ import (
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
-	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -528,7 +527,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 	}
 	fas = latestAssignmentPerTarget(fas)
 
-	tenants, err := uidata.ListTenants(ctx)
+	tenantEnvs, err := envpkg.ListTenantEnvironments(ctx, false)
 	if err != nil {
 		return []AssignmentEnvStatus{}
 	}
@@ -539,22 +538,12 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 		labels     map[string]string
 	}
 	var allEnvs []envInfo
-	for _, tenant := range tenants {
-		envs, err := envpkg.List(ctx, tenant.ID)
-		if err != nil {
+	for _, te := range tenantEnvs {
+		if !featureTargetsKind(feature.EnvironmentKinds, te.Kind) {
 			continue
 		}
-		for _, env := range envs {
-			if !featureTargetsKind(feature.EnvironmentKinds, env.Kind) {
-				continue
-			}
-			labels, err := envpkg.GetLabels(ctx, env.ID)
-			if err != nil {
-				continue
-			}
-
-			allEnvs = append(allEnvs, envInfo{env: env, tenantName: tenant.Name, labels: labels})
-		}
+		env := te.Environment
+		allEnvs = append(allEnvs, envInfo{env: &env, tenantName: te.TenantName, labels: te.Labels})
 	}
 
 	winners := map[uuid.UUID]*featureassignment.FeatureAssignment{}
@@ -570,15 +559,32 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 		}
 	}
 
+	statusesByFA, err := reconciler.AllReconcileStatuses(ctx)
+	if err != nil {
+		return []AssignmentEnvStatus{}
+	}
 	statusByAssignmentEnv := map[string]*reconciler.FeatureReconcileStatus{}
 	for _, fa := range fas {
-		statuses, err := reconciler.ReconcileStatuses(ctx, fa.ID)
-		if err != nil {
-			continue
-		}
-		for _, status := range statuses {
+		for _, status := range statusesByFA[fa.ID] {
 			statusByAssignmentEnv[fa.ID.String()+":"+status.EnvironmentID.String()] = status
 		}
+	}
+
+	disabledByEnv, err := featurepkg.DisabledEnvironmentsForFeature(ctx, feature.Name)
+	if err != nil {
+		return []AssignmentEnvStatus{}
+	}
+	latestDeployed, err := featurepkg.LatestDeployedForFeature(ctx, feature.Name)
+	if err != nil {
+		return []AssignmentEnvStatus{}
+	}
+	latestInstruction, err := featurepkg.LatestDeployInstructionsForFeature(ctx, feature.Name)
+	if err != nil {
+		return []AssignmentEnvStatus{}
+	}
+	releaseByEnv, err := naisdstatus.ReleaseStatusesForFeature(ctx, feature.Name)
+	if err != nil {
+		return []AssignmentEnvStatus{}
 	}
 
 	ret := []AssignmentEnvStatus{}
@@ -588,10 +594,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 				continue
 			}
 
-			disabledAt, disabled, err := featurepkg.FeatureDisabledAt(ctx, env.env.ID, feature.Name)
-			if err != nil {
-				continue
-			}
+			disabledAt, disabled := disabledByEnv[env.env.ID]
 
 			es := AssignmentEnvStatus{
 				Name:                 env.env.Name,
@@ -609,21 +612,15 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 				es.DisableReason = audit.LatestDisableReason(ctx, feature.Name, env.env.ID)
 			}
 
-			if di, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
+			if di := latestDeployed[env.env.ID]; di != nil {
 				es.LastDeployed = di.LastModified
 			}
-			if di, err := featurepkg.GetLatestDeployInstruction(ctx, env.env.ID, feature.Name); err == nil && di != nil {
+			if di := latestInstruction[env.env.ID]; di != nil {
 				es.DeployInstructionID = di.ID.String()
 			}
 
-			releases, err := naisdstatus.ListReleaseStatuses(ctx, env.env.ID)
-			if err == nil {
-				for _, release := range releases {
-					if release.Name == feature.Name {
-						es.ReleaseVersion = release.Version
-						break
-					}
-				}
+			if release := releaseByEnv[env.env.ID]; release != nil {
+				es.ReleaseVersion = release.Version
 			}
 
 			winner := winners[env.env.ID]

@@ -11,7 +11,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
-	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -32,37 +31,28 @@ type labelKeyInfo struct {
 
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tenants, err := uidata.ListTenants(r.Context())
+		tenantEnvs, err := environment.ListTenantEnvironments(r.Context(), false)
 		if err != nil {
-			http.Error(w, "Failed to load tenants", http.StatusInternalServerError)
+			http.Error(w, "Failed to load environments", http.StatusInternalServerError)
 			return
 		}
 
 		var rows []envRow
 		allLabels := map[string]map[string]bool{}
 
-		for _, tenant := range tenants {
-			envs, err := environment.List(r.Context(), tenant.ID)
-			if err != nil {
-				continue
-			}
-			for _, env := range envs {
-				labels, err := environment.GetLabels(r.Context(), env.ID)
-				if err != nil {
-					continue
+		for _, te := range tenantEnvs {
+			labels := te.Labels
+			for k, v := range labels {
+				if allLabels[k] == nil {
+					allLabels[k] = map[string]bool{}
 				}
-				for k, v := range labels {
-					if allLabels[k] == nil {
-						allLabels[k] = map[string]bool{}
-					}
-					allLabels[k][v] = true
-				}
-				rows = append(rows, envRow{
-					Tenant:      tenant.Name,
-					Environment: env.Name,
-					Labels:      labels,
-				})
+				allLabels[k][v] = true
 			}
+			rows = append(rows, envRow{
+				Tenant:      te.TenantName,
+				Environment: te.Name,
+				Labels:      labels,
+			})
 		}
 
 		sort.Slice(rows, func(i, j int) bool {

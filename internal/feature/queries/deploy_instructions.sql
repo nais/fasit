@@ -73,6 +73,42 @@ ORDER BY
 	feature_name,
 	created DESC;
 
+-- name: ListLatestDeployInstructionsForFeature :many
+SELECT
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_status
+WHERE
+	feature_name = @feature_name::TEXT
+ORDER BY
+	environment_id;
+
+-- name: ListLatestDeployedForFeature :many
+SELECT DISTINCT ON (environment_id)
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_log
+WHERE
+	feature_name = @feature_name::TEXT
+	AND status = 'deployed'
+ORDER BY
+	environment_id,
+	created DESC;
+
 -- name: ListDeployLog :many
 SELECT
 	diid,

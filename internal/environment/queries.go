@@ -129,6 +129,8 @@ func ListTenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*Tenant
 				Created:      d.Created,
 				LastModified: d.LastModified,
 				Kind:         EnvironmentKind(d.Kind),
+				Reconcile:    d.Reconcile,
+				Labels:       map[string]string(d.Labels),
 			},
 			TenantName: d.TenantName,
 			TenantID:   d.TenantID,

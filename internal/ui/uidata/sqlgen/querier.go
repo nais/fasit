@@ -16,6 +16,7 @@ type Querier interface {
 	ListTenantEnvironments(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	ListTenants(ctx context.Context) ([]Tenant, error)
 	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
+	LogsByDeployInstructions(ctx context.Context, deployInstructions []uuid.UUID) ([]Log, error)
 	LogsByID(ctx context.Context, id int64) (Log, error)
 }
 

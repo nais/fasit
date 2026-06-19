@@ -13,7 +13,6 @@ import (
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/ui/components"
-	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -240,7 +239,7 @@ func featureEnvironments(ctx context.Context, feat *featurepkg.Feature) ([]confi
 	}
 	assignments = latestAssignmentPerTarget(assignments)
 
-	tenants, err := uidata.ListTenants(ctx)
+	tenantEnvs, err := envpkg.ListTenantEnvironments(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -251,21 +250,12 @@ func featureEnvironments(ctx context.Context, feat *featurepkg.Feature) ([]confi
 		labels     map[string]string
 	}
 	var allEnvs []envInfo
-	for _, tenant := range tenants {
-		envs, err := envpkg.List(ctx, tenant.ID)
-		if err != nil {
-			return nil, fmt.Errorf("list environments for tenant %s: %w", tenant.Name, err)
+	for _, te := range tenantEnvs {
+		if !featureTargetsKind(feat.EnvironmentKinds, te.Kind) {
+			continue
 		}
-		for _, env := range envs {
-			if !featureTargetsKind(feat.EnvironmentKinds, env.Kind) {
-				continue
-			}
-			labels, err := envpkg.GetLabels(ctx, env.ID)
-			if err != nil {
-				return nil, fmt.Errorf("get labels for environment %s: %w", env.Name, err)
-			}
-			allEnvs = append(allEnvs, envInfo{env: env, tenantName: tenant.Name, labels: labels})
-		}
+		env := te.Environment
+		allEnvs = append(allEnvs, envInfo{env: &env, tenantName: te.TenantName, labels: te.Labels})
 	}
 
 	var result []configCompareEnv
