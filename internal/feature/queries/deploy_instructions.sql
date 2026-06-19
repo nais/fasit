@@ -17,26 +17,6 @@ WHERE
 	feature_name = @feature_name::TEXT
 	AND environment_id = @environment_id::UUID;
 
--- name: GetLatestDeployedDeployInstruction :one
-SELECT
-	diid AS id,
-	environment_id,
-	feature_assignment_id,
-	feature_name,
-	feature_version,
-	status,
-	hash,
-	created
-FROM
-	deploy_log
-WHERE
-	feature_name = @feature_name::TEXT
-	AND environment_id = @environment_id::UUID
-	AND status = 'deployed'
-ORDER BY
-	created DESC
-LIMIT 1;
-
 -- name: ListLatestDeployInstructionsForEnvironment :many
 SELECT
 	diid AS id,

@@ -6,13 +6,16 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nais/fasit/internal/database"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
 type metricsMiddleware struct {
-	requestsTotal   metric.Int64Counter
-	requestDuration metric.Float64Histogram
+	requestsTotal     metric.Int64Counter
+	requestDuration   metric.Float64Histogram
+	queriesPerRequest metric.Int64Histogram
+	dbTimePerRequest  metric.Float64Histogram
 }
 
 func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
@@ -32,9 +35,28 @@ func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
 		return nil, err
 	}
 
+	queriesPerRequest, err := meter.Int64Histogram("db_queries_per_request",
+		metric.WithDescription("Number of database queries executed while serving one HTTP request"),
+		metric.WithExplicitBucketBoundaries(1, 2, 5, 10, 20, 50, 100, 200),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	dbTimePerRequest, err := meter.Float64Histogram("db_time_per_request_ms",
+		metric.WithDescription("Total time spent in the database while serving one HTTP request"),
+		metric.WithUnit("ms"),
+		metric.WithExplicitBucketBoundaries(1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &metricsMiddleware{
-		requestsTotal:   requestsTotal,
-		requestDuration: requestDuration,
+		requestsTotal:     requestsTotal,
+		requestDuration:   requestDuration,
+		queriesPerRequest: queriesPerRequest,
+		dbTimePerRequest:  dbTimePerRequest,
 	}, nil
 }
 
@@ -51,7 +73,8 @@ func (m *metricsMiddleware) Handler(next http.Handler) http.Handler {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
-		next.ServeHTTP(rw, r)
+		ctx, stats := database.WithRequestStats(r.Context())
+		next.ServeHTTP(rw, r.WithContext(ctx))
 
 		if skipMetricsPaths[r.URL.Path] {
 			return
@@ -68,13 +91,15 @@ func (m *metricsMiddleware) Handler(next http.Handler) http.Handler {
 			attribute.String("status", strconv.Itoa(rw.status)),
 		)
 
-		m.requestsTotal.Add(r.Context(), 1, attrs)
-		m.requestDuration.Record(r.Context(), float64(time.Since(start).Milliseconds()),
-			metric.WithAttributes(
-				attribute.String("method", r.Method),
-				attribute.String("path", pattern),
-			),
+		pathAttrs := metric.WithAttributes(
+			attribute.String("method", r.Method),
+			attribute.String("path", pattern),
 		)
+
+		m.requestsTotal.Add(r.Context(), 1, attrs)
+		m.requestDuration.Record(r.Context(), float64(time.Since(start).Milliseconds()), pathAttrs)
+		m.queriesPerRequest.Record(r.Context(), stats.Queries(), pathAttrs)
+		m.dbTimePerRequest.Record(r.Context(), float64(stats.DBDuration().Milliseconds()), pathAttrs)
 	})
 }
 

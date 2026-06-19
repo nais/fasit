@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
@@ -543,31 +542,6 @@ func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureNam
 		FeatureName:   featureName,
 	})
 	if err != nil {
-		return nil, err
-	}
-
-	return &DeployInstruction{
-		ID:                  di.ID,
-		EnvironmentID:       di.EnvironmentID,
-		FeatureAssignmentID: &di.FeatureAssignmentID,
-		FeatureName:         di.FeatureName,
-		FeatureVersion:      di.FeatureVersion,
-		Status:              DeployStatus(di.Status),
-		Hash:                di.Hash,
-		Created:             di.Created,
-		LastModified:        di.Created,
-	}, nil
-}
-
-func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*DeployInstruction, error) {
-	di, err := querier(ctx).GetLatestDeployedDeployInstruction(ctx, featuresql.GetLatestDeployedDeployInstructionParams{
-		EnvironmentID: envID,
-		FeatureName:   featureName,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 

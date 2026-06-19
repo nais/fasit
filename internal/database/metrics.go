@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -11,6 +12,30 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
+
+type reqStatsKey struct{}
+
+// RequestStats accumulates per-request query count and total time spent in the
+// database, so a request can be classified as DB-bound vs render-bound.
+type RequestStats struct {
+	queries atomic.Int64
+	dbNanos atomic.Int64
+}
+
+func (rs *RequestStats) Queries() int64            { return rs.queries.Load() }
+func (rs *RequestStats) DBDuration() time.Duration { return time.Duration(rs.dbNanos.Load()) }
+
+// WithRequestStats attaches a fresh RequestStats to ctx. The query tracer adds
+// to it on every query that runs under the returned context.
+func WithRequestStats(ctx context.Context) (context.Context, *RequestStats) {
+	rs := &RequestStats{}
+	return context.WithValue(ctx, reqStatsKey{}, rs), rs
+}
+
+func requestStatsFrom(ctx context.Context) *RequestStats {
+	rs, _ := ctx.Value(reqStatsKey{}).(*RequestStats)
+	return rs
+}
 
 type queryCtxKey struct{}
 
@@ -85,6 +110,11 @@ func (t *QueryMetricsTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, dat
 
 	t.queryCount.Add(ctx, 1, attrs)
 	t.queryDuration.Record(ctx, float64(time.Since(v.start).Milliseconds()), attrs)
+
+	if rs := requestStatsFrom(ctx); rs != nil {
+		rs.queries.Add(1)
+		rs.dbNanos.Add(int64(time.Since(v.start)))
+	}
 }
 
 func RegisterPoolMetrics(meter metric.Meter, pool *pgxpool.Pool) error {
