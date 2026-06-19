@@ -266,11 +266,11 @@ func templateReference(hasFeature bool) g.Node {
 	renderItems := func(items []refItem) g.Node {
 		nodes := make([]g.Node, 0, len(items))
 		for _, item := range items {
-			attrs := []g.Node{h.Class("ref-item"), g.Text(item.Name)}
+			children := []g.Node{h.Class("ref-item"), h.Span(h.Class("ref-item-name"), g.Text(item.Name))}
 			if item.Example != "" {
-				attrs = []g.Node{h.Class("ref-item"), g.Attr("data-tip", item.Example), g.Text(item.Name)}
+				children = append(children, h.Span(h.Class("ref-tip"), g.Text(item.Example)))
 			}
-			nodes = append(nodes, h.Span(attrs...))
+			nodes = append(nodes, h.Span(children...))
 		}
 		return g.Group(nodes)
 	}

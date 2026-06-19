@@ -2553,18 +2553,19 @@ a:hover .status-badge {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 3px;
+  color: var(--text-secondary);
   cursor: default;
   white-space: nowrap;
 }
 .ref-item:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-primary);
+  z-index: 10;
 }
-.ref-item[data-tip]:hover::after {
-  content: attr(data-tip);
+.ref-tip {
   position: absolute;
-  left: 0;
+  left: -1px;
   top: 100%;
+  display: none;
   margin-top: 4px;
   padding: 0.35rem 0.5rem;
   background: var(--bg-surface);
@@ -2573,8 +2574,20 @@ a:hover .status-badge {
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   font-size: 0.7rem;
   white-space: nowrap;
-  z-index: 10;
   color: var(--text-primary);
+  user-select: text;
+  cursor: text;
+}
+.ref-tip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -5px;
+  height: 5px;
+}
+.ref-item:hover .ref-tip {
+  display: block;
 }
 @media (max-width: 768px) {
   .template-test-layout {
