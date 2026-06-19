@@ -584,6 +584,58 @@ func GetLatestDeployedDeployInstruction(ctx context.Context, envID uuid.UUID, fe
 	}, nil
 }
 
+// LatestDeployInstructionsForEnvironment returns the latest deploy instruction
+// per feature in an environment, keyed by feature name. One query instead of
+// one per feature.
+func LatestDeployInstructionsForEnvironment(ctx context.Context, envID uuid.UUID) (map[string]*DeployInstruction, error) {
+	rows, err := querier(ctx).ListLatestDeployInstructionsForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]*DeployInstruction, len(rows))
+	for _, di := range rows {
+		faID := di.FeatureAssignmentID
+		out[di.FeatureName] = &DeployInstruction{
+			ID:                  di.ID,
+			EnvironmentID:       di.EnvironmentID,
+			FeatureAssignmentID: &faID,
+			FeatureName:         di.FeatureName,
+			FeatureVersion:      di.FeatureVersion,
+			Status:              DeployStatus(di.Status),
+			Hash:                di.Hash,
+			Created:             di.Created,
+			LastModified:        di.Created,
+		}
+	}
+	return out, nil
+}
+
+// LatestDeployedForEnvironment returns the latest successfully deployed deploy
+// instruction per feature in an environment, keyed by feature name. One query
+// instead of one per feature.
+func LatestDeployedForEnvironment(ctx context.Context, envID uuid.UUID) (map[string]*DeployInstruction, error) {
+	rows, err := querier(ctx).ListLatestDeployedForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]*DeployInstruction, len(rows))
+	for _, di := range rows {
+		faID := di.FeatureAssignmentID
+		out[di.FeatureName] = &DeployInstruction{
+			ID:                  di.ID,
+			EnvironmentID:       di.EnvironmentID,
+			FeatureAssignmentID: &faID,
+			FeatureName:         di.FeatureName,
+			FeatureVersion:      di.FeatureVersion,
+			Status:              DeployStatus(di.Status),
+			Hash:                di.Hash,
+			Created:             di.Created,
+			LastModified:        di.Created,
+		}
+	}
+	return out, nil
+}
+
 // ListRecentDeployInstructions returns deploy history for an environment x
 // feature, one entry per deploy (diid). The deploy_log holds one row per status
 // transition, so rows are grouped by diid here: the earliest row is the publish

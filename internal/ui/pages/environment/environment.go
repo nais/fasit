@@ -179,20 +179,37 @@ func loadEnvironmentFeatureRows(ctx context.Context, env *envpkg.Environment) ([
 	if err != nil {
 		return nil, err
 	}
+
+	var statuses map[string]reconciler.EnvironmentFeatureStatus
+	if env.Reconcile {
+		statuses, err = reconciler.FeatureStatusesForEnvironment(ctx, env.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	latest, err := featurepkg.LatestDeployInstructionsForEnvironment(ctx, env.ID)
+	if err != nil {
+		return nil, err
+	}
+	deployed, err := featurepkg.LatestDeployedForEnvironment(ctx, env.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	rows := make([]environmentFeatureRow, 0, len(features))
 	for _, feature := range features {
 		row := environmentFeatureRow{Name: feature.Name, Status: "UNKNOWN"}
 		if !env.Reconcile || feature.FeatureDisabled {
 			row.Status = "DISABLED"
-		} else if status, msg, err := reconciler.FeatureStatusForEnvironment(ctx, env.ID, feature.Name); err == nil && status != "" {
-			row.Status = reconciler.NormalizeStatus(status)
-			row.StatusMessage = msg
+		} else if s, ok := statuses[feature.Name]; ok && s.Status != "" {
+			row.Status = reconciler.NormalizeStatus(s.Status)
+			row.StatusMessage = s.Message
 		}
-		if latest, err := featurepkg.GetLatestDeployInstruction(ctx, env.ID, feature.Name); err == nil && latest != nil {
-			row.Version = latest.FeatureVersion
+		if di := latest[feature.Name]; di != nil {
+			row.Version = di.FeatureVersion
 		}
-		if deployed, err := featurepkg.GetLatestDeployedDeployInstruction(ctx, env.ID, feature.Name); err == nil && deployed != nil {
-			row.LastSuccessful = deployed.LastModified
+		if di := deployed[feature.Name]; di != nil {
+			row.LastSuccessful = di.LastModified
 		}
 		rows = append(rows, row)
 	}

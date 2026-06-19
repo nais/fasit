@@ -38,6 +38,14 @@ func (f *fakeQuerier) ListDeployLog(ctx context.Context, arg featuresql.ListDepl
 	panic("not implemented")
 }
 
+func (f *fakeQuerier) ListLatestDeployInstructionsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]featuresql.ListLatestDeployInstructionsForEnvironmentRow, error) {
+	panic("not implemented")
+}
+
+func (f *fakeQuerier) ListLatestDeployedForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]featuresql.ListLatestDeployedForEnvironmentRow, error) {
+	panic("not implemented")
+}
+
 func (f *fakeQuerier) ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error {
 	return f.configGlobalDeleteFunc(ctx, id)
 }

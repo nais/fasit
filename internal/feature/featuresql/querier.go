@@ -38,6 +38,8 @@ type Querier interface {
 	GetLatestDeployedDeployInstruction(ctx context.Context, arg GetLatestDeployedDeployInstructionParams) (GetLatestDeployedDeployInstructionRow, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
+	ListLatestDeployInstructionsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployInstructionsForEnvironmentRow, error)
+	ListLatestDeployedForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployedForEnvironmentRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)

@@ -37,6 +37,42 @@ ORDER BY
 	created DESC
 LIMIT 1;
 
+-- name: ListLatestDeployInstructionsForEnvironment :many
+SELECT
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_status
+WHERE
+	environment_id = @environment_id::UUID
+ORDER BY
+	feature_name;
+
+-- name: ListLatestDeployedForEnvironment :many
+SELECT DISTINCT ON (feature_name)
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_log
+WHERE
+	environment_id = @environment_id::UUID
+	AND status = 'deployed'
+ORDER BY
+	feature_name,
+	created DESC;
+
 -- name: ListDeployLog :many
 SELECT
 	diid,

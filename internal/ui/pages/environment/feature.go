@@ -848,7 +848,7 @@ func computedRow(page *FeaturePage, item FeatureConfigItem) g.Node {
 			"&tenant=" + url.QueryEscape(page.TenantSlug) +
 			"&env=" + url.QueryEscape(page.Environment.Name) +
 			"&key=" + url.QueryEscape(item.Key)
-		extraKebab = append(extraKebab, h.A(h.Href(testURL), h.Class("kebab-item"), g.Text("Test template ↗")))
+		extraKebab = append(extraKebab, h.A(h.Href(testURL), h.Class("kebab-item"), g.Text("Test template")))
 	}
 	return h.Tr(h.ID("config-"+item.Key), h.Class("config-row-computed"),
 		components.ConfigKeyCell(item),

@@ -205,6 +205,39 @@ func FeatureStatusForEnvironment(ctx context.Context, envID uuid.UUID, featureNa
 	return "", "", nil
 }
 
+// EnvironmentFeatureStatus is the reconcile status of a single feature in an
+// environment.
+type EnvironmentFeatureStatus struct {
+	Status  string
+	Message string
+}
+
+// FeatureStatusesForEnvironment returns the reconcile status of the winning
+// feature assignment for every feature in an environment, keyed by feature
+// name. It batches the work (winning assignments in one query, all reconcile
+// signals in two) instead of fanning out per feature.
+func FeatureStatusesForEnvironment(ctx context.Context, envID uuid.UUID) (map[string]EnvironmentFeatureStatus, error) {
+	winners, err := featureassignment.ListForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+	statusesByFA, err := AllReconcileStatuses(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[string]EnvironmentFeatureStatus, len(winners))
+	for _, w := range winners {
+		for _, s := range statusesByFA[w.ID] {
+			if s.EnvironmentID == envID {
+				out[w.Feature.Name] = EnvironmentFeatureStatus{Status: string(s.State), Message: s.Message}
+				break
+			}
+		}
+	}
+	return out, nil
+}
+
 // joinReconcileSignals joins the two raw per-environment signals (latest
 // decision, latest deploy) by environment and derives the effective reconcile
 // status for each.

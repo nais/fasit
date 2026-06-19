@@ -178,3 +178,121 @@ func (q *Queries) ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([
 	}
 	return items, nil
 }
+
+const listLatestDeployInstructionsForEnvironment = `-- name: ListLatestDeployInstructionsForEnvironment :many
+SELECT
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_status
+WHERE
+	environment_id = $1::UUID
+ORDER BY
+	feature_name
+`
+
+type ListLatestDeployInstructionsForEnvironmentRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+}
+
+func (q *Queries) ListLatestDeployInstructionsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployInstructionsForEnvironmentRow, error) {
+	rows, err := q.db.Query(ctx, listLatestDeployInstructionsForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLatestDeployInstructionsForEnvironmentRow{}
+	for rows.Next() {
+		var i ListLatestDeployInstructionsForEnvironmentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.FeatureAssignmentID,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.Hash,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLatestDeployedForEnvironment = `-- name: ListLatestDeployedForEnvironment :many
+SELECT DISTINCT ON (feature_name)
+	diid AS id,
+	environment_id,
+	feature_assignment_id,
+	feature_name,
+	feature_version,
+	status,
+	hash,
+	created
+FROM
+	deploy_log
+WHERE
+	environment_id = $1::UUID
+	AND status = 'deployed'
+ORDER BY
+	feature_name,
+	created DESC
+`
+
+type ListLatestDeployedForEnvironmentRow struct {
+	ID                  uuid.UUID
+	EnvironmentID       uuid.UUID
+	FeatureAssignmentID uuid.UUID
+	FeatureName         string
+	FeatureVersion      string
+	Status              string
+	Hash                string
+	Created             time.Time
+}
+
+func (q *Queries) ListLatestDeployedForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployedForEnvironmentRow, error) {
+	rows, err := q.db.Query(ctx, listLatestDeployedForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLatestDeployedForEnvironmentRow{}
+	for rows.Next() {
+		var i ListLatestDeployedForEnvironmentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.FeatureAssignmentID,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.Hash,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
