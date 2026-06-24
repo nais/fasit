@@ -87,8 +87,9 @@ func getOIDCVerifier(ctx context.Context, issuer, discoveryURL, audience string)
 	}
 
 	// Explicit discovery URL: it is the full discovery-document endpoint (e.g.
-	// served via oidcproxy), fetched verbatim. The token's iss is still validated
-	// against the configured issuer, which may differ from where we fetch keys.
+	// served via kube-oidc-discovery-proxy), fetched verbatim. The token's iss is
+	// still validated against the configured issuer, which may differ from where
+	// we fetch keys.
 	if ks, ok := keySetCache.Load(discoveryURL); ok {
 		return oidc.NewVerifier(issuer, ks.(oidc.KeySet), cfg), nil
 	}
