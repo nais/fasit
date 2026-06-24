@@ -77,6 +77,7 @@ var ErrReconcileInProgress = errors.New("reconcile already in progress")
 // side-effects (DB writes, message publishing, UI updates, etc.).
 type Deployer interface {
 	Deploy(ctx context.Context, decisions []DeployDecision) error
+	Uninstall(ctx context.Context, diid uuid.UUID, tenantName, envName, releaseName string) error
 }
 
 func assignmentFromRow(row reconcilersql.ListLatestFeatureAssignmentsRow) (*reconcileAssignment, error) {

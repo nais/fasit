@@ -427,10 +427,14 @@ func (d *DeployManager) runOnce() {
 
 func (d *DeployManager) uninstallHandler(ctx context.Context, msg message.DeployInstruction) error {
 	log := d.log.With("feature", msg.Name, "method", "uninstall")
-	if msg.Name == "naisd" || msg.Name == "" {
+	if msg.Name == "naisd" || msg.Name == "fasitd" || msg.Name == "" {
 		log.Warn("will not uninstall")
 		return nil
 	}
+
+	pubsubLog := newPubsubLogger(msg.ID, d.statuses, d.log)
+	go pubsubLog.Run(ctx)
+	defer ioconvenience.CloseWithLog(pubsubLog, d.log)
 
 	timeout := 5 * time.Minute
 	if msg.Timeout.Seconds() > 10 {
@@ -445,7 +449,7 @@ func (d *DeployManager) uninstallHandler(ctx context.Context, msg message.Deploy
 		msg.Name,
 	}
 
-	_, err := d.runHelm(ctx, nil, args)
+	_, err := d.runHelm(ctx, pubsubLog, args)
 
 	d.RepublishHelmList()
 

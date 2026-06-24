@@ -20,6 +20,36 @@ var ErrRedeployNotSettled = errors.New("feature is not in a redeployable state")
 // winning assignment matches the given environment and feature.
 var ErrRedeployTargetNotFound = errors.New("no reconciling deployment found for feature in environment")
 
+// ErrUninstallProtected is returned when an uninstall is requested for a
+// release that must not be removed, such as the agents (naisd, fasitd) that
+// execute the uninstall itself.
+var ErrUninstallProtected = errors.New("release is a managed agent and cannot be uninstalled")
+
+// protectedReleases must never be uninstalled: they are the agents that carry
+// out the uninstall, so removing them would sever Fasit's control of the
+// environment. The agent enforces this too; this is a server-side backstop.
+var protectedReleases = map[string]bool{
+	"naisd":  true,
+	"fasitd": true,
+}
+
+// Uninstall asks the environment's naisd agent to remove releaseName. It is a
+// deliberate operator action for cleaning up releases that no longer have a
+// matching feature assignment; the reconciler never uninstalls on its own.
+func (r *Reconciler) Uninstall(ctx context.Context, tenantName, envName, releaseName string) (uuid.UUID, error) {
+	if r.deployer == nil {
+		return uuid.Nil, errors.New("reconciler has no deployer configured")
+	}
+	if releaseName == "" || protectedReleases[releaseName] {
+		return uuid.Nil, ErrUninstallProtected
+	}
+	diid := uuid.New()
+	if err := r.deployer.Uninstall(ctx, diid, tenantName, envName, releaseName); err != nil {
+		return uuid.Nil, err
+	}
+	return diid, nil
+}
+
 // Redeploy forces a fresh deploy of featureName to the given environment even
 // though its rendered config is unchanged. It only proceeds when the feature
 // is in a settled state (ActionSkipUnchanged); otherwise it returns

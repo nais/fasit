@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/message"
@@ -41,6 +43,11 @@ type Options struct {
 	// skips them and their features stay PENDING. Mirrors a cluster where no
 	// naisd is running.
 	UnhealthyEnvs []string
+	// OrphanReleases (each "tenant/env/release") seeds Helm releases with no
+	// matching feature assignment, so the environment's Helm Releases tab shows
+	// them as orphaned and offers an uninstall button. Mirrors charts left
+	// behind after their assignments were removed.
+	OrphanReleases []string
 }
 
 type Agent struct {
@@ -48,6 +55,7 @@ type Agent struct {
 	deployDelay   time.Duration
 	failingEnvs   map[envKey]bool
 	unhealthyEnvs map[envKey]bool
+	orphanEnvs    map[envKey]bool
 
 	out chan message.Status
 
@@ -56,13 +64,40 @@ type Agent struct {
 }
 
 func New(log *slog.Logger, opts Options) *Agent {
-	return &Agent{
+	a := &Agent{
 		log:           log,
 		deployDelay:   2 * time.Second,
 		failingEnvs:   parseEnvSet(opts.FailingEnvs),
 		unhealthyEnvs: parseEnvSet(opts.UnhealthyEnvs),
+		orphanEnvs:    map[envKey]bool{},
 		out:           make(chan message.Status, 256),
 		releases:      map[envKey]map[string]*releaseState{},
+	}
+	a.seedOrphans(opts.OrphanReleases)
+	return a
+}
+
+// seedOrphans installs releases that have no matching feature assignment, so
+// they surface as orphaned in the UI. Each item is "tenant/env/release".
+func (a *Agent) seedOrphans(items []string) {
+	for _, item := range items {
+		parts := strings.SplitN(strings.TrimSpace(item), "/", 3)
+		if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+			continue
+		}
+		key := envKey{parts[0], parts[1]}
+		envRel := a.releases[key]
+		if envRel == nil {
+			envRel = map[string]*releaseState{}
+			a.releases[key] = envRel
+		}
+		envRel[parts[2]] = &releaseState{
+			version:      "1.0.0",
+			revision:     1,
+			status:       "deployed",
+			lastDeployed: time.Now(),
+		}
+		a.orphanEnvs[key] = true
 	}
 }
 
@@ -117,6 +152,7 @@ func (a *Agent) handleInstruction(key envKey, instr message.DeployInstruction) {
 		time.Sleep(a.deployDelay)
 
 		if instr.Uninstall {
+			a.emitUninstallLog(key, instr)
 			a.recordUninstall(key, instr.Name)
 			a.emitReleases(key)
 			return
@@ -183,12 +219,23 @@ func (a *Agent) emitLog(key envKey, instr message.DeployInstruction, failing boo
 	if failing {
 		lines = mockFailLog
 	}
+	a.sendLog(key, instr.ID, lines)
+}
+
+func (a *Agent) emitUninstallLog(key envKey, instr message.DeployInstruction) {
+	a.sendLog(key, instr.ID, []string{
+		"These resources were kept due to the resource policy:",
+		"release \"" + instr.Name + "\" uninstalled",
+	})
+}
+
+func (a *Agent) sendLog(key envKey, diid uuid.UUID, lines []string) {
 	now := time.Now()
 	logs := make([]message.LogLine, len(lines))
 	for i, msg := range lines {
 		logs[i] = message.LogLine{Time: now.Add(time.Duration(i) * time.Millisecond), Msg: msg}
 	}
-	a.send(key, message.StatusTypeLog, message.StatusLog{DIID: instr.ID, Logs: logs})
+	a.send(key, message.StatusTypeLog, message.StatusLog{DIID: diid, Logs: logs})
 }
 
 func (a *Agent) emitReleases(key envKey) {
@@ -252,6 +299,11 @@ func (a *Agent) ReportHealth(ctx context.Context, interval time.Duration) {
 					continue
 				}
 				a.send(key, message.StatusTypeHealth, message.Health{ReportedAt: time.Now()})
+				// Re-report seeded orphans so they remain visible even before any
+				// deploy populates the release list for that environment.
+				if a.orphanEnvs[key] {
+					a.emitReleases(key)
+				}
 			}
 		}
 

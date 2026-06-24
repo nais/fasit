@@ -1187,6 +1187,10 @@ nav .user {
   background: var(--btn-bg);
   color: var(--text-secondary);
 }
+.badge.status-error {
+  background: var(--status-error);
+  color: #fff;
+}
 .config-warning {
   border-left: 3px solid var(--status-warning);
 }

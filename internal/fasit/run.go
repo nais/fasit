@@ -104,8 +104,9 @@ func Run(ctx context.Context) error {
 	if cfg.LocalFakeNaisd {
 		log.Warn("FASIT_FAKE_NAISD enabled: using in-process fake naisd, no Pub/Sub")
 		fakeAgent = fakeagent.New(log.With("component", "fake-naisd"), fakeagent.Options{
-			FailingEnvs:   cfg.FakeNaisdFailingEnvs,
-			UnhealthyEnvs: cfg.FakeNaisdUnhealthyEnvs,
+			FailingEnvs:    cfg.FakeNaisdFailingEnvs,
+			UnhealthyEnvs:  cfg.FakeNaisdUnhealthyEnvs,
+			OrphanReleases: cfg.FakeNaisdOrphanReleases,
 		})
 		newPublisher = fakeAgent.Publisher
 		receiverClient = fakeAgent

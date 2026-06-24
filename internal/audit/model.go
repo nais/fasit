@@ -18,6 +18,7 @@ const (
 	ActionDisabled  Action = "disabled"
 	ActionTriggered Action = "triggered"
 	ActionRedeploy  Action = "redeploy"
+	ActionUninstall Action = "uninstall"
 )
 
 // ObjectType represents the type of resource affected.

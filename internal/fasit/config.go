@@ -22,9 +22,10 @@ type Config struct {
 
 	// LocalFakeNaisd replaces the Pub/Sub round-trip to naisd with an in-process
 	// fake. Local development only; never enable in production.
-	LocalFakeNaisd         bool     `env:"FASIT_FAKE_NAISD,default=false"`
-	FakeNaisdFailingEnvs   []string `env:"FASIT_FAKE_NAISD_FAILING_ENVS"`
-	FakeNaisdUnhealthyEnvs []string `env:"FASIT_FAKE_NAISD_UNHEALTHY_ENVS"`
+	LocalFakeNaisd          bool     `env:"FASIT_FAKE_NAISD,default=false"`
+	FakeNaisdFailingEnvs    []string `env:"FASIT_FAKE_NAISD_FAILING_ENVS"`
+	FakeNaisdUnhealthyEnvs  []string `env:"FASIT_FAKE_NAISD_UNHEALTHY_ENVS"`
+	FakeNaisdOrphanReleases []string `env:"FASIT_FAKE_NAISD_ORPHAN_RELEASES"`
 }
 
 // newConfig creates a new configuration instance from environment variables.

@@ -134,7 +134,25 @@ func DetailNode(e *audit.Entry) g.Node {
 	return g.Group([]g.Node{
 		configCell(e),
 		g.If(showDesc, h.Div(g.Text(desc))),
+		uninstallLogsLink(e),
 	})
+}
+
+// uninstallLogsLink renders a link to the naisd helm output captured for an
+// uninstall, when the audit entry carries the deploy-instruction id (diid).
+func uninstallLogsLink(e *audit.Entry) g.Node {
+	if e.Action != audit.ActionUninstall {
+		return nil
+	}
+	diid := metadataString(e.Metadata, "diid")
+	if diid == "" {
+		return nil
+	}
+	return h.Div(
+		h.Button(h.Type("button"), h.Class("btn-link"),
+			g.Attr("data-lazy-modal", "/auditlog/uninstall-logs/"+diid),
+			g.Text("View uninstall log")),
+	)
 }
 
 // configCell renders the config value diff followed by the tenant/environment

@@ -59,6 +59,13 @@ func (d *Deployer) Deploy(ctx context.Context, decisions []reconciler.DeployDeci
 	return nil
 }
 
+// Uninstall is a no-op in the shadow lane: fasitd runs dry-run only, so the
+// canonical naisd path performs the actual uninstall.
+func (d *Deployer) Uninstall(_ context.Context, _ uuid.UUID, _, envName, releaseName string) error {
+	d.log.With("feature", releaseName, "env", envName).Info("dry-run: skipping uninstall in shadow lane")
+	return nil
+}
+
 func (d *Deployer) dispatch(ctx context.Context, dec reconciler.DeployDecision) error {
 	diid := uuid.New()
 	vals, err := json.Marshal(dec.Values)

@@ -24,7 +24,7 @@ func TestEnvironmentPageRendersSideMenuAndBreadcrumbs(t *testing.T) {
 		"",
 		"",
 		[]environmentFeatureRow{{Name: "kyverno", Status: "DEPLOYED", Version: "1.2.3"}},
-		[]*feature.Release{{Name: "kyverno", Status: "deployed", Version: "1.2.3", Revision: 7}},
+		[]releaseRow{{Release: &feature.Release{Name: "kyverno", Status: "deployed", Version: "1.2.3", Revision: 7}}},
 		environmentHealth{ReportedAt: time.Now(), HasReport: true},
 	)
 	if err := node.Render(&buf); err != nil {

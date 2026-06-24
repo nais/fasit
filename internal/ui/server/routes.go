@@ -37,6 +37,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/logo", environments.ServeLogoHandler())
 
 	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage))
+	r.Post("/tenants/{tenant}/envs/{env}/releases/{release}/uninstall", environment.UninstallReleaseHandler())
 
 	r.Get("/assignments", assignments.ListHandler(s.renderPage))
 	r.Post("/assignments", assignments.CreateHandler())
@@ -80,6 +81,7 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/features/{feature}/config/set", features.SetGlobalConfigHandler())
 
 	r.Get("/auditlog", auditlog.Handler(s.renderPage))
+	r.Get("/auditlog/uninstall-logs/{diid}", auditlog.UninstallLogsFragmentHandler())
 
 	r.Get("/template-test", templatetest.Handler(s.renderPage))
 

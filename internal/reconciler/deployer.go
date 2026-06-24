@@ -126,6 +126,18 @@ func (w *pubSubDeployer) Deploy(ctx context.Context, decisions []DeployDecision)
 	return nil
 }
 
+// Uninstall publishes an uninstall instruction for releaseName to the
+// environment's naisd agent. The agent runs `helm uninstall` and republishes
+// its release list, so the orphan clears on the immediate follow-up report.
+func (w *pubSubDeployer) Uninstall(ctx context.Context, diid uuid.UUID, tenantName, envName, releaseName string) error {
+	pub := w.publisher(naisdTopicID(tenantName, envName))
+	return pub.Publish(ctx, message.DeployInstruction{
+		ID:        diid,
+		Name:      releaseName,
+		Uninstall: true,
+	})
+}
+
 func (w *pubSubDeployer) publisher(topicID string) Publisher {
 	w.publishersMu.Lock()
 	defer w.publishersMu.Unlock()
