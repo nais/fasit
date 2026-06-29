@@ -824,6 +824,14 @@ nav .user {
 .reconcile-alert-pending .reconcile-alert-icon {
   color: var(--status-pending);
 }
+.reconcile-spin {
+  display: inline-block;
+  vertical-align: -0.15em;
+  animation: reconcile-spin 1s linear infinite;
+}
+@keyframes reconcile-spin {
+  to { transform: rotate(360deg); }
+}
 .reconcile-reason-inline {
   font-size: 0.875rem;
   color: var(--text-muted);

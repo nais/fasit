@@ -572,25 +572,29 @@ func runtimeLine(page *FeaturePage) g.Node {
 func reconcileAlertLine(page *FeaturePage) g.Node {
 	switch page.Status {
 	case "FAILED":
-		return alertLine("error", "⚠", "Reconcile failed", lastDeployAge(page), logsLink(page, "View logs"))
+		return alertLine("error", g.Text("⚠"), "Reconcile failed", lastDeployAge(page), logsLink(page, "View logs"))
 	case "SENT", "INSTALLING":
-		return alertLine("pending", "⟳", "Reconciling"+targetVersionSuffix(page)+"…", "", logsLink(page, "View logs"))
+		return alertLine("pending", spinnerIcon(), "Reconciling"+targetVersionSuffix(page)+"…", "", logsLink(page, "View logs"))
 	case "PENDING":
-		return alertLine("pending", "⟳", "Reconcile pending", "", logsLink(page, "View logs"))
+		return alertLine("pending", spinnerIcon(), "Reconcile pending", "", logsLink(page, "View logs"))
 	case "MISSING-CONFIG", "MISSING-DEPS", "UNHEALTHY", "RENDER-ERROR":
 		msg := page.StatusMessage
 		if msg == "" {
 			msg = "reconcile blocked"
 		}
-		return alertLine("warning", "⚠", "Reconcile blocked: "+msg, "", nil)
+		return alertLine("warning", g.Text("⚠"), "Reconcile blocked: "+msg, "", nil)
 	default:
 		return nil
 	}
 }
 
-func alertLine(kind, icon, text, age string, logs g.Node) g.Node {
+func spinnerIcon() g.Node {
+	return g.Raw(`<svg class="reconcile-spin" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 6.5 6.5"/></svg>`)
+}
+
+func alertLine(kind string, icon g.Node, text, age string, logs g.Node) g.Node {
 	nodes := []g.Node{
-		h.Span(h.Class("reconcile-alert-icon"), g.Text(icon)),
+		h.Span(h.Class("reconcile-alert-icon"), icon),
 		h.Span(g.Text(text)),
 	}
 	if age != "" {
