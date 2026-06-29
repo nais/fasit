@@ -783,27 +783,41 @@ nav .user {
   text-decoration: underline;
 }
 
-/* Merged env-feature heading: latest deploy + problem, shown in the card header */
+/* Merged env-feature heading: runtime (installed release) stacked over an
+   optional reconcile alert, shown in the card header. */
 .deploy-version {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
 }
-.deploy-status-heading {
+.deploy-status-stack {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
+  flex-direction: column;
+  gap: 0.3rem;
   min-width: 0;
 }
-.heading-group {
+.runtime-line,
+.reconcile-alert {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  min-width: 0;
 }
-.deploy-status-heading > .heading-group + .heading-group {
-  border-left: 1px solid var(--border-subtle);
-  padding-left: 1rem;
+.reconcile-alert {
+  font-size: 0.875rem;
+}
+.reconcile-alert-icon {
+  font-weight: 600;
+}
+.reconcile-alert-error .reconcile-alert-icon {
+  color: var(--status-error);
+}
+.reconcile-alert-warning .reconcile-alert-icon {
+  color: var(--status-warning);
+}
+.reconcile-alert-pending .reconcile-alert-icon {
+  color: var(--status-pending);
 }
 .reconcile-reason-inline {
   font-size: 0.875rem;

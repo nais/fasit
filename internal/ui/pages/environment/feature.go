@@ -511,55 +511,127 @@ func isRedeployable(page *FeaturePage) bool {
 // reason, an actionable problem (failed render, missing config/deps, unhealthy
 // agent) and the latest deploy with links to logs and full history. The popovers
 // these trigger are emitted by pageKebab.
+// deployHeaderLeft stacks two independent truths the page must not conflate:
+// the runtime line (the Helm release naisd reports from the cluster) and, only
+// when Fasit has not converged, a reconcile alert (an in-flight, failed, or
+// blocked deploy attempt). A failed deploy does not remove the installed
+// release, so both lines can be present at once.
 func deployHeaderLeft(page *FeaturePage) g.Node {
-	groups := []g.Node{}
+	rows := []g.Node{}
 	if !page.Feature.Enabled {
 		reason := page.Feature.DisableReason
 		if reason == "" {
 			reason = "disabled before we started requiring reason"
 		}
-		groups = append(groups, h.Span(h.Class("heading-group"), h.Span(h.Class("reconcile-reason-inline"), g.Text(reason))))
+		rows = append(rows, h.Div(h.Class("reconcile-reason-inline"), g.Text(reason)))
 	}
-	if p := problemInline(page); p != nil {
-		groups = append(groups, p)
+	rows = append(rows, runtimeLine(page))
+	if alert := reconcileAlertLine(page); alert != nil {
+		rows = append(rows, alert)
 	}
-	groups = append(groups, lastDeployInline(page))
-
-	return h.Div(h.Class("deploy-status-heading"), g.Group(groups))
+	return h.Div(h.Class("deploy-status-stack"), g.Group(rows))
 }
 
-func problemInline(page *FeaturePage) g.Node {
-	if page.StatusMessage == "" {
-		return nil
+// runtimeLine reports what is actually installed in the cluster, as reported by
+// naisd. It says "Installed" rather than "Running" because a Helm release may
+// contain nothing that runs (e.g. just a ConfigMap). When the feature is
+// converged the deploy log is offered here, since the last deploy is the one
+// that produced the installed release.
+func runtimeLine(page *FeaturePage) g.Node {
+	rel := page.Release
+	if rel == nil {
+		return h.Div(h.Class("runtime-line text-muted"), g.Text("No release reported."))
 	}
+
+	var status g.Node
+	if strings.EqualFold(rel.Status, "deployed") {
+		status = h.Span(h.Class("status-success"), g.Text("✓ Installed"))
+	} else {
+		status = components.Status(strings.ToUpper(rel.Status))
+	}
+
+	var logs g.Node
+	if isConverged(page) {
+		logs = logsLink(page, "Logs")
+	}
+
+	return h.Div(h.Class("runtime-line"),
+		h.Span(h.Class("deploy-version"), g.Text(rel.Version)),
+		status,
+		h.Span(h.Class("text-muted"), h.Title(view.FormatTime(rel.LastDeployed)), g.Text("updated "+view.RelativeTime(rel.LastDeployed))),
+		logs,
+	)
+}
+
+// reconcileAlertLine surfaces Fasit's deploy intent only when it has not
+// converged: a deploy in flight, a failed deploy, or a pre-deploy block. It
+// returns nil when the latest desired state is installed (the common case), so
+// the header stays quiet. The failed caption is deliberately generic: the
+// underlying decision message ("deployment instruction created") describes the
+// attempt, not the failure — the real reason lives in the logs.
+func reconcileAlertLine(page *FeaturePage) g.Node {
 	switch page.Status {
-	case "FAILED", "UNHEALTHY", "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR":
+	case "FAILED":
+		return alertLine("error", "⚠", "Last deploy failed", lastDeployAge(page), logsLink(page, "View logs"))
+	case "SENT", "INSTALLING":
+		return alertLine("pending", "⟳", "Deploying"+targetVersionSuffix(page)+"…", "", logsLink(page, "View logs"))
+	case "PENDING":
+		return alertLine("pending", "⟳", "Deploy pending", "", logsLink(page, "View logs"))
+	case "MISSING-CONFIG", "MISSING-DEPS", "UNHEALTHY", "RENDER-ERROR":
+		msg := page.StatusMessage
+		if msg == "" {
+			msg = "reconcile blocked"
+		}
+		return alertLine("warning", "⚠", msg, "", nil)
 	default:
 		return nil
 	}
-	return h.Span(h.Class("heading-group"),
-		components.Status(page.Status),
-		h.Span(h.Class("reconcile-reason-inline"), g.Text(page.StatusMessage)),
-	)
 }
 
-func lastDeployInline(page *FeaturePage) g.Node {
-	var logToggle g.Node
-	if page.FeatureLog != nil && len(page.FeatureLog.CurrentLog) > 0 {
-		logToggle = h.Button(h.Type("button"), h.Class("btn-link"), g.Attr("popovertarget", "deploy-logs"), g.Text("Logs"))
+func alertLine(kind, icon, text, age string, logs g.Node) g.Node {
+	nodes := []g.Node{
+		h.Span(h.Class("reconcile-alert-icon"), g.Text(icon)),
+		h.Span(g.Text(text)),
 	}
-
-	rel := page.Release
-	if rel == nil {
-		return h.Span(h.Class("heading-group text-muted"), g.Text("No release reported."), logToggle)
+	if age != "" {
+		nodes = append(nodes, h.Span(h.Class("text-muted"), g.Text("· "+age)))
 	}
+	if logs != nil {
+		nodes = append(nodes, logs)
+	}
+	return h.Div(h.Class("reconcile-alert reconcile-alert-"+kind), g.Group(nodes))
+}
 
-	return h.Span(h.Class("heading-group"),
-		h.Span(h.Class("deploy-version"), g.Text(rel.Version)),
-		components.Status(strings.ToUpper(rel.Status)),
-		h.Span(h.Class("text-muted"), h.Title(view.FormatTime(rel.LastDeployed)), g.Text(view.RelativeTime(rel.LastDeployed))),
-		logToggle,
-	)
+// isConverged reports whether Fasit has nothing outstanding to do, so the
+// reconcile alert line can stay hidden.
+func isConverged(page *FeaturePage) bool {
+	switch page.Status {
+	case "DEPLOYED", "DISABLED", "UNKNOWN", "":
+		return true
+	default:
+		return false
+	}
+}
+
+func logsLink(page *FeaturePage, label string) g.Node {
+	if page.FeatureLog == nil || len(page.FeatureLog.CurrentLog) == 0 {
+		return nil
+	}
+	return h.Button(h.Type("button"), h.Class("btn-link"), g.Attr("popovertarget", "deploy-logs"), g.Text(label))
+}
+
+func lastDeployAge(page *FeaturePage) string {
+	if len(page.RecentDeployHistory) == 0 {
+		return ""
+	}
+	return view.RelativeTime(page.RecentDeployHistory[0].LastModified)
+}
+
+func targetVersionSuffix(page *FeaturePage) string {
+	if page.WinningAssignment != nil && page.WinningAssignment.Feature != nil && page.WinningAssignment.Feature.Version != "" {
+		return " " + page.WinningAssignment.Feature.Version
+	}
+	return ""
 }
 
 func deployLogsPopover(page *FeaturePage) g.Node {
