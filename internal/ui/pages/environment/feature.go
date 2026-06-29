@@ -511,11 +511,11 @@ func isRedeployable(page *FeaturePage) bool {
 // reason, an actionable problem (failed render, missing config/deps, unhealthy
 // agent) and the latest deploy with links to logs and full history. The popovers
 // these trigger are emitted by pageKebab.
-// deployHeaderLeft stacks two independent truths the page must not conflate:
-// the runtime line (the Helm release naisd reports from the cluster) and, only
-// when Fasit has not converged, a reconcile alert (an in-flight, failed, or
-// blocked deploy attempt). A failed deploy does not remove the installed
-// release, so both lines can be present at once.
+// deployHeaderLeft shows two independent truths the page must not conflate: the
+// runtime line (the Helm release naisd reports) and, only when Fasit has not
+// converged, a reconcile alert. They sit on one row separated by a divider, with
+// the alert to the left of the runtime; a failed deploy does not remove the
+// installed release, so both can be present at once.
 func deployHeaderLeft(page *FeaturePage) g.Node {
 	rows := []g.Node{}
 	if !page.Feature.Enabled {
@@ -523,13 +523,13 @@ func deployHeaderLeft(page *FeaturePage) g.Node {
 		if reason == "" {
 			reason = "disabled before we started requiring reason"
 		}
-		rows = append(rows, h.Div(h.Class("reconcile-reason-inline"), g.Text(reason)))
+		rows = append(rows, h.Span(h.Class("reconcile-reason-inline"), g.Text(reason)))
 	}
-	rows = append(rows, runtimeLine(page))
 	if alert := reconcileAlertLine(page); alert != nil {
 		rows = append(rows, alert)
 	}
-	return h.Div(h.Class("deploy-status-stack"), g.Group(rows))
+	rows = append(rows, runtimeLine(page))
+	return h.Div(h.Class("deploy-status-heading"), g.Group(rows))
 }
 
 // runtimeLine reports what is actually installed in the cluster, as reported by
@@ -572,17 +572,17 @@ func runtimeLine(page *FeaturePage) g.Node {
 func reconcileAlertLine(page *FeaturePage) g.Node {
 	switch page.Status {
 	case "FAILED":
-		return alertLine("error", "⚠", "Last deploy failed", lastDeployAge(page), logsLink(page, "View logs"))
+		return alertLine("error", "⚠", "Reconcile failed", lastDeployAge(page), logsLink(page, "View logs"))
 	case "SENT", "INSTALLING":
-		return alertLine("pending", "⟳", "Deploying"+targetVersionSuffix(page)+"…", "", logsLink(page, "View logs"))
+		return alertLine("pending", "⟳", "Reconciling"+targetVersionSuffix(page)+"…", "", logsLink(page, "View logs"))
 	case "PENDING":
-		return alertLine("pending", "⟳", "Deploy pending", "", logsLink(page, "View logs"))
+		return alertLine("pending", "⟳", "Reconcile pending", "", logsLink(page, "View logs"))
 	case "MISSING-CONFIG", "MISSING-DEPS", "UNHEALTHY", "RENDER-ERROR":
 		msg := page.StatusMessage
 		if msg == "" {
 			msg = "reconcile blocked"
 		}
-		return alertLine("warning", "⚠", msg, "", nil)
+		return alertLine("warning", "⚠", "Reconcile blocked: "+msg, "", nil)
 	default:
 		return nil
 	}

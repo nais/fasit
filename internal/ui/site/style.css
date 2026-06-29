@@ -783,18 +783,23 @@ nav .user {
   text-decoration: underline;
 }
 
-/* Merged env-feature heading: runtime (installed release) stacked over an
-   optional reconcile alert, shown in the card header. */
+/* Merged env-feature heading: an optional reconcile alert and the runtime
+   (installed release) on one row, separated by a divider. */
 .deploy-version {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
 }
-.deploy-status-stack {
+.deploy-status-heading {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
   min-width: 0;
+}
+.deploy-status-heading > * + * {
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 1rem;
 }
 .runtime-line,
 .reconcile-alert {
