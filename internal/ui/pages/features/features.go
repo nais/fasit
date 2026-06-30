@@ -401,7 +401,7 @@ func detailPage(data *DetailPage) g.Node {
 				Title:        title,
 				AllHref:      "/auditlog?q=" + url.QueryEscape(data.CurrentFeature.Name),
 				Entries:      data.RecentActivity,
-				ResourceNode: configKeyNode,
+				ResourceNode: featureActivityResourceNode,
 			})),
 		)
 	}
@@ -419,10 +419,19 @@ func featureSidebar(data *DetailPage) g.Node {
 	return components.FeatureSidebar(data.CurrentFeature.Name, data.ActiveTab, "", "", data.FeatureEnvs)
 }
 
-func configKeyNode(e *audit.Entry) g.Node {
-	if e.ObjectType == audit.ObjectTypeConfiguration {
+// featureActivityResourceNode renders the activity-sidebar resource for a
+// feature-scoped page: config keys without the feature prefix, and assignment
+// events as a bare "assignment" link (the feature is already the page context;
+// the version and target are shown in the entry description).
+func featureActivityResourceNode(e *audit.Entry) g.Node {
+	switch e.ObjectType {
+	case audit.ObjectTypeConfiguration:
 		if i := strings.IndexByte(e.ObjectID, '/'); i > 0 {
 			return h.Code(g.Text(e.ObjectID[i+1:]))
+		}
+	case audit.ObjectTypeFeatureAssignment:
+		if href := auditview.AssignmentHref(e); href != "" {
+			return h.A(h.Href(href), g.Text("assignment"))
 		}
 	}
 	return auditview.ResourceLink(e)

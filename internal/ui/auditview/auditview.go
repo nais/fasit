@@ -48,6 +48,18 @@ func Description(e *audit.Entry) string {
 	return e.Summary()
 }
 
+// AssignmentHref returns the URL to a feature assignment's detail page, or ""
+// when the entry has no linkable assignment id.
+func AssignmentHref(e *audit.Entry) string {
+	if e.ObjectType != audit.ObjectTypeFeatureAssignment {
+		return ""
+	}
+	if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
+		return "/assignments/" + depID
+	}
+	return ""
+}
+
 // ResourceLink renders the resource column as a clickable link (or plain text),
 // without the environment.
 func ResourceLink(e *audit.Entry) g.Node {
