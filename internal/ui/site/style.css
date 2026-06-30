@@ -672,6 +672,18 @@ nav .user {
   font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
+.activity-location {
+  margin-top: 0.1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.env-global {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.env-global::first-letter {
+  font-size: 0.85em;
+}
 .activity-description {
   margin-top: 0.15rem;
   color: var(--text-muted);

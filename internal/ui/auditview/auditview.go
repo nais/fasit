@@ -48,7 +48,8 @@ func Description(e *audit.Entry) string {
 	return e.Summary()
 }
 
-// ResourceLink renders the resource column as a clickable link (or plain text).
+// ResourceLink renders the resource column as a clickable link (or plain text),
+// without the environment.
 func ResourceLink(e *audit.Entry) g.Node {
 	var nodes []g.Node
 
@@ -60,11 +61,7 @@ func ResourceLink(e *audit.Entry) g.Node {
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
 			)
 		} else if isRedeploy(e) {
-			parts := []g.Node{h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID))}
-			if e.TenantName != "" && e.EnvironmentName != "" {
-				parts = append(parts, g.Text(" in "+e.TenantName+"/"+e.EnvironmentName))
-			}
-			nodes = append(nodes, parts...)
+			nodes = append(nodes, h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)))
 		}
 	}
 
@@ -75,9 +72,6 @@ func ResourceLink(e *audit.Entry) g.Node {
 			nodes = append(nodes, g.Text(label))
 		} else {
 			nodes = append(nodes, h.A(h.Href(href), g.Text(label)))
-		}
-		if e.ObjectType == audit.ObjectTypeFeature && e.TenantName != "" && e.EnvironmentName != "" {
-			nodes = append(nodes, g.Text(" in "+e.TenantName+"/"+e.EnvironmentName))
 		}
 	}
 
@@ -117,9 +111,13 @@ func ResourceHref(e *audit.Entry) string {
 	}
 }
 
-// EnvLink renders the environment column as a link.
+// EnvLink renders the environment column as a link. Global config entries (no
+// environment) render a "Global" marker with a globe icon instead.
 func EnvLink(e *audit.Entry) g.Node {
 	if e.TenantName == "" || e.EnvironmentName == "" {
+		if e.ObjectType == audit.ObjectTypeConfiguration {
+			return h.Span(h.Class("env-global"), g.Text("\U0001F310 global"))
+		}
 		return g.Text("")
 	}
 	label := e.TenantName + "/" + e.EnvironmentName
@@ -127,7 +125,7 @@ func EnvLink(e *audit.Entry) g.Node {
 	return h.A(h.Href(href), g.Text(label))
 }
 
-// DetailNode renders the details cell content for an audit entry (table view).
+// DetailNode renders the details cell content for an audit entry.
 func DetailNode(e *audit.Entry) g.Node {
 	desc := Description(e)
 	showDesc := desc != "" && !IsDescriptionRedundant(e)
@@ -155,23 +153,63 @@ func uninstallLogsLink(e *audit.Entry) g.Node {
 	)
 }
 
-// configCell renders the config value diff followed by the tenant/environment
-// (or "global") the config applies to. For non-config entries it falls back to
-// the plain diff node (nil).
+// configCell renders the config value diff.
 func configCell(e *audit.Entry) g.Node {
-	diff := ConfigChangeNode(e)
-	if e.ObjectType != audit.ObjectTypeConfiguration {
-		return diff
+	return ConfigChangeNode(e)
+}
+
+// locationChip renders the entry's location in the sidebar: tenant/env (unless
+// it matches the environment the list is already scoped to), or a "Global"
+// marker for global config entries.
+func locationChip(e *audit.Entry, scopeEnv string) g.Node {
+	if e.TenantName == "" || e.EnvironmentName == "" {
+		if e.ObjectType == audit.ObjectTypeConfiguration {
+			return h.Div(h.Class("activity-location"), EnvLink(e))
+		}
+		return nil
 	}
-	loc := "global"
-	if e.EnvironmentID != nil && e.TenantName != "" && e.EnvironmentName != "" {
-		loc = "in " + e.TenantName + "/" + e.EnvironmentName
+	if e.TenantName+"/"+e.EnvironmentName == scopeEnv {
+		return nil
 	}
-	locNode := h.Span(h.Class("text-muted"), g.Text(loc))
-	if diff == nil {
-		return locNode
+	return h.Div(h.Class("activity-location"), EnvLink(e))
+}
+
+// ActivityTable renders the standard activity table (Action, Resource,
+// Environment, Details, Actor, When). When sortKey is non-empty the table is
+// sortable; otherwise it renders compact. Both the audit log and the front-page
+// recent-activity section use this so the row layout stays in one place.
+func ActivityTable(entries []*audit.Entry, sortKey string) g.Node {
+	rows := make([]g.Node, 0, len(entries))
+	for _, e := range entries {
+		rows = append(rows, h.Tr(
+			h.Td(g.Text(DisplayAction(e))),
+			h.Td(ResourceLink(e)),
+			h.Td(EnvLink(e)),
+			h.Td(h.Class("text-muted"), DetailNode(e)),
+			h.Td(view.ActorNode(e.Actor)),
+			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
+		))
 	}
-	return g.Group([]g.Node{diff, h.Span(h.Class("text-muted"), g.Text(" · ")), locNode})
+
+	class := "table table-compact"
+	attrs := []g.Node{}
+	if sortKey != "" {
+		class = "table sortable"
+		attrs = append(attrs, g.Attr("data-sort-key", sortKey))
+	}
+
+	return h.Table(append(attrs,
+		h.Class(class),
+		h.THead(h.Tr(
+			h.Th(g.Text("Action")),
+			h.Th(g.Text("Resource")),
+			h.Th(g.Text("Environment")),
+			h.Th(g.Text("Details")),
+			h.Th(g.Text("Actor")),
+			h.Th(g.Text("When")),
+		)),
+		h.TBody(g.Group(rows)),
+	)...)
 }
 
 // ActivityListParams configures the compact activity sidebar.
@@ -180,6 +218,11 @@ type ActivityListParams struct {
 	FilterBadge string
 	AllHref     string
 	Entries     []*audit.Entry
+	// ScopeEnv is the "tenant/env" the list is already scoped to (e.g. an
+	// instance page). Entries in that environment omit the location chip since
+	// it would just repeat the context. Empty means show location for any entry
+	// that has one.
+	ScopeEnv string
 	// ResourceNode overrides how the resource is rendered per entry.
 	// If nil, uses ResourceLink.
 	ResourceNode func(*audit.Entry) g.Node
@@ -209,6 +252,7 @@ func ActivityList(p ActivityListParams) g.Node {
 				h.Span(h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
 			),
 			h.Div(h.Class("activity-resource"), resourceFn(e)),
+			locationChip(e, p.ScopeEnv),
 			configCell(e),
 			g.If(showDesc, h.Div(h.Class("activity-description"), g.Text(desc))),
 		))

@@ -57,14 +57,9 @@ type Entry struct {
 }
 
 // Summary returns a human-readable one-liner composed from the structured
-// fields. Example: "created deployment naiserator in nav/dev".
+// fields, e.g. "created deployment naiserator".
 func (e *Entry) Summary() string {
 	s := string(e.Action) + " " + e.ObjectType.Display() + " " + e.ObjectID
-	if e.TenantName != "" && e.EnvironmentName != "" {
-		s += " in " + e.TenantName + "/" + e.EnvironmentName
-	} else if e.EnvironmentName != "" {
-		s += " in " + e.EnvironmentName
-	}
 	if e.Description != "" {
 		s += " (" + e.Description + ")"
 	}

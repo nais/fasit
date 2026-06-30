@@ -363,30 +363,9 @@ func recentActivity(audits []*audit.Entry) g.Node {
 		return h.P(h.Class("text-muted"), g.Text("No recent activity."))
 	}
 
-	tableRows := make([]g.Node, 0, len(filtered))
-	for _, a := range filtered {
-		resource := auditview.ResourceLink(a)
-		tableRows = append(tableRows, h.Tr(
-			h.Td(g.Text(auditview.DisplayAction(a))),
-			h.Td(resource),
-			h.Td(h.Class("text-muted"), auditview.DetailNode(a)),
-			h.Td(view.ActorNode(a.Actor)),
-			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(a.CreatedAt)), g.Text(view.RelativeTime(a.CreatedAt))),
-		))
-	}
-
 	return g.Group([]g.Node{
 		h.H3(g.Text("Recent activity")),
-		h.Table(h.Class("table table-compact"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Action")),
-				h.Th(g.Text("Resource")),
-				h.Th(g.Text("Details")),
-				h.Th(g.Text("Actor")),
-				h.Th(g.Text("When")),
-			)),
-			h.TBody(g.Group(tableRows)),
-		),
+		auditview.ActivityTable(filtered, ""),
 		h.Div(h.Class("section-link-row"), h.A(h.Href("/auditlog"), h.Class("link-muted"), g.Text("All activity →"))),
 	})
 }

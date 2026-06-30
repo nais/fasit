@@ -36,9 +36,6 @@ func TestRedeployShowsFeatureAndEnvironment(t *testing.T) {
 	if !strings.Contains(rendered, "loki") {
 		t.Errorf("resource link should contain feature name, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "nav/dev") {
-		t.Errorf("resource link should contain environment, got %q", rendered)
-	}
 }
 
 func TestConfigUpdateShowsOldAndNewValues(t *testing.T) {
@@ -123,36 +120,16 @@ func TestLongValuesAreTruncatedWithHoverForFull(t *testing.T) {
 	}
 }
 
-func TestConfigCellShowsEnvironmentLocation(t *testing.T) {
-	envID := uuid.New()
-	e := &audit.Entry{
-		ObjectType:      audit.ObjectTypeConfiguration,
-		ObjectID:        "myapp/port",
-		Metadata:        json.RawMessage(`{"old":"3000","new":"8080"}`),
-		EnvironmentID:   &envID,
-		TenantName:      "test-partner",
-		EnvironmentName: "dev",
-	}
-
-	rendered := renderToString(t, configCell(e))
-	if !strings.Contains(rendered, "in test-partner/dev") {
-		t.Errorf("should show tenant/environment location, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "8080") {
-		t.Errorf("should still show the value diff, got %q", rendered)
-	}
-}
-
-func TestConfigCellShowsGlobalForTenantWideConfig(t *testing.T) {
+func TestEnvLinkShowsGlobalForTenantWideConfig(t *testing.T) {
 	e := &audit.Entry{
 		ObjectType: audit.ObjectTypeConfiguration,
 		ObjectID:   "myapp/port",
 		Metadata:   json.RawMessage(`{"old":"3000","new":"8080"}`),
 	}
 
-	rendered := renderToString(t, configCell(e))
+	rendered := renderToString(t, EnvLink(e))
 	if !strings.Contains(rendered, "global") {
-		t.Errorf("should mark a config with no environment as global, got %q", rendered)
+		t.Errorf("should mark a config with no environment as global in the env column, got %q", rendered)
 	}
 }
 

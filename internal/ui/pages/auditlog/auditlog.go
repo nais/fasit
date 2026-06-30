@@ -9,7 +9,6 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
-	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -70,28 +69,5 @@ func activityTable(entries []*audit.Entry) g.Node {
 	if len(entries) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No activity recorded."))
 	}
-
-	rows := make([]g.Node, 0, len(entries))
-	for _, e := range entries {
-		rows = append(rows, h.Tr(
-			h.Td(g.Text(auditview.DisplayAction(e))),
-			h.Td(auditview.ResourceLink(e)),
-			h.Td(auditview.EnvLink(e)),
-			h.Td(h.Class("text-muted"), auditview.DetailNode(e)),
-			h.Td(view.ActorNode(e.Actor)),
-			h.Td(h.Class("text-muted"), h.Title(view.FormatTime(e.CreatedAt)), g.Text(view.RelativeTime(e.CreatedAt))),
-		))
-	}
-
-	return h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "auditlog"),
-		h.THead(h.Tr(
-			h.Th(g.Text("Action")),
-			h.Th(g.Text("Resource")),
-			h.Th(g.Text("Environment")),
-			h.Th(g.Text("Details")),
-			h.Th(g.Text("Actor")),
-			h.Th(g.Text("When")),
-		)),
-		h.TBody(g.Group(rows)),
-	)
+	return auditview.ActivityTable(entries, "auditlog")
 }
