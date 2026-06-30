@@ -214,10 +214,9 @@ func ActivityTable(entries []*audit.Entry, sortKey string) g.Node {
 
 // ActivityListParams configures the compact activity sidebar.
 type ActivityListParams struct {
-	Title       string
-	FilterBadge string
-	AllHref     string
-	Entries     []*audit.Entry
+	Title   string
+	AllHref string
+	Entries []*audit.Entry
 	// ScopeEnv is the "tenant/env" the list is already scoped to (e.g. an
 	// instance page). Entries in that environment omit the location chip since
 	// it would just repeat the context. Empty means show location for any entry
@@ -259,10 +258,7 @@ func ActivityList(p ActivityListParams) g.Node {
 	}
 
 	headerContent := []g.Node{
-		h.Div(
-			h.H3(g.Text(p.Title)),
-			g.If(p.FilterBadge != "", h.Span(h.Class("activity-filter-badge"), g.Text(p.FilterBadge))),
-		),
+		h.H3(g.Text(p.Title)),
 	}
 	if p.AllHref != "" {
 		headerContent = append(headerContent, h.A(h.Href(p.AllHref), h.Class("link-muted"), g.Text("All →")))

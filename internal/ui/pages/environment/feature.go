@@ -799,7 +799,6 @@ func envActivitySidebar(page *FeaturePage) g.Node {
 	return h.Aside(h.Class("right-sidebar"),
 		components.CardCompact(auditview.ActivityList(auditview.ActivityListParams{
 			Title:        title,
-			FilterBadge:  page.Tenant.Name + "/" + page.Environment.Name,
 			ScopeEnv:     page.Tenant.Name + "/" + page.Environment.Name,
 			AllHref:      "/auditlog?q=" + url.QueryEscape(page.Feature.Name+" "+page.Tenant.Name+"/"+page.Environment.Name),
 			Entries:      page.AuditEntries,
