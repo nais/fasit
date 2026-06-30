@@ -36,7 +36,7 @@ func TestDeactivation(t *testing.T) {
 		return loadContext(ctx), mgr.seeder
 	}
 
-	t.Run("creating deployment deactivates previous for same target", func(t *testing.T) {
+	t.Run("creating assignment deactivates previous for same target", func(t *testing.T) {
 		ctx, seeder := setupCtx(t)
 
 		seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
@@ -51,7 +51,7 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("get dep1: %v", err)
 		}
 		if dep1.Active {
-			t.Error("old deployment should be inactive")
+			t.Error("old assignment should be inactive")
 		}
 
 		dep2, err := featureassignment.Get(ctx, ids[1])
@@ -59,11 +59,11 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("get dep2: %v", err)
 		}
 		if !dep2.Active {
-			t.Error("new deployment should be active")
+			t.Error("new assignment should be active")
 		}
 	})
 
-	t.Run("creating deployment does not deactivate different target", func(t *testing.T) {
+	t.Run("creating assignment does not deactivate different target", func(t *testing.T) {
 		ctx, seeder := setupCtx(t)
 
 		seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
@@ -78,7 +78,7 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("get dep1: %v", err)
 		}
 		if !dep1.Active {
-			t.Error("broad deployment should remain active")
+			t.Error("broad assignment should remain active")
 		}
 
 		dep2, err := featureassignment.Get(ctx, ids[1])
@@ -86,11 +86,11 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("get dep2: %v", err)
 		}
 		if !dep2.Active {
-			t.Error("specific deployment should be active")
+			t.Error("specific assignment should be active")
 		}
 	})
 
-	t.Run("deactivate sets deployment inactive", func(t *testing.T) {
+	t.Run("deactivate sets assignment inactive", func(t *testing.T) {
 		ctx, seeder := setupCtx(t)
 
 		seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
@@ -108,11 +108,11 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("get: %v", err)
 		}
 		if dep.Active {
-			t.Error("deactivated deployment should be inactive")
+			t.Error("deactivated assignment should be inactive")
 		}
 	})
 
-	t.Run("ListByFeature returns only active deployments", func(t *testing.T) {
+	t.Run("ListByFeature returns only active assignments", func(t *testing.T) {
 		ctx, seeder := setupCtx(t)
 
 		seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
@@ -128,11 +128,11 @@ func TestDeactivation(t *testing.T) {
 		}
 
 		if len(deps) != 2 {
-			t.Fatalf("expected 2 active deployments, got %d", len(deps))
+			t.Fatalf("expected 2 active assignments, got %d", len(deps))
 		}
 		for _, dep := range deps {
 			if !dep.Active {
-				t.Errorf("ListByFeature returned inactive deployment %s", dep.ID)
+				t.Errorf("ListByFeature returned inactive assignment %s", dep.ID)
 			}
 		}
 	})
@@ -152,7 +152,7 @@ func TestDeactivation(t *testing.T) {
 		}
 
 		if len(deps) != 2 {
-			t.Fatalf("expected 2 deployments, got %d", len(deps))
+			t.Fatalf("expected 2 assignments, got %d", len(deps))
 		}
 
 		var active, inactive int
@@ -168,7 +168,7 @@ func TestDeactivation(t *testing.T) {
 		}
 	})
 
-	t.Run("deactivated deployment not visible in FeatureForEnvironment", func(t *testing.T) {
+	t.Run("deactivated assignment not visible in FeatureForEnvironment", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
@@ -223,7 +223,7 @@ func TestDeactivation(t *testing.T) {
 			t.Fatalf("seed: %v", err)
 		}
 
-		// Deactivate otherapp so it has no active deployment
+		// Deactivate otherapp so it has no active assignment
 		if _, err := featureassignment.Deactivate(ctx, ids[3]); err != nil {
 			t.Fatalf("deactivate: %v", err)
 		}

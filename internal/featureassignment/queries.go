@@ -57,7 +57,7 @@ func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) 
 		ObjectID:    feat.Name,
 		Feature:     feat.Name,
 		Metadata: map[string]any{
-			"deploymentId": id.String(),
+			"assignmentId": id.String(),
 			"chart":        in.Chart,
 			"target":       in.Target,
 		},
@@ -167,7 +167,7 @@ func Deactivate(ctx context.Context, featureAssignmentID uuid.UUID) (string, err
 			ObjectID:   objectID,
 			Feature:    featureName,
 			Metadata: map[string]any{
-				"deploymentID": featureAssignmentID.String(),
+				"assignmentId": featureAssignmentID.String(),
 			},
 		})
 	})
@@ -212,7 +212,7 @@ func HasActiveAssignments(ctx context.Context, featureName string) (bool, error)
 	return querier(ctx).HasActiveAssignments(ctx, featureName)
 }
 
-// IsMoreSpecific reports whether a deployment with candidateLabels (created at
+// IsMoreSpecific reports whether an assignment with candidateLabels (created at
 // candidateCreated) should replace one with existingLabels (created at
 // existingCreated). More target labels means more specific. Equal count: latest wins.
 func IsMoreSpecific(candidateLabels, existingLabels map[string]string, candidateCreated, existingCreated time.Time) bool {

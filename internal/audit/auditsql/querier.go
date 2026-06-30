@@ -19,7 +19,7 @@ type Querier interface {
 	// Each term must match (AND). The searchable text is built to mirror what the
 	// audit table renders: stored enum values plus their display labels
 	// (configuration->config, redeploy/triggered->redeployed, environment_value->
-	// env value, deployment->assignment), the live tenant/env name from the join,
+	// env value), the live tenant/env name from the join,
 	// 'global' for env-less config, and the config value diff from metadata.
 	SearchRecent(ctx context.Context, arg SearchRecentParams) ([]SearchRecentRow, error)
 }

@@ -47,7 +47,7 @@ func TestCurrentAssignmentEnvStatusesSkipsOverriddenRows(t *testing.T) {
 	}
 }
 
-func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
+func TestAssignmentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
 	var buf bytes.Buffer
 	node := assignmentDetailContent(&DetailPage{
 		CurrentFeature: &feature.Feature{Name: "naiserator"},
@@ -77,7 +77,7 @@ func TestDeploymentDetailContentKeepsKebabOnlyInTableView(t *testing.T) {
 	}
 }
 
-func TestDeploymentDetailContentRendersTable(t *testing.T) {
+func TestAssignmentDetailContentRendersTable(t *testing.T) {
 	var buf bytes.Buffer
 	node := assignmentDetailContent(&DetailPage{
 		CurrentFeature: &feature.Feature{Name: "naiserator"},

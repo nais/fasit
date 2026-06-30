@@ -81,9 +81,9 @@ func TestSearchRecentMatchesDisplay(t *testing.T) {
 		// Config create whose value ("true") exists only in metadata, in nav/management.
 		fmt.Sprintf(`INSERT INTO audits (actor, description, object_type, object_id, action, environment_id, feature, metadata)
 			VALUES ('sten@nais.io', '', 'configuration', 'nais-api-reconcilers/featureFlags.enableGrafanaAlerts', 'created', '%s', 'nais-api-reconcilers', '{"new":"true"}')`, envID),
-		// Redeploy: stored action "redeploy" on a deployment, displayed as "redeployed".
+		// Redeploy: stored action "redeploy" on an assignment, displayed as "redeployed".
 		fmt.Sprintf(`INSERT INTO audits (actor, description, object_type, object_id, action, environment_id, feature)
-			VALUES ('someone@nais.io', '', 'deployment', 'loki', 'redeploy', '%s', 'loki')`, envID),
+			VALUES ('someone@nais.io', '', 'assignment', 'loki', 'redeploy', '%s', 'loki')`, envID),
 	)
 
 	tests := []struct {

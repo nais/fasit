@@ -32,12 +32,12 @@ func TestReconcile(t *testing.T) {
 
 	tt := []struct {
 		name                string
-		deploymentsToCreate []featureInput
+		assignmentsToCreate []featureInput
 		reconcileResults    [][]string
 	}{
 		{
 			name: "install most specific and latest features",
-			deploymentsToCreate: []featureInput{
+			assignmentsToCreate: []featureInput{
 				{name: "aivenator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
 				{name: "aivenator", version: "2.0.0", target: environment.Labels{"aiven": "enabled"}},
 				{name: "aivenator", version: "1.1.0", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name: "install features with dependencies",
-			deploymentsToCreate: []featureInput{
+			assignmentsToCreate: []featureInput{
 				{
 					name:         "monitoring",
 					version:      "v1",
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			h := newReconcileTest(ctx, t, container, dsn)
 			h.createEnvs(envs...)
-			for _, input := range tc.deploymentsToCreate {
+			for _, input := range tc.assignmentsToCreate {
 				h.createAssignment(input.name, input.version, input.target, input.dependencies...)
 			}
 
@@ -246,7 +246,7 @@ func equalStringSet(got, want []string) bool {
 	return true
 }
 
-// TestReconcileRealisticScale seeds 100 features × 2 deployments each across
+// TestReconcileRealisticScale seeds 100 features × 2 assignments each across
 // 10 tenants × 3 environments (30 envs), with global and per-environment
 // config overrides, exercising the full config merge + helm render path.
 func TestReconcileRealisticScale(t *testing.T) {
@@ -386,7 +386,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM feature_assignments`).Scan(&depCount)
 	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_global`).Scan(&globalCfgCount)
 	h.pool.QueryRow(ctx, `SELECT COUNT(*) FROM configurations_environment`).Scan(&envCfgCount)
-	t.Logf("seeded: %d deployments, %d environments, %d global configs, %d env configs",
+	t.Logf("seeded: %d assignments, %d environments, %d global configs, %d env configs",
 		depCount, len(allEnvs), globalCfgCount, envCfgCount)
 
 	h.reconcile()

@@ -25,7 +25,7 @@ const (
 type ObjectType string
 
 const (
-	ObjectTypeFeatureAssignment ObjectType = "deployment"
+	ObjectTypeFeatureAssignment ObjectType = "assignment"
 	ObjectTypeEnvironment       ObjectType = "environment"
 	ObjectTypeEnvironmentValue  ObjectType = "environment_value"
 	ObjectTypeTenant            ObjectType = "tenant"
@@ -57,7 +57,7 @@ type Entry struct {
 }
 
 // Summary returns a human-readable one-liner composed from the structured
-// fields, e.g. "created deployment naiserator".
+// fields, e.g. "created assignment naiserator".
 func (e *Entry) Summary() string {
 	s := string(e.Action) + " " + e.ObjectType.Display() + " " + e.ObjectID
 	if e.Description != "" {

@@ -228,7 +228,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 	}
 
 	actions := []g.Node{}
-	// Card-level kebab for deployment grouping (set version, remove)
+	// Card-level kebab for assignment grouping (set version, remove)
 	if prefs.Group == "assignment" && c.FeatureAssignmentID != "" {
 		setVersionPopoverID := "set-version-" + c.FeatureAssignmentID
 		removePopoverID := "remove-assignment-" + c.FeatureAssignmentID

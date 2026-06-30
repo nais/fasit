@@ -41,13 +41,13 @@ func TestDeploymentActorsByID(t *testing.T) {
 			Actor:      "tronghn@nais/fasit/123456789",
 			Action:     audit.ActionCreated,
 			ObjectType: audit.ObjectTypeFeatureAssignment,
-			Metadata:   []byte(`{"deploymentId":"dep-1"}`),
+			Metadata:   []byte(`{"assignmentId":"dep-1"}`),
 		},
 		{
 			Actor:      "ignored@nais/fasit/1",
 			Action:     audit.ActionUpdated,
 			ObjectType: audit.ObjectTypeFeatureAssignment,
-			Metadata:   []byte(`{"deploymentId":"dep-2"}`),
+			Metadata:   []byte(`{"assignmentId":"dep-2"}`),
 		},
 	})
 

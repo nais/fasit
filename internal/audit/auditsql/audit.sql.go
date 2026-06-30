@@ -93,7 +93,7 @@ FROM
 	LEFT JOIN tenants t ON t.id = e.tenant_id
 WHERE
 	a.feature = $1
-	AND a.object_type = 'deployment'
+	AND a.object_type = 'assignment'
 ORDER BY
 	a.created_at DESC
 LIMIT $2
@@ -582,7 +582,7 @@ WHERE
 		FROM
 			unnest($1::TEXT[]) term
 		WHERE
-			concat_ws(' ', a.action, CASE WHEN a.object_type = 'deployment'
+			concat_ws(' ', a.action, CASE WHEN a.object_type = 'assignment'
 					AND a.action IN ('redeploy', 'triggered') THEN
 					'redeployed'
 				END, a.object_type, CASE a.object_type
@@ -590,8 +590,6 @@ WHERE
 					'config'
 				WHEN 'environment_value' THEN
 					'env value'
-				WHEN 'deployment' THEN
-					'assignment'
 				END, a.object_id, a.feature, t.name || '/' || e.name, e.name, t.name, CASE WHEN a.object_type = 'configuration'
 					AND a.environment_id IS NULL THEN
 					'global'
@@ -625,7 +623,7 @@ type SearchRecentRow struct {
 // Each term must match (AND). The searchable text is built to mirror what the
 // audit table renders: stored enum values plus their display labels
 // (configuration->config, redeploy/triggered->redeployed, environment_value->
-// env value, deployment->assignment), the live tenant/env name from the join,
+// env value), the live tenant/env name from the join,
 // 'global' for env-less config, and the config value diff from metadata.
 func (q *Queries) SearchRecent(ctx context.Context, arg SearchRecentParams) ([]SearchRecentRow, error) {
 	rows, err := q.db.Query(ctx, searchRecent, arg.Terms, arg.PageSize)

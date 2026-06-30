@@ -24,7 +24,7 @@ func TestFeatureForEnvironment(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	t.Run("returns most-specific deployment feature", func(t *testing.T) {
+	t.Run("returns most-specific assignment feature", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
@@ -38,9 +38,9 @@ func TestFeatureForEnvironment(t *testing.T) {
 			"nav:dev": {"team": "myteam"},
 		})
 
-		// Broad deployment (no target labels) with version 1.0.0
+		// Broad assignment (no target labels) with version 1.0.0
 		mgr.seeder.AddAssignment("myapp", "1.0.0", environment.Labels{})
-		// More specific deployment targeting team=myteam with version 2.0.0
+		// More specific assignment targeting team=myteam with version 2.0.0
 		mgr.seeder.AddAssignment("myapp", "2.0.0", environment.Labels{"team": "myteam"})
 
 		_, err = mgr.seeder.Seed(ctx)
@@ -67,11 +67,11 @@ func TestFeatureForEnvironment(t *testing.T) {
 			t.Errorf("got name %q, want myapp", feat.Name)
 		}
 		if feat.Version != "2.0.0" {
-			t.Errorf("should pick the more specific deployment: got %q", feat.Version)
+			t.Errorf("should pick the more specific assignment: got %q", feat.Version)
 		}
 	})
 
-	t.Run("returns ErrFeatureNotFound when no deployment exists", func(t *testing.T) {
+	t.Run("returns ErrFeatureNotFound when no assignment exists", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 
@@ -210,7 +210,7 @@ func TestListEnvironmentFeatures(t *testing.T) {
 		}
 	})
 
-	t.Run("returns empty list when no deployments match", func(t *testing.T) {
+	t.Run("returns empty list when no assignments match", func(t *testing.T) {
 		mgr := setupTestMgr(ctx, t, container, dsn, logger)
 		featureassignment.ChartDownloader = mgr.seeder.ChartDownloader()
 

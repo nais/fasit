@@ -47,7 +47,7 @@ func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 	}
 	ctx = loadContext(ctx)
 
-	// Broad deployment v1, then override v2 for same target (deactivates v1)
+	// Broad assignment v1, then override v2 for same target (deactivates v1)
 	seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
 	seeder.AddAssignment("myapp", "2.0.0", environment.Labels{"kind": "tenant"})
 	ids, err := seeder.Seed(ctx)
@@ -68,7 +68,7 @@ func TestListLatestFeatureAssignmentsFiltersInactive(t *testing.T) {
 		t.Fatalf("ListLatestFeatureAssignments: %v", err)
 	}
 
-	// After both are inactive, there should be NO deployments to reconcile
+	// After both are inactive, there should be NO assignments to reconcile
 	if len(rows) != 0 {
 		t.Errorf("ListLatestFeatureAssignments() returned %d rows, want 0 (all inactive)", len(rows))
 		for _, row := range rows {
@@ -99,7 +99,7 @@ func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T
 	}
 	ctx = loadContext(ctx)
 
-	// Broad deployment v1 (targets all tenants)
+	// Broad assignment v1 (targets all tenants)
 	seeder.AddAssignment("myapp", "1.0.0", environment.Labels{"kind": "tenant"})
 	// Specific override v2 (targets tenant=dev-nais)
 	seeder.AddAssignment("myapp", "2.0.0", environment.Labels{"kind": "tenant", "tenant": "dev-nais"})

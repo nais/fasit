@@ -144,7 +144,7 @@ func (s *Seeder) ChartDownloader() featureassignment.ChartDownloaderFunc {
 }
 
 // fakeGitHubCommit produces a deterministic, realistic-looking commit SHA for seed
-// deployments so the UI can render a sensible GitHub link in local dev.
+// assignments so the UI can render a sensible GitHub link in local dev.
 func fakeGitHubCommit(name, version string) *model.GitHubCommit {
 	sum := sha256.Sum256([]byte(name + "@" + version))
 	return &model.GitHubCommit{

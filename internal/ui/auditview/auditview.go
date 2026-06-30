@@ -54,7 +54,7 @@ func AssignmentHref(e *audit.Entry) string {
 	if e.ObjectType != audit.ObjectTypeFeatureAssignment {
 		return ""
 	}
-	if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
+	if depID := metadataString(e.Metadata, "assignmentId"); depID != "" {
 		return "/assignments/" + depID
 	}
 	return ""
@@ -66,7 +66,7 @@ func ResourceLink(e *audit.Entry) g.Node {
 	var nodes []g.Node
 
 	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.ObjectID != "all" {
-		if depID := metadataString(e.Metadata, "deploymentId"); depID != "" {
+		if depID := metadataString(e.Metadata, "assignmentId"); depID != "" {
 			nodes = append(nodes,
 				h.A(h.Href("/assignments/"+depID), g.Text("assignment")),
 				g.Text(" of "),

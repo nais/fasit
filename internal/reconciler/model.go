@@ -34,7 +34,7 @@ type latestInstruction struct {
 	Status string
 }
 
-// Action describes the reconciler's decision for a single deployment×environment pair.
+// Action describes the reconciler's decision for a single assignment×environment pair.
 type Action string
 
 const (

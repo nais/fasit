@@ -266,7 +266,7 @@ func assignmentActorsByID(audits []*audit.Entry) map[string]string {
 			continue
 		}
 		var metadata struct {
-			FeatureAssignmentID string `json:"deploymentId"`
+			FeatureAssignmentID string `json:"assignmentId"`
 		}
 		if err := json.Unmarshal(a.Metadata, &metadata); err != nil || metadata.FeatureAssignmentID == "" {
 			continue
