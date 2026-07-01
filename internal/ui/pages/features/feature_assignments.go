@@ -197,7 +197,7 @@ func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallback
 	if len(cards) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No environments to show."))
 	}
-	return h.Div(h.Class("feature-card-grid"),
+	return h.Div(h.Class("assignment-list"),
 		g.Map(cards, func(c card) g.Node {
 			return renderCard(c, featureName, chart, prefs, fallbackVersions[c.FeatureAssignmentID])
 		}),
@@ -205,34 +205,30 @@ func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallback
 }
 
 func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVersion string) g.Node {
-	heading := []g.Node{}
+	head := h.Div(h.Class("assignment-row-head"),
+		h.Span(h.Class("card-group-title"), g.Text(c.Title)),
+		flowArrow(),
+		h.Span(h.Class("feature-card-labels"), labelPills(c.Labels)),
+	)
 
-	if prefs.Group == "tenant" {
-		heading = append(heading,
-			components.TenantAvatar(c.Title, components.HasTenantLogo(c.Title), "20px"),
-		)
-	}
-
+	var main g.Node
 	if c.LinkHref != "" {
-		heading = append(heading,
-			h.A(h.Href(c.LinkHref), h.Class("card-group-title-link"), g.Text(c.Title)),
+		main = h.A(h.Href(c.LinkHref), h.Class("assignment-row-link"),
+			head,
+			assignmentStatusSummary(c.Environments),
 		)
 	} else {
-		heading = append(heading,
-			h.Span(h.Class("card-group-title"), g.Text(c.Title)),
+		main = h.Div(h.Class("assignment-row-link"),
+			head,
+			assignmentStatusSummary(c.Environments),
 		)
 	}
 
-	if prefs.Group == "assignment" || len(c.Labels) > 0 {
-		heading = append(heading, h.Span(h.Class("feature-card-labels"), labelPills(c.Labels)))
-	}
-
-	actions := []g.Node{}
-	// Card-level kebab for assignment grouping (set version, remove)
-	if prefs.Group == "assignment" && c.FeatureAssignmentID != "" {
+	var actions g.Node
+	if c.FeatureAssignmentID != "" {
 		setVersionPopoverID := "set-version-" + c.FeatureAssignmentID
 		removePopoverID := "remove-assignment-" + c.FeatureAssignmentID
-		actions = append(actions,
+		actions = h.Div(h.Class("feature-card-actions"),
 			h.Div(h.Class("card-kebab-wrap"),
 				components.KebabButton("card-kebab-"+c.FeatureAssignmentID),
 				h.Div(h.Class("kebab-menu"), h.ID("card-kebab-"+c.FeatureAssignmentID),
@@ -264,46 +260,65 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 		)
 	}
 
-	header := h.Div(h.Class("feature-card-header"),
-		h.Div(h.Class("feature-card-heading"), g.Group(heading)),
-		g.If(len(actions) > 0, h.Div(h.Class("feature-card-actions"), g.Group(actions))),
+	return h.Div(h.Class("assignment-row"),
+		main,
+		actions,
 	)
+}
 
-	// Build table columns
-	showTenant := prefs.Group != "tenant"
-	showVersion := prefs.Group != "version" && prefs.ShowVersion
+func flowArrow() g.Node {
+	return h.Span(h.Class("assignment-flow-arrow"), g.Text("→"))
+}
 
-	thNodes := []g.Node{}
-	if showTenant {
-		thNodes = append(thNodes, h.Th(g.Text("Tenant")))
-	}
-	thNodes = append(thNodes, h.Th(g.Text("Env")))
-	thNodes = append(thNodes, h.Th(g.Text("Status")))
-	if showVersion {
-		thNodes = append(thNodes, h.Th(g.Text("Version")))
-	}
-	if prefs.ShowLastDeploy {
-		thNodes = append(thNodes, h.Th(h.Title("When the latest successful deployment instruction completed"), g.Text("Deployed")))
-	}
-	if prefs.ShowRowActions {
-		thNodes = append(thNodes, h.Th(h.Class("col-action"), g.Attr("data-no-sort", "")))
+func assignmentStatusSummary(envs []AssignmentEnvStatus) g.Node {
+	counts := map[string]int{}
+	for _, e := range envs {
+		counts[e.StatusText]++
 	}
 
-	versionEmph := assignmentVersionEmphasis(c.Environments)
-	rows := make([]g.Node, len(c.Environments))
-	for i, env := range c.Environments {
-		rows[i] = envCardRow(env, featureName, prefs, showTenant, showVersion, false, prefs.ShowRowActions, versionEmph[i])
+	order := []string{
+		"DEPLOYED", "INSTALLING", "SENT", "PENDING", "UNKNOWN",
+		"MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR", "FAILED", "UNHEALTHY",
+		"DISABLED", "OVERRIDDEN", "INACTIVE",
 	}
+	seen := map[string]bool{}
+	var statuses []string
+	for _, s := range order {
+		if counts[s] > 0 {
+			statuses = append(statuses, s)
+			seen[s] = true
+		}
+	}
+	var rest []string
+	for s := range counts {
+		if !seen[s] {
+			rest = append(rest, s)
+		}
+	}
+	sort.Strings(rest)
+	statuses = append(statuses, rest...)
 
-	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-card"),
-		h.THead(h.Tr(g.Group(thNodes))),
-		h.TBody(g.Group(rows)),
-	)
+	items := make([]g.Node, len(statuses))
+	for i, s := range statuses {
+		items[i] = h.Span(h.Class("assignment-status"),
+			h.Span(h.Class("status-dot "+components.StatusClass(s))),
+			g.Textf("%d %s", counts[s], statusLabel(s)),
+		)
+	}
+	return h.Div(h.Class("assignment-summary"), g.Group(items))
+}
 
-	return h.Div(h.Class("feature-card"),
-		header,
-		h.Div(h.Class("feature-card-body"), table),
-	)
+func statusLabel(status string) string {
+	switch status {
+	case "MISSING-DEPS":
+		return "Missing deps"
+	case "MISSING-CONFIG":
+		return "Missing config"
+	case "RENDER-ERROR":
+		return "Render error"
+	default:
+		return strings.ToUpper(status[:1]) + strings.ToLower(status[1:])
+	}
 }
 
 func assignmentVersionEmphasis(envs []AssignmentEnvStatus) []components.Emphasis {

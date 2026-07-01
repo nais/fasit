@@ -2028,6 +2028,73 @@ a:hover .status-badge {
 .feature-card-body {
   padding: 0;
 }
+.assignment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.assignment-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+.assignment-row:hover {
+  border-color: var(--border);
+  background: var(--bg-surface);
+}
+.assignment-row-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+.assignment-row-link:hover {
+  text-decoration: none;
+}
+.assignment-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+.assignment-row .feature-card-actions {
+  align-self: flex-start;
+  padding: 0.5rem 0.5rem 0 0;
+}
+.assignment-flow-arrow {
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin: 0 0.15rem;
+}
+.assignment-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 1rem;
+  font-size: 0.875rem;
+}
+.assignment-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.status-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
 .feature-card-body .table {
   margin: 0;
 }
