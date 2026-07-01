@@ -1,4 +1,4 @@
-package assignments
+package features
 
 import (
 	"encoding/json"
@@ -18,6 +18,7 @@ import (
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/uidata"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -32,105 +33,121 @@ type matchingAssignment struct {
 	Created     time.Time
 }
 
-func DetailHandler(renderPage RenderPage) http.HandlerFunc {
+func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := loadFeatureData(r)
+		if err != nil {
+			handleFeatureLoadError(w, r, err)
+			return
+		}
+
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
 			http.Error(w, "Failed to load assignment", http.StatusInternalServerError)
 			return
 		}
 
-		dep, err := featureassignment.Get(r.Context(), id)
+		d, err := featureassignment.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load assignment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		statuses, _ := reconciler.ReconcileStatuses(r.Context(), id)
-
 		rows := make([]reconcileStatusRow, 0, len(statuses))
 		for _, status := range statuses {
 			env, err := envpkg.Get(r.Context(), status.EnvironmentID)
 			if err != nil {
 				continue
 			}
-
 			tenant, err := envpkg.GetTenant(r.Context(), env.TenantID)
 			if err != nil {
 				continue
 			}
-
-			state := reconciler.NormalizeStatus(string(status.State))
 			rows = append(rows, reconcileStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
 				EnvironmentID:   status.EnvironmentID.String(),
-				State:           state,
+				State:           reconciler.NormalizeStatus(string(status.State)),
 				Message:         status.Message,
 				LastModified:    status.LastModified,
 			})
 		}
 
-		allDeployInstructions, err := uidata.ListDeployInstructions(r.Context(), id)
+		allInstructions, err := uidata.ListDeployInstructions(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deploy instructions: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		// Deduplicate to latest instruction per environment (query is ordered by created DESC).
 		seen := make(map[string]bool)
-		var deployInstructions []*uidata.DeployInstruction
-		for _, di := range allDeployInstructions {
-
+		var instructions []*uidata.DeployInstruction
+		for _, di := range allInstructions {
 			envID := di.EnvironmentID.String()
 			if !seen[envID] {
 				seen[envID] = true
-				deployInstructions = append(deployInstructions, di)
+				instructions = append(instructions, di)
 			}
 		}
 
-		allByFeature, _ := featureassignment.ListAllByFeature(r.Context(), dep.Feature.Name)
+		allByFeature, _ := featureassignment.ListAllByFeature(r.Context(), d.Feature.Name)
 		var matching []matchingAssignment
 		var supersededBy *matchingAssignment
-		for _, d := range allByFeature {
-			if d.ID == dep.ID {
+		for _, other := range allByFeature {
+			if other.ID == d.ID {
 				continue
 			}
-			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
+			if !maps.Equal(map[string]string(other.TargetLabels), map[string]string(d.TargetLabels)) {
 				continue
 			}
 			m := matchingAssignment{
-				ID:      d.ID.String(),
-				Version: d.Feature.Version,
-				Created: d.Created,
+				ID:      other.ID.String(),
+				Version: other.Feature.Version,
+				Created: other.Created,
 			}
 			matching = append(matching, m)
-			if d.Active && d.Created.After(dep.Created) && (supersededBy == nil || d.Created.After(supersededBy.Created)) {
-				copy := m
-				supersededBy = &copy
+			if other.Active && other.Created.After(d.Created) && (supersededBy == nil || other.Created.After(supersededBy.Created)) {
+				m := m
+				supersededBy = &m
 			}
 		}
 
+		data.ActiveTab = "assignments"
+		data.IsAssignmentDetail = true
+		data.Assignment = d
+		data.AssignmentStatusRows = rows
+		data.AssignmentInstructions = instructions
+		data.AssignmentMatching = matching
+		data.AssignmentSupersededBy = supersededBy
+
+		featureName := d.Feature.Name
+		data.Breadcrumbs = []breadcrumb.Crumb{
+			breadcrumb.Features(),
+			breadcrumb.Feature(featureName),
+			{Label: "Assignments", URL: "/features/" + featureName + "/assignments"},
+			{Label: d.Feature.Version},
+		}
+
 		renderPage(w, r, layout.Props{
-			Title:       fmt.Sprintf("FeatureAssignment %s %s", dep.Feature.Name, dep.Feature.Version),
-			CurrentPage: components.PageAssignments,
-			Content:     detailPage(dep, rows, deployInstructions, matching, supersededBy),
+			Title:       fmt.Sprintf("%s %s", featureName, d.Feature.Version),
+			CurrentPage: components.PageFeatures,
+			Content:     detailPage(data),
 		})
 	}
 }
 
-func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStatusRow, deployInstructions []*uidata.DeployInstruction, matching []matchingAssignment, supersededBy *matchingAssignment) g.Node {
+func assignmentDetailPageContent(data *DetailPage) g.Node {
+	d := data.Assignment
+	featureName := d.Feature.Name
+
 	meta := []g.Node{
 		metaRow("Chart", g.Text(d.Feature.Chart)),
-		metaRow("Target", targetPills(assignmentTargetLabels(d))),
+		metaRow("Target", assignmentTargetPills(assignmentTargetLabels(d))),
 		metaRow("Version", g.Text(d.Feature.Version)),
-		metaRow("Created", timeWithTitle(d.Created)),
+		metaRow("Created", assignmentTimeWithTitle(d.Created)),
 	}
-
 	if d.Description != nil && *d.Description != "" {
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
-
 	if ref := parseGHRef(d.GHRef); ref != nil {
 		meta = append(meta, metaRow("Commit", ghRefLink(ref)))
 	}
@@ -145,7 +162,7 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 				),
 			)),
 		),
-		g.If(d.Active, setVersionPopover(d)),
+		g.If(d.Active, setVersionPopover("set-version", featureName, d.Feature.Chart, assignmentTargetLabels(d))),
 		g.If(d.Active, deactivateAssignmentPopover(d)),
 	}
 
@@ -155,29 +172,23 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 		}, content...)
 	}
 
-	if supersededBy != nil {
+	if data.AssignmentSupersededBy != nil {
 		content = append(content, h.Div(h.Class("banner banner-warning"),
 			h.P(
 				g.Text("This is a previous version. Currently active: "),
-				h.A(h.Href("/assignments/"+supersededBy.ID), g.Text(supersededBy.Version)),
+				h.A(h.Href("/features/"+featureName+"/assignments/"+data.AssignmentSupersededBy.ID), g.Text(data.AssignmentSupersededBy.Version)),
 			),
 		))
 	}
 
 	content = append(content, h.Table(h.Class("table meta-table table-compact"), h.TBody(g.Group(meta))))
 
-	// Environments — merged view of deployment statuses and instructions
 	type envRow struct {
-		TenantName      string
-		EnvironmentName string
-		EnvironmentID   string
-		State           string
-		Message         string
-		LastModified    time.Time
+		TenantName, EnvironmentName, EnvironmentID, State, Message string
+		LastModified                                               time.Time
 	}
-
 	envRows := make(map[string]*envRow)
-	for _, s := range statuses {
+	for _, s := range data.AssignmentStatusRows {
 		envRows[s.EnvironmentID] = &envRow{
 			TenantName:      s.TenantName,
 			EnvironmentName: s.EnvironmentName,
@@ -187,7 +198,7 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 			LastModified:    s.LastModified,
 		}
 	}
-	for _, di := range deployInstructions {
+	for _, di := range data.AssignmentInstructions {
 		envID := di.EnvironmentID.String()
 		if _, ok := envRows[envID]; !ok {
 			envRows[envID] = &envRow{
@@ -227,10 +238,10 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 				h.TBody(g.Group(g.Map(sortedEnvRows, func(r *envRow) g.Node {
 					return h.Tr(
 						h.Td(g.Text(r.TenantName)),
-						h.Td(h.A(h.Href("/features/"+d.Feature.Name+"/envs/"+r.TenantName+"/"+r.EnvironmentName), g.Text(r.EnvironmentName))),
+						h.Td(h.A(h.Href("/features/"+featureName+"/envs/"+r.TenantName+"/"+r.EnvironmentName), g.Text(r.EnvironmentName))),
 						h.Td(components.Status(r.State)),
 						h.Td(g.Text(r.Message)),
-						h.Td(timeWithTitle(r.LastModified)),
+						h.Td(assignmentTimeWithTitle(r.LastModified)),
 						h.Td(h.A(h.Href("/assignments/"+d.ID.String()+"/logs/"+r.EnvironmentID), g.Text("View logs"))),
 					)
 				}))),
@@ -238,8 +249,7 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 		)
 	}
 
-	// Previous versions
-	if len(matching) > 0 {
+	if len(data.AssignmentMatching) > 0 {
 		content = append(content,
 			h.H2(g.Text("Previous versions")),
 			h.Table(
@@ -248,26 +258,62 @@ func detailPage(d *featureassignment.FeatureAssignment, statuses []reconcileStat
 					h.Th(g.Text("Version")),
 					h.Th(g.Text("Created")),
 				)),
-				h.TBody(g.Group(g.Map(matching, func(m matchingAssignment) g.Node {
+				h.TBody(g.Group(g.Map(data.AssignmentMatching, func(m matchingAssignment) g.Node {
 					return h.Tr(
-						h.Td(h.A(h.Href("/assignments/"+m.ID), g.Text(m.Version))),
-						h.Td(timeWithTitle(m.Created)),
+						h.Td(h.A(h.Href("/features/"+featureName+"/assignments/"+m.ID), g.Text(m.Version))),
+						h.Td(assignmentTimeWithTitle(m.Created)),
 					)
 				}))),
 			),
 		)
 	}
 
-	return h.Div(
-		h.Class("container"),
-		components.Breadcrumbs([]breadcrumb.Crumb{
-			breadcrumb.Assignments(),
-			{Label: d.Feature.Name, URL: "/features/" + d.Feature.Name},
-			{Content: targetPills(assignmentTargetLabels(d))},
-		}),
-		h.Main(
-			h.Class("main-content"),
-			components.Card(content...),
+	return h.Div(g.Group(content))
+}
+
+func assignmentTimeWithTitle(t time.Time) g.Node {
+	if t.IsZero() {
+		return g.Text("")
+	}
+	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
+}
+
+func assignmentTargetLabels(d *featureassignment.FeatureAssignment) map[string]string {
+	labels := d.Target()
+	if len(labels) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(labels))
+	for _, label := range labels {
+		out[label.Key] = label.Value
+	}
+	return out
+}
+
+func assignmentTargetPills(labels map[string]string) g.Node {
+	if len(labels) == 0 {
+		return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pills := make([]g.Node, 0, len(keys))
+	for _, k := range keys {
+		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+	}
+	return g.Group(pills)
+}
+
+func deactivateAssignmentPopover(d *featureassignment.FeatureAssignment) g.Node {
+	return components.Popover("deactivate-assignment", "", "Deactivate assignment",
+		h.P(g.Textf("This will deactivate %s. It will no longer be reconciled.", d.Feature.Name)),
+		h.Form(h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/deactivate"),
+			h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+d.Feature.Name+"/assignments")),
+			components.PopoverActions(
+				h.Button(h.Type("submit"), g.Text("Deactivate")),
+			),
 		),
 	)
 }
@@ -290,54 +336,17 @@ func ghRefLink(ref *model.GitHubCommit) g.Node {
 	if ref == nil {
 		return nil
 	}
-
 	shortSHA := ref.Ref
 	if len(shortSHA) > 7 {
 		shortSHA = shortSHA[:7]
 	}
-
 	label := shortSHA
 	if ref.Repo != "" {
 		label = ref.Repo + "@" + shortSHA
 	}
-
 	if ref.Owner != "" && ref.Repo != "" && ref.Ref != "" {
 		href := fmt.Sprintf("https://github.com/%s/%s/commit/%s", ref.Owner, ref.Repo, ref.Ref)
 		return h.A(h.Href(href), h.Target("_blank"), h.Class("gh-ref-link"), g.Text(label))
 	}
-
 	return g.Text(label)
-}
-
-func deactivateAssignmentPopover(d *featureassignment.FeatureAssignment) g.Node {
-	return components.Popover("deactivate-assignment", "", "Deactivate assignment",
-		h.P(g.Textf("This will deactivate %s. It will no longer be reconciled.", d.Feature.Name)),
-		h.Form(h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/deactivate"),
-			components.PopoverActions(
-				h.Button(h.Type("submit"), g.Text("Deactivate")),
-			),
-		),
-	)
-}
-
-func setVersionPopover(d *featureassignment.FeatureAssignment) g.Node {
-	return components.Popover("set-version", "", "Set version",
-		h.Form(h.Method("POST"), h.Action("/assignments"),
-			h.Input(h.Type("hidden"), h.Name("chart"), h.Value(d.Feature.Chart)),
-			targetHiddenInputs(assignmentTargetLabels(d)),
-			h.Label(g.Text("Version")),
-			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("placeholder", "e.g. 2026-05-21-001"), h.Value(d.Feature.Version)),
-			components.PopoverActions(
-				h.Button(h.Type("submit"), g.Text("Deploy")),
-			),
-		),
-	)
-}
-
-func targetHiddenInputs(labels map[string]string) g.Node {
-	inputs := make([]g.Node, 0, len(labels))
-	for k, v := range labels {
-		inputs = append(inputs, h.Input(h.Type("hidden"), h.Name("target_label"), h.Value(k+"="+v)))
-	}
-	return g.Group(inputs)
 }

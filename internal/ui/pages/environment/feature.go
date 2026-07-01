@@ -444,7 +444,7 @@ func pageKebab(page *FeaturePage) g.Node {
 
 	if page.WinningAssignment != nil {
 		items = append(items,
-			h.A(h.Href("/assignments/"+page.WinningAssignment.ID.String()), h.Class("kebab-item"),
+			h.A(h.Href("/features/"+page.Feature.Name+"/assignments/"+page.WinningAssignment.ID.String()), h.Class("kebab-item"),
 				g.Raw(components.IconDocument),
 				g.Text("View assignment"),
 			),
@@ -1007,7 +1007,7 @@ func assignmentsTab(page *FeaturePage) g.Node {
 			)),
 			h.TBody(g.Group(g.Map(page.Assignments, func(dep EnvAssignmentItem) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/assignments/"+dep.ID), g.Text(dep.ID[:8]))),
+					h.Td(h.A(h.Href("/features/"+page.Feature.Name+"/assignments/"+dep.ID), g.Text(dep.ID[:8]))),
 					h.Td(g.Text(dep.Version)),
 					h.Td(components.Status(dep.Status)),
 					h.Td(labelPills(dep.TargetLabels)),

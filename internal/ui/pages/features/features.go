@@ -16,12 +16,14 @@ import (
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -41,6 +43,13 @@ type DetailPage struct {
 	Versions        []featurepkg.FeatureVersion
 	VersionEnvs     map[string][]featureenvs.Environment
 	IsVersionDetail bool
+
+	IsAssignmentDetail     bool
+	Assignment             *featureassignment.FeatureAssignment
+	AssignmentStatusRows   []reconcileStatusRow
+	AssignmentInstructions []*uidata.DeployInstruction
+	AssignmentMatching     []matchingAssignment
+	AssignmentSupersededBy *matchingAssignment
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -116,6 +125,7 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		data.ActiveTab = "assignments"
+		data.Breadcrumbs = append(data.Breadcrumbs, breadcrumb.Crumb{Label: "Assignments"})
 		data.RecentActivity, _ = audit.ListAssignmentsForFeature(r.Context(), data.CurrentFeature.Name, 10)
 		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Deploy specs", CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
@@ -129,6 +139,7 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		data.ActiveTab = "config"
+		data.Breadcrumbs = append(data.Breadcrumbs, breadcrumb.Crumb{Label: "Config"})
 		data.ConfigItems, err = loadGlobalConfigItems(r.Context(), data.CurrentFeature)
 		if err != nil {
 			http.Error(w, "Failed to load config", http.StatusInternalServerError)
@@ -376,7 +387,11 @@ func detailPage(data *DetailPage) g.Node {
 	var rightSidebar g.Node
 	switch data.ActiveTab {
 	case "assignments":
-		content = assignmentSpecsContent(data)
+		if data.IsAssignmentDetail {
+			content = assignmentDetailPageContent(data)
+		} else {
+			content = assignmentSpecsContent(data)
+		}
 	case "config":
 		content = globalConfigContent(data)
 	case "versions":

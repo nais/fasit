@@ -50,5 +50,5 @@ func Assignments() Crumb {
 }
 
 func FeatureAssignment(id, featureName, version string) Crumb {
-	return Crumb{Label: featureName + " " + version, URL: "/assignments/" + id}
+	return Crumb{Label: featureName + " " + version, URL: "/features/" + featureName + "/assignments/" + id}
 }

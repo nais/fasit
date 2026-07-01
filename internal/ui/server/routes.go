@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/ui/pages/assignments"
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/pages/environment"
@@ -42,7 +44,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/assignments", assignments.ListHandler(s.renderPage))
 	r.Post("/assignments", assignments.CreateHandler())
 	r.Post("/assignments/preview-targets", assignments.PreviewTargetsHandler())
-	r.Get("/assignments/{id}", assignments.DetailHandler(s.renderPage))
 	r.Get("/assignments/{id}/logs/{envID}", assignments.LogsHandler(s.renderPage))
 	r.Post("/assignments/{id}/deactivate", assignments.DeactivateHandler())
 	r.Post("/assignments/{id}/deactivate-matching", assignments.DeactivateByFeatureAndTargetHandler())
@@ -52,12 +53,23 @@ func (s *Server) Routes() http.Handler {
 		http.Redirect(w, r, "/assignments", http.StatusMovedPermanently)
 	})
 	r.Get("/deployments/{id}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/assignments/"+chi.URLParam(r, "id"), http.StatusMovedPermanently)
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Redirect(w, r, "/assignments", http.StatusSeeOther)
+			return
+		}
+		d, err := featureassignment.Get(r.Context(), id)
+		if err != nil {
+			http.Redirect(w, r, "/assignments", http.StatusSeeOther)
+			return
+		}
+		http.Redirect(w, r, "/features/"+d.Feature.Name+"/assignments/"+id.String(), http.StatusMovedPermanently)
 	})
 
 	r.Get("/features", features.IndexHandler(s.renderPage))
 	r.Get("/features/{feature}", features.Handler(s.renderPage))
 	r.Get("/features/{feature}/assignments", features.DeploySpecsHandler(s.renderPage))
+	r.Get("/features/{feature}/assignments/{id}", features.AssignmentDetailHandler(s.renderPage))
 	r.Get("/features/{feature}/versions", features.VersionsTabHandler(s.renderPage))
 	r.Get("/features/{feature}/versions/{version}", features.VersionDetailHandler(s.renderPage))
 	r.Get("/features/{feature}/config", features.ConfigTabHandler(s.renderPage))

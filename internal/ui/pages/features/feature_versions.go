@@ -27,6 +27,7 @@ func VersionsTabHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 		data.ActiveTab = "versions"
+		data.Breadcrumbs = append(data.Breadcrumbs, breadcrumb.Crumb{Label: "Versions"})
 		data.Versions, err = featurepkg.FeatureVersions(r.Context(), data.CurrentFeature.Name)
 		if err != nil {
 			http.Error(w, "Failed to load versions", http.StatusInternalServerError)
@@ -242,7 +243,7 @@ func versionInstances(feat *featurepkg.Feature, envs []featureenvs.Environment) 
 			h.Td(g.Text(env.TenantName)),
 			h.Td(h.A(h.Href("/features/"+feat.Name+"/envs/"+env.TenantSlug+"/"+env.EnvironmentName), g.Text(env.EnvironmentName))),
 			h.Td(components.Status(env.Status)),
-			h.Td(assignmentIDCell(env.AssignmentID, emphasis[i])),
+			h.Td(assignmentIDCell(feat.Name, env.AssignmentID, emphasis[i])),
 		)
 	}
 
@@ -260,7 +261,7 @@ func versionInstances(feat *featurepkg.Feature, envs []featureenvs.Environment) 
 	)
 }
 
-func assignmentIDCell(assignmentID string, e components.Emphasis) g.Node {
+func assignmentIDCell(featureName, assignmentID string, e components.Emphasis) g.Node {
 	if assignmentID == "" {
 		return components.ConsensusCell(e, h.Span(h.Class("text-muted"), g.Text("—")))
 	}
@@ -268,7 +269,7 @@ func assignmentIDCell(assignmentID string, e components.Emphasis) g.Node {
 	if len(short) > 8 {
 		short = short[:8]
 	}
-	return components.ConsensusCell(e, h.A(h.Href("/assignments/"+assignmentID), g.Text(short)))
+	return components.ConsensusCell(e, h.A(h.Href("/features/"+featureName+"/assignments/"+assignmentID), g.Text(short)))
 }
 
 func versionValues(feat *featurepkg.Feature) g.Node {

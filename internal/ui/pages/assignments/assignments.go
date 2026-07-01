@@ -162,7 +162,7 @@ func assignmentsTable(rows []Summary) g.Node {
 		tableRows = append(tableRows, h.Tr(
 			h.Td(h.A(h.Href("/features/"+dep.FeatureName), g.Text(dep.FeatureName))),
 			h.Td(targetPills(dep.TargetLabels)),
-			h.Td(h.A(h.Href("/assignments/"+dep.FeatureAssignmentID), g.Text(dep.Version))),
+			h.Td(h.A(h.Href("/features/"+dep.FeatureName+"/assignments/"+dep.FeatureAssignmentID), g.Text(dep.Version))),
 			h.Td(statusCell(dep)),
 			h.Td(g.Attr("data-sort-value", dep.createdAt.Format(time.RFC3339)), h.Title(view.FormatTime(dep.createdAt)), g.Text(view.RelativeTime(dep.createdAt))),
 		))

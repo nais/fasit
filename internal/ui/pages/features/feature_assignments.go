@@ -137,7 +137,7 @@ func assignmentSpecsContent(data *DetailPage) g.Node {
 	}
 
 	prefs := assignmentSpecsViewPrefs()
-	cards := groupByAssignmentCards(data.AssignmentEnvs)
+	cards := groupByAssignmentCards(data.AssignmentEnvs, data.CurrentFeature.Name)
 	fallbacks := fallbackVersionMap(data.AssignmentEnvs)
 	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs, fallbacks)
 }
@@ -156,14 +156,14 @@ func fallbackVersionMap(envs []AssignmentEnvStatus) map[string]string {
 	return fallbacks
 }
 
-func groupByAssignmentCards(envs []AssignmentEnvStatus) []card {
+func groupByAssignmentCards(envs []AssignmentEnvStatus, featureName string) []card {
 	groups := map[string]*card{}
 	var order []string
 	for _, env := range envs {
 		if _, ok := groups[env.FeatureAssignmentID]; !ok {
 			groups[env.FeatureAssignmentID] = &card{
 				Title:               env.AssignmentVersion,
-				LinkHref:            "/assignments/" + env.FeatureAssignmentID,
+				LinkHref:            "/features/" + featureName + "/assignments/" + env.FeatureAssignmentID,
 				Labels:              env.TargetLabels,
 				FeatureAssignmentID: env.FeatureAssignmentID,
 			}
@@ -392,7 +392,7 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 		}
 
 		menuItems = append(menuItems,
-			h.A(h.Href("/assignments/"+env.FeatureAssignmentID), h.Class("kebab-item"),
+			h.A(h.Href("/features/"+featureName+"/assignments/"+env.FeatureAssignmentID), h.Class("kebab-item"),
 				g.Raw(components.IconDocument),
 				g.Text("View assignment"),
 			),
