@@ -19,6 +19,7 @@ type FeatureReconcileStatus struct {
 	State        FeatureReconcileStatusState `json:"state"`
 	Message      string                      `json:"message"`
 	LastModified time.Time                   `json:"lastModified"`
+	DecidedAt    time.Time                   `json:"decidedAt"`
 	Created      time.Time                   `json:"created"`
 
 	FeatureAssignmentID uuid.UUID `json:"-"`
@@ -286,6 +287,7 @@ func joinReconcileSignals(
 			State:               FeatureReconcileStatusState(NormalizeStatus(state)),
 			Message:             dec.message,
 			LastModified:        lastModified,
+			DecidedAt:           dec.created,
 			Created:             lastModified,
 			FeatureAssignmentID: featureAssignmentID,
 			EnvironmentID:       envID,

@@ -26,6 +26,7 @@ import (
 type reconcileStatusRow struct {
 	TenantName, EnvironmentName, EnvironmentID, State, Message string
 	LastModified                                               time.Time
+	DecidedAt                                                  time.Time
 }
 
 type matchingAssignment struct {
@@ -71,6 +72,7 @@ func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 				State:           reconciler.NormalizeStatus(string(status.State)),
 				Message:         status.Message,
 				LastModified:    status.LastModified,
+				DecidedAt:       status.DecidedAt,
 			})
 		}
 
@@ -186,6 +188,7 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 	type envRow struct {
 		TenantName, EnvironmentName, EnvironmentID, State, Message string
 		LastModified                                               time.Time
+		DecidedAt                                                  time.Time
 	}
 	envRows := make(map[string]*envRow)
 	for _, s := range data.AssignmentStatusRows {
@@ -196,6 +199,7 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 			State:           s.State,
 			Message:         s.Message,
 			LastModified:    s.LastModified,
+			DecidedAt:       s.DecidedAt,
 		}
 	}
 	for _, di := range data.AssignmentInstructions {
@@ -230,9 +234,10 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 				h.THead(h.Tr(
 					h.Th(g.Text("Tenant")),
 					h.Th(g.Text("Environment")),
-					h.Th(g.Text("State")),
-					h.Th(g.Text("Message")),
-					h.Th(g.Text("Last Modified")),
+					h.Th(g.Text("Status")),
+					h.Th(g.Text("When")),
+					h.Th(g.Text("Reconcile decision")),
+					h.Th(g.Text("Since")),
 					h.Th(g.Text("")),
 				)),
 				h.TBody(g.Group(g.Map(sortedEnvRows, func(r *envRow) g.Node {
@@ -240,8 +245,9 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 						h.Td(g.Text(r.TenantName)),
 						h.Td(h.A(h.Href("/features/"+featureName+"/envs/"+r.TenantName+"/"+r.EnvironmentName), g.Text(r.EnvironmentName))),
 						h.Td(components.Status(r.State)),
-						h.Td(g.Text(r.Message)),
 						h.Td(assignmentTimeWithTitle(r.LastModified)),
+						h.Td(g.Text(r.Message)),
+						h.Td(assignmentTimeWithTitle(r.DecidedAt)),
 						h.Td(h.A(h.Href("/assignments/"+d.ID.String()+"/logs/"+r.EnvironmentID), g.Text("View logs"))),
 					)
 				}))),

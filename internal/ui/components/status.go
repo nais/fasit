@@ -28,7 +28,7 @@ func Status(status string) g.Node {
 	case "DISABLED":
 		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("○")), g.Text(" Disabled")})
 	case "UNHEALTHY":
-		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("⚠")), g.Text(" Unhealthy")})
+		return g.Group([]g.Node{h.Span(h.Class("status-warning"), g.Text("⚠")), g.Text(" Unhealthy")})
 	case "UNKNOWN":
 		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("?")), g.Text(" Unknown")})
 	case "ENABLED":
@@ -46,9 +46,9 @@ func StatusClass(status string) string {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED", "ENABLED":
 		return "status-success"
-	case "FAILED", "UNHEALTHY":
+	case "FAILED":
 		return "status-error"
-	case "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR":
+	case "MISSING-DEPS", "MISSING-CONFIG", "RENDER-ERROR", "UNHEALTHY":
 		return "status-warning"
 	case "SENT", "INSTALLING", "PENDING", "PENDING-INSTALL", "PENDING-UPGRADE", "PENDING-ROLLBACK":
 		return "status-pending"

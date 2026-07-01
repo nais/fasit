@@ -181,7 +181,7 @@ func (r *Reconciler) computeAction(snap *snapshot, env environment, dep *reconci
 		}
 		if instr.Hash == hash {
 			base.Action = ActionSkipUnchanged
-			base.Message = "no changes in feature"
+			base.Message = "in sync"
 			return base
 		}
 	}
