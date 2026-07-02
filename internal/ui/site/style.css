@@ -1596,6 +1596,8 @@ textarea.bulk-value-input {
 }
 [popover].popover-wide {
   max-width: min(56rem, 90vw);
+  max-height: 90dvh;
+  overflow: auto;
 }
 .popover-scroll {
   max-height: 60vh;
@@ -1604,6 +1606,8 @@ textarea.bulk-value-input {
 .deploy-history-list {
   display: flex;
   flex-direction: column;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 .deploy-history-item {
   border-bottom: 1px solid var(--border-subtle);
@@ -1635,6 +1639,10 @@ textarea.bulk-value-input {
 }
 .deploy-history-item[open] .deploy-log-toggle::after {
   content: " \25b4";
+}
+.deploy-history-item > .popover-scroll {
+  max-height: none;
+  overflow: visible;
 }
 .deploy-history-item > .popover-scroll,
 .deploy-history-empty {
