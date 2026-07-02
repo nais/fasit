@@ -21,6 +21,7 @@ import (
 
 type AssignmentEnvStatus struct {
 	Name                 string
+	EnvironmentID        string
 	TenantName           string
 	TenantSlug           string
 	Enabled              bool
@@ -613,6 +614,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 
 			es := AssignmentEnvStatus{
 				Name:                 env.env.Name,
+				EnvironmentID:        env.env.ID.String(),
 				TenantName:           env.tenantName,
 				TenantSlug:           env.tenantName,
 				Enabled:              !disabled,

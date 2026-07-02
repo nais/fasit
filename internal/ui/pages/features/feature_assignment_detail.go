@@ -76,6 +76,23 @@ func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 			})
 		}
 
+		seenEnv := make(map[string]bool, len(rows))
+		for _, row := range rows {
+			seenEnv[row.EnvironmentID] = true
+		}
+		for _, es := range featureAssignmentEnvStatuses(r.Context(), data.CurrentFeature) {
+			if es.FeatureAssignmentID != id.String() || !es.IsOverridden || seenEnv[es.EnvironmentID] {
+				continue
+			}
+			rows = append(rows, reconcileStatusRow{
+				TenantName:      es.TenantName,
+				EnvironmentName: es.Name,
+				EnvironmentID:   es.EnvironmentID,
+				State:           "OVERRIDDEN",
+			})
+			seenEnv[es.EnvironmentID] = true
+		}
+
 		allInstructions, err := uidata.ListDeployInstructions(r.Context(), id)
 		if err != nil {
 			http.Error(w, "Failed to load deploy instructions: "+err.Error(), http.StatusInternalServerError)
@@ -241,6 +258,10 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 					h.Th(g.Text("")),
 				)),
 				h.TBody(g.Group(g.Map(sortedEnvRows, func(r *envRow) g.Node {
+					logsCell := g.Node(g.Text(""))
+					if r.State != "OVERRIDDEN" {
+						logsCell = h.A(h.Href("/assignments/"+d.ID.String()+"/logs/"+r.EnvironmentID), g.Text("View logs"))
+					}
 					return h.Tr(
 						h.Td(g.Text(r.TenantName)),
 						h.Td(h.A(h.Href("/features/"+featureName+"/envs/"+r.TenantName+"/"+r.EnvironmentName), g.Text(r.EnvironmentName))),
@@ -248,7 +269,7 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 						h.Td(assignmentTimeWithTitle(r.LastModified)),
 						h.Td(g.Text(r.Message)),
 						h.Td(assignmentTimeWithTitle(r.DecidedAt)),
-						h.Td(h.A(h.Href("/assignments/"+d.ID.String()+"/logs/"+r.EnvironmentID), g.Text("View logs"))),
+						h.Td(logsCell),
 					)
 				}))),
 			),
