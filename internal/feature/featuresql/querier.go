@@ -14,7 +14,6 @@ type Querier interface {
 	DeleteGlobalConfig(ctx context.Context, id uuid.UUID) error
 	FeatureDataByVersion(ctx context.Context, arg FeatureDataByVersionParams) (FeatureDataByVersionRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error)
 	FeatureNames(ctx context.Context) ([]string, error)
 	FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error)
 	GetDisabledFeature(ctx context.Context, arg GetDisabledFeatureParams) (DisabledFeature, error)
@@ -27,6 +26,7 @@ type Querier interface {
 	// history (one entry per deploy) is grouped by diid in Go from ListDeployLog.
 	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
+	ListActiveFeatures(ctx context.Context) ([]ListActiveFeaturesRow, error)
 	ListAllEnvConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
 	ListDisabledFeatureEnvironments(ctx context.Context, feature string) ([]ListDisabledFeatureEnvironmentsRow, error)

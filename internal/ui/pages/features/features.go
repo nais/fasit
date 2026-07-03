@@ -78,22 +78,17 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 func IndexHandler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		indexRows, err := featurepkg.FeatureIndexRows(r.Context())
+		features, err := featurepkg.ListActiveFeatures(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
 
 		query := strings.TrimSpace(r.URL.Query().Get("q"))
-		rows := make([]featureIndexRow, 0, len(indexRows))
-		for _, indexRow := range indexRows {
-			row := featureIndexRow{
-				Name:        indexRow.Name,
-				Description: indexRow.Description,
-				Source:      indexRow.Source,
-			}
-			if query == "" || featureIndexMatches(row, query) {
-				rows = append(rows, row)
+		rows := make([]featurepkg.FeatureSummary, 0, len(features))
+		for _, feature := range features {
+			if query == "" || featureIndexMatches(feature, query) {
+				rows = append(rows, feature)
 			}
 		}
 		sort.Slice(rows, func(i, j int) bool {
@@ -181,13 +176,7 @@ func landingSearch() g.Node {
 	)
 }
 
-type featureIndexRow struct {
-	Name        string
-	Description string
-	Source      string
-}
-
-func featureIndexPage(features []featureIndexRow, query string) g.Node {
+func featureIndexPage(features []featurepkg.FeatureSummary, query string) g.Node {
 	return h.Div(h.Class("container"),
 		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()}),
 		h.Main(h.Class("main-content"),
@@ -212,7 +201,7 @@ func featureIndexPage(features []featureIndexRow, query string) g.Node {
 	)
 }
 
-func featureIndexMatches(feature featureIndexRow, query string) bool {
+func featureIndexMatches(feature featurepkg.FeatureSummary, query string) bool {
 	terms := strings.Fields(strings.ToLower(query))
 	if len(terms) == 0 {
 		return true
@@ -230,7 +219,7 @@ func featureIndexMatches(feature featureIndexRow, query string) bool {
 	return true
 }
 
-func featureIndexTable(features []featureIndexRow) g.Node {
+func featureIndexTable(features []featurepkg.FeatureSummary) g.Node {
 	rows := make([]g.Node, 0, len(features))
 	for i, feature := range features {
 		rows = append(rows, h.Tr(
@@ -249,7 +238,7 @@ func featureIndexTable(features []featureIndexRow) g.Node {
 	)
 }
 
-func featureRowKebab(feature featureIndexRow, idx int) g.Node {
+func featureRowKebab(feature featurepkg.FeatureSummary, idx int) g.Node {
 	if feature.Source == "" {
 		return g.Text("")
 	}

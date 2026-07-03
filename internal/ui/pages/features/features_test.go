@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/audit"
+	featurepkg "github.com/nais/fasit/internal/feature"
 )
 
 func TestFeatureIndexTableSourceKebabMenu(t *testing.T) {
 	var buf bytes.Buffer
-	err := featureIndexTable([]featureIndexRow{{
+	err := featureIndexTable([]featurepkg.FeatureSummary{{
 		Name:        "kyverno",
 		Description: "policy engine",
 		Source:      "https://github.com/nais/kyverno",

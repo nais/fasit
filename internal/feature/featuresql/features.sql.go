@@ -104,48 +104,6 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 	return err
 }
 
-const featureIndexRows = `-- name: FeatureIndexRows :many
-SELECT DISTINCT ON (d.feature_name)
-	fd.name,
-	fd.description,
-	fd.source
-FROM
-	feature_assignments d
-	JOIN feature_data fd ON d.feature_name = fd.name
-		AND d.version = fd.version
-WHERE
-	d.active = TRUE
-ORDER BY
-	d.feature_name,
-	d.created DESC
-`
-
-type FeatureIndexRowsRow struct {
-	Name        string
-	Description string
-	Source      string
-}
-
-func (q *Queries) FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error) {
-	rows, err := q.db.Query(ctx, featureIndexRows)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []FeatureIndexRowsRow{}
-	for rows.Next() {
-		var i FeatureIndexRowsRow
-		if err := rows.Scan(&i.Name, &i.Description, &i.Source); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const featureNames = `-- name: FeatureNames :many
 SELECT DISTINCT
 	feature_name
@@ -270,4 +228,46 @@ func (q *Queries) LatestFeatureData(ctx context.Context, featureName string) (La
 		&i.FeatureDatum.TplDetails,
 	)
 	return i, err
+}
+
+const listActiveFeatures = `-- name: ListActiveFeatures :many
+SELECT DISTINCT ON (d.feature_name)
+	fd.name,
+	fd.description,
+	fd.source
+FROM
+	feature_assignments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.feature_name,
+	d.created DESC
+`
+
+type ListActiveFeaturesRow struct {
+	Name        string
+	Description string
+	Source      string
+}
+
+func (q *Queries) ListActiveFeatures(ctx context.Context) ([]ListActiveFeaturesRow, error) {
+	rows, err := q.db.Query(ctx, listActiveFeatures)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveFeaturesRow{}
+	for rows.Next() {
+		var i ListActiveFeaturesRow
+		if err := rows.Scan(&i.Name, &i.Description, &i.Source); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

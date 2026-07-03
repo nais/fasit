@@ -80,7 +80,7 @@ WHERE
 ORDER BY
 	feature_name;
 
--- name: FeatureIndexRows :many
+-- name: ListActiveFeatures :many
 SELECT DISTINCT ON (d.feature_name)
 	fd.name,
 	fd.description,

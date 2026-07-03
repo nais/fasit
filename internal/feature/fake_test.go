@@ -126,7 +126,7 @@ func (f *fakeQuerier) FeatureDataCreate(context.Context, featuresql.FeatureDataC
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) FeatureIndexRows(context.Context) ([]featuresql.FeatureIndexRowsRow, error) {
+func (f *fakeQuerier) ListActiveFeatures(context.Context) ([]featuresql.ListActiveFeaturesRow, error) {
 	panic("not implemented")
 }
 

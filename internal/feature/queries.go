@@ -475,7 +475,7 @@ func asTime(v any) time.Time {
 	return time.Time{}
 }
 
-type FeatureIndexRow struct {
+type FeatureSummary struct {
 	Name        string
 	Description string
 	Source      string
@@ -485,15 +485,15 @@ func FeatureNames(ctx context.Context) ([]string, error) {
 	return querier(ctx).FeatureNames(ctx)
 }
 
-func FeatureIndexRows(ctx context.Context) ([]FeatureIndexRow, error) {
-	rows, err := querier(ctx).FeatureIndexRows(ctx)
+func ListActiveFeatures(ctx context.Context) ([]FeatureSummary, error) {
+	rows, err := querier(ctx).ListActiveFeatures(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]FeatureIndexRow, len(rows))
+	ret := make([]FeatureSummary, len(rows))
 	for i, row := range rows {
-		ret[i] = FeatureIndexRow{
+		ret[i] = FeatureSummary{
 			Name:        row.Name,
 			Description: row.Description,
 			Source:      row.Source,
