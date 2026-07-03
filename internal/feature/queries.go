@@ -44,43 +44,9 @@ func querier(ctx context.Context) featuresql.Querier {
 }
 
 func helmValues(ctx context.Context, f *Feature, envID uuid.UUID) (map[string]any, error) {
-	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
+	data, err := fetchHelmRenderData(ctx, f, envID)
 	if err != nil {
 		return nil, err
-	}
-
-	includeKeys := []string{}
-	for key, fv := range f.Values {
-		if fv.Config != nil && !slices.Contains(fv.IgnoreKind, envKind) {
-			includeKeys = append(includeKeys, key)
-		}
-	}
-
-	globalConfigs, err := querier(ctx).ConfigGlobalListByFeature(ctx, f.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	envConfigs, err := querier(ctx).ConfigEnvListByFeature(ctx, featuresql.ConfigEnvListByFeatureParams{
-		Feature:       f.Name,
-		EnvironmentID: envID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	vals := MergeConfigs(globalConfigs, envConfigs, includeKeys)
-
-	mp, err := MakeHelmConfigMap(vals)
-	if err != nil {
-		return nil, err
-	}
-
-	data := &HelmRenderData{
-		MV:         mv,
-		EnvKind:    envKind,
-		ConfigVals: vals,
-		ConfigMap:  mp,
 	}
 	return RenderHelmValues(data, f, TemplateFuncs, true)
 }
