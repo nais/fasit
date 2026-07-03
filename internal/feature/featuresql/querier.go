@@ -9,17 +9,8 @@ import (
 )
 
 type Querier interface {
-	ConfigEnvDelete(ctx context.Context, id uuid.UUID) error
-	ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
-	ConfigEnvGetByKey(ctx context.Context, arg ConfigEnvGetByKeyParams) (ConfigurationsEnvironment, error)
-	ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
-	ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error)
-	ConfigEnvUpsert(ctx context.Context, arg ConfigEnvUpsertParams) (ConfigurationsEnvironment, error)
-	ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error
-	ConfigGlobalGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
-	ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error)
-	ConfigGlobalUpdate(ctx context.Context, arg ConfigGlobalUpdateParams) (ConfigurationsGlobal, error)
-	ConfigGlobalUpsert(ctx context.Context, arg ConfigGlobalUpsertParams) (ConfigurationsGlobal, error)
+	DeleteEnvConfig(ctx context.Context, id uuid.UUID) error
+	DeleteGlobalConfig(ctx context.Context, id uuid.UUID) error
 	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
 	DisabledFeatureEnvironments(ctx context.Context, feature string) ([]DisabledFeatureEnvironmentsRow, error)
 	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
@@ -30,11 +21,16 @@ type Querier interface {
 	FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error)
 	FeatureNames(ctx context.Context) ([]string, error)
 	FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error)
+	GetEnvConfigByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
+	GetEnvConfigByKey(ctx context.Context, arg GetEnvConfigByKeyParams) (ConfigurationsEnvironment, error)
+	GetGlobalConfigByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
+	GetGlobalConfigByKey(ctx context.Context, arg GetGlobalConfigByKeyParams) (ConfigurationsGlobal, error)
 	// Deploy state is derived from deploy_log. Per-environment current state comes
 	// from the deploy_status view (latest row per environment x feature). Deploy
 	// history (one entry per deploy) is grouped by diid in Go from ListDeployLog.
 	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
+	ListAllEnvConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
 	ListEnvConfigByFeature(ctx context.Context, arg ListEnvConfigByFeatureParams) ([]ConfigurationsEnvironment, error)
 	ListGlobalConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
@@ -45,6 +41,10 @@ type Querier interface {
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)
+	UpdateEnvConfig(ctx context.Context, arg UpdateEnvConfigParams) (ConfigurationsEnvironment, error)
+	UpdateGlobalConfig(ctx context.Context, arg UpdateGlobalConfigParams) (ConfigurationsGlobal, error)
+	UpsertEnvConfig(ctx context.Context, arg UpsertEnvConfigParams) (ConfigurationsEnvironment, error)
+	UpsertGlobalConfig(ctx context.Context, arg UpsertGlobalConfigParams) (ConfigurationsGlobal, error)
 }
 
 var _ Querier = (*Queries)(nil)

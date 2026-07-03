@@ -88,7 +88,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigEnvUpdate(ctx, configID, featurepkg.UpdateConfiguration{Value: raw})
+			_, err := featurepkg.UpdateEnvConfig(ctx, configID, featurepkg.UpdateConfiguration{Value: raw})
 			return err
 		}); err != nil {
 			http.Error(w, "Failed to update configuration: "+err.Error(), http.StatusInternalServerError)
@@ -108,7 +108,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			return
 		}
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			return featurepkg.ConfigEnvDelete(ctx, configID)
+			return featurepkg.DeleteEnvConfig(ctx, configID)
 		}); err != nil {
 			http.Error(w, "Failed to delete configuration: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -234,7 +234,7 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 					if err != nil {
 						return fmt.Errorf("%s: invalid configuration id: %w", key, err)
 					}
-					if _, err := featurepkg.ConfigEnvUpdate(ctx, configID, featurepkg.UpdateConfiguration{Value: raw}); err != nil {
+					if _, err := featurepkg.UpdateEnvConfig(ctx, configID, featurepkg.UpdateConfiguration{Value: raw}); err != nil {
 						return fmt.Errorf("%s: %w", key, err)
 					}
 				} else {

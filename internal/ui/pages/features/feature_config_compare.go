@@ -75,7 +75,7 @@ func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key str
 		}
 	}
 
-	envOverrides, err := featurepkg.ConfigEnvListAllByFeature(ctx, feat.Name)
+	envOverrides, err := featurepkg.ListAllEnvConfigByFeature(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}

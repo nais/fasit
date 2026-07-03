@@ -43,7 +43,7 @@ func TestConfigCreate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, fq, aq := newTestCtx(t)
 
-			fq.configGlobalGetByKeyFunc = func(_ context.Context, _ featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error) {
+			fq.configGlobalGetByKeyFunc = func(_ context.Context, _ featuresql.GetGlobalConfigByKeyParams) (featuresql.ConfigurationsGlobal, error) {
 				if tc.existingErr != nil {
 					return featuresql.ConfigurationsGlobal{}, tc.existingErr
 				}
@@ -51,7 +51,7 @@ func TestConfigCreate(t *testing.T) {
 			}
 
 			var wrote bool
-			fq.configGlobalUpsertFunc = func(_ context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error) {
+			fq.configGlobalUpsertFunc = func(_ context.Context, arg featuresql.UpsertGlobalConfigParams) (featuresql.ConfigurationsGlobal, error) {
 				wrote = true
 				return featuresql.ConfigurationsGlobal{
 					ID: uuid.New(), Feature: arg.Feature, Key: arg.Key, Value: arg.Value,
@@ -86,14 +86,14 @@ func TestConfigCreate_Env(t *testing.T) {
 	ctx, fq, aq := newTestCtx(t)
 	envID := uuid.New()
 
-	fq.configEnvGetByKeyFunc = func(_ context.Context, _ featuresql.ConfigEnvGetByKeyParams) (featuresql.ConfigurationsEnvironment, error) {
+	fq.configEnvGetByKeyFunc = func(_ context.Context, _ featuresql.GetEnvConfigByKeyParams) (featuresql.ConfigurationsEnvironment, error) {
 		return featuresql.ConfigurationsEnvironment{
 			ID: uuid.New(), Feature: "f1", Key: "k",
 			Value: []byte(`"old"`), Secret: true,
 		}, nil
 	}
 
-	fq.configEnvUpsertFunc = func(_ context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error) {
+	fq.configEnvUpsertFunc = func(_ context.Context, arg featuresql.UpsertEnvConfigParams) (featuresql.ConfigurationsEnvironment, error) {
 		return featuresql.ConfigurationsEnvironment{
 			ID: uuid.New(), EnvironmentID: envID,
 			Feature: arg.Feature, Key: arg.Key, Value: arg.Value, Secret: arg.Secret,
@@ -157,7 +157,7 @@ func TestConfigUpdate(t *testing.T) {
 			}
 
 			var wrote bool
-			fq.configGlobalUpdateFunc = func(_ context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error) {
+			fq.configGlobalUpdateFunc = func(_ context.Context, arg featuresql.UpdateGlobalConfigParams) (featuresql.ConfigurationsGlobal, error) {
 				wrote = true
 				return featuresql.ConfigurationsGlobal{
 					ID: tc.existing.ID, Feature: tc.existing.Feature, Key: tc.existing.Key, Value: arg.Value,

@@ -86,9 +86,9 @@ type EnvConfigOverride struct {
 	Content       []byte
 }
 
-// ConfigEnvListAllByFeature returns all environment config overrides for a feature.
-func ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]EnvConfigOverride, error) {
-	rows, err := querier(ctx).ConfigEnvListAllByFeature(ctx, feature)
+// ListAllEnvConfigByFeature returns all environment config overrides for a feature.
+func ListAllEnvConfigByFeature(ctx context.Context, feature string) ([]EnvConfigOverride, error) {
+	rows, err := querier(ctx).ListAllEnvConfigByFeature(ctx, feature)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func ConfigEnvCreate(ctx context.Context, c NewConfiguration) (*Configuration, e
 		return nil, err
 	}
 
-	existing, err := querier(ctx).ConfigEnvGetByKey(ctx, featuresql.ConfigEnvGetByKeyParams{
+	existing, err := querier(ctx).GetEnvConfigByKey(ctx, featuresql.GetEnvConfigByKeyParams{
 		EnvironmentID: *c.EnvironmentID,
 		Feature:       c.Feature,
 		Key:           c.Key,
@@ -128,7 +128,7 @@ func ConfigEnvCreate(ctx context.Context, c NewConfiguration) (*Configuration, e
 	if hadExisting {
 		previousVal = existing.Value
 	} else {
-		global, err := querier(ctx).ConfigGlobalGetByKey(ctx, featuresql.ConfigGlobalGetByKeyParams{
+		global, err := querier(ctx).GetGlobalConfigByKey(ctx, featuresql.GetGlobalConfigByKeyParams{
 			Feature: c.Feature,
 			Key:     c.Key,
 		})
@@ -141,7 +141,7 @@ func ConfigEnvCreate(ctx context.Context, c NewConfiguration) (*Configuration, e
 		return environmentConfigurationFromSQL(existing), nil
 	}
 
-	config, err := querier(ctx).ConfigEnvUpsert(ctx, featuresql.ConfigEnvUpsertParams{
+	config, err := querier(ctx).UpsertEnvConfig(ctx, featuresql.UpsertEnvConfigParams{
 		EnvironmentID: *c.EnvironmentID,
 		Feature:       c.Feature,
 		Description:   c.Description,
@@ -173,7 +173,7 @@ func ConfigGlobalCreate(ctx context.Context, c NewConfiguration) (*Configuration
 		return nil, err
 	}
 
-	existing, err := querier(ctx).ConfigGlobalGetByKey(ctx, featuresql.ConfigGlobalGetByKeyParams{
+	existing, err := querier(ctx).GetGlobalConfigByKey(ctx, featuresql.GetGlobalConfigByKeyParams{
 		Feature: c.Feature,
 		Key:     c.Key,
 	})
@@ -189,7 +189,7 @@ func ConfigGlobalCreate(ctx context.Context, c NewConfiguration) (*Configuration
 		return globalConfigFromSQL(existing), nil
 	}
 
-	config, err := querier(ctx).ConfigGlobalUpsert(ctx, featuresql.ConfigGlobalUpsertParams{
+	config, err := querier(ctx).UpsertGlobalConfig(ctx, featuresql.UpsertGlobalConfigParams{
 		Feature:     c.Feature,
 		Description: c.Description,
 		Secret:      c.Secret,
@@ -218,7 +218,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Co
 	var conf featuresql.ConfigurationsGlobal
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
-		conf, err = querier(ctx).ConfigGlobalGetByID(ctx, id)
+		conf, err = querier(ctx).GetGlobalConfigByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -229,7 +229,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Co
 
 		oldVal := conf.Value
 
-		conf, err = querier(ctx).ConfigGlobalUpdate(ctx, featuresql.ConfigGlobalUpdateParams{
+		conf, err = querier(ctx).UpdateGlobalConfig(ctx, featuresql.UpdateGlobalConfigParams{
 			Description: c.Description,
 			Value:       c.Value,
 			ID:          id,
@@ -259,7 +259,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Co
 
 func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		existing, err := querier(ctx).ConfigGlobalGetByID(ctx, id)
+		existing, err := querier(ctx).GetGlobalConfigByID(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil
@@ -267,7 +267,7 @@ func ConfigDelete(ctx context.Context, id uuid.UUID) error {
 			return err
 		}
 
-		if err := querier(ctx).ConfigGlobalDelete(ctx, id); err != nil {
+		if err := querier(ctx).DeleteGlobalConfig(ctx, id); err != nil {
 			return err
 		}
 
@@ -300,11 +300,11 @@ func writeConfigUpsertAudit(ctx context.Context, hadExisting bool, info configAu
 	})
 }
 
-func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Configuration, error) {
+func UpdateEnvConfig(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Configuration, error) {
 	var conf featuresql.ConfigurationsEnvironment
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
-		conf, err = querier(ctx).ConfigEnvGetByID(ctx, id)
+		conf, err = querier(ctx).GetEnvConfigByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -315,7 +315,7 @@ func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (
 
 		oldVal := conf.Value
 
-		conf, err = querier(ctx).ConfigEnvUpdate(ctx, featuresql.ConfigEnvUpdateParams{
+		conf, err = querier(ctx).UpdateEnvConfig(ctx, featuresql.UpdateEnvConfigParams{
 			Description: c.Description,
 			Value:       c.Value,
 			ID:          id,
@@ -344,9 +344,9 @@ func ConfigEnvUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (
 	return environmentConfigurationFromSQL(conf), nil
 }
 
-func ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
+func DeleteEnvConfig(ctx context.Context, id uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		existing, err := querier(ctx).ConfigEnvGetByID(ctx, id)
+		existing, err := querier(ctx).GetEnvConfigByID(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil
@@ -354,7 +354,7 @@ func ConfigEnvDelete(ctx context.Context, id uuid.UUID) error {
 			return err
 		}
 
-		if err := querier(ctx).ConfigEnvDelete(ctx, id); err != nil {
+		if err := querier(ctx).DeleteEnvConfig(ctx, id); err != nil {
 			return err
 		}
 

@@ -19,7 +19,7 @@ WHERE
 ORDER BY
 	key ASC;
 
--- name: ConfigEnvGetByKey :one
+-- name: GetEnvConfigByKey :one
 SELECT
 	*
 FROM
@@ -29,7 +29,7 @@ WHERE
 	AND feature = @feature
 	AND key = @key;
 
--- name: ConfigEnvListAllByFeature :many
+-- name: ListAllEnvConfigByFeature :many
 SELECT
 	*
 FROM
@@ -40,7 +40,7 @@ ORDER BY
 	environment_id,
 	key ASC;
 
--- name: ConfigGlobalGetByKey :one
+-- name: GetGlobalConfigByKey :one
 SELECT
 	*
 FROM
@@ -49,7 +49,7 @@ WHERE
 	feature = @feature
 	AND key = @key;
 
--- name: ConfigEnvUpsert :one
+-- name: UpsertEnvConfig :one
 INSERT INTO configurations_environment(
 	environment_id,
 	feature,
@@ -74,7 +74,7 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ConfigGlobalUpsert :one
+-- name: UpsertGlobalConfig :one
 INSERT INTO configurations_global(
 	feature,
 	description,
@@ -96,7 +96,7 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ConfigGlobalUpdate :one
+-- name: UpdateGlobalConfig :one
 UPDATE
 	configurations_global
 SET
@@ -107,11 +107,11 @@ WHERE
 RETURNING
 	*;
 
--- name: ConfigGlobalDelete :exec
+-- name: DeleteGlobalConfig :exec
 DELETE FROM configurations_global
 WHERE id = @id;
 
--- name: ConfigGlobalGetByID :one
+-- name: GetGlobalConfigByID :one
 SELECT
 	*
 FROM
@@ -119,7 +119,7 @@ FROM
 WHERE
 	id = @id;
 
--- name: ConfigEnvGetByID :one
+-- name: GetEnvConfigByID :one
 SELECT
 	*
 FROM
@@ -127,7 +127,7 @@ FROM
 WHERE
 	id = @id;
 
--- name: ConfigEnvUpdate :one
+-- name: UpdateEnvConfig :one
 UPDATE
 	configurations_environment
 SET
@@ -138,7 +138,7 @@ WHERE
 RETURNING
 	*;
 
--- name: ConfigEnvDelete :exec
+-- name: DeleteEnvConfig :exec
 DELETE FROM configurations_environment
 WHERE id = @id;
 
