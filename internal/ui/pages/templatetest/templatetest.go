@@ -106,7 +106,7 @@ func renderWithFeature(ctx context.Context, featureName string, envID uuid.UUID,
 	modifiedFeat := *feat
 	modifiedFeat.Values = modifiedValues
 
-	rendered, _, _, err := featurepkg.HelmValuesWithSecretTaint(ctx, &modifiedFeat, envID)
+	rendered, err := featurepkg.HelmValues(ctx, &modifiedFeat, envID)
 	if err != nil {
 		return "", err
 	}

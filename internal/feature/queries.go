@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
-	"reflect"
 	"slices"
 	"text/template"
 	"time"
@@ -19,7 +17,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature/featuresql"
-	"github.com/nais/fasit/internal/feature/featureutil"
 )
 
 type ctxKey int
@@ -50,12 +47,6 @@ func helmValues(ctx context.Context, f *Feature, envID uuid.UUID) (map[string]an
 	}
 	return RenderHelmValues(data, f, TemplateFuncs, true)
 }
-
-// probeSecretSentinel is the high-entropy placeholder injected into both
-// environment and config secret values during a probe render. Any computed
-// output that differs between the control and probe renders depends on at
-// least one secret input.
-const probeSecretSentinel = "__FASIT_PROBE_a9f4e1c8d7b2__" // #nosec G101 -- placeholder, not a credential
 
 // HelmRenderData holds everything needed to render helm values without
 // additional database access. Fetched once, rendered multiple times for
@@ -153,180 +144,6 @@ func RenderHelmValues(data *HelmRenderData, f *Feature, funcs template.FuncMap, 
 	}
 
 	return mp, nil
-}
-
-func cloneConfigMap(m map[string]any) map[string]any {
-	b, _ := json.Marshal(m)
-	ret := make(map[string]any)
-	_ = json.Unmarshal(b, &ret)
-	return ret
-}
-
-func setNestedSentinel(m map[string]any, dottedKey string) {
-	keys, err := featureutil.SmartDotSplit(dottedKey)
-	if err != nil || len(keys) == 0 {
-		return
-	}
-	parent := m
-	for i, k := range keys {
-		if i == len(keys)-1 {
-			if _, ok := parent[k]; ok {
-				parent[k] = json.RawMessage(`"` + probeSecretSentinel + `"`)
-			}
-			return
-		}
-		next, ok := parent[k].(map[string]any)
-		if !ok {
-			return
-		}
-		parent = next
-	}
-}
-
-// maskEnvSecrets replaces secret env values in mv with the probe sentinel.
-func maskEnvSecrets(mv *ComputedValues, secretKeys map[string]bool) {
-	maskMapKeys(mv.Env, secretKeys)
-	maskMapKeys(mv.Management, secretKeys)
-	for _, envMap := range mv.Envs {
-		maskMapKeys(envMap, secretKeys)
-	}
-}
-
-func maskMapKeys(m map[string]any, secretKeys map[string]bool) {
-	for k := range m {
-		if secretKeys[k] {
-			m[k] = probeSecretSentinel
-		}
-	}
-}
-
-// cloneComputedValues returns a deep copy of mv so that mutations
-// (e.g. sentinel injection) don't affect the original.
-func cloneComputedValues(mv *ComputedValues) *ComputedValues {
-	clone := &ComputedValues{
-		Kind:   mv.Kind,
-		Tenant: mv.Tenant,
-		Fasit:  mv.Fasit,
-	}
-	clone.Env = cloneStringAnyMap(mv.Env)
-	clone.Management = cloneStringAnyMap(mv.Management)
-	clone.Envs = make([]map[string]any, len(mv.Envs))
-	for i, e := range mv.Envs {
-		clone.Envs[i] = cloneStringAnyMap(e)
-	}
-	return clone
-}
-
-func cloneStringAnyMap(m map[string]any) map[string]any {
-	if m == nil {
-		return nil
-	}
-	c := make(map[string]any, len(m))
-	maps.Copy(c, m)
-	return c
-}
-
-// HelmValuesWithSecretTaint renders the helm values for f in envID and reports
-// the set of computed value keys whose rendered output depends on a secret
-// input (a secret config or a secret environment value).
-//
-// The taint comparison uses deterministic template functions so that
-// non-deterministic functions (now, randAlphaNum, …) do not cause false
-// positives.
-//
-// Both env and config secrets are masked with the same high-entropy
-// sentinel for the probe render.
-//
-// If probeOK is false, the caller should treat all computed values as
-// potentially secret.
-//
-// NOTE: non-string secret configs (int, bool, string_array) receive a
-// string sentinel which may cause a type mismatch in the probe template
-// render. In that case probeOK will be false and the caller falls back
-// to pessimistically masking all computed values.
-func HelmValuesWithSecretTaint(ctx context.Context, f *Feature, envID uuid.UUID) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
-	data, err := fetchHelmRenderData(ctx, f, envID)
-	if err != nil {
-		return nil, nil, false, err
-	}
-	return renderHelmValuesWithSecretTaint(data, f)
-}
-
-func renderHelmValuesWithSecretTaint(data *HelmRenderData, f *Feature) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
-	// Snapshot the pre-render configMap so control/probe start from the same
-	// state as the real render. addToMap is write-once: if the real render's
-	// computed values leaked into control/probe, they'd skip re-rendering and
-	// the taint diff would always be empty.
-	originalConfigMap := cloneConfigMap(data.ConfigMap)
-
-	real, err := RenderHelmValues(data, f, TemplateFuncs, false)
-	if err != nil {
-		return nil, nil, false, err
-	}
-
-	controlData := *data
-	controlData.ConfigMap = cloneConfigMap(originalConfigMap)
-	control, cerr := RenderHelmValues(&controlData, f, deterministicTemplateFuncs, false)
-
-	// Probe render (deterministic funcs, secrets masked with sentinel, no validation).
-	probeMV := cloneComputedValues(data.MV)
-	maskEnvSecrets(probeMV, data.SecretEnvKeys)
-	probeCfg := cloneConfigMap(originalConfigMap)
-	for _, key := range f.SecretKeys() {
-		setNestedSentinel(probeCfg, key)
-	}
-	probeData := &HelmRenderData{
-		MV:         probeMV,
-		EnvKind:    data.EnvKind,
-		ConfigVals: data.ConfigVals,
-		ConfigMap:  probeCfg,
-	}
-
-	probe, perr := RenderHelmValues(probeData, f, deterministicTemplateFuncs, false)
-
-	if cerr != nil || perr != nil {
-		return real, nil, false, nil
-	}
-
-	taint = computedSecretTaint(f.Values, control, probe)
-	return real, taint, true, nil
-}
-
-// computedSecretTaint reports which computed value keys in values render to
-// different output between the control and probe maps. A computed value with a
-// differing rendered value depends on at least one secret input.
-func computedSecretTaint(values Values, control, probe map[string]any) map[string]bool {
-	taint := map[string]bool{}
-	for key, val := range values {
-		if val.Computed == nil {
-			continue
-		}
-		a, aok := lookupNested(control, key)
-		b, bok := lookupNested(probe, key)
-		if aok != bok || !reflect.DeepEqual(a, b) {
-			taint[key] = true
-		}
-	}
-	return taint
-}
-
-func lookupNested(m map[string]any, dottedKey string) (any, bool) {
-	keys, err := featureutil.SmartDotSplit(dottedKey)
-	if err != nil || len(keys) == 0 {
-		return nil, false
-	}
-	var cur any = m
-	for _, k := range keys {
-		mm, ok := cur.(map[string]any)
-		if !ok {
-			return nil, false
-		}
-		cur, ok = mm[k]
-		if !ok {
-			return nil, false
-		}
-	}
-	return cur, true
 }
 
 func HelmValues(ctx context.Context, f *Feature, envID uuid.UUID) (map[string]any, error) {

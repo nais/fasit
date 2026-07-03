@@ -95,14 +95,10 @@ func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key str
 				EnvName:    env.Name,
 				EnvHref:    "/features/" + feat.Name + "/envs/" + env.TenantName + "/" + env.Name + "/config#config-" + key,
 			}
-			rendered, secretTaint, _, rerr := featurepkg.HelmValuesWithSecretTaint(ctx, feat, env.ID)
+			rendered, rerr := featurepkg.HelmValues(ctx, feat, env.ID)
 			if rerr != nil {
 				row.Value = "(render error)"
 				row.Source = "mapping"
-			} else if secretTaint[key] {
-				row.Value = "••••••••"
-				row.Source = "mapping"
-				row.IsSecret = true
 			} else if v, ok := lookupRenderedValue(rendered, key); ok {
 				row.Value = v
 				row.Source = "mapping"
@@ -179,11 +175,7 @@ func configCompareRows(rows []compareRow) []g.Node {
 	valKeys := make([]string, len(rows))
 	srcKeys := make([]string, len(rows))
 	for i, row := range rows {
-		if row.IsSecret {
-			valKeys[i] = "••••••••"
-		} else {
-			valKeys[i] = truncateValue(row.Value, 60)
-		}
+		valKeys[i] = row.Value
 		srcKeys[i] = row.Source
 	}
 	valEmph := components.ColumnConsensus(valKeys)
@@ -193,11 +185,28 @@ func configCompareRows(rows []compareRow) []g.Node {
 	for i, row := range rows {
 		body[i] = h.Tr(
 			h.Td(h.A(h.Href(row.EnvHref), h.Strong(g.Text(row.TenantName)), g.Text(" / "), g.Text(row.EnvName))),
-			h.Td(components.ConsensusCell(valEmph[i], g.Text(valKeys[i]))),
+			h.Td(components.ConsensusCell(valEmph[i], compareValueNode(i, row.Value))),
 			h.Td(components.ConsensusCell(srcEmph[i], h.Span(h.Class("source-label"), g.Text(row.Source)))),
 		)
 	}
 	return body
+}
+
+// compareValueNode renders a value cell, truncating long values via CSS and
+// always exposing a copy button so the full value is reachable.
+func compareValueNode(idx int, value string) g.Node {
+	id := fmt.Sprintf("compare-val-%d", idx)
+	return h.Span(h.Class("compare-value-wrap"),
+		h.Span(h.Class("compare-value compare-value-truncated"), h.ID(id), g.Text(value)),
+		h.Button(
+			h.Type("button"),
+			h.Class("copy-btn copy-btn-icon"),
+			g.Attr("data-copy-target", id),
+			g.Attr("aria-label", "Copy value"),
+			h.Title("Copy value"),
+			g.Raw(`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`),
+		),
+	)
 }
 
 func lookupRenderedValue(m map[string]any, key string) (string, bool) {
@@ -281,11 +290,4 @@ func featureEnvironments(ctx context.Context, feat *featurepkg.Feature) ([]confi
 	})
 
 	return result, nil
-}
-
-func truncateValue(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "…"
 }

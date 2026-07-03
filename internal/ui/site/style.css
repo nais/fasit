@@ -784,6 +784,45 @@ nav .user {
   text-decoration: underline;
 }
 
+/* Compare-across-envs value cell: truncate long values and expose a copy
+   button for the full value. */
+.compare-value-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+.compare-value {
+  vertical-align: middle;
+}
+.compare-value-truncated {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 60ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8125rem;
+}
+.copy-btn-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 0;
+  color: var(--text-muted);
+}
+.copy-btn-icon:hover {
+  color: var(--text-primary);
+}
+.copy-btn-icon.copied {
+  color: var(--status-success, #3fb950);
+}
+
 /* Merged env-feature heading: an optional reconcile alert and the runtime
    (installed release) on one row, separated by a divider. */
 .deploy-version {

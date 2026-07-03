@@ -6,6 +6,18 @@ document.addEventListener("click", (e) => {
   if (!target) return;
   const text = target.innerText;
   const done = () => {
+    if (btn.querySelector("svg")) {
+      const prevLabel = btn.getAttribute("aria-label");
+      btn.classList.add("copied");
+      btn.setAttribute("aria-label", "Copied!");
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        if (prevLabel) btn.setAttribute("aria-label", prevLabel);
+        btn.disabled = false;
+      }, 1200);
+      return;
+    }
     const prev = btn.textContent;
     btn.textContent = "Copied!";
     btn.disabled = true;

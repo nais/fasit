@@ -292,16 +292,12 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 	}
 
 	var rendered map[string]any
-	var computedSecrets map[string]bool
-	probeFailed := false
 	if hasComputed {
-		var probeOK bool
 		var rerr error
-		rendered, computedSecrets, probeOK, rerr = featurepkg.HelmValuesWithSecretTaint(ctx, feat, envID)
+		rendered, rerr = featurepkg.HelmValues(ctx, feat, envID)
 		if rerr != nil {
 			rendered = nil
 		}
-		probeFailed = rerr == nil && !probeOK
 	}
 
 	globalConfigs, err := featurepkg.GetGlobalConfig(ctx, feat.Name)
@@ -336,9 +332,6 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 			if cfg.Value.Computed != nil {
 				item.IsComputed = true
 				item.Template = cfg.Value.Computed.Template
-				if probeFailed || computedSecrets[cfg.Key] {
-					item.IsSecret = true
-				}
 			}
 		}
 		if cfg.Source == featurepkg.ConfigSourceEnv {
@@ -361,6 +354,9 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 			}
 			if v, found, hasVal := lookupHelmValue(rendered, item.Key); found {
 				items[i].Value = v
+				if items[i].IsComputed {
+					items[i].Value = items[i].Template
+				}
 				items[i].HasValue = hasVal
 			}
 		}
