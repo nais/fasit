@@ -14,11 +14,11 @@ import (
 	"github.com/nais/fasit/internal/feature/featuresql"
 )
 
-// FeatureDisable marks a (feature, environment) combination as disabled in the
+// DisableFeature marks a (feature, environment) combination as disabled in the
 // authoritative disabled_features table and writes an audit entry. Insert and
 // audit are committed together via dbtx.WithTx; nested calls reuse the outer
 // transaction.
-func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason string) error {
+func DisableFeature(ctx context.Context, envID uuid.UUID, featureName, reason string) error {
 	reason = strings.TrimSpace(reason)
 	if reason == "" {
 		return fmt.Errorf("disable reason is required")
@@ -28,7 +28,7 @@ func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason st
 	}
 
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		if err := querier(ctx).DisabledFeatureSet(ctx, featuresql.DisabledFeatureSetParams{
+		if err := querier(ctx).SetDisabledFeature(ctx, featuresql.SetDisabledFeatureParams{
 			EnvironmentID: envID,
 			Feature:       featureName,
 		}); err != nil {
@@ -46,12 +46,12 @@ func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason st
 	})
 }
 
-// FeatureEnable removes a (feature, environment) row from disabled_features
+// EnableFeature removes a (feature, environment) row from disabled_features
 // and writes an audit entry. No-op if the row does not exist. Delete and
 // audit are committed together via dbtx.WithTx.
-func FeatureEnable(ctx context.Context, envID uuid.UUID, featureName string) error {
+func EnableFeature(ctx context.Context, envID uuid.UUID, featureName string) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
-		if err := querier(ctx).DisabledFeatureDelete(ctx, featuresql.DisabledFeatureDeleteParams{
+		if err := querier(ctx).DeleteDisabledFeature(ctx, featuresql.DeleteDisabledFeatureParams{
 			EnvironmentID: envID,
 			Feature:       featureName,
 		}); err != nil {
@@ -68,11 +68,11 @@ func FeatureEnable(ctx context.Context, envID uuid.UUID, featureName string) err
 	})
 }
 
-// FeatureDisabledAt reports whether a (feature, environment) row exists in
+// GetFeatureDisabledAt reports whether a (feature, environment) row exists in
 // disabled_features. If disabled, returns the disabled_at timestamp and
 // true; otherwise the zero time and false.
-func FeatureDisabledAt(ctx context.Context, envID uuid.UUID, featureName string) (time.Time, bool, error) {
-	row, err := querier(ctx).DisabledFeatureGet(ctx, featuresql.DisabledFeatureGetParams{
+func GetFeatureDisabledAt(ctx context.Context, envID uuid.UUID, featureName string) (time.Time, bool, error) {
+	row, err := querier(ctx).GetDisabledFeature(ctx, featuresql.GetDisabledFeatureParams{
 		EnvironmentID: envID,
 		Feature:       featureName,
 	})
@@ -85,11 +85,11 @@ func FeatureDisabledAt(ctx context.Context, envID uuid.UUID, featureName string)
 	return row.DisabledAt, true, nil
 }
 
-// DisabledEnvironmentsForFeature returns, for a single feature, the set of
+// ListDisabledEnvironmentsForFeature returns, for a single feature, the set of
 // environments where it is disabled, keyed by environment id with the disabled
 // timestamp. One query instead of one per environment.
-func DisabledEnvironmentsForFeature(ctx context.Context, featureName string) (map[uuid.UUID]time.Time, error) {
-	rows, err := querier(ctx).DisabledFeatureEnvironments(ctx, featureName)
+func ListDisabledEnvironmentsForFeature(ctx context.Context, featureName string) (map[uuid.UUID]time.Time, error) {
+	rows, err := querier(ctx).ListDisabledFeatureEnvironments(ctx, featureName)
 	if err != nil {
 		return nil, err
 	}

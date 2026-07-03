@@ -145,7 +145,7 @@ func TestValueRefsForEnvironment(t *testing.T) {
 		}
 
 		// Disable the feature
-		err = featurepkg.FeatureDisable(ctx, env.ID, "app-a", "test")
+		err = featurepkg.DisableFeature(ctx, env.ID, "app-a", "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

@@ -1,4 +1,4 @@
--- name: DisabledFeatureSet :exec
+-- name: SetDisabledFeature :exec
 INSERT INTO disabled_features(
 	environment_id,
 	feature)
@@ -10,12 +10,12 @@ ON CONFLICT (
 	feature)
 	DO NOTHING;
 
--- name: DisabledFeatureDelete :exec
+-- name: DeleteDisabledFeature :exec
 DELETE FROM disabled_features
 WHERE environment_id = @environment_id
 	AND feature = @feature;
 
--- name: DisabledFeatureGet :one
+-- name: GetDisabledFeature :one
 SELECT
 	*
 FROM
@@ -24,7 +24,7 @@ WHERE
 	environment_id = @environment_id
 	AND feature = @feature;
 
--- name: DisabledFeaturesByEnvironment :many
+-- name: ListDisabledFeaturesByEnvironment :many
 SELECT
 	*
 FROM
@@ -34,7 +34,7 @@ WHERE
 ORDER BY
 	feature;
 
--- name: DisabledFeatureEnvironments :many
+-- name: ListDisabledFeatureEnvironments :many
 SELECT
 	environment_id,
 	disabled_at

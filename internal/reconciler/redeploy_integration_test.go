@@ -60,7 +60,7 @@ func TestRedeploy(t *testing.T) {
 		h.requirePublished(1)
 
 		envID := h.envID("nav", "dev")
-		if err := feature.FeatureDisable(h.ctx, envID, "naiserator", "testing redeploy gate"); err != nil {
+		if err := feature.DisableFeature(h.ctx, envID, "naiserator", "testing redeploy gate"); err != nil {
 			t.Fatalf("disable feature: %v", err)
 		}
 

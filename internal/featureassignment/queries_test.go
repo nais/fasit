@@ -131,7 +131,7 @@ func TestFeatureForEnvironment(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		err = featurepkg.FeatureDisable(ctx, env.ID, "myapp", "test")
+		err = featurepkg.DisableFeature(ctx, env.ID, "myapp", "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -187,7 +187,7 @@ func TestListEnvironmentFeatures(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		err = featurepkg.FeatureDisable(ctx, env.ID, "disabled-app", "test")
+		err = featurepkg.DisableFeature(ctx, env.ID, "disabled-app", "test")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

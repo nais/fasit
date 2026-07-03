@@ -42,7 +42,7 @@ func LoadEnvironments(ctx context.Context, feature *featurepkg.Feature) []Enviro
 	winners := winningAssignments(assignments, targetedEnvs)
 	statusByAssignmentEnv := reconcileStatuses(ctx, assignments)
 
-	disabledByEnv, err := featurepkg.DisabledEnvironmentsForFeature(ctx, feature.Name)
+	disabledByEnv, err := featurepkg.ListDisabledEnvironmentsForFeature(ctx, feature.Name)
 	if err != nil {
 		return []Environment{}
 	}

@@ -102,23 +102,23 @@ func (f *fakeQuerier) UpdateGlobalConfig(ctx context.Context, arg featuresql.Upd
 	return f.configGlobalUpdateFunc(ctx, arg)
 }
 
-func (f *fakeQuerier) DisabledFeatureDelete(context.Context, featuresql.DisabledFeatureDeleteParams) error {
+func (f *fakeQuerier) DeleteDisabledFeature(context.Context, featuresql.DeleteDisabledFeatureParams) error {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) DisabledFeatureGet(context.Context, featuresql.DisabledFeatureGetParams) (featuresql.DisabledFeature, error) {
+func (f *fakeQuerier) GetDisabledFeature(context.Context, featuresql.GetDisabledFeatureParams) (featuresql.DisabledFeature, error) {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) DisabledFeatureSet(context.Context, featuresql.DisabledFeatureSetParams) error {
+func (f *fakeQuerier) SetDisabledFeature(context.Context, featuresql.SetDisabledFeatureParams) error {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) DisabledFeaturesByEnvironment(context.Context, uuid.UUID) ([]featuresql.DisabledFeature, error) {
+func (f *fakeQuerier) ListDisabledFeaturesByEnvironment(context.Context, uuid.UUID) ([]featuresql.DisabledFeature, error) {
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) DisabledFeatureEnvironments(context.Context, string) ([]featuresql.DisabledFeatureEnvironmentsRow, error) {
+func (f *fakeQuerier) ListDisabledFeatureEnvironments(context.Context, string) ([]featuresql.ListDisabledFeatureEnvironmentsRow, error) {
 	panic("not implemented")
 }
 

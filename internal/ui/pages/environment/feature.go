@@ -309,9 +309,9 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 		}
 
 		if enabled {
-			err = featurepkg.FeatureEnable(r.Context(), env.ID, feature.Name)
+			err = featurepkg.EnableFeature(r.Context(), env.ID, feature.Name)
 		} else {
-			err = featurepkg.FeatureDisable(r.Context(), env.ID, feature.Name, reason)
+			err = featurepkg.DisableFeature(r.Context(), env.ID, feature.Name, reason)
 		}
 		if err != nil {
 			http.Error(w, "Failed to toggle feature state: "+err.Error(), http.StatusInternalServerError)

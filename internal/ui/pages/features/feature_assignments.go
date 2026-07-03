@@ -586,7 +586,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 		}
 	}
 
-	disabledByEnv, err := featurepkg.DisabledEnvironmentsForFeature(ctx, feature.Name)
+	disabledByEnv, err := featurepkg.ListDisabledEnvironmentsForFeature(ctx, feature.Name)
 	if err != nil {
 		return []AssignmentEnvStatus{}
 	}

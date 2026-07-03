@@ -470,7 +470,7 @@ func main() {
 
 	// Features are enabled by default (absence from disabled_features = enabled).
 	// Disable one feature to get a DISABLED status row in the mix.
-	if err := feature.FeatureDisable(ctx, envID("dev-nais", "dev"), "dependencytrack", "seeded as disabled for local dev"); err != nil {
+	if err := feature.DisableFeature(ctx, envID("dev-nais", "dev"), "dependencytrack", "seeded as disabled for local dev"); err != nil {
 		log.With("err", err).Error("disable dependencytrack in dev-nais/dev")
 	}
 
@@ -529,9 +529,9 @@ func main() {
 
 		// Enable a previously disabled feature (re-enable dependencytrack in a different env)
 		devNaisDev := envID("dev-nais", "dev")
-		_ = feature.FeatureEnable(ctx, devNaisDev, "dependencytrack")
+		_ = feature.EnableFeature(ctx, devNaisDev, "dependencytrack")
 		// Then disable it again with a different reason (generates disable+enable+disable sequence)
-		_ = feature.FeatureDisable(ctx, devNaisDev, "dependencytrack", "re-disabled after testing: broken metrics endpoint")
+		_ = feature.DisableFeature(ctx, devNaisDev, "dependencytrack", "re-disabled after testing: broken metrics endpoint")
 
 		// Update environment labels (exercises SetLabels audit)
 		ctx = auth.SetEmail(ctx, actors[1])

@@ -186,7 +186,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 		return nil, err
 	}
 
-	_, disabled, err := featurepkg.FeatureDisabledAt(ctx, env.ID, featureName)
+	_, disabled, err := featurepkg.GetFeatureDisabledAt(ctx, env.ID, featureName)
 	if err != nil {
 		return nil, err
 	}

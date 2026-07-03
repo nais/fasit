@@ -9,18 +9,15 @@ import (
 )
 
 type Querier interface {
+	DeleteDisabledFeature(ctx context.Context, arg DeleteDisabledFeatureParams) error
 	DeleteEnvConfig(ctx context.Context, id uuid.UUID) error
 	DeleteGlobalConfig(ctx context.Context, id uuid.UUID) error
-	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
-	DisabledFeatureEnvironments(ctx context.Context, feature string) ([]DisabledFeatureEnvironmentsRow, error)
-	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
-	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
-	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
 	FeatureDataByVersion(ctx context.Context, arg FeatureDataByVersionParams) (FeatureDataByVersionRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureIndexRows(ctx context.Context) ([]FeatureIndexRowsRow, error)
 	FeatureNames(ctx context.Context) ([]string, error)
 	FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error)
+	GetDisabledFeature(ctx context.Context, arg GetDisabledFeatureParams) (DisabledFeature, error)
 	GetEnvConfigByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
 	GetEnvConfigByKey(ctx context.Context, arg GetEnvConfigByKeyParams) (ConfigurationsEnvironment, error)
 	GetGlobalConfigByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
@@ -32,6 +29,8 @@ type Querier interface {
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	ListAllEnvConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
+	ListDisabledFeatureEnvironments(ctx context.Context, feature string) ([]ListDisabledFeatureEnvironmentsRow, error)
+	ListDisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
 	ListEnvConfigByFeature(ctx context.Context, arg ListEnvConfigByFeatureParams) ([]ConfigurationsEnvironment, error)
 	ListGlobalConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ListLatestDeployInstructionsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployInstructionsForEnvironmentRow, error)
@@ -41,6 +40,7 @@ type Querier interface {
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
 	ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error)
+	SetDisabledFeature(ctx context.Context, arg SetDisabledFeatureParams) error
 	UpdateEnvConfig(ctx context.Context, arg UpdateEnvConfigParams) (ConfigurationsEnvironment, error)
 	UpdateGlobalConfig(ctx context.Context, arg UpdateGlobalConfigParams) (ConfigurationsGlobal, error)
 	UpsertEnvConfig(ctx context.Context, arg UpsertEnvConfigParams) (ConfigurationsEnvironment, error)

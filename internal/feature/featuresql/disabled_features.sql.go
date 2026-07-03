@@ -10,23 +10,45 @@ import (
 	"github.com/google/uuid"
 )
 
-const disabledFeatureDelete = `-- name: DisabledFeatureDelete :exec
+const deleteDisabledFeature = `-- name: DeleteDisabledFeature :exec
 DELETE FROM disabled_features
 WHERE environment_id = $1
 	AND feature = $2
 `
 
-type DisabledFeatureDeleteParams struct {
+type DeleteDisabledFeatureParams struct {
 	EnvironmentID uuid.UUID
 	Feature       string
 }
 
-func (q *Queries) DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error {
-	_, err := q.db.Exec(ctx, disabledFeatureDelete, arg.EnvironmentID, arg.Feature)
+func (q *Queries) DeleteDisabledFeature(ctx context.Context, arg DeleteDisabledFeatureParams) error {
+	_, err := q.db.Exec(ctx, deleteDisabledFeature, arg.EnvironmentID, arg.Feature)
 	return err
 }
 
-const disabledFeatureEnvironments = `-- name: DisabledFeatureEnvironments :many
+const getDisabledFeature = `-- name: GetDisabledFeature :one
+SELECT
+	environment_id, feature, disabled_at
+FROM
+	disabled_features
+WHERE
+	environment_id = $1
+	AND feature = $2
+`
+
+type GetDisabledFeatureParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+}
+
+func (q *Queries) GetDisabledFeature(ctx context.Context, arg GetDisabledFeatureParams) (DisabledFeature, error) {
+	row := q.db.QueryRow(ctx, getDisabledFeature, arg.EnvironmentID, arg.Feature)
+	var i DisabledFeature
+	err := row.Scan(&i.EnvironmentID, &i.Feature, &i.DisabledAt)
+	return i, err
+}
+
+const listDisabledFeatureEnvironments = `-- name: ListDisabledFeatureEnvironments :many
 SELECT
 	environment_id,
 	disabled_at
@@ -38,20 +60,20 @@ ORDER BY
 	environment_id
 `
 
-type DisabledFeatureEnvironmentsRow struct {
+type ListDisabledFeatureEnvironmentsRow struct {
 	EnvironmentID uuid.UUID
 	DisabledAt    time.Time
 }
 
-func (q *Queries) DisabledFeatureEnvironments(ctx context.Context, feature string) ([]DisabledFeatureEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, disabledFeatureEnvironments, feature)
+func (q *Queries) ListDisabledFeatureEnvironments(ctx context.Context, feature string) ([]ListDisabledFeatureEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, listDisabledFeatureEnvironments, feature)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DisabledFeatureEnvironmentsRow{}
+	items := []ListDisabledFeatureEnvironmentsRow{}
 	for rows.Next() {
-		var i DisabledFeatureEnvironmentsRow
+		var i ListDisabledFeatureEnvironmentsRow
 		if err := rows.Scan(&i.EnvironmentID, &i.DisabledAt); err != nil {
 			return nil, err
 		}
@@ -63,52 +85,7 @@ func (q *Queries) DisabledFeatureEnvironments(ctx context.Context, feature strin
 	return items, nil
 }
 
-const disabledFeatureGet = `-- name: DisabledFeatureGet :one
-SELECT
-	environment_id, feature, disabled_at
-FROM
-	disabled_features
-WHERE
-	environment_id = $1
-	AND feature = $2
-`
-
-type DisabledFeatureGetParams struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-}
-
-func (q *Queries) DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error) {
-	row := q.db.QueryRow(ctx, disabledFeatureGet, arg.EnvironmentID, arg.Feature)
-	var i DisabledFeature
-	err := row.Scan(&i.EnvironmentID, &i.Feature, &i.DisabledAt)
-	return i, err
-}
-
-const disabledFeatureSet = `-- name: DisabledFeatureSet :exec
-INSERT INTO disabled_features(
-	environment_id,
-	feature)
-VALUES (
-	$1,
-	$2)
-ON CONFLICT (
-	environment_id,
-	feature)
-	DO NOTHING
-`
-
-type DisabledFeatureSetParams struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-}
-
-func (q *Queries) DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error {
-	_, err := q.db.Exec(ctx, disabledFeatureSet, arg.EnvironmentID, arg.Feature)
-	return err
-}
-
-const disabledFeaturesByEnvironment = `-- name: DisabledFeaturesByEnvironment :many
+const listDisabledFeaturesByEnvironment = `-- name: ListDisabledFeaturesByEnvironment :many
 SELECT
 	environment_id, feature, disabled_at
 FROM
@@ -119,8 +96,8 @@ ORDER BY
 	feature
 `
 
-func (q *Queries) DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error) {
-	rows, err := q.db.Query(ctx, disabledFeaturesByEnvironment, environmentID)
+func (q *Queries) ListDisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error) {
+	rows, err := q.db.Query(ctx, listDisabledFeaturesByEnvironment, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,4 +114,27 @@ func (q *Queries) DisabledFeaturesByEnvironment(ctx context.Context, environment
 		return nil, err
 	}
 	return items, nil
+}
+
+const setDisabledFeature = `-- name: SetDisabledFeature :exec
+INSERT INTO disabled_features(
+	environment_id,
+	feature)
+VALUES (
+	$1,
+	$2)
+ON CONFLICT (
+	environment_id,
+	feature)
+	DO NOTHING
+`
+
+type SetDisabledFeatureParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+}
+
+func (q *Queries) SetDisabledFeature(ctx context.Context, arg SetDisabledFeatureParams) error {
+	_, err := q.db.Exec(ctx, setDisabledFeature, arg.EnvironmentID, arg.Feature)
+	return err
 }
