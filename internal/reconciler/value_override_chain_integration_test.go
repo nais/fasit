@@ -109,9 +109,9 @@ func TestDeployInstructionValueOverrideChain(t *testing.T) {
 			EnvironmentID: envID,
 		}
 		if envID != nil {
-			_, err = feature.ConfigEnvCreate(h.ctx, c)
+			_, err = feature.CreateEnvConfig(h.ctx, c)
 		} else {
-			_, err = feature.ConfigGlobalCreate(h.ctx, c)
+			_, err = feature.CreateGlobalConfig(h.ctx, c)
 		}
 		if err != nil {
 			t.Fatalf("create config %q: %v", key, err)

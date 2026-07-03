@@ -333,7 +333,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 				val = fmt.Sprintf("global-secret-%d", fi)
 			}
 			b, _ := json.Marshal(val)
-			if _, err := feature.ConfigGlobalCreate(h.ctx, feature.NewConfiguration{
+			if _, err := feature.CreateGlobalConfig(h.ctx, feature.NewConfiguration{
 				Feature: name,
 				Key:     key,
 				Value:   b,
@@ -357,7 +357,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 						val = false
 					}
 					b, _ := json.Marshal(val)
-					if _, err := feature.ConfigEnvCreate(h.ctx, feature.NewConfiguration{
+					if _, err := feature.CreateEnvConfig(h.ctx, feature.NewConfiguration{
 						EnvironmentID: &envID,
 						Feature:       name,
 						Key:           key,
@@ -370,7 +370,7 @@ func TestReconcileRealisticScale(t *testing.T) {
 
 			if env.name == "staging" {
 				b, _ := json.Marshal(fmt.Sprintf("staging-b-%d-%s", fi, envID))
-				if _, err := feature.ConfigEnvCreate(h.ctx, feature.NewConfiguration{
+				if _, err := feature.CreateEnvConfig(h.ctx, feature.NewConfiguration{
 					EnvironmentID: &envID,
 					Feature:       name,
 					Key:           "setting_b",

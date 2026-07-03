@@ -165,7 +165,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		}
 
 		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigEnvCreate(ctx, featurepkg.NewConfiguration{
+			_, err := featurepkg.CreateEnvConfig(ctx, featurepkg.NewConfiguration{
 				EnvironmentID: &env.ID,
 				Feature:       featureName,
 				Key:           key,
@@ -242,7 +242,7 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 					if v, ok := feat.Values[key]; ok && v.Config != nil {
 						secret = v.Config.Secret
 					}
-					if _, err := featurepkg.ConfigEnvCreate(ctx, featurepkg.NewConfiguration{
+					if _, err := featurepkg.CreateEnvConfig(ctx, featurepkg.NewConfiguration{
 						EnvironmentID: &env.ID,
 						Feature:       featureName,
 						Key:           key,

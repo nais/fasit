@@ -103,7 +103,7 @@ func ListAllEnvConfigByFeature(ctx context.Context, feature string) ([]EnvConfig
 	return result, nil
 }
 
-func ConfigEnvCreate(ctx context.Context, c NewConfiguration) (*Configuration, error) {
+func CreateEnvConfig(ctx context.Context, c NewConfiguration) (*Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func ConfigEnvCreate(ctx context.Context, c NewConfiguration) (*Configuration, e
 	return environmentConfigurationFromSQL(config), nil
 }
 
-func ConfigGlobalCreate(ctx context.Context, c NewConfiguration) (*Configuration, error) {
+func CreateGlobalConfig(ctx context.Context, c NewConfiguration) (*Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func ConfigGlobalCreate(ctx context.Context, c NewConfiguration) (*Configuration
 	return globalConfigFromSQL(config), nil
 }
 
-func ConfigUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Configuration, error) {
+func UpdateConfig(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Configuration, error) {
 	var conf featuresql.ConfigurationsGlobal
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
 		var err error
@@ -257,7 +257,7 @@ func ConfigUpdate(ctx context.Context, id uuid.UUID, c UpdateConfiguration) (*Co
 	return globalConfigFromSQL(conf), nil
 }
 
-func ConfigDelete(ctx context.Context, id uuid.UUID) error {
+func DeleteConfig(ctx context.Context, id uuid.UUID) error {
 	return dbtx.WithTx(ctx, func(ctx context.Context) error {
 		existing, err := querier(ctx).GetGlobalConfigByID(ctx, id)
 		if err != nil {

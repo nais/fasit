@@ -58,7 +58,7 @@ func TestConfigCreate(t *testing.T) {
 				}, nil
 			}
 
-			_, err := ConfigGlobalCreate(ctx, tc.input)
+			_, err := CreateGlobalConfig(ctx, tc.input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -100,7 +100,7 @@ func TestConfigCreate_Env(t *testing.T) {
 		}, nil
 	}
 
-	_, err := ConfigEnvCreate(ctx, NewConfiguration{
+	_, err := CreateEnvConfig(ctx, NewConfiguration{
 		EnvironmentID: &envID,
 		Feature:       "f1",
 		Key:           "k",
@@ -126,7 +126,7 @@ func TestConfigCreate_Env(t *testing.T) {
 	}
 }
 
-func TestConfigUpdate(t *testing.T) {
+func TestUpdateConfig(t *testing.T) {
 	tests := []struct {
 		name      string
 		existing  featuresql.ConfigurationsGlobal
@@ -135,12 +135,12 @@ func TestConfigUpdate(t *testing.T) {
 		wantAudit bool
 	}{
 		{
-			name:     "ConfigUpdate(same value): no-op",
+			name:     "UpdateConfig(same value): no-op",
 			existing: featuresql.ConfigurationsGlobal{ID: uuid.New(), Feature: "f1", Key: "k", Value: []byte(`"x"`)},
 			newValue: []byte(`"x"`),
 		},
 		{
-			name:      "ConfigUpdate(different value): updates and audits",
+			name:      "UpdateConfig(different value): updates and audits",
 			existing:  featuresql.ConfigurationsGlobal{ID: uuid.New(), Feature: "f1", Key: "k", Value: []byte(`"old"`)},
 			newValue:  []byte(`"new"`),
 			wantWrite: true,
@@ -164,7 +164,7 @@ func TestConfigUpdate(t *testing.T) {
 				}, nil
 			}
 
-			_, err := ConfigUpdate(ctx, tc.existing.ID, UpdateConfiguration{Value: tc.newValue})
+			_, err := UpdateConfig(ctx, tc.existing.ID, UpdateConfiguration{Value: tc.newValue})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +187,7 @@ func TestConfigUpdate(t *testing.T) {
 	}
 }
 
-func TestConfigDelete(t *testing.T) {
+func TestDeleteConfig(t *testing.T) {
 	ctx, fq, aq := newTestCtx(t)
 	id := uuid.New()
 
@@ -201,18 +201,18 @@ func TestConfigDelete(t *testing.T) {
 	var deleted bool
 	fq.configGlobalDeleteFunc = func(_ context.Context, got uuid.UUID) error {
 		if got != id {
-			t.Fatalf("ConfigDelete(%v), want %v", got, id)
+			t.Fatalf("DeleteConfig(%v), want %v", got, id)
 		}
 		deleted = true
 		return nil
 	}
 
-	if err := ConfigDelete(ctx, id); err != nil {
+	if err := DeleteConfig(ctx, id); err != nil {
 		t.Fatal(err)
 	}
 
 	if !deleted {
-		t.Error("expected ConfigDelete to be called")
+		t.Error("expected DeleteConfig to be called")
 	}
 	if len(aq.Creates) != 1 {
 		t.Fatalf("got %d audit calls, want 1", len(aq.Creates))

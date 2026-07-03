@@ -162,7 +162,7 @@ func TestConfig(t *testing.T) {
 			Value:         []byte(`"stringval"`),
 			Secret:        true,
 		}
-		got, err := ConfigEnvCreate(ctx, config)
+		got, err := CreateEnvConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -189,7 +189,7 @@ func TestConfig(t *testing.T) {
 			Value:       []byte(`"stringval"`),
 			Secret:      true,
 		}
-		got, err := ConfigGlobalCreate(ctx, config)
+		got, err := CreateGlobalConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -205,7 +205,7 @@ func TestConfig(t *testing.T) {
 			t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 		}
 	})
-	t.Run("ConfigUpdate_Global", func(t *testing.T) {
+	t.Run("UpdateConfig_Global", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
@@ -217,12 +217,12 @@ func TestConfig(t *testing.T) {
 			Secret:      true,
 		}
 		// Create
-		got, err := ConfigGlobalCreate(ctx, config)
+		got, err := CreateGlobalConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		got, err = ConfigUpdate(ctx, got.ID, UpdateConfiguration{
+		got, err = UpdateConfig(ctx, got.ID, UpdateConfiguration{
 			Value: []byte(`"newval"`),
 		})
 		if err != nil {
@@ -240,7 +240,7 @@ func TestConfig(t *testing.T) {
 			t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 		}
 	})
-	t.Run("ConfigDelete", func(t *testing.T) {
+	t.Run("DeleteConfig", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
@@ -250,13 +250,13 @@ func TestConfig(t *testing.T) {
 			Value:   []byte(`"stringval"`),
 		}
 		// Create
-		got, err := ConfigGlobalCreate(ctx, config)
+		got, err := CreateGlobalConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		gotID := got.ID
-		err = ConfigDelete(ctx, gotID)
+		err = DeleteConfig(ctx, gotID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -307,7 +307,7 @@ func TestConfig(t *testing.T) {
 			Secret:        true,
 		}
 		// Create
-		_, err := ConfigEnvCreate(ctx, config)
+		_, err := CreateEnvConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -370,7 +370,7 @@ func TestConfig(t *testing.T) {
 			Secret:        true,
 		}
 		// Create
-		_, err := ConfigEnvCreate(ctx, config)
+		_, err := CreateEnvConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -403,11 +403,11 @@ func TestConfig(t *testing.T) {
 			Secret:  true,
 		}
 		// Create
-		_, err := ConfigGlobalCreate(ctx, config2)
+		_, err := CreateGlobalConfig(ctx, config2)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = ConfigGlobalCreate(ctx, config)
+		_, err = CreateGlobalConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -571,7 +571,7 @@ ON CONFLICT (
 			Value:         json.RawMessage(`"stringval"`),
 			Secret:        true,
 		}
-		_, err := ConfigEnvCreate(ctx, config)
+		_, err := CreateEnvConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -582,7 +582,7 @@ ON CONFLICT (
 			Value:   []byte(`"ignore"`),
 			Secret:  true,
 		}
-		_, err = ConfigGlobalCreate(ctx, globConfig)
+		_, err = CreateGlobalConfig(ctx, globConfig)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -647,7 +647,7 @@ ON CONFLICT (
 			Value:         []byte(`"stringval"`),
 			Secret:        true,
 		}
-		_, err := ConfigEnvCreate(ctx, config)
+		_, err := CreateEnvConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -658,7 +658,7 @@ ON CONFLICT (
 			Value:   []byte(`"ignore"`),
 			Secret:  true,
 		}
-		_, err = ConfigGlobalCreate(ctx, globConfig)
+		_, err = CreateGlobalConfig(ctx, globConfig)
 		if err != nil {
 			t.Fatal(err)
 		}

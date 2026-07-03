@@ -260,7 +260,7 @@ func UpdateGlobalConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigUpdate(ctx, configID, featurepkg.UpdateConfiguration{Value: raw})
+			_, err := featurepkg.UpdateConfig(ctx, configID, featurepkg.UpdateConfiguration{Value: raw})
 			return err
 		}); err != nil {
 			http.Error(w, "Failed to update: "+err.Error(), http.StatusInternalServerError)
@@ -282,7 +282,7 @@ func DeleteGlobalConfigHandler() http.HandlerFunc {
 			return
 		}
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			return featurepkg.ConfigDelete(ctx, configID)
+			return featurepkg.DeleteConfig(ctx, configID)
 		}); err != nil {
 			http.Error(w, "Failed to delete: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -333,7 +333,7 @@ func SetGlobalConfigHandler() http.HandlerFunc {
 		}
 
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			_, err := featurepkg.ConfigGlobalCreate(ctx, featurepkg.NewConfiguration{
+			_, err := featurepkg.CreateGlobalConfig(ctx, featurepkg.NewConfiguration{
 				Feature: featureName,
 				Key:     key,
 				Value:   raw,

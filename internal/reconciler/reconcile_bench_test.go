@@ -55,7 +55,7 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 		name := fmt.Sprintf("feature-%03d", fi)
 		for _, key := range []string{"setting_a", "setting_b"} {
 			b, _ := json.Marshal(fmt.Sprintf("global-%s-%d", key, fi))
-			if _, err := feature.ConfigGlobalCreate(h.ctx, feature.NewConfiguration{
+			if _, err := feature.CreateGlobalConfig(h.ctx, feature.NewConfiguration{
 				Feature: name, Key: key, Value: b,
 			}); err != nil {
 				t.Fatalf("create config: %v", err)

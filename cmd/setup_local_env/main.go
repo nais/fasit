@@ -456,7 +456,7 @@ func main() {
 			if isEmptyJSONValue(b) {
 				continue
 			}
-			if _, err := feature.ConfigGlobalCreate(ctx, feature.NewConfiguration{
+			if _, err := feature.CreateGlobalConfig(ctx, feature.NewConfiguration{
 				Feature: featureName,
 				Key:     key,
 				Value:   json.RawMessage(b),
@@ -489,7 +489,7 @@ func main() {
 	}
 	for _, o := range overrides {
 		id := envID(o.tenant, o.env)
-		if _, err := feature.ConfigEnvCreate(ctx, feature.NewConfiguration{
+		if _, err := feature.CreateEnvConfig(ctx, feature.NewConfiguration{
 			EnvironmentID: &id,
 			Feature:       o.feature,
 			Key:           o.key,
@@ -511,7 +511,7 @@ func main() {
 	}
 	for _, o := range orphans {
 		id := envID(o.tenant, o.env)
-		if _, err := feature.ConfigEnvCreate(ctx, feature.NewConfiguration{
+		if _, err := feature.CreateEnvConfig(ctx, feature.NewConfiguration{
 			EnvironmentID: &id,
 			Feature:       o.feature,
 			Key:           o.key,
@@ -546,7 +546,7 @@ func main() {
 		confs, _ := feature.GetGlobalConfig(ctx, "naiserator")
 		for _, c := range confs {
 			if c.Key == "logLevel" {
-				_, _ = feature.ConfigUpdate(ctx, c.ID, feature.UpdateConfiguration{
+				_, _ = feature.UpdateConfig(ctx, c.ID, feature.UpdateConfiguration{
 					Value: json.RawMessage(`"warn"`),
 				})
 				break
@@ -558,7 +558,7 @@ func main() {
 		confs, _ = feature.GetGlobalConfig(ctx, "hookd")
 		for _, c := range confs {
 			if c.Key == "slackChannel" {
-				_ = feature.ConfigDelete(ctx, c.ID)
+				_ = feature.DeleteConfig(ctx, c.ID)
 				break
 			}
 		}
