@@ -243,13 +243,13 @@ func TestEnvConfig_PreservesIDAndCreated(t *testing.T) {
 			{ID: globalID, Feature: "f", Key: "g-only", Value: []byte(`"g"`), Created: globalCreated},
 		}, nil
 	}
-	fq.configEnvListByFeatureFunc = func(_ context.Context, _ featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error) {
+	fq.configEnvListByFeatureFunc = func(_ context.Context, _ featuresql.ListEnvConfigByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error) {
 		return []featuresql.ConfigurationsEnvironment{
 			{ID: envRowID, Feature: "f", Key: "e-only", Value: []byte(`"e"`), Created: envCreated, EnvironmentID: environmentID},
 		}, nil
 	}
 
-	got, err := EnvConfig(ctx, &Feature{Name: "f"}, environmentID)
+	got, err := GetEnvConfig(ctx, &Feature{Name: "f"}, environmentID)
 	if err != nil {
 		t.Fatal(err)
 	}

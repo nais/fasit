@@ -81,12 +81,12 @@ func fetchHelmRenderData(ctx context.Context, f *Feature, envID uuid.UUID) (*Hel
 		}
 	}
 
-	globalConfigs, err := querier(ctx).ConfigGlobalListByFeature(ctx, f.Name)
+	globalConfigs, err := querier(ctx).ListGlobalConfigByFeature(ctx, f.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	envConfigs, err := querier(ctx).ConfigEnvListByFeature(ctx, featuresql.ConfigEnvListByFeatureParams{
+	envConfigs, err := querier(ctx).ListEnvConfigByFeature(ctx, featuresql.ListEnvConfigByFeatureParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
 	})

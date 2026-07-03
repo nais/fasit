@@ -109,7 +109,7 @@ func TestConfig(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresql(ctx, t)
 
-	t.Run("ConfigGet", func(t *testing.T) {
+	t.Run("GetGlobalConfig", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
 		ctx = setupContext(pool)
 
@@ -124,7 +124,7 @@ func TestConfig(t *testing.T) {
 
 		execQuery(ctx, t, pool, fmt.Sprintf(q, id, description, created.Format(time.RFC3339)))
 
-		got, err := ConfigGet(ctx, "feature3")
+		got, err := GetGlobalConfig(ctx, "feature3")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -260,7 +260,7 @@ func TestConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		confs, err := ConfigGet(ctx, config.Feature)
+		confs, err := GetGlobalConfig(ctx, config.Feature)
 		if err != nil {
 			return
 		}

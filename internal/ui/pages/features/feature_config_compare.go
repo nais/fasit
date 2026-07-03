@@ -63,7 +63,7 @@ func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key str
 	isComputed := hasVal && val.Computed != nil
 	isSecret := hasVal && val.Config != nil && val.Config.Secret
 
-	globalConfigs, err := featurepkg.ConfigGet(ctx, feat.Name)
+	globalConfigs, err := featurepkg.GetGlobalConfig(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}

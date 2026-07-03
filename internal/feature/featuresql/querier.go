@@ -13,13 +13,11 @@ type Querier interface {
 	ConfigEnvGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
 	ConfigEnvGetByKey(ctx context.Context, arg ConfigEnvGetByKeyParams) (ConfigurationsEnvironment, error)
 	ConfigEnvListAllByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
-	ConfigEnvListByFeature(ctx context.Context, arg ConfigEnvListByFeatureParams) ([]ConfigurationsEnvironment, error)
 	ConfigEnvUpdate(ctx context.Context, arg ConfigEnvUpdateParams) (ConfigurationsEnvironment, error)
 	ConfigEnvUpsert(ctx context.Context, arg ConfigEnvUpsertParams) (ConfigurationsEnvironment, error)
 	ConfigGlobalDelete(ctx context.Context, id uuid.UUID) error
 	ConfigGlobalGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
 	ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error)
-	ConfigGlobalListByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ConfigGlobalUpdate(ctx context.Context, arg ConfigGlobalUpdateParams) (ConfigurationsGlobal, error)
 	ConfigGlobalUpsert(ctx context.Context, arg ConfigGlobalUpsertParams) (ConfigurationsGlobal, error)
 	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
@@ -38,6 +36,8 @@ type Querier interface {
 	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
+	ListEnvConfigByFeature(ctx context.Context, arg ListEnvConfigByFeatureParams) ([]ConfigurationsEnvironment, error)
+	ListGlobalConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ListLatestDeployInstructionsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployInstructionsForEnvironmentRow, error)
 	ListLatestDeployInstructionsForFeature(ctx context.Context, featureName string) ([]ListLatestDeployInstructionsForFeatureRow, error)
 	ListLatestDeployedForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListLatestDeployedForEnvironmentRow, error)

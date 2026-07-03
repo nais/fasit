@@ -23,7 +23,15 @@ type fakeQuerier struct {
 	configGlobalUpsertFunc        func(ctx context.Context, arg featuresql.ConfigGlobalUpsertParams) (featuresql.ConfigurationsGlobal, error)
 	configGlobalUpdateFunc        func(ctx context.Context, arg featuresql.ConfigGlobalUpdateParams) (featuresql.ConfigurationsGlobal, error)
 	configGlobalListByFeatureFunc func(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error)
-	configEnvListByFeatureFunc    func(ctx context.Context, arg featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error)
+	configEnvListByFeatureFunc    func(ctx context.Context, arg featuresql.ListEnvConfigByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error)
+}
+
+func (f *fakeQuerier) ListEnvConfigByFeature(ctx context.Context, arg featuresql.ListEnvConfigByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error) {
+	return f.configEnvListByFeatureFunc(ctx, arg)
+}
+
+func (f *fakeQuerier) ListGlobalConfigByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error) {
+	return f.configGlobalListByFeatureFunc(ctx, feature)
 }
 
 func (f *fakeQuerier) GetLatestDeployInstruction(ctx context.Context, arg featuresql.GetLatestDeployInstructionParams) (featuresql.GetLatestDeployInstructionRow, error) {
@@ -76,14 +84,6 @@ func (f *fakeQuerier) ConfigEnvUpdate(ctx context.Context, arg featuresql.Config
 
 func (f *fakeQuerier) ConfigEnvUpsert(ctx context.Context, arg featuresql.ConfigEnvUpsertParams) (featuresql.ConfigurationsEnvironment, error) {
 	return f.configEnvUpsertFunc(ctx, arg)
-}
-
-func (f *fakeQuerier) ConfigEnvListByFeature(ctx context.Context, arg featuresql.ConfigEnvListByFeatureParams) ([]featuresql.ConfigurationsEnvironment, error) {
-	return f.configEnvListByFeatureFunc(ctx, arg)
-}
-
-func (f *fakeQuerier) ConfigGlobalListByFeature(ctx context.Context, feature string) ([]featuresql.ConfigurationsGlobal, error) {
-	return f.configGlobalListByFeatureFunc(ctx, feature)
 }
 
 func (f *fakeQuerier) ConfigGlobalGetByID(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error) {

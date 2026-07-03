@@ -33,13 +33,13 @@ func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *Configuration {
 	}
 }
 
-func EnvConfig(ctx context.Context, feature *Feature, envID uuid.UUID) ([]*Configuration, error) {
-	globalConfigs, err := querier(ctx).ConfigGlobalListByFeature(ctx, feature.Name)
+func GetEnvConfig(ctx context.Context, feature *Feature, envID uuid.UUID) ([]*Configuration, error) {
+	globalConfigs, err := querier(ctx).ListGlobalConfigByFeature(ctx, feature.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	envConfigs, err := querier(ctx).ConfigEnvListByFeature(ctx, featuresql.ConfigEnvListByFeatureParams{
+	envConfigs, err := querier(ctx).ListEnvConfigByFeature(ctx, featuresql.ListEnvConfigByFeatureParams{
 		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
@@ -66,12 +66,12 @@ func EnvConfig(ctx context.Context, feature *Feature, envID uuid.UUID) ([]*Confi
 	return retVal, nil
 }
 
-func ConfigGet(ctx context.Context, feature string) ([]*Configuration, error) {
-	config, err := querier(ctx).ConfigGlobalListByFeature(ctx, feature)
+func GetGlobalConfig(ctx context.Context, feature string) ([]*Configuration, error) {
+	config, err := querier(ctx).ListGlobalConfigByFeature(ctx, feature)
 	if err != nil {
 		return nil, err
 	}
-	retVal := []*Configuration{}
+	retVal := make([]*Configuration, 0)
 	for _, conf := range config {
 		retVal = append(retVal, globalConfigFromSQL(conf))
 	}

@@ -19,7 +19,7 @@ import (
 )
 
 func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]components.ConfigItem, error) {
-	configs, err := featurepkg.ConfigGet(ctx, feat.Name)
+	configs, err := featurepkg.GetGlobalConfig(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}

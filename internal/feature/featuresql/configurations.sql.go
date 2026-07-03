@@ -118,52 +118,6 @@ func (q *Queries) ConfigEnvListAllByFeature(ctx context.Context, feature string)
 	return items, nil
 }
 
-const configEnvListByFeature = `-- name: ConfigEnvListByFeature :many
-SELECT
-	id, feature, key, value, description, secret, created, environment_id
-FROM
-	configurations_environment
-WHERE
-	feature = $1
-	AND environment_id = $2
-ORDER BY
-	key ASC
-`
-
-type ConfigEnvListByFeatureParams struct {
-	Feature       string
-	EnvironmentID uuid.UUID
-}
-
-func (q *Queries) ConfigEnvListByFeature(ctx context.Context, arg ConfigEnvListByFeatureParams) ([]ConfigurationsEnvironment, error) {
-	rows, err := q.db.Query(ctx, configEnvListByFeature, arg.Feature, arg.EnvironmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ConfigurationsEnvironment{}
-	for rows.Next() {
-		var i ConfigurationsEnvironment
-		if err := rows.Scan(
-			&i.ID,
-			&i.Feature,
-			&i.Key,
-			&i.Value,
-			&i.Description,
-			&i.Secret,
-			&i.Created,
-			&i.EnvironmentID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const configEnvUpdate = `-- name: ConfigEnvUpdate :one
 UPDATE
 	configurations_environment
@@ -320,45 +274,6 @@ func (q *Queries) ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetB
 	return i, err
 }
 
-const configGlobalListByFeature = `-- name: ConfigGlobalListByFeature :many
-SELECT
-	id, feature, key, value, description, secret, created
-FROM
-	configurations_global
-WHERE
-	feature = $1
-ORDER BY
-	key ASC
-`
-
-func (q *Queries) ConfigGlobalListByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
-	rows, err := q.db.Query(ctx, configGlobalListByFeature, feature)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ConfigurationsGlobal{}
-	for rows.Next() {
-		var i ConfigurationsGlobal
-		if err := rows.Scan(
-			&i.ID,
-			&i.Feature,
-			&i.Key,
-			&i.Value,
-			&i.Description,
-			&i.Secret,
-			&i.Created,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const configGlobalUpdate = `-- name: ConfigGlobalUpdate :one
 UPDATE
 	configurations_global
@@ -442,4 +357,89 @@ func (q *Queries) ConfigGlobalUpsert(ctx context.Context, arg ConfigGlobalUpsert
 		&i.Created,
 	)
 	return i, err
+}
+
+const listEnvConfigByFeature = `-- name: ListEnvConfigByFeature :many
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	configurations_environment
+WHERE
+	feature = $1
+	AND environment_id = $2
+ORDER BY
+	key ASC
+`
+
+type ListEnvConfigByFeatureParams struct {
+	Feature       string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) ListEnvConfigByFeature(ctx context.Context, arg ListEnvConfigByFeatureParams) ([]ConfigurationsEnvironment, error) {
+	rows, err := q.db.Query(ctx, listEnvConfigByFeature, arg.Feature, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigurationsEnvironment{}
+	for rows.Next() {
+		var i ConfigurationsEnvironment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Created,
+			&i.EnvironmentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listGlobalConfigByFeature = `-- name: ListGlobalConfigByFeature :many
+SELECT
+	id, feature, key, value, description, secret, created
+FROM
+	configurations_global
+WHERE
+	feature = $1
+ORDER BY
+	key ASC
+`
+
+func (q *Queries) ListGlobalConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
+	rows, err := q.db.Query(ctx, listGlobalConfigByFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigurationsGlobal{}
+	for rows.Next() {
+		var i ConfigurationsGlobal
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

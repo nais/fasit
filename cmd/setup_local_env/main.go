@@ -543,7 +543,7 @@ func main() {
 
 		// Update a config value (exercises ActionUpdated for configs)
 		ctx = auth.SetEmail(ctx, actors[0])
-		confs, _ := feature.ConfigGet(ctx, "naiserator")
+		confs, _ := feature.GetGlobalConfig(ctx, "naiserator")
 		for _, c := range confs {
 			if c.Key == "logLevel" {
 				_, _ = feature.ConfigUpdate(ctx, c.ID, feature.UpdateConfiguration{
@@ -555,7 +555,7 @@ func main() {
 
 		// Delete a config (exercises ActionDeleted for configs)
 		ctx = auth.SetEmail(ctx, actors[1])
-		confs, _ = feature.ConfigGet(ctx, "hookd")
+		confs, _ = feature.GetGlobalConfig(ctx, "hookd")
 		for _, c := range confs {
 			if c.Key == "slackChannel" {
 				_ = feature.ConfigDelete(ctx, c.ID)

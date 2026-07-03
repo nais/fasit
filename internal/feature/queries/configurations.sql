@@ -1,4 +1,4 @@
--- name: ConfigEnvListByFeature :many
+-- name: ListEnvConfigByFeature :many
 SELECT
 	*
 FROM
@@ -9,7 +9,7 @@ WHERE
 ORDER BY
 	key ASC;
 
--- name: ConfigGlobalListByFeature :many
+-- name: ListGlobalConfigByFeature :many
 SELECT
 	*
 FROM

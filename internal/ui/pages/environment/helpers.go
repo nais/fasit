@@ -250,7 +250,7 @@ func loadFeaturePageData(ctx context.Context, tenantSlug, envName, featureName, 
 }
 
 func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID uuid.UUID) ([]FeatureConfigItem, error) {
-	configs, err := featurepkg.EnvConfig(ctx, feat, envID)
+	configs, err := featurepkg.GetEnvConfig(ctx, feat, envID)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 		probeFailed = rerr == nil && !probeOK
 	}
 
-	globalConfigs, err := featurepkg.ConfigGet(ctx, feat.Name)
+	globalConfigs, err := featurepkg.GetGlobalConfig(ctx, feat.Name)
 	if err != nil {
 		return nil, err
 	}
