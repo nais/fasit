@@ -31,7 +31,8 @@ type Deployer struct {
 }
 
 func NewDeployer(pool *pgxpool.Pool, srv *Server, meter metric.Meter, log *slog.Logger) (*Deployer, error) {
-	commands, err := meter.Int64Counter("fasitd_commands_total",
+	commands, err := meter.Int64Counter(
+		"fasitd_commands_total",
 		metric.WithDescription("fasitd commands dispatched, by delivery outcome"),
 	)
 	if err != nil {

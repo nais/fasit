@@ -130,7 +130,8 @@ func TestListLatestFeatureAssignmentsPicksBroadAfterOverrideRemoved(t *testing.T
 
 func startPostgres(ctx context.Context, t *testing.T) (*postgres.PostgresContainer, string) {
 	t.Helper()
-	container, err := postgres.Run(ctx,
+	container, err := postgres.Run(
+		ctx,
 		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase("test"),
 		postgres.WithUsername("test"),

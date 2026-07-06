@@ -75,7 +75,8 @@ func TestReconcileWorkerPoolScaling(t *testing.T) {
 		}
 	}
 
-	t.Logf("fetch=%-10s  compute=%-10s  total=%-10s  decisions=%d  deploys=%d",
+	t.Logf(
+		"fetch=%-10s  compute=%-10s  total=%-10s  decisions=%d  deploys=%d",
 		result.FetchDur.Round(time.Millisecond),
 		result.ComputeDur.Round(time.Millisecond),
 		(result.FetchDur + result.ComputeDur).Round(time.Millisecond),

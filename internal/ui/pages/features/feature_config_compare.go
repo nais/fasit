@@ -148,16 +148,19 @@ func configCompareFragment(key string, feat *featurepkg.Feature, rows []compareR
 	}
 
 	if len(rows) == 0 {
-		return h.Div(h.Class("modal-body"),
+		return h.Div(
+			h.Class("modal-body"),
 			h.H3(g.Text(displayName)),
 			h.P(h.Class("text-muted"), g.Text("Not deployed to any environments.")),
 		)
 	}
 
-	return h.Div(h.Class("modal-body"),
+	return h.Div(
+		h.Class("modal-body"),
 		h.H3(g.Text(displayName)),
 		g.If(displayName != key, h.P(h.Class("text-muted text-sm"), h.Code(g.Text(key)))),
-		h.Table(h.Class("table table-compact"),
+		h.Table(
+			h.Class("table table-compact"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Environment")),
 				h.Th(g.Text("Value")),
@@ -196,7 +199,8 @@ func configCompareRows(rows []compareRow) []g.Node {
 // always exposing a copy button so the full value is reachable.
 func compareValueNode(idx int, value string) g.Node {
 	id := fmt.Sprintf("compare-val-%d", idx)
-	return h.Span(h.Class("compare-value-wrap"),
+	return h.Span(
+		h.Class("compare-value-wrap"),
 		h.Span(h.Class("compare-value compare-value-truncated"), h.ID(id), g.Text(value)),
 		h.Button(
 			h.Type("button"),

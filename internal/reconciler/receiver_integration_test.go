@@ -118,7 +118,8 @@ func TestReceiverIntegration(t *testing.T) {
 
 		faID := uuid.New()
 		diID := uuid.New()
-		testinfra.Exec(ctx, t, pool,
+		testinfra.Exec(
+			ctx, t, pool,
 			"INSERT INTO feature_data (name, version, values, chart, source, description, kinds, default_values, dependencies) VALUES ('myfeature', '1.0.0', '{}', 'oci://chart', 'source', 'description', '{tenant}', '{}', '{}')",
 			fmt.Sprintf("INSERT INTO feature_assignments (id, feature_name, version) VALUES ('%s', 'myfeature', '1.0.0')", faID),
 			fmt.Sprintf("INSERT INTO deploy_log (diid, environment_id, feature_assignment_id, feature_name, feature_version, status, hash) VALUES ('%s', '%s', '%s', 'myfeature', '1.0.0', 'sent', 'abc')", diID, envID, faID),

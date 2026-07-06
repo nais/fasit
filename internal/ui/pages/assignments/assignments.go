@@ -106,9 +106,12 @@ func listPage(rows []Summary, query string) g.Node {
 		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Assignments()}),
 		h.Main(
 			h.Class("main-content"),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
-				h.Div(h.Class("assignments-header"),
-					h.Div(h.Class("assignments-toolbar"),
+			h.Div(h.Class("card"), h.Div(
+				h.Class("card-body"),
+				h.Div(
+					h.Class("assignments-header"),
+					h.Div(
+						h.Class("assignments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),
@@ -130,8 +133,10 @@ func listPage(rows []Summary, query string) g.Node {
 }
 
 func newAssignmentPopover() g.Node {
-	return components.Popover("new-assignment", "", "New assignment",
-		h.Form(h.Method("POST"), h.Action("/assignments"),
+	return components.Popover(
+		"new-assignment", "", "New assignment",
+		h.Form(
+			h.Method("POST"), h.Action("/assignments"),
 			h.Label(g.Text("Chart")),
 			h.Input(h.Type("text"), h.Name("chart"), g.Attr("required", ""), g.Attr("placeholder", "e.g. oci://naiserator")),
 			h.Label(g.Text("Version")),
@@ -140,7 +145,8 @@ func newAssignmentPopover() g.Node {
 			h.Input(h.Type("text"), h.Name("description"), g.Attr("placeholder", "e.g. Rollback to stable")),
 			h.Label(g.Text("Target labels")),
 			h.Textarea(h.Name("target_labels_raw"), h.ID("target-labels-input"), g.Attr("rows", "4"), g.Attr("placeholder", "{\n  \"kind\": \"tenant\",\n  \"tenant\": \"nav\"\n}")),
-			h.Div(h.Class("form-hint-row"),
+			h.Div(
+				h.Class("form-hint-row"),
 				h.A(h.Href("/labels"), g.Attr("target", "_blank"), h.Class("form-hint"), g.Text("Browse labels")),
 				h.Button(h.Type("button"), h.Class("btn-small btn-outline"), h.ID("preview-targets-btn"), g.Text("Preview targets")),
 			),

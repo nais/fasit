@@ -339,10 +339,12 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, userEmail string, features []environmentFeatureRow, releases []releaseRow, health environmentHealth) g.Node {
 	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, userEmail, health)
 	orphanCount := countOrphans(releases)
-	return h.Div(h.Class("container"),
+	return h.Div(
+		h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab, orphanCount),
 		components.Breadcrumbs(breadcrumbs, summaryNodes...),
-		h.Main(h.Class("main-content"),
+		h.Main(
+			h.Class("main-content"),
 			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, features, releases, health),
 		),
 	)
@@ -359,11 +361,14 @@ func environmentSidebar(tenantName, environmentName, activeTab string, orphanCou
 				g.Textf("%d", orphanCount)),
 		})
 	}
-	return h.Aside(h.Class("sidebar feature-sidebar"),
-		h.Div(h.Class("feature-sidebar-header"),
+	return h.Aside(
+		h.Class("sidebar feature-sidebar"),
+		h.Div(
+			h.Class("feature-sidebar-header"),
 			h.H4(g.Text(environmentName)),
 		),
-		h.Div(h.Class("nav"),
+		h.Div(
+			h.Class("nav"),
 			h.Ul(
 				environmentNavItem(base+"?tab=features", g.Text("Features"), activeTab == environmentTabFeatures),
 				environmentNavItem(base+"?tab=values", g.Text("Values"), activeTab == environmentTabValues),
@@ -445,11 +450,13 @@ func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment 
 
 func naisdHealthOverviewItem(health environmentHealth) g.Node {
 	class, label := naisdHealthBucket(health, time.Now())
-	return h.Div(h.Class("environment-health-item "+class),
+	return h.Div(
+		h.Class("environment-health-item "+class),
 		h.Div(h.Class("environment-health-icon"), g.Text(naisdHealthIcon(label))),
 		h.Div(
 			h.Div(h.Class("environment-health-title"), g.Text(naisdHealthTitle(label))),
-			g.If(health.HasReport, h.Div(h.Class("environment-health-meta"),
+			g.If(health.HasReport, h.Div(
+				h.Class("environment-health-meta"),
 				h.Span(h.Title(view.FormatTime(health.ReportedAt)), g.Text("Reported "+view.RelativeTime(health.ReportedAt))),
 			)),
 			g.If(!health.HasReport, h.Div(h.Class("environment-health-meta"), g.Text("No health report has been received for this environment."))),
@@ -493,19 +500,25 @@ func naisdHealthBucket(health environmentHealth, now time.Time) (string, string)
 }
 
 func environmentDetailsCard(environment *Environment, labels map[string]string, gcpProjectID string, userEmail string, health environmentHealth) g.Node {
-	return h.Div(h.Class("card"),
-		h.Div(h.Class("card-body"),
-			h.Div(h.Class("environment-details-list"),
+	return h.Div(
+		h.Class("card"),
+		h.Div(
+			h.Class("card-body"),
+			h.Div(
+				h.Class("environment-details-list"),
 				naisdHealthOverviewItem(health),
 				g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
-					return h.Div(h.Class("environment-details-item"),
+					return h.Div(
+						h.Class("environment-details-item"),
 						h.Div(h.Class("environment-details-key"), g.Text(item.Key)),
 						h.Div(h.Class("environment-details-value"), metadataValue(item)),
 					)
 				})),
-				g.If(gcpProjectID != "", h.Div(h.Class("environment-details-item"),
+				g.If(gcpProjectID != "", h.Div(
+					h.Class("environment-details-item"),
 					h.Div(h.Class("environment-details-key"), g.Text("GCP Project")),
-					h.Div(h.Class("environment-details-value"),
+					h.Div(
+						h.Class("environment-details-value"),
 						g.Text(gcpProjectID),
 						g.Text(" "),
 						h.A(
@@ -517,11 +530,14 @@ func environmentDetailsCard(environment *Environment, labels map[string]string, 
 						),
 					),
 				)),
-				g.If(len(labels) > 0, h.Div(h.Class("environment-labels-section"),
+				g.If(len(labels) > 0, h.Div(
+					h.Class("environment-labels-section"),
 					h.H3(h.Class("environment-labels-heading"), g.Text("Labels")),
-					h.Div(h.Class("environment-labels-group"),
+					h.Div(
+						h.Class("environment-labels-group"),
 						g.Group(g.Map(sortedKeys(labels), func(k string) g.Node {
-							return h.Div(h.Class("environment-details-item"),
+							return h.Div(
+								h.Class("environment-details-item"),
 								h.Div(h.Class("environment-details-key"), g.Text(k)),
 								h.Div(h.Class("environment-details-value"), g.Text(labels[k])),
 							)
@@ -537,10 +553,13 @@ func environmentValuesCard(envValues []*envpkg.EnvironmentValue, valueRefs map[s
 	if len(envValues) == 0 {
 		return g.Group(nil)
 	}
-	return h.Div(h.Class("card"),
-		h.Div(h.Class("card-body"),
+	return h.Div(
+		h.Class("card"),
+		h.Div(
+			h.Class("card-body"),
 			h.H2(h.Class("card-section-heading"), g.Text("Environment values")),
-			h.Table(h.Class("table"),
+			h.Table(
+				h.Class("table"),
 				h.TBody(g.Group(g.Map(envValues, func(val *envpkg.EnvironmentValue) g.Node {
 					var valNode g.Node
 					if val.Secret {
@@ -567,11 +586,14 @@ func environmentValuesCard(envValues []*envpkg.EnvironmentValue, valueRefs map[s
 }
 
 func environmentFeaturesCard(tenantName, environmentName string, features []environmentFeatureRow) g.Node {
-	return h.Div(h.Class("card"),
-		h.Div(h.Class("card-body"),
+	return h.Div(
+		h.Class("card"),
+		h.Div(
+			h.Class("card-body"),
 			h.H2(h.Class("card-section-heading"), g.Text("Features in this environment")),
 			g.If(len(features) == 0, h.P(h.Class("text-muted"), g.Text("No features target this environment."))),
-			g.If(len(features) > 0, h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "environment-features"),
+			g.If(len(features) > 0, h.Table(
+				h.Class("table sortable"), g.Attr("data-sort-key", "environment-features"),
 				h.THead(h.Tr(
 					h.Th(g.Text("Feature")),
 					h.Th(g.Text("Status")),
@@ -598,13 +620,16 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 func helmReleasesCard(tenantName, environmentName string, releases []releaseRow) g.Node {
 	sort.Slice(releases, func(i, j int) bool { return releases[i].Name < releases[j].Name })
 	orphanCount := countOrphans(releases)
-	return h.Div(h.Class("card"),
-		h.Div(h.Class("card-body"),
+	return h.Div(
+		h.Class("card"),
+		h.Div(
+			h.Class("card-body"),
 			h.H2(h.Class("card-section-heading"), g.Text("Helm releases")),
 			h.P(h.Class("text-muted"), g.Text("Actual state reported by naisd from the environment.")),
 			g.If(orphanCount > 0, h.P(h.Class("text-muted"), g.Textf("%d release%s installed without a matching feature assignment.", orphanCount, plural(orphanCount)))),
 			g.If(len(releases) == 0, h.P(h.Class("text-muted"), g.Text("No releases reported."))),
-			g.If(len(releases) > 0, h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "environment-releases"),
+			g.If(len(releases) > 0, h.Table(
+				h.Class("table sortable"), g.Attr("data-sort-key", "environment-releases"),
 				h.THead(h.Tr(
 					h.Th(g.Text("Feature")),
 					h.Th(g.Text("Status")),
@@ -644,7 +669,8 @@ func uninstallCell(tenantName, environmentName string, release releaseRow) g.Nod
 		return g.Text("")
 	}
 	action := "/tenants/" + tenantName + "/envs/" + environmentName + "/releases/" + release.Name + "/uninstall"
-	return h.Form(h.Method("post"), h.Action(action),
+	return h.Form(
+		h.Method("post"), h.Action(action),
 		g.Attr("onsubmit", "return confirm('Uninstall "+release.Name+" from "+tenantName+"/"+environmentName+"? This runs helm uninstall in the environment.')"),
 		h.Button(h.Type("submit"), h.Class("btn btn-danger btn-sm"), g.Text("Uninstall")),
 	)

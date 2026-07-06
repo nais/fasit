@@ -44,9 +44,12 @@ func listPage(entries []*audit.Entry, query string) g.Node {
 		components.Breadcrumbs([]breadcrumb.Crumb{{Label: "Audit log", URL: "/auditlog"}}),
 		h.Main(
 			h.Class("main-content"),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
-				h.Div(h.Class("assignments-header"),
-					h.Div(h.Class("assignments-toolbar"),
+			h.Div(h.Class("card"), h.Div(
+				h.Class("card-body"),
+				h.Div(
+					h.Class("assignments-header"),
+					h.Div(
+						h.Class("assignments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),

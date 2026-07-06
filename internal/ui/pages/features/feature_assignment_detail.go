@@ -172,10 +172,13 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 	}
 
 	content := []g.Node{
-		h.Div(h.Class("deploy-detail-topbar"),
-			g.If(d.Active, h.Details(h.Class("env-actions"),
+		h.Div(
+			h.Class("deploy-detail-topbar"),
+			g.If(d.Active, h.Details(
+				h.Class("env-actions"),
 				h.Summary(h.Class("env-actions-toggle"), g.Attr("title", "Actions"), g.Text("\u22ee")),
-				h.Div(h.Class("env-actions-menu"),
+				h.Div(
+					h.Class("env-actions-menu"),
 					h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version")),
 					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "deactivate-assignment"), g.Text("Deactivate assignment")),
 				),
@@ -192,7 +195,8 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 	}
 
 	if data.AssignmentSupersededBy != nil {
-		content = append(content, h.Div(h.Class("banner banner-warning"),
+		content = append(content, h.Div(
+			h.Class("banner banner-warning"),
 			h.P(
 				g.Text("This is a previous version. Currently active: "),
 				h.A(h.Href("/features/"+featureName+"/assignments/"+data.AssignmentSupersededBy.ID), g.Text(data.AssignmentSupersededBy.Version)),
@@ -243,7 +247,8 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 	})
 
 	if len(sortedEnvRows) > 0 {
-		content = append(content,
+		content = append(
+			content,
 			h.H2(g.Text("Instances")),
 			h.Table(
 				h.Class("table sortable"),
@@ -277,7 +282,8 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 	}
 
 	if len(data.AssignmentMatching) > 0 {
-		content = append(content,
+		content = append(
+			content,
 			h.H2(g.Text("Previous versions")),
 			h.Table(
 				h.Class("table"),
@@ -334,9 +340,11 @@ func assignmentTargetPills(labels map[string]string) g.Node {
 }
 
 func deactivateAssignmentPopover(d *featureassignment.FeatureAssignment) g.Node {
-	return components.Popover("deactivate-assignment", "", "Deactivate assignment",
+	return components.Popover(
+		"deactivate-assignment", "", "Deactivate assignment",
 		h.P(g.Textf("This will deactivate %s. It will no longer be reconciled.", d.Feature.Name)),
-		h.Form(h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/deactivate"),
+		h.Form(
+			h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/deactivate"),
 			h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+d.Feature.Name+"/assignments")),
 			components.PopoverActions(
 				h.Button(h.Type("submit"), g.Text("Deactivate")),

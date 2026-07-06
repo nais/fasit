@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	ui "github.com/nais/fasit/internal/ui"
+	"github.com/nais/fasit/internal/ui"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -52,9 +52,9 @@ func initialColor(name string) string {
 		"#4e79a7", "#f28e2b", "#e15759", "#76b7b2",
 		"#59a14f", "#edc948", "#b07aa1", "#ff9da7",
 	}
-	var h uint32
-	for _, c := range name {
-		h = h*31 + uint32(c)
+	var hash uint32
+	for i := 0; i < len(name); i++ {
+		hash = hash*31 + uint32(name[i])
 	}
-	return colors[h%uint32(len(colors))] // #nosec G115 -- h is a hash of a short string, overflow is harmless
+	return colors[int(hash)%len(colors)]
 }

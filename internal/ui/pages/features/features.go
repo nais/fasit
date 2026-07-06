@@ -146,8 +146,10 @@ func ConfigTabHandler(renderPage RenderPage) http.HandlerFunc {
 }
 
 func listPage(rows []deployRow, audits []*audit.Entry) g.Node {
-	return h.Div(h.Class("container"),
-		h.Main(h.Class("main-content landing-page"),
+	return h.Div(
+		h.Class("container"),
+		h.Main(
+			h.Class("main-content landing-page"),
 			landingSearch(),
 			components.CardCompact(
 				recentAssignments(rows),
@@ -160,8 +162,10 @@ func listPage(rows []deployRow, audits []*audit.Entry) g.Node {
 }
 
 func landingSearch() g.Node {
-	return h.Section(h.Class("landing-search"),
-		h.Form(h.Method("get"), h.Action("/features"), h.Class("feature-search-form landing-search-form"), g.Attr("data-feature-search", ""),
+	return h.Section(
+		h.Class("landing-search"),
+		h.Form(
+			h.Method("get"), h.Action("/features"), h.Class("feature-search-form landing-search-form"), g.Attr("data-feature-search", ""),
 			h.Input(
 				h.Type("search"),
 				h.Name("q"),
@@ -177,12 +181,17 @@ func landingSearch() g.Node {
 }
 
 func featureIndexPage(features []featurepkg.FeatureSummary, query string) g.Node {
-	return h.Div(h.Class("container"),
+	return h.Div(
+		h.Class("container"),
 		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()}),
-		h.Main(h.Class("main-content"),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
-				h.Div(h.Class("assignments-header"),
-					h.Div(h.Class("assignments-toolbar"),
+		h.Main(
+			h.Class("main-content"),
+			h.Div(h.Class("card"), h.Div(
+				h.Class("card-body"),
+				h.Div(
+					h.Class("assignments-header"),
+					h.Div(
+						h.Class("assignments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),
@@ -228,7 +237,8 @@ func featureIndexTable(features []featurepkg.FeatureSummary) g.Node {
 			h.Td(h.Class("table-kebab-cell"), featureRowKebab(feature, i)),
 		))
 	}
-	return h.Table(h.ID("feature-index-table"), h.Class("table sortable"),
+	return h.Table(
+		h.ID("feature-index-table"), h.Class("table sortable"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Feature")),
 			h.Th(g.Attr("data-no-sort", ""), g.Text("Description")),
@@ -295,7 +305,8 @@ func recentAssignments(rows []deployRow) g.Node {
 
 	return g.Group([]g.Node{
 		h.H3(g.Text("Recent deployments")),
-		h.Table(h.Class("table table-compact"),
+		h.Table(
+			h.Class("table table-compact"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Feature")),
 				h.Th(g.Text("Version")),
@@ -400,7 +411,8 @@ func detailPage(data *DetailPage) g.Node {
 		case "config":
 			title = "Config activity"
 		}
-		rightSidebar = h.Aside(h.Class("right-sidebar"),
+		rightSidebar = h.Aside(
+			h.Class("right-sidebar"),
 			components.CardCompact(auditview.ActivityList(auditview.ActivityListParams{
 				Title:        title,
 				AllHref:      "/auditlog?q=" + url.QueryEscape(data.CurrentFeature.Name),
@@ -409,10 +421,12 @@ func detailPage(data *DetailPage) g.Node {
 			})),
 		)
 	}
-	return h.Div(h.Class("container"),
+	return h.Div(
+		h.Class("container"),
 		featureSidebar(data),
 		components.Breadcrumbs(data.Breadcrumbs, breadcrumbActions...),
-		h.Main(h.Class("main-content"),
+		h.Main(
+			h.Class("main-content"),
 			components.Card(content),
 		),
 		g.If(rightSidebar != nil, rightSidebar),

@@ -33,23 +33,29 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 
 	return h.Nav(
 		h.A(h.Href("/"), h.Class("logo"), g.Text("Fasit")),
-		h.Div(h.Class("menu"),
+		h.Div(
+			h.Class("menu"),
 			navItem("/features", "Features", PageFeatures),
 			navItem("/environments", "Environments", PageEnvironments),
 		),
-		g.If(!hideSearch, h.Form(h.Method("get"), h.Action("/features"), h.Class("nav-search"), g.Attr("data-feature-search", ""),
+		g.If(!hideSearch, h.Form(
+			h.Method("get"), h.Action("/features"), h.Class("nav-search"), g.Attr("data-feature-search", ""),
 			h.Input(h.Type("search"), h.Name("q"), h.Class("feature-search-input nav-search-input"), h.Placeholder("Search…"), h.AutoComplete("off"), g.Attr("aria-label", "Search features")),
 			h.Div(h.Class("feature-search-suggestions"), g.Attr("data-feature-search-suggestions", "")),
 		)),
-		h.Div(h.Class("nav-kebab-wrap"),
-			h.Button(h.Class("kebab-btn nav-hotdog"), g.Attr("data-kebab-toggle", "nav-kebab"), g.Attr("title", "More"),
+		h.Div(
+			h.Class("nav-kebab-wrap"),
+			h.Button(
+				h.Class("kebab-btn nav-hotdog"), g.Attr("data-kebab-toggle", "nav-kebab"), g.Attr("title", "More"),
 				g.Raw(`<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="7" width="12" height="2" rx="1"/><rect x="5" y="3" width="6" height="2" rx="1"/><rect x="5" y="11" width="6" height="2" rx="1"/></svg>`),
 			),
-			h.Div(h.Class("nav-hotdog-hint"), h.ID("nav-hotdog-hint"),
+			h.Div(
+				h.Class("nav-hotdog-hint"), h.ID("nav-hotdog-hint"),
 				g.Text("Some nav items moved here"),
 				h.Button(h.Type("button"), h.Class("nav-hotdog-hint-close"), g.Attr("onclick", "dismissNavHint()"), g.Raw("&times;")),
 			),
-			h.Div(h.Class("kebab-menu"), h.ID("nav-kebab"),
+			h.Div(
+				h.Class("kebab-menu"), h.ID("nav-kebab"),
 				h.A(h.Href("/assignments"), h.Class("kebab-item"), g.Text("Assignments")),
 				h.A(h.Href("/auditlog"), h.Class("kebab-item"), g.Text("Audit log")),
 				h.A(h.Href("/labels"), h.Class("kebab-item"), g.Text("Labels")),
@@ -71,7 +77,8 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 					g.Attr("title", "Toggle light/dark mode"),
 					g.Text("Toggle theme"),
 				),
-				g.If(appVersion != "",
+				g.If(
+					appVersion != "",
 					g.Group([]g.Node{
 						h.Div(h.Class("kebab-divider")),
 						h.Span(h.Class("kebab-version"), g.Text(appVersion)),

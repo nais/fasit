@@ -79,7 +79,8 @@ func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs ma
 
 func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.PostgresContainer, dsn string, err error) {
 	t.Helper()
-	container, err = postgres.Run(ctx,
+	container, err = postgres.Run(
+		ctx,
 		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase("test"),
 		postgres.WithUsername("test"),

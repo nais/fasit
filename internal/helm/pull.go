@@ -68,7 +68,8 @@ func DownloadChart(chart, version, repo string) (*bytes.Buffer, error) {
 				IdleConnTimeout:       90 * time.Second,
 				TLSHandshakeTimeout:   10 * time.Second,
 				ExpectContinueTimeout: 1 * time.Second,
-			}))
+			},
+		))
 	}
 
 	b, err := get.Get(u.String(), opts...)

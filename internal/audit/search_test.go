@@ -20,7 +20,8 @@ func discardLog() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard,
 
 func startPostgres(ctx context.Context, t *testing.T) (*postgres.PostgresContainer, string) {
 	t.Helper()
-	container, err := postgres.Run(ctx, "docker.io/postgres:16-alpine",
+	container, err := postgres.Run(
+		ctx, "docker.io/postgres:16-alpine",
 		postgres.WithDatabase("test"), postgres.WithUsername("test"), postgres.WithPassword("test"),
 		postgres.WithSQLDriver("pgx"), postgres.BasicWaitStrategies(),
 	)
@@ -75,7 +76,8 @@ func TestSearchRecentMatchesDisplay(t *testing.T) {
 
 	tenantID := uuid.New()
 	envID := uuid.New()
-	exec(ctx, t, pool,
+	exec(
+		ctx, t, pool,
 		fmt.Sprintf(`INSERT INTO tenants (id, name) VALUES ('%s', 'nav')`, tenantID),
 		fmt.Sprintf(`INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'management', 'management')`, envID, tenantID),
 		// Config create whose value ("true") exists only in metadata, in nav/management.

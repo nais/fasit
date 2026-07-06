@@ -19,14 +19,16 @@ type metricsMiddleware struct {
 }
 
 func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
-	requestsTotal, err := meter.Int64Counter("http_requests_total",
+	requestsTotal, err := meter.Int64Counter(
+		"http_requests_total",
 		metric.WithDescription("Total HTTP requests"),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	requestDuration, err := meter.Float64Histogram("http_request_duration_ms",
+	requestDuration, err := meter.Float64Histogram(
+		"http_request_duration_ms",
 		metric.WithDescription("HTTP request duration"),
 		metric.WithUnit("ms"),
 		metric.WithExplicitBucketBoundaries(1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
@@ -35,7 +37,8 @@ func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
 		return nil, err
 	}
 
-	queriesPerRequest, err := meter.Int64Histogram("db_queries_per_request",
+	queriesPerRequest, err := meter.Int64Histogram(
+		"db_queries_per_request",
 		metric.WithDescription("Number of database queries executed while serving one HTTP request"),
 		metric.WithExplicitBucketBoundaries(1, 2, 5, 10, 20, 50, 100, 200),
 	)
@@ -43,7 +46,8 @@ func NewMetricsMiddleware(meter metric.Meter) (*metricsMiddleware, error) {
 		return nil, err
 	}
 
-	dbTimePerRequest, err := meter.Float64Histogram("db_time_per_request_ms",
+	dbTimePerRequest, err := meter.Float64Histogram(
+		"db_time_per_request_ms",
 		metric.WithDescription("Total time spent in the database while serving one HTTP request"),
 		metric.WithUnit("ms"),
 		metric.WithExplicitBucketBoundaries(1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),

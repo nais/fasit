@@ -12,7 +12,8 @@ type Tab struct {
 }
 
 func TabsNav(activeTab string, tabs []Tab) g.Node {
-	return h.Nav(h.Class("tabs-nav"),
+	return h.Nav(
+		h.Class("tabs-nav"),
 		g.Group(g.Map(tabs, func(tab Tab) g.Node {
 			attrs := []g.Node{h.Href(tab.Href)}
 			if activeTab == tab.ID {

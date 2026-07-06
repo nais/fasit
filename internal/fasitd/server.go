@@ -38,7 +38,8 @@ type Server struct {
 }
 
 func NewServer(pool *pgxpool.Pool, loadContext contextloader.LoaderFunc, meter metric.Meter, log *slog.Logger) (*Server, error) {
-	reportsRecv, err := meter.Int64Counter("fasitd_reports_received_total",
+	reportsRecv, err := meter.Int64Counter(
+		"fasitd_reports_received_total",
 		metric.WithDescription("Total reports received from fasitd agents, by type"),
 	)
 	if err != nil {

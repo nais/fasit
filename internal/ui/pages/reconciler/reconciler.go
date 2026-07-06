@@ -23,16 +23,21 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 }
 
 func triggerPage() g.Node {
-	return h.Main(h.Class("main-content"),
-		h.Div(h.Class("reconciler-header"),
+	return h.Main(
+		h.Class("main-content"),
+		h.Div(
+			h.Class("reconciler-header"),
 			h.H1(g.Text("Reconciler")),
 			h.Button(h.Type("button"), h.Class("btn"), h.ID("reconcile-btn"), g.Text("Run reconcile")),
 		),
 		h.P(h.Class("text-muted"), h.ID("reconcile-status"), g.Text("Run a dry-run reconcile to see what would be deployed.")),
 		h.Div(h.ID("reconcile-summary")),
-		h.Div(h.Class("card"), h.ID("reconcile-table-card"), g.Attr("style", "display:none"),
-			h.Div(h.Class("card-body"),
-				h.Table(h.Class("table"), h.ID("reconcile-table"),
+		h.Div(
+			h.Class("card"), h.ID("reconcile-table-card"), g.Attr("style", "display:none"),
+			h.Div(
+				h.Class("card-body"),
+				h.Table(
+					h.Class("table"), h.ID("reconcile-table"),
 					h.THead(h.Tr(
 						h.Th(g.Text("Action")),
 						h.Th(g.Text("Tenant")),

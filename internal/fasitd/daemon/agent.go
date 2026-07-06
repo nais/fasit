@@ -54,7 +54,8 @@ func NewAgent(client protogen.FasitdClient, opts AgentOptions, log *slog.Logger)
 func (a *Agent) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	ctx = metadata.AppendToOutgoingContext(ctx,
+	ctx = metadata.AppendToOutgoingContext(
+		ctx,
 		"x-fasit-tenant", a.opts.Tenant,
 		"x-fasit-environment", a.opts.Environment,
 	)
