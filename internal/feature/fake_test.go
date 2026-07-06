@@ -138,10 +138,6 @@ func (f *fakeQuerier) FeatureDataByVersion(context.Context, featuresql.FeatureDa
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) FeatureVersionRows(context.Context, string) ([]featuresql.FeatureVersionRowsRow, error) {
-	panic("not implemented")
-}
-
 func (f *fakeQuerier) LatestFeatureData(context.Context, string) (featuresql.LatestFeatureDataRow, error) {
 	panic("not implemented")
 }

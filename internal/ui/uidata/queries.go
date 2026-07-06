@@ -172,3 +172,20 @@ func GetEnvironmentValueReferences(ctx context.Context, envID uuid.UUID) (Enviro
 	}
 	return refs, nil
 }
+
+func FeatureVersions(ctx context.Context, name string) ([]FeatureVersion, error) {
+	rows, err := querier(ctx).FeatureVersions(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("list versions for %q: %w", name, err)
+	}
+	ret := make([]FeatureVersion, len(rows))
+	for i, row := range rows {
+		ret[i] = FeatureVersion{
+			Version:     row.Version,
+			Description: row.Description,
+			Source:      row.Source,
+			LastUpdated: row.LastUpdated,
+		}
+	}
+	return ret, nil
+}

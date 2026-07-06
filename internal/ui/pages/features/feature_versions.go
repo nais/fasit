@@ -14,6 +14,7 @@ import (
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/uidata"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 	"sigs.k8s.io/yaml"
@@ -28,7 +29,7 @@ func VersionsTabHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 		data.ActiveTab = "versions"
 		data.Breadcrumbs = append(data.Breadcrumbs, breadcrumb.Crumb{Label: "Versions"})
-		data.Versions, err = featurepkg.FeatureVersions(r.Context(), data.CurrentFeature.Name)
+		data.Versions, err = uidata.FeatureVersions(r.Context(), data.CurrentFeature.Name)
 		if err != nil {
 			http.Error(w, "Failed to load versions", http.StatusInternalServerError)
 			return
@@ -94,7 +95,7 @@ func versionsListContent(data *DetailPage) g.Node {
 				h.Th(g.Text("Instances")),
 				h.Th(g.Text("Last updated")),
 			)),
-			h.TBody(g.Group(g.Map(data.Versions, func(v featurepkg.FeatureVersion) g.Node {
+			h.TBody(g.Group(g.Map(data.Versions, func(v uidata.FeatureVersion) g.Node {
 				envs := data.VersionEnvs[v.Version]
 				instances := len(envs)
 				rowAttrs := []g.Node{}

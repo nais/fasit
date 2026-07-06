@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	FeatureVersions(ctx context.Context, featureName string) ([]FeatureVersionsRow, error)
 	GetDeployInstructionByFeatureAssignmentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByFeatureAssignmentAndEnvironmentIDParams) (GetDeployInstructionByFeatureAssignmentAndEnvironmentIDRow, error)
 	// Deploy history for the UI, derived from the deploy_status view (latest row
 	// per environment x feature). One row per environment for the assignment.

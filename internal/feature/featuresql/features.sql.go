@@ -135,63 +135,6 @@ func (q *Queries) FeatureNames(ctx context.Context) ([]string, error) {
 	return items, nil
 }
 
-const featureVersionRows = `-- name: FeatureVersionRows :many
-SELECT
-	fd.name,
-	fd.version,
-	fd.description,
-	fd.source,
-	MAX(fa.created) AS last_updated
-FROM
-	feature_data fd
-	LEFT JOIN feature_assignments fa ON fa.feature_name = fd.name
-		AND fa.version = fd.version
-WHERE
-	fd.name = $1
-GROUP BY
-	fd.name,
-	fd.version,
-	fd.description,
-	fd.source
-ORDER BY
-	last_updated DESC NULLS LAST,
-	fd.version DESC
-`
-
-type FeatureVersionRowsRow struct {
-	Name        string
-	Version     string
-	Description string
-	Source      string
-	LastUpdated interface{}
-}
-
-func (q *Queries) FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error) {
-	rows, err := q.db.Query(ctx, featureVersionRows, featureName)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []FeatureVersionRowsRow{}
-	for rows.Next() {
-		var i FeatureVersionRowsRow
-		if err := rows.Scan(
-			&i.Name,
-			&i.Version,
-			&i.Description,
-			&i.Source,
-			&i.LastUpdated,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const latestFeatureData = `-- name: LatestFeatureData :one
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
