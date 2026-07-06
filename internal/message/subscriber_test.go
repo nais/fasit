@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub/pstest"
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"cloud.google.com/go/pubsub/v2/pstest"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
