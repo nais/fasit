@@ -89,7 +89,8 @@ func assignmentDetailContent(data *DetailPage) g.Node {
 
 	featureName := data.CurrentFeature.Name
 
-	return h.Div(h.ID("env-overview"),
+	return h.Div(
+		h.ID("env-overview"),
 		overviewTable(envs, featureName),
 	)
 }
@@ -110,12 +111,15 @@ func overviewTable(envs []AssignmentEnvStatus, featureName string) g.Node {
 	for i, env := range envs {
 		rows[i] = envCardRow(env, featureName, prefs, true, true, true, true, versionEmph[i])
 	}
-	table := h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-overview"),
+	table := h.Table(
+		h.Class("table sortable"), g.Attr("data-sort-key", "feature-overview"),
 		h.THead(h.Tr(g.Group(thNodes))),
 		h.TBody(g.Group(rows)),
 	)
-	return h.Div(h.Class("feature-overview-table"), h.ID("overview-table"),
-		h.Div(h.Class("feature-card"),
+	return h.Div(
+		h.Class("feature-overview-table"), h.ID("overview-table"),
+		h.Div(
+			h.Class("feature-card"),
 			h.Div(h.Class("feature-card-body"), table),
 		),
 	)
@@ -198,7 +202,8 @@ func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallback
 	if len(cards) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No environments to show."))
 	}
-	return h.Div(h.Class("assignment-list"),
+	return h.Div(
+		h.Class("assignment-list"),
 		g.Map(cards, func(c card) g.Node {
 			return renderCard(c, featureName, chart, prefs, fallbackVersions[c.FeatureAssignmentID])
 		}),
@@ -206,7 +211,8 @@ func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallback
 }
 
 func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVersion string) g.Node {
-	head := h.Div(h.Class("assignment-row-head"),
+	head := h.Div(
+		h.Class("assignment-row-head"),
 		h.Span(h.Class("card-group-title"), g.Text(c.Title)),
 		flowArrow(),
 		h.Span(h.Class("feature-card-labels"), labelPills(c.Labels)),
@@ -214,12 +220,14 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 
 	var main g.Node
 	if c.LinkHref != "" {
-		main = h.A(h.Href(c.LinkHref), h.Class("assignment-row-link"),
+		main = h.A(
+			h.Href(c.LinkHref), h.Class("assignment-row-link"),
 			head,
 			assignmentStatusSummary(c.Environments),
 		)
 	} else {
-		main = h.Div(h.Class("assignment-row-link"),
+		main = h.Div(
+			h.Class("assignment-row-link"),
 			head,
 			assignmentStatusSummary(c.Environments),
 		)
@@ -229,28 +237,37 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 	if c.FeatureAssignmentID != "" {
 		setVersionPopoverID := "set-version-" + c.FeatureAssignmentID
 		removePopoverID := "remove-assignment-" + c.FeatureAssignmentID
-		actions = h.Div(h.Class("feature-card-actions"),
-			h.Div(h.Class("card-kebab-wrap"),
+		actions = h.Div(
+			h.Class("feature-card-actions"),
+			h.Div(
+				h.Class("card-kebab-wrap"),
 				components.KebabButton("card-kebab-"+c.FeatureAssignmentID),
-				h.Div(h.Class("kebab-menu"), h.ID("card-kebab-"+c.FeatureAssignmentID),
-					h.Button(h.Type("button"), h.Class("kebab-item"),
+				h.Div(
+					h.Class("kebab-menu"), h.ID("card-kebab-"+c.FeatureAssignmentID),
+					h.Button(
+						h.Type("button"), h.Class("kebab-item"),
 						g.Attr("popovertarget", setVersionPopoverID),
 						g.Text("Set version"),
 					),
-					h.Button(h.Type("button"), h.Class("kebab-item kebab-item-danger"),
+					h.Button(
+						h.Type("button"), h.Class("kebab-item kebab-item-danger"),
 						g.Attr("popovertarget", removePopoverID),
 						g.Text("Remove"),
 					),
 				),
 				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels),
-				components.Popover(removePopoverID, "", "Remove assignment spec",
-					g.If(fallbackVersion != "",
+				components.Popover(
+					removePopoverID, "", "Remove assignment spec",
+					g.If(
+						fallbackVersion != "",
 						h.P(g.Textf("This will remove this assignment spec. Version %s will take its place.", fallbackVersion)),
 					),
-					g.If(fallbackVersion == "",
+					g.If(
+						fallbackVersion == "",
 						h.P(g.Text("This will remove this assignment spec. It will no longer be reconciled.")),
 					),
-					h.Form(h.Method("POST"), h.Action("/assignments/"+c.FeatureAssignmentID+"/deactivate"),
+					h.Form(
+						h.Method("POST"), h.Action("/assignments/"+c.FeatureAssignmentID+"/deactivate"),
 						h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+featureName+"/assignments")),
 						components.PopoverActions(
 							h.Button(h.Type("submit"), g.Text("Remove")),
@@ -261,7 +278,8 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 		)
 	}
 
-	return h.Div(h.Class("assignment-row"),
+	return h.Div(
+		h.Class("assignment-row"),
 		main,
 		actions,
 	)
@@ -301,7 +319,8 @@ func assignmentStatusSummary(envs []AssignmentEnvStatus) g.Node {
 
 	items := make([]g.Node, len(statuses))
 	for i, s := range statuses {
-		items[i] = h.Span(h.Class("assignment-status"),
+		items[i] = h.Span(
+			h.Class("assignment-status"),
 			h.Span(h.Class("status-dot "+components.StatusClass(s))),
 			g.Textf("%d %s", counts[s], statusLabel(s)),
 		)
@@ -349,7 +368,8 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 	}
 
 	hasDrift := env.ReleaseVersion != "" && env.ReleaseVersion != env.AssignmentVersion
-	driftIcon := g.If(hasDrift,
+	driftIcon := g.If(
+		hasDrift,
 		h.Span(
 			h.Class("version-drift"),
 			h.Title("Running: "+env.ReleaseVersion),
@@ -384,7 +404,8 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 		toggleReconcileAction := baseHref + "/toggle-reconcile"
 
 		menuItems := []g.Node{
-			h.A(h.Href(logsHref), h.Class("kebab-item"),
+			h.A(
+				h.Href(logsHref), h.Class("kebab-item"),
 				g.Raw(components.IconLogs),
 				g.Text("Deploy logs"),
 			),
@@ -392,30 +413,38 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 		}
 
 		if env.Enabled {
-			menuItems = append(menuItems,
-				h.Button(h.Type("button"), h.Class("kebab-item kebab-item-danger"), g.Attr("popovertarget", reconcilePopoverID),
+			menuItems = append(
+				menuItems,
+				h.Button(
+					h.Type("button"), h.Class("kebab-item kebab-item-danger"), g.Attr("popovertarget", reconcilePopoverID),
 					g.Raw(components.IconPause),
 					g.Text("Disable reconcile"),
 				),
 			)
 		} else {
-			menuItems = append(menuItems,
-				h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", reconcilePopoverID),
+			menuItems = append(
+				menuItems,
+				h.Button(
+					h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", reconcilePopoverID),
 					g.Raw(components.IconPlay),
 					g.Text("Enable reconcile"),
 				),
 			)
 		}
 
-		menuItems = append(menuItems,
-			h.A(h.Href("/features/"+featureName+"/assignments/"+env.FeatureAssignmentID), h.Class("kebab-item"),
+		menuItems = append(
+			menuItems,
+			h.A(
+				h.Href("/features/"+featureName+"/assignments/"+env.FeatureAssignmentID), h.Class("kebab-item"),
 				g.Raw(components.IconDocument),
 				g.Text("View assignment"),
 			),
 		)
 
-		cells = append(cells, h.Td(h.Class("action"),
-			components.KebabWrap(kebabID, menuItems,
+		cells = append(cells, h.Td(
+			h.Class("action"),
+			components.KebabWrap(
+				kebabID, menuItems,
 				components.ReconcilePopover(reconcilePopoverID, toggleReconcileAction, featureName, env.Name, env.Enabled, "/features/"+featureName),
 			),
 		))
@@ -428,7 +457,8 @@ func tenantCell(env AssignmentEnvStatus, showAvatar bool) g.Node {
 	if !showAvatar {
 		return h.Td(g.Text(env.TenantName))
 	}
-	return h.Td(h.Span(h.Class("tenant-cell"),
+	return h.Td(h.Span(
+		h.Class("tenant-cell"),
 		components.TenantAvatar(env.TenantName, components.HasTenantLogo(env.TenantName), "20px"),
 		h.Span(g.Text(env.TenantName)),
 	))
@@ -508,8 +538,10 @@ func setVersionPopover(popoverID, featureName, chart string, target map[string]s
 	for _, k := range keys {
 		inputs = append(inputs, h.Input(h.Type("hidden"), h.Name("target_label"), h.Value(k+"="+target[k])))
 	}
-	return components.Popover(popoverID, "", "Set version",
-		h.Form(h.Method("POST"), h.Action("/assignments"),
+	return components.Popover(
+		popoverID, "", "Set version",
+		h.Form(
+			h.Method("POST"), h.Action("/assignments"),
 			g.Group(inputs),
 			h.Label(g.Text("Version")),
 			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("autofocus", "")),

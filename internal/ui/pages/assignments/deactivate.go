@@ -28,7 +28,7 @@ func DeactivateHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, deactivateRedirectForFeature(r, featureName), http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirectForFeature(r, featureName), http.StatusSeeOther) // #nosec G710 -- deactivateRedirect validates leading slash and Referer host == r.Host, forcing a same-origin relative path
 	}
 }
 
@@ -53,7 +53,7 @@ func DeactivateByFeatureAndTargetHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		http.Redirect(w, r, deactivateRedirectForFeature(r, fa.Feature.Name), http.StatusSeeOther)
+		http.Redirect(w, r, deactivateRedirectForFeature(r, fa.Feature.Name), http.StatusSeeOther) // #nosec G710 -- deactivateRedirect validates leading slash and Referer host == r.Host, forcing a same-origin relative path
 	}
 }
 

@@ -68,14 +68,16 @@ type QueryMetricsTracer struct {
 }
 
 func NewQueryMetricsTracer(meter metric.Meter) (*QueryMetricsTracer, error) {
-	queryCount, err := meter.Int64Counter("db_queries_total",
+	queryCount, err := meter.Int64Counter(
+		"db_queries_total",
 		metric.WithDescription("Total database queries executed"),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	queryDuration, err := meter.Float64Histogram("db_query_duration_ms",
+	queryDuration, err := meter.Float64Histogram(
+		"db_query_duration_ms",
 		metric.WithDescription("Database query duration"),
 		metric.WithUnit("ms"),
 		metric.WithExplicitBucketBoundaries(1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
@@ -118,7 +120,8 @@ func (t *QueryMetricsTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, dat
 }
 
 func RegisterPoolMetrics(meter metric.Meter, pool *pgxpool.Pool) error {
-	if _, err := meter.Int64ObservableGauge("db_pool_total_conns",
+	if _, err := meter.Int64ObservableGauge(
+		"db_pool_total_conns",
 		metric.WithDescription("Total number of connections in the pool"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
 			o.Observe(int64(pool.Stat().TotalConns()))
@@ -128,7 +131,8 @@ func RegisterPoolMetrics(meter metric.Meter, pool *pgxpool.Pool) error {
 		return err
 	}
 
-	if _, err := meter.Int64ObservableGauge("db_pool_idle_conns",
+	if _, err := meter.Int64ObservableGauge(
+		"db_pool_idle_conns",
 		metric.WithDescription("Number of idle connections in the pool"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
 			o.Observe(int64(pool.Stat().IdleConns()))
@@ -138,7 +142,8 @@ func RegisterPoolMetrics(meter metric.Meter, pool *pgxpool.Pool) error {
 		return err
 	}
 
-	if _, err := meter.Int64ObservableGauge("db_pool_acquired_conns",
+	if _, err := meter.Int64ObservableGauge(
+		"db_pool_acquired_conns",
 		metric.WithDescription("Number of acquired connections in the pool"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
 			o.Observe(int64(pool.Stat().AcquiredConns()))
@@ -148,7 +153,8 @@ func RegisterPoolMetrics(meter metric.Meter, pool *pgxpool.Pool) error {
 		return err
 	}
 
-	if _, err := meter.Int64ObservableGauge("db_pool_max_conns",
+	if _, err := meter.Int64ObservableGauge(
+		"db_pool_max_conns",
 		metric.WithDescription("Maximum number of connections in the pool"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
 			o.Observe(int64(pool.Stat().MaxConns()))

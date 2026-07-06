@@ -176,29 +176,39 @@ func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, template, selected
 		})
 	}
 
-	return h.Div(h.Class("container"),
-		h.Main(h.Class("main-content"),
-			h.Div(h.Class("template-test-layout"),
-				h.Div(h.Class("template-test-main"),
+	return h.Div(
+		h.Class("container"),
+		h.Main(
+			h.Class("main-content"),
+			h.Div(
+				h.Class("template-test-layout"),
+				h.Div(
+					h.Class("template-test-main"),
 					components.Card(
 						h.H2(g.Text("Template tester")),
-						h.Form(h.Method("GET"), h.Class("template-test-page-form"),
+						h.Form(
+							h.Method("GET"), h.Class("template-test-page-form"),
 							hiddenFields,
-							h.Div(h.Class("form-group"),
+							h.Div(
+								h.Class("form-group"),
 								h.Label(h.For("env-select"), g.Text("Environment")),
 								h.Select(h.Name("env"), h.ID("env-select"), g.Group(envOpts)),
 							),
-							h.Div(h.Class("form-group"),
+							h.Div(
+								h.Class("form-group"),
 								h.Label(h.For("template-input"), g.Text("Template")),
-								h.Textarea(h.Name("template"), h.ID("template-input"), h.Rows("6"),
+								h.Textarea(
+									h.Name("template"), h.ID("template-input"), h.Rows("6"),
 									g.Text(template),
 								),
 							),
-							h.Div(h.Class("template-test-actions"),
+							h.Div(
+								h.Class("template-test-actions"),
 								h.Button(h.Type("submit"), h.Class("btn-secondary"), g.Text("Render")),
 								h.Span(h.Class("text-muted text-sm"), g.Text("Shift+Enter")),
 							),
-							h.Div(h.Class("form-group"),
+							h.Div(
+								h.Class("form-group"),
 								h.Label(g.Text("Result")),
 								resultNode,
 							),
@@ -275,7 +285,8 @@ func templateReference(hasFeature bool) g.Node {
 		return g.Group(nodes)
 	}
 
-	return h.Aside(h.Class("template-test-reference"),
+	return h.Aside(
+		h.Class("template-test-reference"),
 		h.H3(g.Text("Reference")),
 		h.H4(g.Text("Variables")),
 		h.Div(h.Class("ref-list"), renderItems(variables)),

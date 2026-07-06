@@ -67,7 +67,8 @@ func logsPage(dep *featureassignment.FeatureAssignment, log *uidata.RolloutLog) 
 			sb.WriteString(" ")
 			sb.WriteString(line.Message)
 		}
-		logContent = append(logContent,
+		logContent = append(
+			logContent,
 			h.P(h.Class("text-muted"), g.Textf("Environment: %s", log.Environment)),
 			h.Pre(h.Class("code-block"), g.Text(sb.String())),
 		)

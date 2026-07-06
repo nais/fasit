@@ -35,7 +35,8 @@ func UninstallLogsFragmentHandler() http.HandlerFunc {
 
 func uninstallLogsFragment(lines []*uidata.LogLine) g.Node {
 	if len(lines) == 0 {
-		return h.Div(h.Class("modal-body"),
+		return h.Div(
+			h.Class("modal-body"),
 			h.H3(g.Text("Uninstall log")),
 			h.P(h.Class("text-muted"), g.Text("No log output recorded for this uninstall.")),
 		)
@@ -43,7 +44,8 @@ func uninstallLogsFragment(lines []*uidata.LogLine) g.Node {
 
 	rows := make([]g.Node, 0, len(lines))
 	for _, line := range lines {
-		rows = append(rows,
+		rows = append(
+			rows,
 			h.Div(
 				h.Span(h.Class("text-muted"), h.Title(view.FormatTime(line.Timestamp)), g.Text(view.FormatTime(line.Timestamp)+"  ")),
 				g.Text(line.Message),
@@ -51,7 +53,8 @@ func uninstallLogsFragment(lines []*uidata.LogLine) g.Node {
 		)
 	}
 
-	return h.Div(h.Class("modal-body"),
+	return h.Div(
+		h.Class("modal-body"),
 		h.H3(g.Text("Uninstall log")),
 		h.Pre(h.Class("code-block"), g.Group(rows)),
 	)

@@ -63,7 +63,7 @@ func (s *Server) Routes() http.Handler {
 			http.Redirect(w, r, "/assignments", http.StatusSeeOther)
 			return
 		}
-		http.Redirect(w, r, "/features/"+d.Feature.Name+"/assignments/"+id.String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, "/features/"+d.Feature.Name+"/assignments/"+id.String(), http.StatusMovedPermanently) // #nosec G710 -- constant-prefixed relative path from DB value and parsed UUID, not attacker-controlled
 	})
 
 	r.Get("/features", features.IndexHandler(s.renderPage))

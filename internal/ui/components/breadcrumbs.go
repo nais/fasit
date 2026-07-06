@@ -94,7 +94,8 @@ func breadcrumbWithDropdown(crumb breadcrumb.Crumb, isActive bool) g.Node {
 		label = h.Span(h.Class(class), g.Group(labelNodes))
 	}
 
-	return h.Span(h.Class("breadcrumb-switcher"),
+	return h.Span(
+		h.Class("breadcrumb-switcher"),
 		label,
 		h.Div(h.Class("breadcrumb-dropdown"), g.Group(items)),
 	)

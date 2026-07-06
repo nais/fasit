@@ -48,7 +48,7 @@ func VersionDetailHandler(renderPage RenderPage) http.HandlerFunc {
 		version := chi.URLParam(r, "version")
 		selected, err := featurepkg.FeatureByNameVersion(r.Context(), data.CurrentFeature.Name, version)
 		if err != nil {
-			http.Redirect(w, r, "/features/"+data.CurrentFeature.Name+"/versions", http.StatusSeeOther)
+			http.Redirect(w, r, "/features/"+data.CurrentFeature.Name+"/versions", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from DB value, not attacker-controlled
 			return
 		}
 
@@ -87,7 +87,8 @@ func versionsListContent(data *DetailPage) g.Node {
 	}
 	return h.Div(
 		h.H2(g.Text("Versions")),
-		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-versions"),
+		h.Table(
+			h.Class("table sortable"), g.Attr("data-sort-key", "feature-versions"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Version")),
 				h.Th(g.Text("Instances")),
@@ -100,8 +101,10 @@ func versionsListContent(data *DetailPage) g.Node {
 				if instances == 0 {
 					rowAttrs = append(rowAttrs, h.Class("version-inactive"))
 				}
-				rowAttrs = append(rowAttrs,
-					h.Td(h.Span(h.Class("version-cell"),
+				rowAttrs = append(
+					rowAttrs,
+					h.Td(h.Span(
+						h.Class("version-cell"),
 						h.A(h.Href("/features/"+featureName+"/versions/"+v.Version), g.Text(v.Version)),
 						activePill(instances),
 					)),
@@ -202,7 +205,8 @@ func versionMetadata(feat *featurepkg.Feature) g.Node {
 		h.Td(h.Class("deps-value"), deps),
 	))
 
-	return h.Table(h.Class("table meta-table table-compact version-meta"),
+	return h.Table(
+		h.Class("table meta-table table-compact version-meta"),
 		h.TBody(g.Group(rows)),
 	)
 }
@@ -249,7 +253,8 @@ func versionInstances(feat *featurepkg.Feature, envs []featureenvs.Environment) 
 
 	return h.Div(
 		h.H2(g.Text("Instances")),
-		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-version-instances"),
+		h.Table(
+			h.Class("table sortable"), g.Attr("data-sort-key", "feature-version-instances"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Tenant")),
 				h.Th(g.Text("Environment")),
@@ -287,7 +292,8 @@ func collapsibleYAMLBlock(title string, v any) g.Node {
 	if pre == nil {
 		return nil
 	}
-	return h.Details(h.Class("version-collapsible"),
+	return h.Details(
+		h.Class("version-collapsible"),
 		h.Summary(h.H2(g.Text(title))),
 		pre,
 	)

@@ -44,7 +44,8 @@ const (
 
 // LokiLogsItem renders a kebab menu item linking to Loki.
 func LokiLogsItem(lokiURL string) g.Node {
-	return h.A(h.Href(lokiURL), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener"),
+	return h.A(
+		h.Href(lokiURL), h.Class("kebab-item"), g.Attr("target", "_blank"), g.Attr("rel", "noopener"),
 		g.Raw(IconLoki),
 		g.Text("Loki logs ↗"),
 	)

@@ -59,9 +59,11 @@ func helmValuesFragment(valuesJSON string) g.Node {
 	if err := json.Indent(&pretty, []byte(valuesJSON), "", "  "); err == nil {
 		valuesJSON = pretty.String()
 	}
-	return h.Div(h.Class("modal-body"),
+	return h.Div(
+		h.Class("modal-body"),
 		h.H3(g.Text("Computed Helm Values")),
-		h.Div(h.Class("code-block-wrap"),
+		h.Div(
+			h.Class("code-block-wrap"),
 			h.Button(h.Type("button"), h.Class("copy-btn"), g.Attr("data-copy-target", "helm-values-modal"), g.Text("Copy")),
 			h.Pre(h.Class("code-block"), h.ID("helm-values-modal"), g.Text(valuesJSON)),
 		),
@@ -69,7 +71,8 @@ func helmValuesFragment(valuesJSON string) g.Node {
 }
 
 func helmValuesErrorFragment(errMsg string) g.Node {
-	return h.Div(h.Class("modal-body"),
+	return h.Div(
+		h.Class("modal-body"),
 		h.H3(g.Text("Computed Helm Values")),
 		h.P(g.Text("Failed to render helm values:")),
 		h.Pre(h.Class("code-block"), g.Text(errMsg)),

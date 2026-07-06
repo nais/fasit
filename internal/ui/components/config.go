@@ -91,7 +91,8 @@ func BulkConfigCell(formID, idForUpdate string, item ConfigItem) g.Node {
 	}
 	return h.Td(
 		h.Div(h.Class("config-value-display"), display),
-		h.Div(h.Class("config-value-edit"),
+		h.Div(
+			h.Class("config-value-edit"),
 			bulkValueWidget(formID, item),
 			hidden(BulkKeysField, item.Key),
 			hidden(BulkTypeField(item.Key), item.Type),
@@ -217,11 +218,14 @@ func StringEditor(currentValue string) g.Node {
 		initialMode = "json"
 	}
 	return g.Group([]g.Node{
-		h.Div(h.Class("value-editor-toolbar"),
+		h.Div(
+			h.Class("value-editor-toolbar"),
 			h.Label(g.Text("Value")),
-			h.Span(h.Class("mode-toggle"),
+			h.Span(
+				h.Class("mode-toggle"),
 				h.Label(
-					h.Input(h.Type("radio"), h.Name("mode"), h.Value("json"),
+					h.Input(
+						h.Type("radio"), h.Name("mode"), h.Value("json"),
 						g.If(initialMode == "json", g.Attr("checked", "checked")),
 						g.Attr("data-mode-toggle", ""),
 					),
@@ -229,7 +233,8 @@ func StringEditor(currentValue string) g.Node {
 				),
 				g.Text(" "),
 				h.Label(
-					h.Input(h.Type("radio"), h.Name("mode"), h.Value("raw"),
+					h.Input(
+						h.Type("radio"), h.Name("mode"), h.Value("raw"),
 						g.If(initialMode == "raw", g.Attr("checked", "checked")),
 						g.Attr("data-mode-toggle", ""),
 					),
@@ -251,8 +256,10 @@ func ConfigEditPopover(popoverID, action, title, submitLabel string, item Config
 	formFields := append([]g.Node{}, extraFields...)
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")),
-		Popover(popoverID, "", title,
-			h.Form(h.Method("POST"), h.Action(action),
+		Popover(
+			popoverID, "", title,
+			h.Form(
+				h.Method("POST"), h.Action(action),
 				g.Group(formFields),
 				h.Label(g.Text("Configuration Key")),
 				h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")),
@@ -278,10 +285,12 @@ func ConfigDeletePopover(popoverID, action, title, confirmLabel, message, fallba
 // trigger button. Callers provide their own trigger via popovertarget=popoverID
 // (e.g. a kebab menu item).
 func ConfigDeleteConfirm(popoverID, action, title, confirmLabel, message, fallbackValue string) g.Node {
-	return Popover(popoverID, "", title,
+	return Popover(
+		popoverID, "", title,
 		g.If(message != "", h.P(g.Text(message))),
 		g.If(fallbackValue != "", fallbackValueNode(fallbackValue)),
-		h.Form(h.Method("POST"), h.Action(action),
+		h.Form(
+			h.Method("POST"), h.Action(action),
 			PopoverActions(
 				h.Button(h.Type("submit"), g.Text(confirmLabel)),
 			),

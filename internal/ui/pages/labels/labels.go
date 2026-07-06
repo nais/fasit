@@ -173,10 +173,13 @@ func page(rows []envRow, labelKeys []labelKeyInfo, activeFilters map[string]stri
 		}
 	}
 
-	return h.Div(h.Class("labels-page"),
+	return h.Div(
+		h.Class("labels-page"),
 		h.P(h.Class("labels-desc"), g.Text("Select labels to see which environments a target configuration matches.")),
-		h.Div(h.Class("labels-grid"),
-			h.Div(h.Class("labels-main"),
+		h.Div(
+			h.Class("labels-grid"),
+			h.Div(
+				h.Class("labels-main"),
 				availableLabelsSection(labelKeys, activeFilters, len(rows)),
 			),
 			sidebar(activeFilters, filteredRows, len(rows)),
@@ -210,8 +213,10 @@ func availableLabelsSection(labelKeys []labelKeyInfo, activeFilters map[string]s
 		)
 	})
 
-	return h.Section(h.Class("labels-section"),
-		h.Table(h.Class("table"),
+	return h.Section(
+		h.Class("labels-section"),
+		h.Table(
+			h.Class("table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Label")),
 				h.Th(g.Text("Possible Values")),
@@ -231,14 +236,18 @@ func sidebar(activeFilters map[string]string, filteredRows []envRow, totalCount 
 	}
 	matchTitle += ")"
 
-	return h.Aside(h.Class("labels-sidebar"),
-		h.Div(h.Class("labels-sidebar-card"),
+	return h.Aside(
+		h.Class("labels-sidebar"),
+		h.Div(
+			h.Class("labels-sidebar-card"),
 			h.H3(g.Text("Target Configuration")),
-			h.Div(h.Class("labels-json"),
+			h.Div(
+				h.Class("labels-json"),
 				h.Pre(g.Text(jsonStr)),
 			),
 			h.P(h.Class("labels-desc"), targetDescription(activeFilters, len(filteredRows))),
-			h.Div(h.Class("labels-sidebar-header"),
+			h.Div(
+				h.Class("labels-sidebar-header"),
 				h.H4(g.Text(matchTitle)),
 				g.If(len(activeFilters) > 0, h.A(h.Href("/labels"), h.Class("btn-small"), g.Text("Clear all"))),
 			),
@@ -283,7 +292,8 @@ func matchedEnvironmentsTable(rows []envRow, activeFilters map[string]string) g.
 		)
 	})
 
-	return h.Table(h.Class("table"),
+	return h.Table(
+		h.Class("table"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Tenant")),
 			h.Th(g.Text("Environment")),

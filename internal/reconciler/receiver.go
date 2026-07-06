@@ -39,14 +39,16 @@ type Receiver struct {
 }
 
 func NewReceiver(pool *pgxpool.Pool, mgr ReceiverClient, log *slog.Logger, slackClient slack.SlackClient, slackChannel string, meter metric.Meter) *Receiver {
-	messagesRecv, err := meter.Int64Counter("status_messages_received_total",
+	messagesRecv, err := meter.Int64Counter(
+		"status_messages_received_total",
 		metric.WithDescription("Total status messages received from naisd, by type"),
 	)
 	if err != nil {
 		log.With("err", err).Warn("failed to create status messages counter")
 	}
 
-	deployDuration, err := meter.Float64Histogram("deploy_instruction_duration_seconds",
+	deployDuration, err := meter.Float64Histogram(
+		"deploy_instruction_duration_seconds",
 		metric.WithDescription("Time from deploy instruction creation to terminal status"),
 		metric.WithUnit("s"),
 	)

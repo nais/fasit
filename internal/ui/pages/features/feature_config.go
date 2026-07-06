@@ -120,7 +120,8 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 	}
 	return h.Div(
 		h.H2(g.Text("Global configuration")),
-		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "feature-global-config"),
+		h.Table(
+			h.Class("table sortable config-table"), g.Attr("data-sort-key", "feature-global-config"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
@@ -129,7 +130,8 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
-				return h.Tr(h.ID("config-"+item.Key),
+				return h.Tr(
+					h.ID("config-"+item.Key),
 					components.ConfigKeyCell(item),
 					components.ConfigActionsCell(globalConfigActionsCell(featureName, item)),
 					components.ConfigValueCell(item),
@@ -147,14 +149,16 @@ func globalComputedTable(featureName string, items []components.ConfigItem) g.No
 	}
 	return h.Div(
 		h.H2(g.Text("Computed")),
-		h.Table(h.Class("table sortable config-table computed-template-table"), g.Attr("data-sort-key", "feature-global-computed"),
+		h.Table(
+			h.Class("table sortable config-table computed-template-table"), g.Attr("data-sort-key", "feature-global-computed"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(g.Text("Template")),
 				h.Th(h.Class("config-kebab-col"), g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
-				return h.Tr(h.ID("config-"+item.Key),
+				return h.Tr(
+					h.ID("config-"+item.Key),
 					components.ConfigKeyCell(item),
 					components.TemplateCell(item),
 					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(featureName, item.Key)),
@@ -171,14 +175,16 @@ func orphanedConfigTable(featureName string, items []components.ConfigItem) g.No
 	return h.Div(
 		h.H2(g.Text("Orphaned")),
 		h.P(h.Class("text-muted"), g.Text("These global config values no longer match any key in the feature chart and have no effect.")),
-		h.Table(h.Class("table config-table"),
+		h.Table(
+			h.Class("table config-table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Key")),
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
-				return h.Tr(h.Class("config-orphaned"),
+				return h.Tr(
+					h.Class("config-orphaned"),
 					h.Td(h.Span(h.Class("text-muted"), g.Text(item.Key))),
 					components.ConfigActionsCell(globalDeleteButton(featureName, item)),
 					h.Td(h.Span(h.Class("text-muted"), g.Text(item.Value))),
@@ -269,7 +275,7 @@ func UpdateGlobalConfigHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 		featureName := chi.URLParam(r, "feature")
-		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route param, not attacker-controlled
 	}
 }
 
@@ -290,7 +296,7 @@ func DeleteGlobalConfigHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 		featureName := chi.URLParam(r, "feature")
-		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route param, not attacker-controlled
 	}
 }
 
@@ -346,6 +352,6 @@ func SetGlobalConfigHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route param, not attacker-controlled
 	}
 }

@@ -85,12 +85,17 @@ func buildRows(ctx context.Context, tenants []*uidata.Tenant) []envRow {
 }
 
 func page(rows []envRow, query string, now time.Time) g.Node {
-	return h.Div(h.Class("container"),
+	return h.Div(
+		h.Class("container"),
 		components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Environments()}),
-		h.Main(h.Class("main-content"),
-			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
-				h.Div(h.Class("assignments-header"),
-					h.Div(h.Class("assignments-toolbar"),
+		h.Main(
+			h.Class("main-content"),
+			h.Div(h.Class("card"), h.Div(
+				h.Class("card-body"),
+				h.Div(
+					h.Class("assignments-header"),
+					h.Div(
+						h.Class("assignments-toolbar"),
 						h.Input(
 							h.Type("search"),
 							h.Class("table-filter"),

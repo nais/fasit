@@ -67,7 +67,8 @@ func ResourceLink(e *audit.Entry) g.Node {
 
 	if e.ObjectType == audit.ObjectTypeFeatureAssignment && e.ObjectID != "all" {
 		if depID := metadataString(e.Metadata, "assignmentId"); depID != "" {
-			nodes = append(nodes,
+			nodes = append(
+				nodes,
 				h.A(h.Href("/features/"+e.ObjectID+"/assignments/"+depID), g.Text("assignment")),
 				g.Text(" of "),
 				h.A(h.Href("/features/"+e.ObjectID), g.Text(e.ObjectID)),
@@ -210,7 +211,8 @@ func ActivityTable(entries []*audit.Entry, sortKey string) g.Node {
 		attrs = append(attrs, g.Attr("data-sort-key", sortKey))
 	}
 
-	return h.Table(append(attrs,
+	return h.Table(append(
+		attrs,
 		h.Class(class),
 		h.THead(h.Tr(
 			h.Th(g.Text("Action")),
@@ -255,7 +257,8 @@ func ActivityList(p ActivityListParams) g.Node {
 		desc := Description(e)
 		showDesc := desc != "" && !IsDescriptionRedundant(e)
 		items = append(items, h.Li(
-			h.Div(h.Class("activity-meta"),
+			h.Div(
+				h.Class("activity-meta"),
 				h.Span(
 					g.Text(DisplayAction(e)),
 					g.If(e.Actor != "", g.Group([]g.Node{g.Text(" by "), h.Span(h.Class("activity-actor"), view.ActorNode(e.Actor))})),
@@ -276,7 +279,8 @@ func ActivityList(p ActivityListParams) g.Node {
 		headerContent = append(headerContent, h.A(h.Href(p.AllHref), h.Class("link-muted"), g.Text("All →")))
 	}
 
-	return h.Section(h.Class("activity-section"),
+	return h.Section(
+		h.Class("activity-section"),
 		h.Div(h.Class("activity-header"), g.Group(headerContent)),
 		h.Ul(h.Class("activity-list"), g.Group(items)),
 	)
@@ -310,7 +314,8 @@ func ConfigChangeNode(e *audit.Entry) g.Node {
 	if !hasNew {
 		return h.Code(h.Class("val-deleted"), h.Title(oldClean), g.Text(truncateVal(oldClean)))
 	}
-	return h.Span(h.Class("config-change"), h.Title(oldClean+" → "+newClean),
+	return h.Span(
+		h.Class("config-change"), h.Title(oldClean+" → "+newClean),
 		h.Code(h.Class("val-old"), g.Text(truncateVal(oldClean))),
 		g.Text(" → "),
 		h.Code(g.Text(truncateVal(newClean))),

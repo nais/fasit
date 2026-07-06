@@ -34,7 +34,8 @@ func PopoverCloseButton(popoverID string) g.Node {
 }
 
 func popoverHeader(id, title string) g.Node {
-	return h.Div(h.Class("popover-header"),
+	return h.Div(
+		h.Class("popover-header"),
 		h.H3(g.Text(title)),
 		PopoverCloseButton(id),
 	)
@@ -47,8 +48,10 @@ func RedeployPopover(popoverID, action, featureName, envName string, enabled boo
 	if !enabled {
 		return nil
 	}
-	return Popover(popoverID, "", "Confirm redeploy",
-		h.Form(h.Method("POST"), h.Action(action),
+	return Popover(
+		popoverID, "", "Confirm redeploy",
+		h.Form(
+			h.Method("POST"), h.Action(action),
 			redirectField(redirectURL),
 			h.P(g.Textf("Force a fresh deploy of %s in %s?", featureName, envName)),
 			PopoverActions(
@@ -64,8 +67,10 @@ func RedeployPopover(popoverID, action, featureName, envName string, enabled boo
 func ReconcilePopover(popoverID, action, featureName, envName string, enabled bool, redirectURL string) g.Node {
 	if enabled {
 		reasonID := popoverID + "-reason"
-		return Popover(popoverID, "", "Disable reconcile",
-			h.Form(h.Method("POST"), h.Action(action),
+		return Popover(
+			popoverID, "", "Disable reconcile",
+			h.Form(
+				h.Method("POST"), h.Action(action),
 				h.Input(h.Type("hidden"), h.Name("enabled"), h.Value("false")),
 				redirectField(redirectURL),
 				h.P(g.Textf("Disable reconcile for %s in %s? Reconciliation will stop until re-enabled.", featureName, envName)),
@@ -78,8 +83,10 @@ func ReconcilePopover(popoverID, action, featureName, envName string, enabled bo
 		)
 	}
 
-	return Popover(popoverID, "", "Enable reconcile",
-		h.Form(h.Method("POST"), h.Action(action),
+	return Popover(
+		popoverID, "", "Enable reconcile",
+		h.Form(
+			h.Method("POST"), h.Action(action),
 			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value("true")),
 			redirectField(redirectURL),
 			h.P(g.Textf("Enable reconcile for %s in %s?", featureName, envName)),

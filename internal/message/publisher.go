@@ -61,14 +61,16 @@ func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log *
 
 func (p *Publisher[T]) SetMeter(meter metric.Meter) {
 	var err error
-	p.publishCount, err = meter.Int64Counter("pubsub_messages_published_total",
+	p.publishCount, err = meter.Int64Counter(
+		"pubsub_messages_published_total",
 		metric.WithDescription("Total pub/sub messages published"),
 	)
 	if err != nil {
 		p.log.With("err", err).Warn("failed to create publish counter")
 	}
 
-	p.publishDuration, err = meter.Float64Histogram("pubsub_publish_duration_seconds",
+	p.publishDuration, err = meter.Float64Histogram(
+		"pubsub_publish_duration_seconds",
 		metric.WithDescription("Pub/sub publish duration"),
 		metric.WithUnit("s"),
 	)

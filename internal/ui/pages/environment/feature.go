@@ -58,7 +58,7 @@ func AuditRedirectHandler() http.HandlerFunc {
 func FeatureLogsRedirectHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		basePath := "/features/" + chi.URLParam(r, "feature") + "/envs/" + chi.URLParam(r, "tenant") + "/" + chi.URLParam(r, "env")
-		http.Redirect(w, r, basePath, http.StatusSeeOther)
+		http.Redirect(w, r, basePath, http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -96,7 +96,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -114,7 +114,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			return
 		}
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -180,7 +180,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -264,7 +264,7 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 		if changed > 0 {
 			reconciler.TriggerReconcile()
 		}
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -318,7 +318,7 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 			return
 		}
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther) // #nosec G710 -- redirectOrDefault only returns request values with a leading slash, forcing a same-origin relative path
 	}
 }
 
@@ -357,7 +357,7 @@ func RedeployHandler() http.HandlerFunc {
 			// The UI grays out redeploy unless it is allowed, so reaching here
 			// means the state changed between render and click. Bounce back to
 			// the feature page, which now reflects the current state.
-			http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+			http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther) // #nosec G710 -- redirectOrDefault only returns request values with a leading slash, forcing a same-origin relative path
 			return
 		default:
 			http.Error(w, "Failed to redeploy: "+err.Error(), http.StatusInternalServerError)
@@ -375,7 +375,7 @@ func RedeployHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther) // #nosec G710 -- redirectOrDefault only returns request values with a leading slash, forcing a same-origin relative path
 	}
 }
 
@@ -390,14 +390,18 @@ func featurePageContent(page *FeaturePage) g.Node {
 		body = assignmentsTab(page)
 	}
 
-	return h.Div(h.Class("container"),
+	return h.Div(
+		h.Class("container"),
 		featurePageSidebar(page),
 		components.Breadcrumbs(page.Breadcrumbs),
-		h.Main(h.Class("main-content"),
+		h.Main(
+			h.Class("main-content"),
 			components.Card(
-				h.Div(h.Class("card-header-row"),
+				h.Div(
+					h.Class("card-header-row"),
 					headerLeft,
-					h.Div(h.Class("card-header-actions"),
+					h.Div(
+						h.Class("card-header-actions"),
 						reconcileHeaderStatus(page),
 						pageKebab(page),
 					),
@@ -418,8 +422,10 @@ func pageKebab(page *FeaturePage) g.Node {
 	items := []g.Node{}
 
 	items = append(items, components.LokiLogsItem(LokiExploreURL(page.Tenant.Name, page.Environment.Name, page.Feature.Name)))
-	items = append(items,
-		h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("data-lazy-modal", featureBasePathForPage(page)+"/helm-values"),
+	items = append(
+		items,
+		h.Button(
+			h.Type("button"), h.Class("kebab-item"), g.Attr("data-lazy-modal", featureBasePathForPage(page)+"/helm-values"),
 			g.Raw(components.IconDocument),
 			g.Text("Render Helm values"),
 		),
@@ -427,15 +433,19 @@ func pageKebab(page *FeaturePage) g.Node {
 	reconcilePopoverID := "toggle-reconcile"
 
 	if page.Feature.Enabled {
-		items = append(items,
-			h.Button(h.Type("button"), h.Class("kebab-item kebab-item-danger"), g.Attr("popovertarget", reconcilePopoverID),
+		items = append(
+			items,
+			h.Button(
+				h.Type("button"), h.Class("kebab-item kebab-item-danger"), g.Attr("popovertarget", reconcilePopoverID),
 				g.Raw(components.IconPause),
 				g.Text("Disable reconcile"),
 			),
 		)
 	} else {
-		items = append(items,
-			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", reconcilePopoverID),
+		items = append(
+			items,
+			h.Button(
+				h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", reconcilePopoverID),
 				g.Raw(components.IconPlay),
 				g.Text("Enable reconcile"),
 			),
@@ -443,8 +453,10 @@ func pageKebab(page *FeaturePage) g.Node {
 	}
 
 	if page.WinningAssignment != nil {
-		items = append(items,
-			h.A(h.Href("/features/"+page.Feature.Name+"/assignments/"+page.WinningAssignment.ID.String()), h.Class("kebab-item"),
+		items = append(
+			items,
+			h.A(
+				h.Href("/features/"+page.Feature.Name+"/assignments/"+page.WinningAssignment.ID.String()), h.Class("kebab-item"),
 				g.Raw(components.IconDocument),
 				g.Text("View assignment"),
 			),
@@ -453,15 +465,19 @@ func pageKebab(page *FeaturePage) g.Node {
 
 	if page.WinningAssignment != nil {
 		if isRedeployable(page) {
-			items = append(items,
-				h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "redeploy"),
+			items = append(
+				items,
+				h.Button(
+					h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "redeploy"),
 					g.Raw(components.IconRedeploy),
 					g.Text("Redeploy"),
 				),
 			)
 		} else {
-			items = append(items,
-				h.Button(h.Type("button"), h.Class("kebab-item kebab-item-disabled"), g.Attr("disabled", ""),
+			items = append(
+				items,
+				h.Button(
+					h.Type("button"), h.Class("kebab-item kebab-item-disabled"), g.Attr("disabled", ""),
 					h.Title("Redeploy is only available when the feature is enabled and in a settled state (deployed or failed)"),
 					g.Raw(components.IconRedeploy),
 					g.Text("Redeploy"),
@@ -471,8 +487,10 @@ func pageKebab(page *FeaturePage) g.Node {
 	}
 
 	if len(page.RecentDeployHistory) > 0 {
-		items = append(items,
-			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "deploy-history"),
+		items = append(
+			items,
+			h.Button(
+				h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "deploy-history"),
 				g.Raw(components.IconHistory),
 				g.Text("Deploy history"),
 			),
@@ -480,8 +498,10 @@ func pageKebab(page *FeaturePage) g.Node {
 	}
 
 	if len(page.DecisionHistory) > 0 {
-		items = append(items,
-			h.Button(h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "decision-history"),
+		items = append(
+			items,
+			h.Button(
+				h.Type("button"), h.Class("kebab-item"), g.Attr("popovertarget", "decision-history"),
 				g.Raw(components.IconLogs),
 				g.Text("Reconciler log"),
 			),
@@ -555,7 +575,8 @@ func runtimeLine(page *FeaturePage) g.Node {
 		logs = logsLink(page, "Logs")
 	}
 
-	return h.Div(h.Class("runtime-line"),
+	return h.Div(
+		h.Class("runtime-line"),
 		h.Span(h.Class("deploy-version"), g.Text(rel.Version)),
 		status,
 		h.Span(h.Class("text-muted"), h.Title(view.FormatTime(rel.LastDeployed)), g.Text("updated "+view.RelativeTime(rel.LastDeployed))),
@@ -642,7 +663,8 @@ func deployLogsPopover(page *FeaturePage) g.Node {
 	if page.FeatureLog == nil || len(page.FeatureLog.CurrentLog) == 0 {
 		return nil
 	}
-	return components.Popover("deploy-logs", "popover-wide", "Logs",
+	return components.Popover(
+		"deploy-logs", "popover-wide", "Logs",
 		h.Div(h.Class("popover-scroll"), logBlock(page.FeatureLog.CurrentLog)),
 	)
 }
@@ -680,8 +702,10 @@ func deployHistoryPopover(page *FeaturePage) g.Node {
 		if i == expandIndex {
 			attrs = append(attrs, g.Attr("open"))
 		}
-		items[i] = h.Details(append(attrs,
-			h.Summary(h.Class("deploy-history-summary"),
+		items[i] = h.Details(append(
+			attrs,
+			h.Summary(
+				h.Class("deploy-history-summary"),
 				h.Span(h.Class("deploy-version"), g.Text(di.FeatureVersion)),
 				components.Status(strings.ToUpper(string(di.Status))),
 				h.Span(h.Class("text-muted deploy-history-when"), h.Title(view.FormatTime(di.Created)), g.Text(view.RelativeTime(di.Created))),
@@ -690,7 +714,8 @@ func deployHistoryPopover(page *FeaturePage) g.Node {
 			body,
 		)...)
 	}
-	return components.Popover("deploy-history", "popover-wide", "Deploy history",
+	return components.Popover(
+		"deploy-history", "popover-wide", "Deploy history",
 		h.Div(h.Class("deploy-history-list"), g.Group(items)),
 	)
 }
@@ -709,7 +734,8 @@ func reconcileHeaderStatus(page *FeaturePage) g.Node {
 		title = statusText + ": " + reason
 	}
 
-	return h.Span(h.Class("reconcile-header-status "+statusClass), h.Title(title),
+	return h.Span(
+		h.Class("reconcile-header-status "+statusClass), h.Title(title),
 		h.Span(h.Class("reconcile-header-icon"), g.Text("●")),
 		h.Span(g.Text(statusText)),
 	)
@@ -738,9 +764,12 @@ func decisionHistoryPopover(page *FeaturePage) g.Node {
 		)
 	})
 
-	return components.Popover("decision-history", "popover-wide", "Reconciler log",
-		h.Div(h.Class("popover-scroll"),
-			h.Table(h.Class("table table-compact"),
+	return components.Popover(
+		"decision-history", "popover-wide", "Reconciler log",
+		h.Div(
+			h.Class("popover-scroll"),
+			h.Table(
+				h.Class("table table-compact"),
 				h.THead(h.Tr(
 					h.Th(g.Text("Action")),
 					h.Th(g.Text("Version")),
@@ -786,7 +815,8 @@ func overviewTab(page *FeaturePage) g.Node {
 		}
 	}
 
-	return h.Div(h.Class("tab-content-wrapper env-feature-overview"),
+	return h.Div(
+		h.Class("tab-content-wrapper env-feature-overview"),
 		configTable(page, configurable, computed, orphaned),
 	)
 }
@@ -796,7 +826,8 @@ func envActivitySidebar(page *FeaturePage) g.Node {
 		return nil
 	}
 	title := "Recent activity"
-	return h.Aside(h.Class("right-sidebar"),
+	return h.Aside(
+		h.Class("right-sidebar"),
 		components.CardCompact(auditview.ActivityList(auditview.ActivityListParams{
 			Title:        title,
 			ScopeEnv:     page.Tenant.Name + "/" + page.Environment.Name,
@@ -822,14 +853,17 @@ func configTable(page *FeaturePage, configurable, computed, orphaned []FeatureCo
 	}
 	const formID = "config-batch-form"
 	basePath := featureBasePathForPage(page)
-	header := h.Div(h.Class("config-section-header"),
+	header := h.Div(
+		h.Class("config-section-header"),
 		h.H3(g.Text("Configuration")),
-		g.If(len(configurable) > 0, h.Div(h.Class("config-section-actions"),
+		g.If(len(configurable) > 0, h.Div(
+			h.Class("config-section-actions"),
 			h.Button(h.Type("button"), h.Class("btn-small config-edit-toggle"),
 				g.Attr("data-config-edit-toggle", ""),
 				g.Raw(`<svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5l2 2L6 12l-2.5.5.5-2.5 7.5-7.5z"/></svg>`),
 				h.Span(g.Text("Edit values"))),
-			h.Form(h.ID(formID), h.Method("POST"), h.Action(basePath+"/config/batch"),
+			h.Form(
+				h.ID(formID), h.Method("POST"), h.Action(basePath+"/config/batch"),
 				h.Class("config-edit-actions"),
 				h.Button(h.Type("submit"), h.Class("btn-small config-save-btn"), g.Text("Save changes")),
 				h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("data-config-edit-cancel", ""), g.Text("Cancel")),
@@ -847,9 +881,11 @@ func configTable(page *FeaturePage, configurable, computed, orphaned []FeatureCo
 
 	return h.Div(
 		staleValuesSection(page, orphaned),
-		h.Div(h.Class("config-editable-section"),
+		h.Div(
+			h.Class("config-editable-section"),
 			header,
-			h.Table(h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config"),
+			h.Table(
+				h.Class("table sortable config-table-env"), g.Attr("data-sort-key", "env-feature-config"),
 				h.THead(h.Tr(
 					h.Th(g.Text("Configuration Key")),
 					h.Th(g.Text("Value")),
@@ -870,11 +906,13 @@ func staleValuesSection(page *FeaturePage, items []FeatureConfigItem) g.Node {
 	for _, item := range items {
 		rows = append(rows, staleRow(page, item))
 	}
-	return h.Div(h.Class("config-stale-section"),
+	return h.Div(
+		h.Class("config-stale-section"),
 		h.H3(g.Text("\u26a0 Stale values")),
 		h.P(h.Class("text-muted"),
 			g.Text("These keys are stored for this environment but are not declared in the current Feature.yaml \u2014 typically left over after a value was renamed or removed. They are ignored by the deploy and should be deleted.")),
-		h.Table(h.Class("table config-table-env"),
+		h.Table(
+			h.Class("table config-table-env"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Stale Key")),
 				h.Th(g.Text("Value")),
@@ -888,7 +926,8 @@ func staleValuesSection(page *FeaturePage, items []FeatureConfigItem) g.Node {
 func staleRow(page *FeaturePage, item FeatureConfigItem) g.Node {
 	popoverID := "stale-del-" + item.ID
 	action := featureBasePathForPage(page) + "/config/delete/" + item.ID
-	return h.Tr(h.Class("config-row-stale"),
+	return h.Tr(
+		h.Class("config-row-stale"),
 		h.Td(h.Strong(g.Text(item.Key)), g.Text(" "),
 			h.Span(h.Class("config-stale-badge"), g.Text("stale"))),
 		components.ConfigValueCell(item),
@@ -909,7 +948,8 @@ func configurableRow(page *FeaturePage, formID string, item FeatureConfigItem) g
 	if item.Source == string(featurepkg.ConfigSourceEnv) {
 		idForUpdate = item.ID
 	}
-	return h.Tr(h.ID("config-"+item.Key), g.If(warn, h.Class("config-warning")),
+	return h.Tr(
+		h.ID("config-"+item.Key), g.If(warn, h.Class("config-warning")),
 		components.ConfigKeyCell(item),
 		components.BulkConfigCell(formID, idForUpdate, item),
 		sourceCell(page, item),
@@ -926,7 +966,8 @@ func computedRow(page *FeaturePage, item FeatureConfigItem) g.Node {
 			"&key=" + url.QueryEscape(item.Key)
 		extraKebab = append(extraKebab, h.A(h.Href(testURL), h.Class("kebab-item"), g.Text("Test template")))
 	}
-	return h.Tr(h.ID("config-"+item.Key), h.Class("config-row-computed"),
+	return h.Tr(
+		h.ID("config-"+item.Key), h.Class("config-row-computed"),
 		components.ConfigKeyCell(item),
 		components.ComputedValueCell(item),
 		sourceLabelCell(item),
@@ -996,8 +1037,10 @@ func assignmentsTab(page *FeaturePage) g.Node {
 	if len(page.Assignments) == 0 {
 		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Assignments")), h.P(g.Text("No assignments target this environment.")))
 	}
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Assignments")),
-		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-assignments"),
+	return h.Div(
+		h.Class("tab-content-wrapper"), h.H2(g.Text("Assignments")),
+		h.Table(
+			h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-assignments"),
 			h.THead(h.Tr(
 				h.Th(g.Text("FeatureAssignment")),
 				h.Th(g.Text("Version")),

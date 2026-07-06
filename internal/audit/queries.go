@@ -194,7 +194,8 @@ func sanitizeForLog(s string) string {
 func actorOrUnknown(ctx context.Context, description, objectType string) string {
 	actor := auth.GetEmail(ctx)
 	if actor == auth.UnauthorizedName {
-		logger(ctx).Warn("unknown actor",
+		logger(ctx).Warn(
+			"unknown actor",
 			"description", sanitizeForLog(description),
 			"objectType", sanitizeForLog(objectType),
 		)

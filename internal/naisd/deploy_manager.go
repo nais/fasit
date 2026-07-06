@@ -157,7 +157,8 @@ func NewDeployManager(
 
 func (d *DeployManager) SetMeter(meter metric.Meter) {
 	var err error
-	d.helmDuration, err = meter.Float64Histogram("helm_execution_duration_seconds",
+	d.helmDuration, err = meter.Float64Histogram(
+		"helm_execution_duration_seconds",
 		metric.WithDescription("Helm command execution duration"),
 		metric.WithUnit("s"),
 	)
@@ -165,7 +166,8 @@ func (d *DeployManager) SetMeter(meter metric.Meter) {
 		d.log.With("err", err).Warn("failed to create helm duration histogram")
 	}
 
-	d.handlerDuration, err = meter.Float64Histogram("deploy_handler_duration_seconds",
+	d.handlerDuration, err = meter.Float64Histogram(
+		"deploy_handler_duration_seconds",
 		metric.WithDescription("Deploy handler total duration"),
 		metric.WithUnit("s"),
 	)
@@ -388,7 +390,8 @@ func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, ar
 		helmArgs = append(helmArgs, "--debug")
 	}
 
-	environment := append(getEnvironment(),
+	environment := append(
+		getEnvironment(),
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 

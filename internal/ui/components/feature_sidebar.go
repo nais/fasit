@@ -7,11 +7,14 @@ import (
 )
 
 func FeatureSidebar(featureName, activeTab, activeTenant, activeEnvironment string, envs []featureenvs.Environment) g.Node {
-	return h.Aside(h.Class("sidebar feature-sidebar"),
-		h.Div(h.Class("feature-sidebar-header"),
+	return h.Aside(
+		h.Class("sidebar feature-sidebar"),
+		h.Div(
+			h.Class("feature-sidebar-header"),
 			h.H4(g.Text(featureName)),
 		),
-		h.Div(h.Class("nav"),
+		h.Div(
+			h.Class("nav"),
 			h.Ul(
 				featureNavItem("/features/"+featureName, "Overview", activeTab == "overview"),
 				featureNavItem("/features/"+featureName+"/versions", "Versions", activeTab == "versions"),
