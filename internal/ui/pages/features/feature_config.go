@@ -275,7 +275,7 @@ func UpdateGlobalConfigHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 		featureName := chi.URLParam(r, "feature")
-		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route param, not attacker-controlled
 	}
 }
 
@@ -296,7 +296,7 @@ func DeleteGlobalConfigHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 		featureName := chi.URLParam(r, "feature")
-		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route param, not attacker-controlled
 	}
 }
 
@@ -352,6 +352,6 @@ func SetGlobalConfigHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, "/features/"+featureName+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route param, not attacker-controlled
 	}
 }

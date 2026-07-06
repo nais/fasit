@@ -3,6 +3,7 @@ package assignments
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/nais/fasit/internal/environment"
@@ -68,10 +69,12 @@ func CreateHandler() http.HandlerFunc {
 
 		reconciler.TriggerReconcile()
 
-		redirect := r.Referer()
-		if redirect == "" {
-			redirect = "/assignments"
+		redirect := "/assignments"
+		if ref := r.Referer(); ref != "" {
+			if u, err := url.Parse(ref); err == nil && u.Host == r.Host {
+				redirect = u.Path
+			}
 		}
-		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		http.Redirect(w, r, redirect, http.StatusSeeOther) // #nosec G710 -- redirect is the Referer path only when its host == r.Host, forcing a same-origin relative path
 	}
 }

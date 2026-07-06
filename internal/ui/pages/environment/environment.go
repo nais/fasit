@@ -204,7 +204,7 @@ func UninstallReleaseHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/tenants/"+tenantSlug+"/envs/"+envName+"?tab=helm", http.StatusSeeOther)
+		http.Redirect(w, r, "/tenants/"+tenantSlug+"/envs/"+envName+"?tab=helm", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from validated route values, not attacker-controlled
 	}
 }
 

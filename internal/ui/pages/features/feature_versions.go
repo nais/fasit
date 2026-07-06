@@ -48,7 +48,7 @@ func VersionDetailHandler(renderPage RenderPage) http.HandlerFunc {
 		version := chi.URLParam(r, "version")
 		selected, err := featurepkg.FeatureByNameVersion(r.Context(), data.CurrentFeature.Name, version)
 		if err != nil {
-			http.Redirect(w, r, "/features/"+data.CurrentFeature.Name+"/versions", http.StatusSeeOther)
+			http.Redirect(w, r, "/features/"+data.CurrentFeature.Name+"/versions", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from DB value, not attacker-controlled
 			return
 		}
 

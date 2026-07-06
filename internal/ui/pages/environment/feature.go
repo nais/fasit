@@ -58,7 +58,7 @@ func AuditRedirectHandler() http.HandlerFunc {
 func FeatureLogsRedirectHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		basePath := "/features/" + chi.URLParam(r, "feature") + "/envs/" + chi.URLParam(r, "tenant") + "/" + chi.URLParam(r, "env")
-		http.Redirect(w, r, basePath, http.StatusSeeOther)
+		http.Redirect(w, r, basePath, http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -96,7 +96,7 @@ func UpdateConfigHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -114,7 +114,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			return
 		}
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -180,7 +180,7 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 		}
 
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -264,7 +264,7 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 		if changed > 0 {
 			reconciler.TriggerReconcile()
 		}
-		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther)
+		http.Redirect(w, r, featureBasePath(r)+"/config", http.StatusSeeOther) // #nosec G710 -- constant-prefixed relative path from route params, not attacker-controlled
 	}
 }
 
@@ -318,7 +318,7 @@ func ToggleFeatureStateHandler() http.HandlerFunc {
 			return
 		}
 		reconciler.TriggerReconcile()
-		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther) // #nosec G710 -- redirectOrDefault only returns request values with a leading slash, forcing a same-origin relative path
 	}
 }
 
@@ -357,7 +357,7 @@ func RedeployHandler() http.HandlerFunc {
 			// The UI grays out redeploy unless it is allowed, so reaching here
 			// means the state changed between render and click. Bounce back to
 			// the feature page, which now reflects the current state.
-			http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+			http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther) // #nosec G710 -- redirectOrDefault only returns request values with a leading slash, forcing a same-origin relative path
 			return
 		default:
 			http.Error(w, "Failed to redeploy: "+err.Error(), http.StatusInternalServerError)
@@ -375,7 +375,7 @@ func RedeployHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther)
+		http.Redirect(w, r, redirectOrDefault(r, featureBasePath(r)), http.StatusSeeOther) // #nosec G710 -- redirectOrDefault only returns request values with a leading slash, forcing a same-origin relative path
 	}
 }
 
