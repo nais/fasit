@@ -354,9 +354,6 @@ func loadFeatureConfigItems(ctx context.Context, feat *featurepkg.Feature, envID
 			}
 			if v, found, hasVal := lookupHelmValue(rendered, item.Key); found {
 				items[i].Value = v
-				if items[i].IsComputed {
-					items[i].Value = items[i].Template
-				}
 				items[i].HasValue = hasVal
 			}
 		}
