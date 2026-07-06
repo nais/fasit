@@ -15,7 +15,6 @@ type Querier interface {
 	FeatureDataByVersion(ctx context.Context, arg FeatureDataByVersionParams) (FeatureDataByVersionRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureNames(ctx context.Context) ([]string, error)
-	FeatureVersionRows(ctx context.Context, featureName string) ([]FeatureVersionRowsRow, error)
 	GetDisabledFeature(ctx context.Context, arg GetDisabledFeatureParams) (DisabledFeature, error)
 	GetEnvConfigByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
 	GetEnvConfigByKey(ctx context.Context, arg GetEnvConfigByKeyParams) (ConfigurationsEnvironment, error)

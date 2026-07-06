@@ -139,3 +139,10 @@ func (e ConfigSource) IsValid() bool {
 func (e ConfigSource) String() string {
 	return string(e)
 }
+
+type FeatureVersion struct {
+	Version     string
+	Description string
+	Source      string
+	LastUpdated time.Time
+}

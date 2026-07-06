@@ -40,7 +40,7 @@ type DetailPage struct {
 	RecentActivity  []*audit.Entry
 	ActiveTab       string
 	ConfigItems     []components.ConfigItem
-	Versions        []featurepkg.FeatureVersion
+	Versions        []uidata.FeatureVersion
 	VersionEnvs     map[string][]featureenvs.Environment
 	IsVersionDetail bool
 
