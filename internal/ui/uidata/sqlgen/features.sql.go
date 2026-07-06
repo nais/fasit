@@ -5,7 +5,6 @@ package sqlgen
 
 import (
 	"context"
-	"time"
 )
 
 const featureVersions = `-- name: FeatureVersions :many
@@ -14,7 +13,7 @@ SELECT
 	fd.version,
 	fd.description,
 	fd.source,
-	MAX(fa.created)::TIMESTAMPTZ AS last_updated
+	MAX(fa.created) AS last_updated
 FROM
 	feature_data fd
 	LEFT JOIN feature_assignments fa ON fa.feature_name = fd.name
@@ -36,7 +35,7 @@ type FeatureVersionsRow struct {
 	Version     string
 	Description string
 	Source      string
-	LastUpdated time.Time
+	LastUpdated interface{}
 }
 
 func (q *Queries) FeatureVersions(ctx context.Context, featureName string) ([]FeatureVersionsRow, error) {
