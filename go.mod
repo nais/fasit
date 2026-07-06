@@ -16,7 +16,6 @@ tool (
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.20.2
-	cloud.google.com/go/pubsub v1.50.2
 	cloud.google.com/go/pubsub/v2 v2.5.1
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.14
 	github.com/Masterminds/sprig/v3 v3.3.0
