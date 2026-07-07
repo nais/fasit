@@ -189,3 +189,20 @@ func FeatureVersions(ctx context.Context, name string) ([]FeatureVersion, error)
 	}
 	return ret, nil
 }
+
+func ListActiveFeatures(ctx context.Context) ([]FeatureSummary, error) {
+	rows, err := querier(ctx).ListActiveFeatures(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]FeatureSummary, len(rows))
+	for i, row := range rows {
+		ret[i] = FeatureSummary{
+			Name:        row.Name,
+			Description: row.Description,
+			Source:      row.Source,
+		}
+	}
+	return ret, nil
+}

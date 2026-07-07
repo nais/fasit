@@ -25,7 +25,6 @@ type Querier interface {
 	// history (one entry per deploy) is grouped by diid in Go from ListDeployLog.
 	GetLatestDeployInstruction(ctx context.Context, arg GetLatestDeployInstructionParams) (GetLatestDeployInstructionRow, error)
 	LatestFeatureData(ctx context.Context, featureName string) (LatestFeatureDataRow, error)
-	ListActiveFeatures(ctx context.Context) ([]ListActiveFeaturesRow, error)
 	ListAllEnvConfigByFeature(ctx context.Context, feature string) ([]ConfigurationsEnvironment, error)
 	ListDeployLog(ctx context.Context, arg ListDeployLogParams) ([]ListDeployLogRow, error)
 	ListDisabledFeatureEnvironments(ctx context.Context, feature string) ([]ListDisabledFeatureEnvironmentsRow, error)

@@ -20,3 +20,18 @@ ORDER BY
 	last_updated DESC,
 	fd.version DESC;
 
+-- name: ListActiveFeatures :many
+SELECT DISTINCT ON (d.feature_name)
+	fd.name,
+	fd.description,
+	fd.source
+FROM
+	feature_assignments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+WHERE
+	d.active = TRUE
+ORDER BY
+	d.feature_name,
+	d.created DESC;
+

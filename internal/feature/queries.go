@@ -260,31 +260,8 @@ func FeatureByNameVersion(ctx context.Context, name, version string) (*Feature, 
 	return featureFromSQL(f.FeatureDatum)
 }
 
-type FeatureSummary struct {
-	Name        string
-	Description string
-	Source      string
-}
-
 func FeatureNames(ctx context.Context) ([]string, error) {
 	return querier(ctx).FeatureNames(ctx)
-}
-
-func ListActiveFeatures(ctx context.Context) ([]FeatureSummary, error) {
-	rows, err := querier(ctx).ListActiveFeatures(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]FeatureSummary, len(rows))
-	for i, row := range rows {
-		ret[i] = FeatureSummary{
-			Name:        row.Name,
-			Description: row.Description,
-			Source:      row.Source,
-		}
-	}
-	return ret, nil
 }
 
 func GetLatestDeployInstruction(ctx context.Context, envID uuid.UUID, featureName string) (*DeployInstruction, error) {

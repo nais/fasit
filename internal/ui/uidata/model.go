@@ -146,3 +146,9 @@ type FeatureVersion struct {
 	Source      string
 	LastUpdated time.Time
 }
+
+type FeatureSummary struct {
+	Name        string
+	Description string
+	Source      string
+}
