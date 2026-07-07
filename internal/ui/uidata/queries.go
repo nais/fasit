@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -185,15 +184,8 @@ func FeatureVersions(ctx context.Context, name string) ([]FeatureVersion, error)
 			Version:     row.Version,
 			Description: row.Description,
 			Source:      row.Source,
-			LastUpdated: asTime(row.LastUpdated),
+			LastUpdated: row.LastUpdated,
 		}
 	}
 	return ret, nil
-}
-
-func asTime(v any) time.Time {
-	if t, ok := v.(time.Time); ok {
-		return t
-	}
-	return time.Time{}
 }
