@@ -25,53 +25,6 @@ func (q *Queries) DeleteEnvironmentValue(ctx context.Context, arg DeleteEnvironm
 	return err
 }
 
-const getEnvironmentValue = `-- name: GetEnvironmentValue :one
-SELECT
-	"environment_id",
-	"key",
-	"secret",
-(
-		CASE WHEN secret THEN
-			CASE WHEN $1::BOOL THEN
-				value
-			ELSE
-				'"*****"'
-			END
-		ELSE
-			value
-		END)::JSONB AS "value"
-FROM
-	environment_values
-WHERE
-	"environment_id" = $2
-	AND "key" = $3
-`
-
-type GetEnvironmentValueParams struct {
-	Showsensitive bool
-	EnvironmentID uuid.UUID
-	Key           string
-}
-
-type GetEnvironmentValueRow struct {
-	EnvironmentID uuid.UUID
-	Key           string
-	Secret        bool
-	Value         []byte
-}
-
-func (q *Queries) GetEnvironmentValue(ctx context.Context, arg GetEnvironmentValueParams) (GetEnvironmentValueRow, error) {
-	row := q.db.QueryRow(ctx, getEnvironmentValue, arg.Showsensitive, arg.EnvironmentID, arg.Key)
-	var i GetEnvironmentValueRow
-	err := row.Scan(
-		&i.EnvironmentID,
-		&i.Key,
-		&i.Secret,
-		&i.Value,
-	)
-	return i, err
-}
-
 const listEnvironmentValuesForEnvironment = `-- name: ListEnvironmentValuesForEnvironment :many
 SELECT
 	"environment_id",
@@ -121,63 +74,6 @@ func (q *Queries) ListEnvironmentValuesForEnvironment(ctx context.Context, arg L
 			&i.Key,
 			&i.Secret,
 			&i.Value,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listEnvironmentValuesForKey = `-- name: ListEnvironmentValuesForKey :many
-SELECT
-	ev.environment_id,
-	ev.key,
-	ev.secret,
-	ev.value,
-	t.id AS tenant_id,
-	t.name AS tenant_name,
-	e.name AS environment_name
-FROM
-	environment_values ev
-	JOIN environments e ON e.id = ev.environment_id
-	JOIN tenants t ON t.id = e.tenant_id
-WHERE
-	ev.key = $1
-ORDER BY
-	e.name ASC
-`
-
-type ListEnvironmentValuesForKeyRow struct {
-	EnvironmentID   uuid.UUID
-	Key             string
-	Secret          bool
-	Value           []byte
-	TenantID        uuid.UUID
-	TenantName      string
-	EnvironmentName string
-}
-
-func (q *Queries) ListEnvironmentValuesForKey(ctx context.Context, key string) ([]ListEnvironmentValuesForKeyRow, error) {
-	rows, err := q.db.Query(ctx, listEnvironmentValuesForKey, key)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListEnvironmentValuesForKeyRow{}
-	for rows.Next() {
-		var i ListEnvironmentValuesForKeyRow
-		if err := rows.Scan(
-			&i.EnvironmentID,
-			&i.Key,
-			&i.Secret,
-			&i.Value,
-			&i.TenantID,
-			&i.TenantName,
-			&i.EnvironmentName,
 		); err != nil {
 			return nil, err
 		}

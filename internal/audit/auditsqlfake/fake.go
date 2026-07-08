@@ -42,10 +42,6 @@ func (f *Querier) ListForFeatureInEnvironment(_ context.Context, _ auditsql.List
 	return nil, nil
 }
 
-func (f *Querier) ListConfigForFeatureInEnvironment(_ context.Context, _ auditsql.ListConfigForFeatureInEnvironmentParams) ([]auditsql.ListConfigForFeatureInEnvironmentRow, error) {
-	return nil, nil
-}
-
 func (f *Querier) ListGlobalConfigForFeature(_ context.Context, _ auditsql.ListGlobalConfigForFeatureParams) ([]auditsql.ListGlobalConfigForFeatureRow, error) {
 	return nil, nil
 }
