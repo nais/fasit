@@ -211,24 +211,6 @@ func List(ctx context.Context, tenantID uuid.UUID) ([]*Environment, error) {
 	return environmentSlice, nil
 }
 
-func GetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*EnvironmentValue, error) {
-	ev, err := querier(ctx).GetEnvironmentValue(ctx, environmentsql.GetEnvironmentValueParams{
-		EnvironmentID: environmentID,
-		Key:           key,
-		Showsensitive: showSensitive,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &EnvironmentValue{
-		EnvironmentID: ev.EnvironmentID,
-		Key:           ev.Key,
-		Value:         ev.Value,
-		Secret:        ev.Secret,
-	}, nil
-}
-
 func ListEnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*EnvironmentValue, error) {
 	values, err := querier(ctx).ListEnvironmentValuesForEnvironment(ctx, environmentsql.ListEnvironmentValuesForEnvironmentParams{
 		EnvironmentID: envID,
@@ -249,10 +231,6 @@ func ListEnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, s
 	}
 
 	return ret, nil
-}
-
-func ListEnvironmentValuesForKey(ctx context.Context, key string) ([]environmentsql.ListEnvironmentValuesForKeyRow, error) {
-	return querier(ctx).ListEnvironmentValuesForKey(ctx, key)
 }
 
 func DeleteEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string) error {

@@ -97,27 +97,6 @@ func ListForFeatureInEnvironment(ctx context.Context, feature string, envID uuid
 	return ret, nil
 }
 
-func ListConfigForFeatureInEnvironment(ctx context.Context, feature string, envID uuid.UUID, limit int32) ([]*Entry, error) {
-	rows, err := querier(ctx).ListConfigForFeatureInEnvironment(ctx, auditsql.ListConfigForFeatureInEnvironmentParams{
-		Feature:  feature,
-		EnvID:    &envID,
-		PageSize: limit,
-	})
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*Entry, 0, len(rows))
-	for _, r := range rows {
-		ret = append(ret, &Entry{
-			Actor: r.Actor, Action: Action(r.Action), Description: r.Description,
-			ObjectType: ObjectType(r.ObjectType), ObjectID: r.ObjectID,
-			EnvironmentID: r.EnvironmentID, EnvironmentName: ptrOr(r.EnvironmentName),
-			TenantName: ptrOr(r.TenantName), CreatedAt: r.CreatedAt, Metadata: r.Metadata,
-		})
-	}
-	return ret, nil
-}
-
 func ListGlobalConfigForFeature(ctx context.Context, feature string, limit int32) ([]*Entry, error) {
 	rows, err := querier(ctx).ListGlobalConfigForFeature(ctx, auditsql.ListGlobalConfigForFeatureParams{
 		Feature:  feature,
