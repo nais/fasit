@@ -232,7 +232,7 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 				if newValue == r.PostFormValue(components.BulkOrigField(key)) {
 					continue
 				}
-				value, err := components.ParseConfigValue(newValue, r.PostFormValue(components.BulkTypeField(key)), "raw")
+				value, err := components.ParseConfigValueAuto(newValue, r.PostFormValue(components.BulkTypeField(key)))
 				if err != nil {
 					return &configParseError{key: key, err: err}
 				}
