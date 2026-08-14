@@ -7,7 +7,7 @@ set -euo pipefail
 # containerd CRI checkpoint/restore features (we don't run containerd's CRI;
 # containerd is only pulled in transitively by Helm's OCI registry client).
 # Reconsider whenever containerd is upgraded.
-ALLOWED="GO-2026-5622 GO-2026-5338 GO-2026-5064"
+ALLOWED=""
 
 out=$(go tool golang.org/x/vuln/cmd/govulncheck -format json ./...)
 ids=$(echo "$out" | jq -r 'select(.finding.trace[0].function != null) | .finding.osv' | sort -u)

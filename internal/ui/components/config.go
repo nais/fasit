@@ -251,6 +251,12 @@ func StringEditor(currentValue string) g.Node {
 	})
 }
 
+// ConfigFormError renders the inline error slot for a config form. It stays
+// hidden until the submit interceptor in site.js fills it with a server error.
+func ConfigFormError() g.Node {
+	return h.P(h.Class("text-error config-form-error"), g.Attr("data-config-form-error", ""), h.Style("display:none"))
+}
+
 // ConfigEditPopover renders an edit popover for a config item.
 func ConfigEditPopover(popoverID, action, title, submitLabel string, item ConfigItem, extraFields ...g.Node) g.Node {
 	formFields := append([]g.Node{}, extraFields...)
@@ -260,10 +266,12 @@ func ConfigEditPopover(popoverID, action, title, submitLabel string, item Config
 			popoverID, "", title,
 			h.Form(
 				h.Method("POST"), h.Action(action),
+				g.Attr("data-config-form", ""),
 				g.Group(formFields),
 				h.Label(g.Text("Configuration Key")),
 				h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")),
 				ConfigValueEditor(item, item.Value),
+				ConfigFormError(),
 				PopoverActions(
 					h.Button(h.Type("submit"), g.Text(submitLabel)),
 				),
