@@ -2,6 +2,7 @@ package components
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -96,4 +97,107 @@ func TestConfigFormError_RendersHidden(t *testing.T) {
 	if !strings.Contains(html, "display:none") {
 		t.Errorf("want error slot hidden by default, got:\n%s", html)
 	}
+}
+
+func TestParseConfigValueAuto(t *testing.T) {
+	t.Parallel()
+
+	t.Run("valid JSON object is stored as JSON, not an escaped string", func(t *testing.T) {
+		v, err := ParseConfigValueAuto(`{"a": 1}`, "STRING")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		raw, err := json.Marshal(v)
+		if err != nil {
+			t.Fatalf("marshal: %v", err)
+		}
+		if string(raw) != `{"a":1}` {
+			t.Errorf("stored %s, want real JSON object {\"a\":1}", raw)
+		}
+	})
+
+	t.Run("valid JSON array is stored as an array", func(t *testing.T) {
+		v, err := ParseConfigValueAuto(`["a", "b"]`, "STRING")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		raw, err := json.Marshal(v)
+		if err != nil {
+			t.Fatalf("marshal: %v", err)
+		}
+		if string(raw) != `["a","b"]` {
+			t.Errorf("stored %s, want [\"a\",\"b\"]", raw)
+		}
+	})
+
+	t.Run("leading whitespace before JSON is still detected", func(t *testing.T) {
+		v, err := ParseConfigValueAuto("\n  {\"a\":1}  ", "STRING")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		raw, _ := json.Marshal(v)
+		if string(raw) != `{"a":1}` {
+			t.Errorf("stored %s, want {\"a\":1}", raw)
+		}
+	})
+
+	t.Run("malformed JSON-looking input errors", func(t *testing.T) {
+		_, err := ParseConfigValueAuto(`{"a":}`, "STRING")
+		if err == nil {
+			t.Fatal("expected error for malformed JSON")
+		}
+		if !strings.Contains(err.Error(), "invalid JSON") {
+			t.Errorf("error = %v, want to contain 'invalid JSON'", err)
+		}
+	})
+
+	t.Run("plain string stays a raw string", func(t *testing.T) {
+		v, err := ParseConfigValueAuto("just text", "STRING")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if v != "just text" {
+			t.Errorf("got %v, want raw string", v)
+		}
+	})
+
+	t.Run("STRING_ARRAY comma input still comma-splits", func(t *testing.T) {
+		v, err := ParseConfigValueAuto("a, b ,c", "STRING_ARRAY")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got, ok := v.([]string)
+		if !ok {
+			t.Fatalf("got type %T, want []string", v)
+		}
+		want := []string{"a", "b", "c"}
+		if len(got) != len(want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("got[%d] = %q, want %q", i, got[i], want[i])
+			}
+		}
+	})
+
+	t.Run("INT is unchanged", func(t *testing.T) {
+		v, err := ParseConfigValueAuto("42", "INT")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if v != 42 {
+			t.Errorf("got %v, want 42", v)
+		}
+	})
+
+	t.Run("BOOL is unchanged", func(t *testing.T) {
+		v, err := ParseConfigValueAuto("true", "BOOL")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if v != true {
+			t.Errorf("got %v, want true", v)
+		}
+	})
 }

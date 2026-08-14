@@ -419,6 +419,22 @@ func ParseConfigValue(value, configType, mode string) (any, error) {
 	}
 }
 
+// ParseConfigValueAuto parses a config value for editors that have no explicit
+// JSON/RAW mode toggle. Input that starts with '{' or '[' is treated as JSON:
+// valid JSON is stored as a real JSON value, invalid JSON returns an error.
+// Anything else falls back to the raw parsing rules for the type.
+func ParseConfigValueAuto(value, configType string) (any, error) {
+	trimmed := strings.TrimSpace(value)
+	if len(trimmed) > 0 && (trimmed[0] == '{' || trimmed[0] == '[') {
+		var v any
+		if err := json.Unmarshal([]byte(trimmed), &v); err != nil {
+			return nil, fmt.Errorf("invalid JSON: %w", err)
+		}
+		return v, nil
+	}
+	return ParseConfigValue(value, configType, "raw")
+}
+
 // RawValueForDisplay converts a JSON raw message to a display string.
 // Objects and arrays are pretty-printed; scalar strings are unquoted
 // (and pretty-printed if they contain embedded JSON).
