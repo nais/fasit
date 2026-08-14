@@ -184,6 +184,18 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 	}
 }
 
+// configParseError marks a bulk-update failure caused by unparsable user input,
+// so the handler can answer 400 instead of 500.
+type configParseError struct {
+	key string
+	err error
+}
+
+func (e *configParseError) Error() string {
+	return fmt.Sprintf("%s: invalid value format: %s", e.key, e.err)
+}
+func (e *configParseError) Unwrap() error { return e.err }
+
 func BatchUpdateConfigHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
@@ -222,7 +234,7 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 				}
 				value, err := components.ParseConfigValue(newValue, r.PostFormValue(components.BulkTypeField(key)), "raw")
 				if err != nil {
-					return fmt.Errorf("%s: invalid value format: %w", key, err)
+					return &configParseError{key: key, err: err}
 				}
 				raw, err := json.Marshal(value)
 				if err != nil {
@@ -257,7 +269,12 @@ func BatchUpdateConfigHandler() http.HandlerFunc {
 			return nil
 		})
 		if err != nil {
-			http.Error(w, "Failed to update configuration: "+err.Error(), http.StatusInternalServerError)
+			status := http.StatusInternalServerError
+			var parseErr *configParseError
+			if errors.As(err, &parseErr) {
+				status = http.StatusBadRequest
+			}
+			http.Error(w, "Failed to update configuration: "+err.Error(), status)
 			return
 		}
 
@@ -865,6 +882,8 @@ func configTable(page *FeaturePage, configurable, computed, orphaned []FeatureCo
 			h.Form(
 				h.ID(formID), h.Method("POST"), h.Action(basePath+"/config/batch"),
 				h.Class("config-edit-actions"),
+				g.Attr("data-config-form", ""),
+				components.ConfigFormError(),
 				h.Button(h.Type("submit"), h.Class("btn-small config-save-btn"), g.Text("Save changes")),
 				h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("data-config-edit-cancel", ""), g.Text("Cancel")),
 			),

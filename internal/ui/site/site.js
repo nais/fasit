@@ -365,17 +365,44 @@ document.addEventListener("click", (e) => {
   btn.textContent = anyClosed ? "Collapse all" : "Expand all";
 });
 
-// JSON / RAW textarea mode toggle. Radios with [data-mode-toggle] inside
-// the same form as a [data-mode-target] textarea reformat its contents.
-document.addEventListener("change", (e) => {
-  const radio = e.target.closest("input[data-mode-toggle][type=radio]");
-  if (!radio) return;
-  const ta = radio.form?.querySelector("textarea[data-mode-target]");
-  if (!ta) return;
+// Config forms submit via fetch so a validation error (e.g. invalid JSON) is
+// shown inline and the user's input is preserved, instead of navigating to a
+// bare error page and discarding the form. On success the server responds with
+// a 303 redirect, which fetch follows; we then navigate to the final URL.
+document.addEventListener("submit", async (e) => {
+  const form = e.target.closest("form[data-config-form]");
+  if (!form) return;
+  e.preventDefault();
+
+  const errorSlot = form.querySelector("[data-config-form-error]");
+  const showError = (msg) => {
+    if (!errorSlot) return;
+    errorSlot.textContent = msg;
+    errorSlot.style.display = "";
+  };
+  if (errorSlot) {
+    errorSlot.textContent = "";
+    errorSlot.style.display = "none";
+  }
+
   try {
-    const parsed = JSON.parse(ta.value);
-    ta.value = radio.value === "json" ? JSON.stringify(parsed, null, 2) : JSON.stringify(parsed);
-  } catch {}
+    // URLSearchParams keeps the body application/x-www-form-urlencoded, which
+    // the handlers expect via r.ParseForm. A FormData body would be multipart
+    // and ParseForm would leave r.Form empty, dropping every field.
+    const res = await fetch(form.action, {
+      method: "POST",
+      body: new URLSearchParams(new FormData(form)),
+      redirect: "follow",
+    });
+    if (res.ok) {
+      window.location.href = res.url;
+      return;
+    }
+    const msg = (await res.text()).trim() || `Request failed (${res.status})`;
+    showError(msg);
+  } catch {
+    showError("Request failed. Check your connection and try again.");
+  }
 });
 
 // Table text filter: [data-filter-table="<id>"] filters rows of table#<id>

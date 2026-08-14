@@ -369,3 +369,42 @@ func TestOverviewTab_OrphanedKeyRendersStaleSection(t *testing.T) {
 		t.Error("orphan must not reuse the declared field's display name")
 	}
 }
+
+func TestConfigTable_BulkFormHasFetchHookAndErrorSlot(t *testing.T) {
+	t.Parallel()
+	feat := &feature.Feature{
+		Name: "f",
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"replicas": {Config: &feature.Config{Type: feature.ConfigTypeInt}},
+			},
+		},
+	}
+	page := &FeaturePage{
+		TenantSlug:  "t",
+		Environment: &Environment{Environment: &environment2.Environment{Name: "e"}},
+		Feature: &FeatureDetail{
+			Feature: feat,
+			Enabled: true,
+			ConfigItems: []FeatureConfigItem{
+				{Key: "replicas", Value: "3", HasValue: true, Source: string(feature.ConfigSourceHelm), Type: "INT", IsConfigurable: true},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	if err := overviewTab(page).Render(&buf); err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	html := buf.String()
+
+	if !strings.Contains(html, `id="config-batch-form"`) {
+		t.Error("want the bulk form rendered, got no config-batch-form")
+	}
+	if !strings.Contains(html, "data-config-form") {
+		t.Error("want data-config-form attribute on the bulk form")
+	}
+	if !strings.Contains(html, "data-config-form-error") {
+		t.Error("want inline error slot in the bulk form")
+	}
+}

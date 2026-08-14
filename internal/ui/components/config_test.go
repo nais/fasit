@@ -76,3 +76,24 @@ func TestConfigKeyCell_DisplayNameShowsKeyAsTitle(t *testing.T) {
 		t.Errorf("want key as title attribute, got:\n%s", html)
 	}
 }
+
+func TestConfigEditPopover_HasFetchHookAndErrorSlot(t *testing.T) {
+	item := ConfigItem{Key: "k", Type: "STRING", Value: "v", HasValue: true}
+	html := renderNode(t, ConfigEditPopover("edit-k", "/features/f/config/1", "Edit", "Save", item))
+	if !strings.Contains(html, "data-config-form") {
+		t.Errorf("want data-config-form attribute on form, got:\n%s", html)
+	}
+	if !strings.Contains(html, "data-config-form-error") {
+		t.Errorf("want inline error slot, got:\n%s", html)
+	}
+}
+
+func TestConfigFormError_RendersHidden(t *testing.T) {
+	html := renderNode(t, ConfigFormError())
+	if !strings.Contains(html, "data-config-form-error") {
+		t.Errorf("want data-config-form-error attribute, got:\n%s", html)
+	}
+	if !strings.Contains(html, "display:none") {
+		t.Errorf("want error slot hidden by default, got:\n%s", html)
+	}
+}
