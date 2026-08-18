@@ -52,7 +52,7 @@ func TestDeactivateRedirect(t *testing.T) {
 			if tt.formBody != "" {
 				body = strings.NewReader(tt.formBody)
 			}
-			r, _ := http.NewRequest("POST", "http://localhost:8080/assignments/123/deactivate", body)
+			r, _ := http.NewRequest("POST", "http://localhost:8080/assignments/123/remove", body)
 			if tt.formBody != "" {
 				r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			}

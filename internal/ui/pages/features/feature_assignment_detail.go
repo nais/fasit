@@ -180,12 +180,12 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 				h.Div(
 					h.Class("env-actions-menu"),
 					h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version")),
-					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "deactivate-assignment"), g.Text("Deactivate assignment")),
+					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "remove-assignment"), g.Text("Remove assignment")),
 				),
 			)),
 		),
 		g.If(d.Active, setVersionPopover("set-version", featureName, d.Feature.Chart, assignmentTargetLabels(d))),
-		g.If(d.Active, deactivateAssignmentPopover(d)),
+		g.If(d.Active, removeAssignmentPopover(d)),
 	}
 
 	if !d.Active {
@@ -339,15 +339,15 @@ func assignmentTargetPills(labels map[string]string) g.Node {
 	return g.Group(pills)
 }
 
-func deactivateAssignmentPopover(d *featureassignment.FeatureAssignment) g.Node {
+func removeAssignmentPopover(d *featureassignment.FeatureAssignment) g.Node {
 	return components.Popover(
-		"deactivate-assignment", "", "Deactivate assignment",
-		h.P(g.Textf("This will deactivate %s. It will no longer be reconciled.", d.Feature.Name)),
+		"remove-assignment", "", "Remove assignment",
+		h.P(g.Textf("This will remove %s. It will no longer be reconciled.", d.Feature.Name)),
 		h.Form(
-			h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/deactivate"),
+			h.Method("POST"), h.Action("/assignments/"+d.ID.String()+"/remove"),
 			h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+d.Feature.Name+"/assignments")),
 			components.PopoverActions(
-				h.Button(h.Type("submit"), g.Text("Deactivate")),
+				h.Button(h.Type("submit"), g.Text("Remove")),
 			),
 		),
 	)

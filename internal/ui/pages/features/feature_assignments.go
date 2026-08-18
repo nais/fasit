@@ -258,17 +258,17 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 				),
 				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels),
 				components.Popover(
-					removePopoverID, "", "Remove assignment spec",
+					removePopoverID, "", "Remove assignment",
 					g.If(
 						fallbackVersion != "",
-						h.P(g.Textf("This will remove this assignment spec. Version %s will take its place.", fallbackVersion)),
+						h.P(g.Textf("This will remove this assignment. Version %s will take its place.", fallbackVersion)),
 					),
 					g.If(
 						fallbackVersion == "",
-						h.P(g.Text("This will remove this assignment spec. It will no longer be reconciled.")),
+						h.P(g.Text("This will remove this assignment. It will no longer be reconciled.")),
 					),
 					h.Form(
-						h.Method("POST"), h.Action("/assignments/"+c.FeatureAssignmentID+"/deactivate"),
+						h.Method("POST"), h.Action("/assignments/"+c.FeatureAssignmentID+"/remove"),
 						h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+featureName+"/assignments")),
 						components.PopoverActions(
 							h.Button(h.Type("submit"), g.Text("Remove")),
