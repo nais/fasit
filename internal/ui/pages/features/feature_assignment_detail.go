@@ -271,9 +271,9 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 						h.Td(g.Text(r.TenantName)),
 						h.Td(h.A(h.Href("/features/"+featureName+"/envs/"+r.TenantName+"/"+r.EnvironmentName), g.Text(r.EnvironmentName))),
 						h.Td(components.Status(r.State)),
-						h.Td(assignmentTimeWithTitle(r.LastModified)),
+						view.TimeCell(r.LastModified),
 						h.Td(g.Text(r.Message)),
-						h.Td(assignmentTimeWithTitle(r.DecidedAt)),
+						view.TimeCell(r.DecidedAt),
 						h.Td(logsCell),
 					)
 				}))),
@@ -294,7 +294,7 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 				h.TBody(g.Group(g.Map(data.AssignmentMatching, func(m matchingAssignment) g.Node {
 					return h.Tr(
 						h.Td(h.A(h.Href("/features/"+featureName+"/assignments/"+m.ID), g.Text(m.Version))),
-						h.Td(assignmentTimeWithTitle(m.Created)),
+						view.TimeCell(m.Created),
 					)
 				}))),
 			),
@@ -308,7 +308,7 @@ func assignmentTimeWithTitle(t time.Time) g.Node {
 	if t.IsZero() {
 		return g.Text("")
 	}
-	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
+	return h.Span(h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }
 
 func assignmentTargetLabels(d *featureassignment.FeatureAssignment) map[string]string {

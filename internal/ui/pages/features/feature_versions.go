@@ -15,6 +15,7 @@ import (
 	"github.com/nais/fasit/internal/ui/featureenvs"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/uidata"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 	"sigs.k8s.io/yaml"
@@ -110,7 +111,7 @@ func versionsListContent(data *DetailPage) g.Node {
 						activePill(instances),
 					)),
 					h.Td(instancesCell(envs)),
-					lastDeployedCell(v.LastUpdated, "text-muted"),
+					view.TimeCell(v.LastUpdated, h.Class("text-muted")),
 				)
 				return h.Tr(rowAttrs...)
 			}))),

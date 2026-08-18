@@ -15,6 +15,7 @@ import (
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -387,7 +388,7 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 	cells = append(cells, h.Td(statusCell...))
 
 	if prefs.StatusTime {
-		cells = append(cells, lastDeployedCell(env.LastModified, ""))
+		cells = append(cells, view.TimeCell(env.LastModified))
 	}
 
 	if showVersion {
@@ -395,7 +396,7 @@ func envCardRow(env AssignmentEnvStatus, featureName string, prefs ViewPrefs, sh
 	}
 
 	if prefs.ShowLastDeploy && !prefs.StatusTime {
-		cells = append(cells, lastDeployedCell(env.LastDeployed, ""))
+		cells = append(cells, view.TimeCell(env.LastDeployed))
 	}
 
 	if showActions {

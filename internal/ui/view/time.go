@@ -3,6 +3,9 @@ package view
 import (
 	"strconv"
 	"time"
+
+	g "maragu.dev/gomponents"
+	h "maragu.dev/gomponents/html"
 )
 
 var Oslo = mustLoadLocation("Europe/Oslo")
@@ -50,4 +53,21 @@ func RelativeTime(t time.Time) string {
 
 func formatUnit(n int, unit string) string {
 	return strconv.Itoa(n) + unit + " ago"
+}
+
+// TimeCell renders a table cell (<td>) displaying a relative time string with
+// the full timestamp as a tooltip. A data-sort-value attribute carries the
+// UTC RFC3339 timestamp so sortable tables sort chronologically rather than
+// alphabetically. Zero times are shown as a muted "never" label. Extra attrs
+// (e.g. h.Class) are prepended to the element.
+func TimeCell(t time.Time, attrs ...g.Node) g.Node {
+	all := make([]g.Node, 0, len(attrs)+3)
+	all = append(all, attrs...)
+	all = append(all, g.Attr("data-sort-value", t.UTC().Format(time.RFC3339)))
+	if t.IsZero() {
+		all = append(all, h.Span(h.Class("text-muted"), g.Text("never")))
+	} else {
+		all = append(all, h.Title(FormatTime(t)), g.Text(RelativeTime(t)))
+	}
+	return h.Td(all...)
 }

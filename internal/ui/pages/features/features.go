@@ -513,15 +513,3 @@ func featureTargetsKind(kinds []environment.EnvironmentKind, envKind environment
 	return slices.Contains(kinds, envKind)
 }
 
-func lastDeployedCell(t time.Time, class string) g.Node {
-	attrs := []g.Node{}
-	if class != "" {
-		attrs = append(attrs, h.Class(class))
-	}
-	if t.IsZero() {
-		attrs = append(attrs, h.Span(h.Class("text-muted"), g.Text("never")))
-		return h.Td(attrs...)
-	}
-	attrs = append(attrs, h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
-	return h.Td(attrs...)
-}

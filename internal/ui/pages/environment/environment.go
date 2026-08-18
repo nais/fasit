@@ -609,7 +609,7 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 						h.Td(h.A(h.Href("/features/"+feature.Name+"/envs/"+tenantName+"/"+environmentName), g.Text(feature.Name))),
 						statusCell,
 						h.Td(textOrMuted(feature.Version, "unknown")),
-						h.Td(timeOrNever(feature.LastSuccessful)),
+						view.TimeCell(feature.LastSuccessful),
 					)
 				}))),
 			)),
@@ -650,9 +650,9 @@ func helmReleasesCard(tenantName, environmentName string, releases []releaseRow)
 						nameCell,
 						h.Td(g.Text(release.Status)),
 						h.Td(textOrMuted(release.Version, "unknown")),
-						h.Td(timeOrNever(release.LastDeployed)),
-						h.Td(timeOrNever(release.LastModified)),
-						h.Td(timeOrNever(release.Created)),
+						view.TimeCell(release.LastDeployed),
+						view.TimeCell(release.LastModified),
+						view.TimeCell(release.Created),
 						h.Td(g.Textf("%d", release.Revision)),
 						h.Td(uninstallCell(tenantName, environmentName, release)),
 					)
@@ -683,9 +683,3 @@ func textOrMuted(value, fallback string) g.Node {
 	return g.Text(value)
 }
 
-func timeOrNever(t time.Time) g.Node {
-	if t.IsZero() {
-		return h.Span(h.Class("text-muted"), g.Text("never"))
-	}
-	return h.Span(h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
-}
