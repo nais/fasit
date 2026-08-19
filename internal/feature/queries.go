@@ -201,7 +201,7 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 	return mv, env.Kind, nil
 }
 
-func FeatureDataCreate(ctx context.Context, feat Feature, details *FeatureTemplateDetails) error {
+func CreateFeatureData(ctx context.Context, feat Feature, details *FeatureTemplateDetails) error {
 	// TODO: Use pgx v5 instead of []byte
 	dep, err := json.Marshal(feat.Dependencies)
 	if err != nil {
@@ -221,7 +221,7 @@ func FeatureDataCreate(ctx context.Context, feat Feature, details *FeatureTempla
 		return fmt.Errorf("marshal details to json: %w", err)
 	}
 
-	err = querier(ctx).FeatureDataCreate(ctx, featuresql.FeatureDataCreateParams{
+	err = querier(ctx).CreateFeatureData(ctx, featuresql.CreateFeatureDataParams{
 		FeatureName:   feat.Name,
 		Version:       feat.Version,
 		Chart:         feat.Chart,

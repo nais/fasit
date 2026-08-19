@@ -1,4 +1,4 @@
--- name: FeatureDataCreate :exec
+-- name: CreateFeatureData :exec
 INSERT INTO feature_data(
 	name,
 	version,

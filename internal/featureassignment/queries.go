@@ -252,7 +252,7 @@ func createFeatureAssignment(ctx context.Context, feat *featurepkg.Feature, desc
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
 	}
 
-	if err := featurepkg.FeatureDataCreate(ctx, *feat, details); err != nil {
+	if err := featurepkg.CreateFeatureData(ctx, *feat, details); err != nil {
 		var pgErr *pgconn.PgError
 		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
 			return uuid.Nil, fmt.Errorf("unable to create feature data: %w", pgErr)

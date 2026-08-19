@@ -122,7 +122,7 @@ func (f *fakeQuerier) ListDisabledFeatureEnvironments(context.Context, string) (
 	panic("not implemented")
 }
 
-func (f *fakeQuerier) FeatureDataCreate(context.Context, featuresql.FeatureDataCreateParams) error {
+func (f *fakeQuerier) CreateFeatureData(context.Context, featuresql.CreateFeatureDataParams) error {
 	panic("not implemented")
 }
 

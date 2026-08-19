@@ -512,4 +512,3 @@ func featureTargetsKind(kinds []environment.EnvironmentKind, envKind environment
 	}
 	return slices.Contains(kinds, envKind)
 }
-

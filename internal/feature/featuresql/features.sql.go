@@ -7,6 +7,65 @@ import (
 	"context"
 )
 
+const createFeatureData = `-- name: CreateFeatureData :exec
+INSERT INTO feature_data(
+	name,
+	version,
+	chart,
+	description,
+	source,
+	kinds,
+	dependencies,
+	"values",
+	default_values,
+	timeout,
+	tpl_details)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+(
+		$6::TEXT[]) ::environment_kind[],
+	$7,
+	$8,
+	$9,
+	$10,
+	$11)
+`
+
+type CreateFeatureDataParams struct {
+	FeatureName   string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
+	Timeout       int64
+	TplDetails    []byte
+}
+
+func (q *Queries) CreateFeatureData(ctx context.Context, arg CreateFeatureDataParams) error {
+	_, err := q.db.Exec(ctx, createFeatureData,
+		arg.FeatureName,
+		arg.Version,
+		arg.Chart,
+		arg.Description,
+		arg.Source,
+		arg.Kinds,
+		arg.Dependencies,
+		arg.Values,
+		arg.DefaultValues,
+		arg.Timeout,
+		arg.TplDetails,
+	)
+	return err
+}
+
 const featureDataByVersion = `-- name: FeatureDataByVersion :one
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
@@ -43,65 +102,6 @@ func (q *Queries) FeatureDataByVersion(ctx context.Context, arg FeatureDataByVer
 		&i.FeatureDatum.TplDetails,
 	)
 	return i, err
-}
-
-const featureDataCreate = `-- name: FeatureDataCreate :exec
-INSERT INTO feature_data(
-	name,
-	version,
-	chart,
-	description,
-	source,
-	kinds,
-	dependencies,
-	"values",
-	default_values,
-	timeout,
-	tpl_details)
-VALUES (
-	$1,
-	$2,
-	$3,
-	$4,
-	$5,
-(
-		$6::TEXT[]) ::environment_kind[],
-	$7,
-	$8,
-	$9,
-	$10,
-	$11)
-`
-
-type FeatureDataCreateParams struct {
-	FeatureName   string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	TplDetails    []byte
-}
-
-func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error {
-	_, err := q.db.Exec(ctx, featureDataCreate,
-		arg.FeatureName,
-		arg.Version,
-		arg.Chart,
-		arg.Description,
-		arg.Source,
-		arg.Kinds,
-		arg.Dependencies,
-		arg.Values,
-		arg.DefaultValues,
-		arg.Timeout,
-		arg.TplDetails,
-	)
-	return err
 }
 
 const featureNames = `-- name: FeatureNames :many

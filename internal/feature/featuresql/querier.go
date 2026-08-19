@@ -9,11 +9,11 @@ import (
 )
 
 type Querier interface {
+	CreateFeatureData(ctx context.Context, arg CreateFeatureDataParams) error
 	DeleteDisabledFeature(ctx context.Context, arg DeleteDisabledFeatureParams) error
 	DeleteEnvConfig(ctx context.Context, id uuid.UUID) error
 	DeleteGlobalConfig(ctx context.Context, id uuid.UUID) error
 	FeatureDataByVersion(ctx context.Context, arg FeatureDataByVersionParams) (FeatureDataByVersionRow, error)
-	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureNames(ctx context.Context) ([]string, error)
 	GetDisabledFeature(ctx context.Context, arg GetDisabledFeatureParams) (DisabledFeature, error)
 	GetEnvConfigByID(ctx context.Context, id uuid.UUID) (ConfigurationsEnvironment, error)
