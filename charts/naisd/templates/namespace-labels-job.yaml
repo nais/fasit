@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "naisd.namespaceLabelsName" . }}
+  labels:
+    {{- include "naisd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "naisd.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "naisd.serviceAccountName" . }}
+      restartPolicy: Never
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: kubectl
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.kubectl.image }}"
+          imagePullPolicy: {{ .Values.kubectl.pullPolicy }}
+          args:
+            - apply
+            - --server-side
+            - --field-manager=naisd-managed-labels
+            - --force-conflicts
+            - -f
+            - /manifests/namespace.yaml
+          volumeMounts:
+            - name: manifests
+              mountPath: /manifests
+              readOnly: true
+            - name: kubeconfig
+              mountPath: /.kube
+      volumes:
+        - name: manifests
+          configMap:
+            name: {{ include "naisd.namespaceLabelsName" . }}
+        - name: kubeconfig
+          emptyDir: {}

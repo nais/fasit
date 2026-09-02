@@ -70,3 +70,13 @@ https_proxy:
 google:
   useServiceAccountKey: false
   serviceAccountKey: ""
+
+# Labels server-side-applied to the release namespace (.Release.Namespace) by a
+# post-install/post-upgrade hook. Removing a key here will unset it on the namespace;
+# labels owned by other controllers are left untouched.
+namespaceLabels:
+  cloud.google.com/default-compute-class: management-n4
+
+kubectl:
+  image: cgr.dev/chainguard/kubectl:latest
+  pullPolicy: IfNotPresent
