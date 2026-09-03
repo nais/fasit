@@ -45,4 +45,4 @@ spec:
             name: {{ include "naisd.namespaceLabelsName" . }}
         - name: kubeconfig
           emptyDir: {}
-{{-end }}
+{{- end }}

@@ -9,6 +9,10 @@ naisProjectId: nais-io
 management: "false"
 deploySubscription: "naisd-subscription"
 
+fasit:
+  env:
+    kind: ""
+
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/naisd
   pullPolicy: IfNotPresent
