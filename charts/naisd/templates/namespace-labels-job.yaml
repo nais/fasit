@@ -1,3 +1,4 @@
+{{- if eq .Values.fasit.env.kind "management" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -44,3 +45,4 @@ spec:
             name: {{ include "naisd.namespaceLabelsName" . }}
         - name: kubeconfig
           emptyDir: {}
+{{-end }}

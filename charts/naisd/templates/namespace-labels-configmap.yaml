@@ -1,3 +1,4 @@
+{{- if eq .Values.fasit.env.kind "management" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,3 +17,4 @@ data:
       name: {{ .Release.Namespace }}
       labels:
         {{- toYaml .Values.namespaceLabels | nindent 8 }}
+{{- end }}

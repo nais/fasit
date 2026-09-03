@@ -1,0 +1,17 @@
+{{- if .Capabilities.APIVersions.Has "cloud.google.com/v1" }}
+{{- if eq .Values.fasit.env.kind "management" }}
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: management-n4
+spec:
+  nodePoolAutoCreation:
+    enabled: true
+  priorities:
+    - machineFamily: n4
+    - machineFamily: n4d
+    - machineFamily: n2
+    - machineFamily: e2
+  whenUnsatisfiable: ScaleUpAnyway
+{{- end }}
+{{- end }}
