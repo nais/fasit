@@ -173,21 +173,33 @@ func orphanedConfigTable(featureName string, items []components.ConfigItem) g.No
 		return nil
 	}
 	return h.Div(
-		h.H2(g.Text("Orphaned")),
-		h.P(h.Class("text-muted"), g.Text("These global config values no longer match any key in the feature chart and have no effect.")),
+		h.Class("config-stale-section"),
+		h.H2(g.Text("Unused configuration")),
+		h.P(h.Class("text-muted"), g.Text("These stored global values are not declared in the current Feature.yaml, so they have no effect. They can be removed.")),
 		h.Table(
-			h.Class("table config-table"),
+			h.Class("table config-stale-table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Key")),
-				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
 				h.Th(g.Text("Value")),
+				h.Th(g.Attr("data-no-sort", "")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item components.ConfigItem) g.Node {
+				popoverID := "delete-unused-" + item.ID
 				return h.Tr(
-					h.Class("config-orphaned"),
-					h.Td(h.Span(h.Class("text-muted"), g.Text(item.Key))),
-					components.ConfigActionsCell(globalDeleteButton(featureName, item)),
-					h.Td(h.Span(h.Class("text-muted"), g.Text(item.Value))),
+					h.Class("config-row-stale"),
+					h.Td(h.Strong(g.Text(item.Key))),
+					h.Td(g.Text(item.Value)),
+					h.Td(
+						h.Button(h.Type("button"), h.Class("config-clear-btn"), g.Attr("popovertarget", popoverID), g.Text("Delete")),
+						components.ConfigDeleteConfirm(
+							popoverID,
+							"/features/"+featureName+"/config/"+item.ID+"/delete",
+							"Delete unused value",
+							"Delete",
+							fmt.Sprintf("This removes the global value for %q from all environments.", item.Key),
+							"",
+						),
+					),
 				)
 			}))),
 		),

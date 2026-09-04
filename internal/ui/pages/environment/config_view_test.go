@@ -316,7 +316,7 @@ func TestSourceCell_ClearOnlyForEnvOverride(t *testing.T) {
 	}
 }
 
-func TestOverviewTab_OrphanedKeyRendersStaleSection(t *testing.T) {
+func TestOverviewTab_OrphanedKeyRendersUnusedSection(t *testing.T) {
 	t.Parallel()
 	feat := &feature.Feature{
 		Name: "f",
@@ -352,14 +352,11 @@ func TestOverviewTab_OrphanedKeyRendersStaleSection(t *testing.T) {
 	}
 	html := buf.String()
 
-	if !strings.Contains(html, "Stale values") {
-		t.Error("orphaned key should produce a Stale values section")
+	if !strings.Contains(html, "Unused configuration") {
+		t.Error("orphaned key should produce an Unused configuration section")
 	}
 	if !strings.Contains(html, "nais-ingress-haproxy.authSignin") {
 		t.Error("stale row should show the raw key")
-	}
-	if !strings.Contains(html, "config-stale-badge") {
-		t.Error("stale row should carry the stale badge")
 	}
 	if !strings.Contains(html, "/config/delete/00000000-0000-0000-0000-000000000009") {
 		t.Error("stale row should offer the delete action for its env-override id")

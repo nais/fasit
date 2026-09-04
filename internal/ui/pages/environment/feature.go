@@ -101,6 +101,14 @@ func UpdateConfigHandler() http.HandlerFunc {
 }
 
 func DeleteConfigHandler() http.HandlerFunc {
+	return deleteConfigHandler(featurepkg.DeleteEnvConfig)
+}
+
+func DeleteGlobalConfigHandler() http.HandlerFunc {
+	return deleteConfigHandler(featurepkg.DeleteConfig)
+}
+
+func deleteConfigHandler(deleteConfig func(context.Context, uuid.UUID) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		configID, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
@@ -108,7 +116,7 @@ func DeleteConfigHandler() http.HandlerFunc {
 			return
 		}
 		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
-			return featurepkg.DeleteEnvConfig(ctx, configID)
+			return deleteConfig(ctx, configID)
 		}); err != nil {
 			http.Error(w, "Failed to delete configuration: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -927,13 +935,13 @@ func staleValuesSection(page *FeaturePage, items []FeatureConfigItem) g.Node {
 	}
 	return h.Div(
 		h.Class("config-stale-section"),
-		h.H3(g.Text("\u26a0 Stale values")),
+		h.H3(g.Text("Unused configuration")),
 		h.P(h.Class("text-muted"),
-			g.Text("These keys are stored for this environment but are not declared in the current Feature.yaml \u2014 typically left over after a value was renamed or removed. They are ignored by the deploy and should be deleted.")),
+			g.Text("These stored values are not declared in the current Feature.yaml, so they have no effect. They can be removed.")),
 		h.Table(
-			h.Class("table config-table-env"),
+			h.Class("table config-stale-table"),
 			h.THead(h.Tr(
-				h.Th(g.Text("Stale Key")),
+				h.Th(g.Text("Key")),
 				h.Th(g.Text("Value")),
 				h.Th(g.Text("Source")),
 			)),
@@ -945,17 +953,20 @@ func staleValuesSection(page *FeaturePage, items []FeatureConfigItem) g.Node {
 func staleRow(page *FeaturePage, item FeatureConfigItem) g.Node {
 	popoverID := "stale-del-" + item.ID
 	action := featureBasePathForPage(page) + "/config/delete/" + item.ID
+	message := "This removes the stored value for \"" + item.Key + "\" from this environment."
+	if item.Source == string(featurepkg.ConfigSourceGlobal) {
+		action = featureBasePathForPage(page) + "/config/delete-global/" + item.ID
+		message = "This removes the global value for \"" + item.Key + "\" from all environments."
+	}
 	return h.Tr(
 		h.Class("config-row-stale"),
-		h.Td(h.Strong(g.Text(item.Key)), g.Text(" "),
-			h.Span(h.Class("config-stale-badge"), g.Text("stale"))),
+		h.Td(h.Strong(g.Text(item.Key))),
 		components.ConfigValueCell(item),
 		h.Td(
 			sourceBadge(item),
 			h.Button(h.Type("button"), h.Class("config-clear-btn"), g.Attr("popovertarget", popoverID),
 				h.Title("Delete value"), g.Text("Delete")),
-			components.ConfigDeleteConfirm(popoverID, action, "Delete stale value", "Delete",
-				"This removes the stored value for \""+item.Key+"\". It is not declared in the current Feature.yaml.", ""),
+			components.ConfigDeleteConfirm(popoverID, action, "Delete unused value", "Delete", message, ""),
 		),
 	)
 }

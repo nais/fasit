@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"slices"
@@ -17,6 +18,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
+	helmpkg "github.com/nais/fasit/internal/helm"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/auditview"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -50,6 +52,10 @@ type DetailPage struct {
 	AssignmentInstructions []*uidata.DeployInstruction
 	AssignmentMatching     []matchingAssignment
 	AssignmentSupersededBy *matchingAssignment
+	AssignmentCreator      string
+	AssignmentCreators     map[string]string
+	AssignmentVersions     []string
+	AssignmentLabelOptions []assignmentLabelOption
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -122,7 +128,30 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 		data.ActiveTab = "assignments"
 		data.Breadcrumbs = append(data.Breadcrumbs, breadcrumb.Crumb{Label: "Assignments"})
 		data.RecentActivity, _ = audit.ListAssignmentsForFeature(r.Context(), data.CurrentFeature.Name, 10)
-		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name + " · Deploy specs", CurrentPage: components.PageFeatures, Content: detailPage(data)})
+		data.AssignmentCreators, err = assignmentCreators(r.Context(), data.AssignmentEnvs)
+		if err != nil {
+			http.Error(w, "Failed to load assignment creators", http.StatusInternalServerError)
+			return
+		}
+		data.AssignmentVersions, err = knownAssignmentVersions(r.Context(), data.CurrentFeature)
+		if err != nil {
+			http.Error(w, "Failed to load feature versions", http.StatusInternalServerError)
+			return
+		}
+		if registryVersions, registryErr := helmpkg.ListChartVersions(r.Context(), data.CurrentFeature.Chart); registryErr == nil {
+			data.AssignmentVersions = mergeVersions(registryVersions, data.AssignmentVersions)
+		} else {
+			slog.With("chart", data.CurrentFeature.Chart, "err", registryErr).Warn("failed to list chart versions")
+		}
+		data.AssignmentLabelOptions, err = loadAssignmentLabelOptions(r.Context(), data.CurrentFeature)
+		if err != nil {
+			http.Error(w, "Failed to load environment labels", http.StatusInternalServerError)
+			return
+		}
+		renderPage(w, r, layout.Props{
+			Title: data.CurrentFeature.Name + " · Deploy specs", CurrentPage: components.PageFeatures,
+			Content: detailPage(data), Scripts: []string{"assignments.js"},
+		})
 	}
 }
 

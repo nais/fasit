@@ -83,6 +83,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features/{feature}/envs/{tenant}/{env}/config/edit/{id}", environment.FeatureContextTabHandler(s.renderPage, "config"))
 	r.Post("/features/{feature}/envs/{tenant}/{env}/config/edit/{id}", environment.UpdateConfigHandler())
 	r.Post("/features/{feature}/envs/{tenant}/{env}/config/delete/{id}", environment.DeleteConfigHandler())
+	r.Post("/features/{feature}/envs/{tenant}/{env}/config/delete-global/{id}", environment.DeleteGlobalConfigHandler())
 	r.Get("/features/{feature}/envs/{tenant}/{env}/config/override", environment.FeatureContextTabHandler(s.renderPage, "config"))
 	r.Post("/features/{feature}/envs/{tenant}/{env}/config/override", environment.ConfigOverrideSubmitHandler())
 	r.Post("/features/{feature}/envs/{tenant}/{env}/config/batch", environment.BatchUpdateConfigHandler())

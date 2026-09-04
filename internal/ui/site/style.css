@@ -1272,42 +1272,43 @@ nav .user {
   color: var(--text-muted);
   vertical-align: middle;
 }
-.config-orphaned {
-  opacity: 0.6;
-  border-left: 3px solid var(--status-error);
-}
 .config-stale-section {
-  margin-bottom: 2rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--status-error);
-  border-left: 4px solid var(--status-error);
+  margin: 1.5rem 0 2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--status-warning);
   border-radius: 6px;
-  background: color-mix(in srgb, var(--status-error) 8%, transparent);
+  background: color-mix(in srgb, var(--status-warning) 3%, transparent);
 }
+.config-stale-section h2,
 .config-stale-section h3 {
-  color: var(--status-error);
-  margin-top: 0;
+  margin: 0;
+  color: var(--text-heading);
+}
+.config-stale-section > p {
+  margin: 0.35rem 0 0.75rem;
 }
 .config-stale-section .table {
   width: 100%;
+  margin-bottom: 0;
 }
-.config-stale-section .config-clear-btn {
-  background: var(--status-error);
-  border-color: var(--status-error);
-  color: #fff;
+.config-stale-table {
+  table-layout: fixed;
 }
-.config-stale-badge {
-  display: inline-block;
-  margin-left: 0.4rem;
-  padding: 0.05rem 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  border-radius: 3px;
-  background: var(--status-error);
-  color: var(--bg-page);
-  vertical-align: middle;
+.config-stale-table th:nth-child(1),
+.config-stale-table td:nth-child(1) {
+  width: 32%;
+  word-break: break-word;
+}
+.config-stale-table th:nth-child(2),
+.config-stale-table td:nth-child(2) {
+  width: auto;
+  word-break: break-word;
+}
+.config-stale-table th:nth-child(3),
+.config-stale-table td:nth-child(3) {
+  width: 12rem;
+  text-align: right;
 }
 .edit-icon {
   color: var(--text-muted);
@@ -1638,6 +1639,12 @@ textarea.bulk-value-input {
   max-height: 90dvh;
   overflow: auto;
 }
+[popover].assignment-popover {
+  width: min(34rem, calc(100vw - 3rem));
+  max-width: 34rem;
+  max-height: 90dvh;
+  overflow: auto;
+}
 .popover-scroll {
   max-height: 60vh;
   overflow: auto;
@@ -1925,9 +1932,28 @@ a.label-filter-tag:hover {
 }
 
 .preview-targets-result {
-  margin-top: 0.5rem;
+  min-height: 2rem;
+  margin-top: 0.75rem;
   font-size: 0.875rem;
-  line-height: 1.6;
+  line-height: 1.5;
+  transition: opacity 120ms ease;
+}
+.preview-targets-result.is-loading {
+  opacity: 0.55;
+}
+.assignment-preview-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.2rem;
+  white-space: nowrap;
+}
+.assignment-preview-pills .label-filter-tag {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .btn-outline {
@@ -2093,6 +2119,18 @@ a:hover .status-badge {
   border-color: var(--border);
   background: var(--bg-surface);
 }
+.assignment-row.assignment-non-workflow {
+  border-left: 3px solid var(--status-warning);
+}
+tr.assignment-non-workflow td:first-child {
+  border-left: 3px solid var(--status-warning);
+}
+.assignment-row-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+}
 .assignment-row-link {
   display: flex;
   flex-direction: column;
@@ -2106,11 +2144,121 @@ a:hover .status-badge {
 .assignment-row-link:hover {
   text-decoration: none;
 }
+.assignment-description {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .assignment-row-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.5rem;
+}
+.assignment-creator {
+  flex: 0 0 auto;
+  padding: 0.85rem 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.assignment-custom-version {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+.assignment-custom-version:not([hidden]) {
+  display: grid;
+}
+[popover] button[data-use-version-list] {
+  border-color: var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.4rem 0.65rem;
+  white-space: nowrap;
+}
+[popover] button[data-use-version-list]:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.assignment-label-builder {
+  border: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+.assignment-label-builder legend {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+.assignment-label-rows {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+.assignment-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text-primary);
+  padding: 0.25rem 0.35rem 0.25rem 0.65rem;
+  font-size: 0.875rem;
+}
+[popover] .assignment-label-chip button,
+[popover] button.assignment-label-cancel {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0 0.2rem;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+[popover] .assignment-label-chip button:hover,
+[popover] button.assignment-label-cancel:hover {
+  color: var(--status-error);
+}
+.assignment-label-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+.assignment-label-editor select {
+  min-width: 0;
+}
+[popover] button.assignment-add-label {
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.875rem;
+}
+[popover] button.assignment-add-label:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.assignment-target-preview {
+  margin-top: 1rem;
+}
+.assignment-target-preview-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+.assignment-target-preview .preview-targets-result {
+  margin-top: 0.4rem;
 }
 .assignment-row .feature-card-actions {
   align-self: flex-start;

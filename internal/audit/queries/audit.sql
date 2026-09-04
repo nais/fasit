@@ -148,6 +148,20 @@ ORDER BY
 	a.created_at DESC
 LIMIT @page_size;
 
+-- name: ListAssignmentCreators :many
+SELECT DISTINCT ON (metadata ->> 'assignmentId')
+	COALESCE(metadata ->> 'assignmentId', '')::TEXT AS assignment_id,
+	actor
+FROM
+	audits
+WHERE
+	object_type = 'assignment'
+	AND action = 'created'
+	AND metadata ->> 'assignmentId' = ANY (@assignment_ids::TEXT[])
+ORDER BY
+	metadata ->> 'assignmentId',
+	created_at ASC;
+
 -- name: LatestDisableReason :one
 SELECT
 	description

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/reconciler"
@@ -31,6 +33,16 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
+		assignmentIDs := make([]uuid.UUID, 0, len(fas))
+		for _, fa := range fas {
+			assignmentIDs = append(assignmentIDs, fa.ID)
+		}
+		creators, err := audit.AssignmentCreators(r.Context(), assignmentIDs)
+		if err != nil {
+			http.Error(w, "Failed to load assignment creators", http.StatusInternalServerError)
+			return
+		}
+
 		rows := make([]Summary, 0, len(fas))
 		for _, fa := range fas {
 			statuses := statusesByID[fa.ID]
@@ -51,6 +63,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 				Status:              status,
 				Target:              assignmentTarget(fa),
 				TargetLabels:        assignmentTargetLabels(fa),
+				Creator:             creators[fa.ID],
 				Created:             view.FormatTime(fa.Created),
 				Completed:           latestStatusTime(statuses),
 				FeatureAssignmentID: fa.ID.String(),
@@ -72,7 +85,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			terms := strings.Fields(query)
 			filtered := rows[:0]
 			for _, row := range rows {
-				text := strings.ToLower(row.FeatureName + " " + row.Target + " " + row.Version + " " + row.Status)
+				text := strings.ToLower(row.FeatureName + " " + row.Target + " " + row.Version + " " + row.Status + " " + row.Creator)
 				if matchesAll(text, terms) {
 					filtered = append(filtered, row)
 				}
@@ -165,11 +178,17 @@ func assignmentsTable(rows []Summary) g.Node {
 
 	tableRows := make([]g.Node, 0, len(rows))
 	for _, dep := range rows {
+		rowClass := ""
+		if !view.IsWorkflowActor(dep.Creator) {
+			rowClass = "assignment-non-workflow"
+		}
 		tableRows = append(tableRows, h.Tr(
+			g.If(rowClass != "", h.Class(rowClass)),
 			h.Td(h.A(h.Href("/features/"+dep.FeatureName), g.Text(dep.FeatureName))),
 			h.Td(targetPills(dep.TargetLabels)),
 			h.Td(h.A(h.Href("/features/"+dep.FeatureName+"/assignments/"+dep.FeatureAssignmentID), g.Text(dep.Version))),
 			h.Td(statusCell(dep)),
+			h.Td(view.AssignmentCreatorNode(dep.Creator)),
 			view.TimeCell(dep.createdAt),
 		))
 	}
@@ -183,6 +202,7 @@ func assignmentsTable(rows []Summary) g.Node {
 			h.Th(g.Text("Target"), g.Attr("data-no-sort", "")),
 			h.Th(g.Text("Version")),
 			h.Th(g.Text("Status")),
+			h.Th(g.Text("Created by")),
 			h.Th(g.Text("Updated")),
 		)),
 		h.TBody(g.Group(tableRows)),

@@ -19,18 +19,22 @@ func CreateHandler() http.HandlerFunc {
 		}
 
 		chart := strings.TrimSpace(r.FormValue("chart"))
-		version := strings.TrimSpace(r.FormValue("version"))
+		version := requestedVersion(r.Form)
 		description := strings.TrimSpace(r.FormValue("description"))
 		if chart == "" || version == "" {
 			http.Error(w, "chart and version are required", http.StatusBadRequest)
 			return
 		}
-		if description == "" {
-			description = "Set via UI"
+		var assignmentDescription *string
+		if description != "" {
+			assignmentDescription = &description
 		}
 
 		target := environment.Labels{}
 		for _, raw := range r.Form["target_label"] {
+			if raw == "" {
+				continue
+			}
 			k, v, ok := strings.Cut(raw, "=")
 			if !ok || k == "" {
 				http.Error(w, "invalid target_label: "+raw, http.StatusBadRequest)
@@ -59,7 +63,7 @@ func CreateHandler() http.HandlerFunc {
 		_, err := featureassignment.Create(r.Context(), featureassignment.CreateFeatureAssignment{
 			Chart:       chart,
 			Version:     version,
-			Description: &description,
+			Description: assignmentDescription,
 			Target:      target,
 		})
 		if err != nil {
@@ -77,4 +81,12 @@ func CreateHandler() http.HandlerFunc {
 		}
 		http.Redirect(w, r, redirect, http.StatusSeeOther) // #nosec G710 -- redirect is the Referer path only when its host == r.Host, forcing a same-origin relative path
 	}
+}
+
+func requestedVersion(form url.Values) string {
+	version := strings.TrimSpace(form.Get("version"))
+	if version == "__custom__" {
+		return strings.TrimSpace(form.Get("version_custom"))
+	}
+	return version
 }

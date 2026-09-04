@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/model"
@@ -137,6 +138,12 @@ func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 		data.AssignmentInstructions = instructions
 		data.AssignmentMatching = matching
 		data.AssignmentSupersededBy = supersededBy
+		creators, err := audit.AssignmentCreators(r.Context(), []uuid.UUID{id})
+		if err != nil {
+			http.Error(w, "Failed to load assignment creator", http.StatusInternalServerError)
+			return
+		}
+		data.AssignmentCreator = creators[id]
 
 		featureName := d.Feature.Name
 		data.Breadcrumbs = []breadcrumb.Crumb{
@@ -163,6 +170,7 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 		metaRow("Target", assignmentTargetPills(assignmentTargetLabels(d))),
 		metaRow("Version", g.Text(d.Feature.Version)),
 		metaRow("Created", assignmentTimeWithTitle(d.Created)),
+		metaRow("Created by", view.AssignmentCreatorNode(data.AssignmentCreator)),
 	}
 	if d.Description != nil && *d.Description != "" {
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))

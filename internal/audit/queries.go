@@ -56,6 +56,29 @@ func ListForFeature(ctx context.Context, feature string, limit int32) ([]*Entry,
 	return ret, nil
 }
 
+// AssignmentCreators returns the actor that created each requested assignment.
+func AssignmentCreators(ctx context.Context, assignmentIDs []uuid.UUID) (map[uuid.UUID]string, error) {
+	ids := make([]string, 0, len(assignmentIDs))
+	for _, id := range assignmentIDs {
+		ids = append(ids, id.String())
+	}
+
+	rows, err := querier(ctx).ListAssignmentCreators(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("list assignment creators: %w", err)
+	}
+
+	creators := make(map[uuid.UUID]string, len(rows))
+	for _, row := range rows {
+		id, err := uuid.Parse(row.AssignmentID)
+		if err != nil {
+			return nil, fmt.Errorf("parse assignment ID %q: %w", row.AssignmentID, err)
+		}
+		creators[id] = row.Actor
+	}
+	return creators, nil
+}
+
 func ListAssignmentsForFeature(ctx context.Context, feature string, limit int32) ([]*Entry, error) {
 	rows, err := querier(ctx).ListAssignmentsForFeature(ctx, auditsql.ListAssignmentsForFeatureParams{
 		Feature:  feature,

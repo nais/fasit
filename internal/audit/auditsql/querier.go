@@ -9,6 +9,7 @@ import (
 type Querier interface {
 	Create(ctx context.Context, arg CreateParams) error
 	LatestDisableReason(ctx context.Context, arg LatestDisableReasonParams) (string, error)
+	ListAssignmentCreators(ctx context.Context, assignmentIds []string) ([]ListAssignmentCreatorsRow, error)
 	ListAssignmentsForFeature(ctx context.Context, arg ListAssignmentsForFeatureParams) ([]ListAssignmentsForFeatureRow, error)
 	ListForEnvironment(ctx context.Context, arg ListForEnvironmentParams) ([]ListForEnvironmentRow, error)
 	ListForFeature(ctx context.Context, arg ListForFeatureParams) ([]ListForFeatureRow, error)

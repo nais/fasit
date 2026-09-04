@@ -15,32 +15,34 @@ import (
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
+	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
 
 type AssignmentEnvStatus struct {
-	Name                 string
-	EnvironmentID        string
-	TenantName           string
-	TenantSlug           string
-	Enabled              bool
-	DisableReason        string
-	EnvReconcileDisabled bool
-	LastModified         time.Time
-	LastDeployed         time.Time
-	StatusText           string
-	FeatureAssignmentID  string
-	AssignmentVersion    string
-	ChartDescription     string
-	ReleaseVersion       string
-	TargetLabels         map[string]string
-	IsOverridden         bool
-	OverriddenByID       string
-	OverriddenByVersion  string
-	OverriddenByLabels   map[string]string
-	DeployInstructionID  string
+	Name                  string
+	EnvironmentID         string
+	TenantName            string
+	TenantSlug            string
+	Enabled               bool
+	DisableReason         string
+	EnvReconcileDisabled  bool
+	LastModified          time.Time
+	LastDeployed          time.Time
+	StatusText            string
+	FeatureAssignmentID   string
+	AssignmentVersion     string
+	AssignmentDescription string
+	ChartDescription      string
+	ReleaseVersion        string
+	TargetLabels          map[string]string
+	IsOverridden          bool
+	OverriddenByID        string
+	OverriddenByVersion   string
+	OverriddenByLabels    map[string]string
+	DeployInstructionID   string
 }
 
 type ViewPrefs struct {
@@ -75,7 +77,104 @@ type card struct {
 	LinkHref            string
 	Labels              map[string]string
 	FeatureAssignmentID string
+	Creator             string
+	Description         string
 	Environments        []AssignmentEnvStatus
+}
+
+type assignmentLabelOption struct {
+	Key    string
+	Values []string
+}
+
+func assignmentCreators(ctx context.Context, envs []AssignmentEnvStatus) (map[string]string, error) {
+	seen := make(map[uuid.UUID]struct{})
+	ids := make([]uuid.UUID, 0)
+	for _, env := range envs {
+		id, err := uuid.Parse(env.FeatureAssignmentID)
+		if err != nil {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	creators, err := audit.AssignmentCreators(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(map[string]string, len(creators))
+	for id, creator := range creators {
+		ret[id.String()] = creator
+	}
+	return ret, nil
+}
+
+func knownAssignmentVersions(ctx context.Context, feature *featurepkg.Feature) ([]string, error) {
+	versions, err := uidata.FeatureVersions(ctx, feature.Name)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]string, 0, len(versions)+1)
+	ret = append(ret, feature.Version)
+	for _, version := range versions {
+		ret = append(ret, version.Version)
+	}
+	return mergeVersions(ret), nil
+}
+
+func mergeVersions(versionSets ...[]string) []string {
+	seen := make(map[string]struct{})
+	var ret []string
+	for _, versions := range versionSets {
+		for _, version := range versions {
+			if version == "" {
+				continue
+			}
+			if _, ok := seen[version]; ok {
+				continue
+			}
+			seen[version] = struct{}{}
+			ret = append(ret, version)
+		}
+	}
+	return ret
+}
+
+func loadAssignmentLabelOptions(ctx context.Context, feature *featurepkg.Feature) ([]assignmentLabelOption, error) {
+	tenantEnvs, err := envpkg.ListTenantEnvironments(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	valuesByKey := make(map[string]map[string]struct{})
+	for _, tenantEnv := range tenantEnvs {
+		if !featureTargetsKind(feature.EnvironmentKinds, tenantEnv.Kind) {
+			continue
+		}
+		for key, value := range tenantEnv.Labels {
+			if valuesByKey[key] == nil {
+				valuesByKey[key] = make(map[string]struct{})
+			}
+			valuesByKey[key][value] = struct{}{}
+		}
+	}
+	keys := make([]string, 0, len(valuesByKey))
+	for key := range valuesByKey {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	ret := make([]assignmentLabelOption, 0, len(keys))
+	for _, key := range keys {
+		values := make([]string, 0, len(valuesByKey[key]))
+		for value := range valuesByKey[key] {
+			values = append(values, value)
+		}
+		sort.Strings(values)
+		ret = append(ret, assignmentLabelOption{Key: key, Values: values})
+	}
+	return ret, nil
 }
 
 func loadAssignmentData(ctx context.Context, feature *featurepkg.Feature, data *DetailPage) {
@@ -138,14 +237,26 @@ func currentAssignmentEnvStatuses(envs []AssignmentEnvStatus) []AssignmentEnvSta
 }
 
 func assignmentSpecsContent(data *DetailPage) g.Node {
+	featureName := data.CurrentFeature.Name
+	content := []g.Node{
+		h.Div(
+			h.Class("assignments-header"),
+			h.Div(h.Class("assignments-toolbar"), h.H2(g.Text("Assignments"))),
+			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "new-feature-assignment"), g.Text("+ New assignment")),
+			newFeatureAssignmentPopover(data),
+		),
+	}
+
 	if len(data.AssignmentEnvs) == 0 {
-		return h.P(g.Text("No environments found."))
+		content = append(content, h.P(h.Class("text-muted"), g.Text("No assignments found.")))
+		return h.Div(g.Group(content))
 	}
 
 	prefs := assignmentSpecsViewPrefs()
-	cards := groupByAssignmentCards(data.AssignmentEnvs, data.CurrentFeature.Name)
+	cards := groupByAssignmentCards(data.AssignmentEnvs, featureName, data.AssignmentCreators)
 	fallbacks := fallbackVersionMap(data.AssignmentEnvs)
-	return cardGrid(cards, data.CurrentFeature.Name, data.CurrentFeature.Chart, prefs, fallbacks)
+	content = append(content, cardGrid(cards, featureName, data.CurrentFeature.Chart, prefs, fallbacks))
+	return h.Div(g.Group(content))
 }
 
 // fallbackVersionMap returns a map from assignment ID to the version that
@@ -162,7 +273,7 @@ func fallbackVersionMap(envs []AssignmentEnvStatus) map[string]string {
 	return fallbacks
 }
 
-func groupByAssignmentCards(envs []AssignmentEnvStatus, featureName string) []card {
+func groupByAssignmentCards(envs []AssignmentEnvStatus, featureName string, creators map[string]string) []card {
 	groups := map[string]*card{}
 	var order []string
 	for _, env := range envs {
@@ -172,6 +283,8 @@ func groupByAssignmentCards(envs []AssignmentEnvStatus, featureName string) []ca
 				LinkHref:            "/features/" + featureName + "/assignments/" + env.FeatureAssignmentID,
 				Labels:              env.TargetLabels,
 				FeatureAssignmentID: env.FeatureAssignmentID,
+				Creator:             creators[env.FeatureAssignmentID],
+				Description:         env.AssignmentDescription,
 			}
 			order = append(order, env.FeatureAssignmentID)
 		}
@@ -219,18 +332,22 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 		h.Span(h.Class("feature-card-labels"), labelPills(c.Labels)),
 	)
 
+	content := []g.Node{head}
+	if description := strings.TrimSpace(c.Description); description != "" && description != "Set via UI" {
+		content = append(content, h.Span(h.Class("assignment-description"), h.Title(description), g.Text(description)))
+	}
+	content = append(content, assignmentStatusSummary(c.Environments))
+
 	var main g.Node
 	if c.LinkHref != "" {
 		main = h.A(
 			h.Href(c.LinkHref), h.Class("assignment-row-link"),
-			head,
-			assignmentStatusSummary(c.Environments),
+			g.Group(content),
 		)
 	} else {
 		main = h.Div(
 			h.Class("assignment-row-link"),
-			head,
-			assignmentStatusSummary(c.Environments),
+			g.Group(content),
 		)
 	}
 
@@ -279,9 +396,17 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 		)
 	}
 
+	rowClass := "assignment-row"
+	if !view.IsWorkflowActor(c.Creator) {
+		rowClass += " assignment-non-workflow"
+	}
 	return h.Div(
-		h.Class("assignment-row"),
-		main,
+		h.Class(rowClass),
+		h.Div(
+			h.Class("assignment-row-main"),
+			main,
+			h.Div(h.Class("assignment-creator"), g.Text("Created by "), view.AssignmentCreatorNode(c.Creator)),
+		),
 		actions,
 	)
 }
@@ -526,6 +651,61 @@ func formatLabels(labels map[string]string) string {
 	return strings.Join(pairs, ", ")
 }
 
+func newFeatureAssignmentPopover(data *DetailPage) g.Node {
+	versionOptions := g.Map(data.AssignmentVersions, func(version string) g.Node {
+		return h.Option(h.Value(version), g.Text(version))
+	})
+	kindInputs := g.Map(data.CurrentFeature.EnvironmentKinds, func(kind envpkg.EnvironmentKind) g.Node {
+		return h.Input(h.Type("hidden"), h.Name("environment_kind"), h.Value(string(kind)))
+	})
+	labelOptions := g.Map(data.AssignmentLabelOptions, func(option assignmentLabelOption) g.Node {
+		values := g.Map(option.Values, func(value string) g.Node {
+			return h.Span(g.Attr("data-label-value", ""), g.Text(value))
+		})
+		return h.Div(g.Attr("data-label-key", option.Key), g.Group(values))
+	})
+
+	return components.Popover(
+		"new-feature-assignment", "assignment-popover", "New assignment",
+		h.Form(
+			h.Method("POST"), h.Action("/assignments"), g.Attr("data-assignment-form", ""),
+			h.Input(h.Type("hidden"), h.Name("chart"), h.Value(data.CurrentFeature.Chart)),
+			g.Group(kindInputs),
+			h.Label(h.ID("assignment-version-label"), g.Text("Version")),
+			h.Select(
+				h.ID("assignment-version"), h.Name("version"), g.Attr("aria-labelledby", "assignment-version-label"), g.Attr("required", ""), g.Attr("data-version-select", ""),
+				h.Option(h.Value(""), g.Attr("selected", ""), g.Attr("disabled", ""), g.Text("Choose a version…")),
+				g.Group(versionOptions),
+				h.Option(h.Value("__custom__"), g.Text("Enter another version…")),
+			),
+			h.Div(
+				h.Class("assignment-custom-version"), g.Attr("data-custom-version", ""), g.Attr("hidden", ""),
+				h.Input(h.ID("assignment-custom-version"), h.Type("text"), h.Name("version_custom"), g.Attr("aria-labelledby", "assignment-version-label"), g.Attr("autocomplete", "off"), h.Placeholder("Enter chart version")),
+				h.Button(h.Type("button"), h.Class("btn-small btn-outline"), g.Attr("data-use-version-list", ""), g.Text("Use version list")),
+			),
+			h.P(h.Class("form-hint"), g.Text("Available versions are loaded from the chart registry.")),
+			h.Label(g.Text("Description (optional)")),
+			h.Input(h.Type("text"), h.Name("description"), h.Placeholder("e.g. Rollback to stable")),
+			h.FieldSet(
+				h.Class("assignment-label-builder"), g.Attr("data-label-builder", ""),
+				h.Legend(g.Text("Target labels")),
+				h.P(h.Class("form-hint"), g.Text("Add labels to narrow the target. No labels targets all environments.")),
+				h.Div(g.Attr("data-label-options", ""), g.Attr("hidden", ""), g.Group(labelOptions)),
+				h.Div(
+					h.Class("assignment-label-rows"), g.Attr("data-label-rows", ""),
+					h.Button(h.Type("button"), h.Class("assignment-add-label"), g.Attr("data-add-label", ""), g.Text("+ Add label")),
+				),
+			),
+			h.Div(
+				h.Class("assignment-target-preview"),
+				h.Div(h.Class("assignment-target-preview-label"), g.Text("Target environments")),
+				h.Div(h.ID("preview-targets-result"), h.Class("preview-targets-result"), g.Attr("aria-live", "polite")),
+			),
+			components.PopoverActions(h.Button(h.Type("submit"), g.Text("Create assignment"))),
+		),
+	)
+}
+
 func setVersionPopover(popoverID, featureName, chart string, target map[string]string) g.Node {
 	keys := make([]string, 0, len(target))
 	for k := range target {
@@ -656,6 +836,9 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 				AssignmentVersion:    fa.Feature.Version,
 				ChartDescription:     fa.Feature.Description,
 				TargetLabels:         fa.TargetLabels,
+			}
+			if fa.Description != nil {
+				es.AssignmentDescription = *fa.Description
 			}
 			if disabled {
 				es.LastModified = disabledAt

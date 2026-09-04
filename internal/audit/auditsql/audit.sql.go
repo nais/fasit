@@ -82,6 +82,46 @@ func (q *Queries) LatestDisableReason(ctx context.Context, arg LatestDisableReas
 	return description, err
 }
 
+const listAssignmentCreators = `-- name: ListAssignmentCreators :many
+SELECT DISTINCT ON (metadata ->> 'assignmentId')
+	COALESCE(metadata ->> 'assignmentId', '')::TEXT AS assignment_id,
+	actor
+FROM
+	audits
+WHERE
+	object_type = 'assignment'
+	AND action = 'created'
+	AND metadata ->> 'assignmentId' = ANY ($1::TEXT[])
+ORDER BY
+	metadata ->> 'assignmentId',
+	created_at ASC
+`
+
+type ListAssignmentCreatorsRow struct {
+	AssignmentID string
+	Actor        string
+}
+
+func (q *Queries) ListAssignmentCreators(ctx context.Context, assignmentIds []string) ([]ListAssignmentCreatorsRow, error) {
+	rows, err := q.db.Query(ctx, listAssignmentCreators, assignmentIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAssignmentCreatorsRow{}
+	for rows.Next() {
+		var i ListAssignmentCreatorsRow
+		if err := rows.Scan(&i.AssignmentID, &i.Actor); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAssignmentsForFeature = `-- name: ListAssignmentsForFeature :many
 SELECT
 	a.id, a.actor, a.description, a.object_type, a.object_id, a.created_at, a.metadata, a.action, a.environment_id, a.feature,

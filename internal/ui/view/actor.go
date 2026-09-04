@@ -31,6 +31,19 @@ func ActorNode(actor string) g.Node {
 }
 
 // ActorName returns just the display name without the workflow link.
+// AssignmentCreatorNode renders an assignment creator, including a workflow link when available.
+func AssignmentCreatorNode(actor string) g.Node {
+	if actor == "" || actor == "unknown" {
+		return g.Text("Unknown")
+	}
+	return ActorNode(actor)
+}
+
+// IsWorkflowActor reports whether actor identifies a GitHub Actions run.
+func IsWorkflowActor(actor string) bool {
+	return ActorWorkflowURL(actor) != ""
+}
+
 func ActorName(actor string) g.Node {
 	user, rest, ok := strings.Cut(actor, "@")
 	if !ok {

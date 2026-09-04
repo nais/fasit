@@ -12,11 +12,15 @@ var _ auditsql.Querier = (*Querier)(nil)
 // Querier is a test fake that records calls. Assign function fields to
 // control return values; unset fields return nil.
 type Querier struct {
-	AuditCreateFunc       func(ctx context.Context, arg auditsql.CreateParams) error
-	AuditSearchRecentFunc func(ctx context.Context, arg auditsql.SearchRecentParams) ([]auditsql.SearchRecentRow, error)
+	AuditCreateFunc                 func(ctx context.Context, arg auditsql.CreateParams) error
+	AuditListAssignmentCreatorsFunc func(ctx context.Context, assignmentIDs []string) ([]auditsql.ListAssignmentCreatorsRow, error)
+	AuditSearchRecentFunc           func(ctx context.Context, arg auditsql.SearchRecentParams) ([]auditsql.SearchRecentRow, error)
 
 	// Creates records every Create call for assertion.
 	Creates []auditsql.CreateParams
+
+	// ListAssignmentCreatorsCalls records every ListAssignmentCreators call for assertion.
+	ListAssignmentCreatorsCalls [][]string
 
 	// SearchRecentCalls records every SearchRecent call for assertion.
 	SearchRecentCalls []auditsql.SearchRecentParams
@@ -31,6 +35,14 @@ func (f *Querier) Create(ctx context.Context, arg auditsql.CreateParams) error {
 }
 
 func (f *Querier) ListForFeature(_ context.Context, _ auditsql.ListForFeatureParams) ([]auditsql.ListForFeatureRow, error) {
+	return nil, nil
+}
+
+func (f *Querier) ListAssignmentCreators(ctx context.Context, assignmentIDs []string) ([]auditsql.ListAssignmentCreatorsRow, error) {
+	f.ListAssignmentCreatorsCalls = append(f.ListAssignmentCreatorsCalls, assignmentIDs)
+	if f.AuditListAssignmentCreatorsFunc != nil {
+		return f.AuditListAssignmentCreatorsFunc(ctx, assignmentIDs)
+	}
 	return nil, nil
 }
 
