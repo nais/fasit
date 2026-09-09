@@ -675,9 +675,6 @@ func newFeatureAssignmentPopover(data *DetailPage) g.Node {
 			g.If(data.AssignmentVersionsError != "",
 				h.P(h.Class("form-hint status-warning"), g.Text(data.AssignmentVersionsError)),
 			),
-			g.If(data.AssignmentVersionsError == "",
-				h.P(h.Class("form-hint"), g.Text("Available versions are loaded from the chart registry.")),
-			),
 			h.Label(g.Text("Description (optional)")),
 			h.Input(h.Type("text"), h.Name("description"), h.Placeholder("e.g. Rollback to stable")),
 			h.FieldSet(

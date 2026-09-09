@@ -67,9 +67,6 @@ func TestNewFeatureAssignmentPopoverExplainsRegistryFailure(t *testing.T) {
 	if !strings.Contains(html, "Could not load the latest versions from the chart registry") {
 		t.Errorf("popover should explain the registry failure: %s", html)
 	}
-	if strings.Contains(html, "Available versions are loaded from the chart registry.") {
-		t.Errorf("popover should not claim versions came from the registry: %s", html)
-	}
 }
 
 func TestAssignmentCardHighlightsCreatorsOutsideWorkflows(t *testing.T) {
