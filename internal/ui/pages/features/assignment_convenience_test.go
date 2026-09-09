@@ -34,7 +34,7 @@ func TestNewFeatureAssignmentPopoverUsesFeatureAndStructuredTargets(t *testing.T
 		`data-version-select`,
 		`Choose a version…`,
 		`value="2.0.0">2.0.0`,
-		`Enter another version…`,
+		`Enter manually…`,
 		`name="environment_kind" value="tenant"`,
 		`data-label-builder`,
 		`data-label-key="kind"`,
@@ -91,7 +91,7 @@ func TestAssignmentCardHighlightsCreatorsOutsideWorkflows(t *testing.T) {
 				Title:               "1.2.3",
 				FeatureAssignmentID: "assignment-id",
 				Creator:             tc.creator,
-			}, "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "")
+			}, "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "", nil)
 			if err := node.Render(&buf); err != nil {
 				t.Fatalf("render card: %v", err)
 			}
@@ -103,6 +103,55 @@ func TestAssignmentCardHighlightsCreatorsOutsideWorkflows(t *testing.T) {
 				t.Errorf("card HTML missing %q", tc.want)
 			}
 		})
+	}
+}
+
+func TestAssignmentCardSetVersionUsesVersionList(t *testing.T) {
+	versions := []string{"1.11.0", "1.10.0", "1.9.0", "1.8.0", "1.7.0", "1.6.0", "1.5.0", "1.4.0", "1.3.0", "1.2.0", "1.1.0"}
+
+	var buf bytes.Buffer
+	if err := renderCard(card{
+		Title:               "1.1.0",
+		FeatureAssignmentID: "assignment-id",
+	}, "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "", versions).Render(&buf); err != nil {
+		t.Fatalf("render card: %v", err)
+	}
+	html := buf.String()
+	for _, want := range []string{
+		`id="set-version-assignment-id"`,
+		`name="version"`,
+		`value="1.11.0">1.11.0`,
+		`value="1.2.0">1.2.0`,
+		`value="1.1.0" hidden="" data-extra-version="">1.1.0`,
+		`Load all versions…`,
+		`Enter manually…`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("set version popover HTML missing %q", want)
+		}
+	}
+}
+
+func TestVersionSelectLimitsVersionsAndOffersLoadAll(t *testing.T) {
+	versions := []string{"1.12.0", "1.11.0", "1.10.0", "1.9.0", "1.8.0", "1.7.0", "1.6.0", "1.5.0", "1.4.0", "1.3.0", "1.2.0", "1.1.0"}
+
+	var buf bytes.Buffer
+	if err := versionSelect("set-version-version", "set-version-custom-version", "set-version-version-label", versions).Render(&buf); err != nil {
+		t.Fatalf("render version select: %v", err)
+	}
+	html := buf.String()
+	for _, want := range []string{
+		`value="1.12.0">1.12.0`,
+		`value="1.3.0">1.3.0`,
+		`value="1.2.0" hidden="" data-extra-version="">1.2.0`,
+		`value="1.1.0" hidden="" data-extra-version="">1.1.0`,
+		`Load all versions…`,
+		`Enter manually…`,
+		`name="version_custom"`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("version select HTML missing %q", want)
+		}
 	}
 }
 

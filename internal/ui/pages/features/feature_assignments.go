@@ -255,7 +255,7 @@ func assignmentSpecsContent(data *DetailPage) g.Node {
 	prefs := assignmentSpecsViewPrefs()
 	cards := groupByAssignmentCards(data.AssignmentEnvs, featureName, data.AssignmentCreators)
 	fallbacks := fallbackVersionMap(data.AssignmentEnvs)
-	content = append(content, cardGrid(cards, featureName, data.CurrentFeature.Chart, prefs, fallbacks))
+	content = append(content, cardGrid(cards, featureName, data.CurrentFeature.Chart, prefs, fallbacks, data.AssignmentVersions))
 	return h.Div(g.Group(content))
 }
 
@@ -312,19 +312,21 @@ func sortEnvs(envs []AssignmentEnvStatus) {
 	})
 }
 
-func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallbackVersions map[string]string) g.Node {
+func cardGrid(cards []card, featureName, chart string, prefs ViewPrefs, fallbackVersions map[string]string, versions []string) g.Node {
 	if len(cards) == 0 {
 		return h.P(h.Class("text-muted"), g.Text("No environments to show."))
 	}
 	return h.Div(
 		h.Class("assignment-list"),
 		g.Map(cards, func(c card) g.Node {
-			return renderCard(c, featureName, chart, prefs, fallbackVersions[c.FeatureAssignmentID])
+			return renderCard(c, featureName, chart, prefs, fallbackVersions[c.FeatureAssignmentID], versions)
 		}),
 	)
 }
 
-func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVersion string) g.Node {
+const assignmentVersionListLimit = 10
+
+func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVersion string, versions []string) g.Node {
 	head := h.Div(
 		h.Class("assignment-row-head"),
 		h.Span(h.Class("card-group-title"), g.Text(c.Title)),
@@ -373,7 +375,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 						g.Text("Remove"),
 					),
 				),
-				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels),
+				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels, versions),
 				components.Popover(
 					removePopoverID, "", "Remove assignment",
 					g.If(
@@ -652,9 +654,6 @@ func formatLabels(labels map[string]string) string {
 }
 
 func newFeatureAssignmentPopover(data *DetailPage) g.Node {
-	versionOptions := g.Map(data.AssignmentVersions, func(version string) g.Node {
-		return h.Option(h.Value(version), g.Text(version))
-	})
 	kindInputs := g.Map(data.CurrentFeature.EnvironmentKinds, func(kind envpkg.EnvironmentKind) g.Node {
 		return h.Input(h.Type("hidden"), h.Name("environment_kind"), h.Value(string(kind)))
 	})
@@ -672,17 +671,7 @@ func newFeatureAssignmentPopover(data *DetailPage) g.Node {
 			h.Input(h.Type("hidden"), h.Name("chart"), h.Value(data.CurrentFeature.Chart)),
 			g.Group(kindInputs),
 			h.Label(h.ID("assignment-version-label"), g.Text("Version")),
-			h.Select(
-				h.ID("assignment-version"), h.Name("version"), g.Attr("aria-labelledby", "assignment-version-label"), g.Attr("required", ""), g.Attr("data-version-select", ""),
-				h.Option(h.Value(""), g.Attr("selected", ""), g.Attr("disabled", ""), g.Text("Choose a version…")),
-				g.Group(versionOptions),
-				h.Option(h.Value("__custom__"), g.Text("Enter another version…")),
-			),
-			h.Div(
-				h.Class("assignment-custom-version"), g.Attr("data-custom-version", ""), g.Attr("hidden", ""),
-				h.Input(h.ID("assignment-custom-version"), h.Type("text"), h.Name("version_custom"), g.Attr("aria-labelledby", "assignment-version-label"), g.Attr("autocomplete", "off"), h.Placeholder("Enter chart version")),
-				h.Button(h.Type("button"), h.Class("btn-small btn-outline"), g.Attr("data-use-version-list", ""), g.Text("Use version list")),
-			),
+			versionSelect("assignment-version", "assignment-custom-version", "assignment-version-label", data.AssignmentVersions),
 			g.If(data.AssignmentVersionsError != "",
 				h.P(h.Class("form-hint status-warning"), g.Text(data.AssignmentVersionsError)),
 			),
@@ -711,7 +700,7 @@ func newFeatureAssignmentPopover(data *DetailPage) g.Node {
 	)
 }
 
-func setVersionPopover(popoverID, featureName, chart string, target map[string]string) g.Node {
+func setVersionPopover(popoverID, featureName, chart string, target map[string]string, versions []string) g.Node {
 	keys := make([]string, 0, len(target))
 	for k := range target {
 		keys = append(keys, k)
@@ -729,11 +718,41 @@ func setVersionPopover(popoverID, featureName, chart string, target map[string]s
 		h.Form(
 			h.Method("POST"), h.Action("/assignments"),
 			g.Group(inputs),
-			h.Label(g.Text("Version")),
-			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("autofocus", "")),
+			h.Label(h.ID(popoverID+"-version-label"), g.Text("Version")),
+			versionSelect(popoverID+"-version", popoverID+"-custom-version", popoverID+"-version-label", versions),
 			components.PopoverActions(
 				h.Button(h.Type("submit"), g.Text("Set version")),
 			),
+		),
+	)
+}
+
+func versionSelect(selectID, customID, labelID string, versions []string) g.Node {
+	visibleCount := min(len(versions), assignmentVersionListLimit)
+	versionOptions := make([]g.Node, 0, len(versions)+2)
+	versionOptions = append(versionOptions, h.Option(h.Value(""), g.Attr("selected", ""), g.Attr("disabled", ""), g.Text("Choose a version…")))
+	for i, version := range versions {
+		attrs := []g.Node{h.Value(version)}
+		if i >= visibleCount {
+			attrs = append(attrs, g.Attr("hidden", ""), g.Attr("data-extra-version", ""))
+		}
+		versionOptions = append(versionOptions, h.Option(g.Group(attrs), g.Text(version)))
+	}
+	versionOptions = append(versionOptions,
+		h.Option(h.Value("__load_all__"), g.Text("Load all versions…")),
+		h.Option(h.Value("__custom__"), g.Text("Enter manually…")),
+	)
+
+	return h.Div(
+		h.Class("assignment-version-field"),
+		h.Select(
+			h.ID(selectID), h.Name("version"), g.Attr("aria-labelledby", labelID), g.Attr("required", ""), g.Attr("data-version-select", ""),
+			g.Group(versionOptions),
+		),
+		h.Div(
+			h.Class("assignment-custom-version"), g.Attr("data-custom-version", ""), g.Attr("hidden", ""),
+			h.Input(h.ID(customID), h.Type("text"), h.Name("version_custom"), g.Attr("aria-labelledby", labelID), g.Attr("autocomplete", "off"), h.Placeholder("Enter chart version")),
+			h.Button(h.Type("button"), h.Class("btn-small btn-outline"), g.Attr("data-use-version-list", ""), g.Text("Use version list")),
 		),
 	)
 }

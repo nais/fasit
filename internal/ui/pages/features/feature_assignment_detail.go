@@ -13,6 +13,7 @@ import (
 	"github.com/nais/fasit/internal/audit"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
+	helm "github.com/nais/fasit/internal/helm"
 	"github.com/nais/fasit/internal/model"
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -145,6 +146,17 @@ func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 		data.AssignmentCreator = creators[id]
 
+		data.AssignmentVersions, err = knownAssignmentVersions(r.Context(), data.CurrentFeature)
+		if err != nil {
+			http.Error(w, "Failed to load feature versions", http.StatusInternalServerError)
+			return
+		}
+		if registryVersions, registryErr := helm.ListChartVersions(r.Context(), d.Feature.Chart); registryErr == nil {
+			data.AssignmentVersions = mergeVersions(registryVersions, data.AssignmentVersions)
+		} else {
+			data.AssignmentVersionsError = "Could not load the latest versions from the chart registry. The list below contains previously used versions; enter a version manually if needed."
+		}
+
 		featureName := d.Feature.Name
 		data.Breadcrumbs = []breadcrumb.Crumb{
 			breadcrumb.Features(),
@@ -157,6 +169,7 @@ func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 			Title:       fmt.Sprintf("%s %s", featureName, d.Feature.Version),
 			CurrentPage: components.PageFeatures,
 			Content:     detailPage(data),
+			Scripts:     []string{"assignments.js"},
 		})
 	}
 }
@@ -192,7 +205,7 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 				),
 			)),
 		),
-		g.If(d.Active, setVersionPopover("set-version", featureName, d.Feature.Chart, assignmentTargetLabels(d))),
+		g.If(d.Active, setVersionPopover("set-version", featureName, d.Feature.Chart, assignmentTargetLabels(d), data.AssignmentVersions)),
 		g.If(d.Active, removeAssignmentPopover(d)),
 	}
 

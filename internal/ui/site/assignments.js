@@ -170,7 +170,15 @@
       if (custom && focus) customInput.focus();
     }
 
-    select.addEventListener("change", () => syncCustomVersion(true));
+    select.addEventListener("change", () => {
+      if (select.value === "__load_all__") {
+        for (const option of select.querySelectorAll("[data-extra-version]")) option.hidden = false;
+        select.querySelector("option[value='__load_all__']")?.remove();
+        select.value = "";
+        return;
+      }
+      syncCustomVersion(true);
+    });
     useListButton.addEventListener("click", () => {
       select.value = "";
       syncCustomVersion(false);

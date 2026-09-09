@@ -18,7 +18,7 @@ func TestAssignmentCardShowsDescription(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := renderCard(cards[0], "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "").Render(&buf); err != nil {
+	if err := renderCard(cards[0], "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "", nil).Render(&buf); err != nil {
 		t.Fatalf("render card: %v", err)
 	}
 	html := buf.String()
@@ -37,7 +37,7 @@ func TestAssignmentCardOmitsInternalDefaultDescription(t *testing.T) {
 		Environments: []AssignmentEnvStatus{{
 			StatusText: "DEPLOYED",
 		}},
-	}, "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "").Render(&buf); err != nil {
+	}, "naiserator", "oci://example.test/naiserator", assignmentSpecsViewPrefs(), "", nil).Render(&buf); err != nil {
 		t.Fatalf("render card: %v", err)
 	}
 	if strings.Contains(buf.String(), "Set via UI") {
