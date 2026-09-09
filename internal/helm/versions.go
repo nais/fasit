@@ -76,12 +76,15 @@ func listTags(ctx context.Context, client *auth.Client, host, repoPath string) (
 		}
 		var page tagsListResponse
 		decodeErr := json.NewDecoder(resp.Body).Decode(&page)
-		resp.Body.Close()
+		closeErr := resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			return nil, nil, fmt.Errorf("registry returned %s", resp.Status)
 		}
 		if decodeErr != nil {
 			return nil, nil, fmt.Errorf("decode tags list: %w", decodeErr)
+		}
+		if closeErr != nil {
+			return nil, nil, fmt.Errorf("close tags list response: %w", closeErr)
 		}
 		tags = append(tags, page.Tags...)
 		for _, manifest := range page.Manifests {
