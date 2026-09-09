@@ -15,7 +15,6 @@ import (
 	"github.com/nais/fasit/internal/reconciler"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/pages/environment"
-	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -110,37 +109,6 @@ func assignmentCreators(ctx context.Context, envs []AssignmentEnvStatus) (map[st
 		ret[id.String()] = creator
 	}
 	return ret, nil
-}
-
-func knownAssignmentVersions(ctx context.Context, feature *featurepkg.Feature) ([]string, error) {
-	versions, err := uidata.FeatureVersions(ctx, feature.Name)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]string, 0, len(versions)+1)
-	ret = append(ret, feature.Version)
-	for _, version := range versions {
-		ret = append(ret, version.Version)
-	}
-	return mergeVersions(ret), nil
-}
-
-func mergeVersions(versionSets ...[]string) []string {
-	seen := make(map[string]struct{})
-	var ret []string
-	for _, versions := range versionSets {
-		for _, version := range versions {
-			if version == "" {
-				continue
-			}
-			if _, ok := seen[version]; ok {
-				continue
-			}
-			seen[version] = struct{}{}
-			ret = append(ret, version)
-		}
-	}
-	return ret
 }
 
 func loadAssignmentLabelOptions(ctx context.Context, feature *featurepkg.Feature) ([]assignmentLabelOption, error) {
@@ -725,6 +693,10 @@ func setVersionPopover(popoverID, featureName, chart string, target map[string]s
 }
 
 func versionSelect(selectID, customID, labelID string, versions []string) g.Node {
+	if len(versions) == 0 {
+		return h.Input(h.ID(customID), h.Type("text"), h.Name("version"), g.Attr("aria-labelledby", labelID), g.Attr("required", ""), g.Attr("autocomplete", "off"), h.Placeholder("Enter chart version"))
+	}
+
 	visibleCount := min(len(versions), assignmentVersionListLimit)
 	versionOptions := make([]g.Node, 0, len(versions)+2)
 	versionOptions = append(versionOptions, h.Option(h.Value(""), g.Attr("selected", ""), g.Attr("disabled", ""), g.Text("Choose a version…")))
@@ -735,10 +707,10 @@ func versionSelect(selectID, customID, labelID string, versions []string) g.Node
 		}
 		versionOptions = append(versionOptions, h.Option(g.Group(attrs), g.Text(version)))
 	}
-	versionOptions = append(versionOptions,
-		h.Option(h.Value("__load_all__"), g.Text("Load all versions…")),
-		h.Option(h.Value("__custom__"), g.Text("Enter manually…")),
-	)
+	if len(versions) > visibleCount {
+		versionOptions = append(versionOptions, h.Option(h.Value("__load_all__"), g.Text("Load all versions…")))
+	}
+	versionOptions = append(versionOptions, h.Option(h.Value("__custom__"), g.Text("Enter manually…")))
 
 	return h.Div(
 		h.Class("assignment-version-field"),

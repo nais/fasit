@@ -56,7 +56,7 @@ func TestNewFeatureAssignmentPopoverUsesFeatureAndStructuredTargets(t *testing.T
 func TestNewFeatureAssignmentPopoverExplainsRegistryFailure(t *testing.T) {
 	data := &DetailPage{
 		CurrentFeature:          &featurepkg.Feature{Name: "naiserator"},
-		AssignmentVersionsError: "Could not load the latest versions from the chart registry. The list below contains previously used versions; enter a version manually if needed.",
+		AssignmentVersionsError: "Could not load versions from the chart registry. Enter a version manually.",
 	}
 
 	var buf bytes.Buffer
@@ -64,8 +64,35 @@ func TestNewFeatureAssignmentPopoverExplainsRegistryFailure(t *testing.T) {
 		t.Fatalf("render popover: %v", err)
 	}
 	html := buf.String()
-	if !strings.Contains(html, "Could not load the latest versions from the chart registry") {
+	if !strings.Contains(html, "Could not load versions from the chart registry") {
 		t.Errorf("popover should explain the registry failure: %s", html)
+	}
+	if !strings.Contains(html, `type="text" name="version"`) {
+		t.Errorf("popover should offer a manual version input when the registry fails: %s", html)
+	}
+}
+
+func TestVersionSelectWithoutVersionsRendersManualInput(t *testing.T) {
+	var buf bytes.Buffer
+	if err := versionSelect("set-version-version", "set-version-custom-version", "set-version-version-label", nil).Render(&buf); err != nil {
+		t.Fatalf("render version select: %v", err)
+	}
+	html := buf.String()
+	if !strings.Contains(html, `type="text" name="version"`) {
+		t.Errorf("empty version list should render a manual version input: %s", html)
+	}
+	if strings.Contains(html, "<select") {
+		t.Errorf("empty version list should not render a select: %s", html)
+	}
+}
+
+func TestVersionSelectOmitsLoadAllWhenAllVersionsVisible(t *testing.T) {
+	var buf bytes.Buffer
+	if err := versionSelect("s", "c", "l", []string{"1.2.0", "1.1.0"}).Render(&buf); err != nil {
+		t.Fatalf("render version select: %v", err)
+	}
+	if strings.Contains(buf.String(), "Load all versions") {
+		t.Errorf("version select should not offer load-all when everything is visible: %s", buf.String())
 	}
 }
 
@@ -148,19 +175,6 @@ func TestVersionSelectLimitsVersionsAndOffersLoadAll(t *testing.T) {
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("version select HTML missing %q", want)
-		}
-	}
-}
-
-func TestMergeVersionsKeepsRegistryOrderAndRemovesDuplicates(t *testing.T) {
-	got := mergeVersions([]string{"3.0.0", "2.0.0"}, []string{"2.0.0", "1.0.0", ""})
-	want := []string{"3.0.0", "2.0.0", "1.0.0"}
-	if len(got) != len(want) {
-		t.Fatalf("mergeVersions() = %v, want %v", got, want)
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("mergeVersions()[%d] = %q, want %q", i, got[i], want[i])
 		}
 	}
 }
