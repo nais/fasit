@@ -46,16 +46,17 @@ type DetailPage struct {
 	VersionEnvs     map[string][]featureenvs.Environment
 	IsVersionDetail bool
 
-	IsAssignmentDetail     bool
-	Assignment             *featureassignment.FeatureAssignment
-	AssignmentStatusRows   []reconcileStatusRow
-	AssignmentInstructions []*uidata.DeployInstruction
-	AssignmentMatching     []matchingAssignment
-	AssignmentSupersededBy *matchingAssignment
-	AssignmentCreator      string
-	AssignmentCreators     map[string]string
-	AssignmentVersions     []string
-	AssignmentLabelOptions []assignmentLabelOption
+	IsAssignmentDetail      bool
+	Assignment              *featureassignment.FeatureAssignment
+	AssignmentStatusRows    []reconcileStatusRow
+	AssignmentInstructions  []*uidata.DeployInstruction
+	AssignmentMatching      []matchingAssignment
+	AssignmentSupersededBy  *matchingAssignment
+	AssignmentCreator       string
+	AssignmentCreators      map[string]string
+	AssignmentVersions      []string
+	AssignmentVersionsError string
+	AssignmentLabelOptions  []assignmentLabelOption
 }
 
 func ListHandler(renderPage RenderPage) http.HandlerFunc {
@@ -141,6 +142,7 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 		if registryVersions, registryErr := helmpkg.ListChartVersions(r.Context(), data.CurrentFeature.Chart); registryErr == nil {
 			data.AssignmentVersions = mergeVersions(registryVersions, data.AssignmentVersions)
 		} else {
+			data.AssignmentVersionsError = "Could not load the latest versions from the chart registry. The list below contains previously used versions; enter a version manually if needed."
 			slog.With("chart", data.CurrentFeature.Chart, "err", registryErr).Warn("failed to list chart versions")
 		}
 		data.AssignmentLabelOptions, err = loadAssignmentLabelOptions(r.Context(), data.CurrentFeature)

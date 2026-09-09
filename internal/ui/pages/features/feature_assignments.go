@@ -683,7 +683,12 @@ func newFeatureAssignmentPopover(data *DetailPage) g.Node {
 				h.Input(h.ID("assignment-custom-version"), h.Type("text"), h.Name("version_custom"), g.Attr("aria-labelledby", "assignment-version-label"), g.Attr("autocomplete", "off"), h.Placeholder("Enter chart version")),
 				h.Button(h.Type("button"), h.Class("btn-small btn-outline"), g.Attr("data-use-version-list", ""), g.Text("Use version list")),
 			),
-			h.P(h.Class("form-hint"), g.Text("Available versions are loaded from the chart registry.")),
+			g.If(data.AssignmentVersionsError != "",
+				h.P(h.Class("form-hint status-warning"), g.Text(data.AssignmentVersionsError)),
+			),
+			g.If(data.AssignmentVersionsError == "",
+				h.P(h.Class("form-hint"), g.Text("Available versions are loaded from the chart registry.")),
+			),
 			h.Label(g.Text("Description (optional)")),
 			h.Input(h.Type("text"), h.Name("description"), h.Placeholder("e.g. Rollback to stable")),
 			h.FieldSet(

@@ -53,6 +53,25 @@ func TestNewFeatureAssignmentPopoverUsesFeatureAndStructuredTargets(t *testing.T
 	}
 }
 
+func TestNewFeatureAssignmentPopoverExplainsRegistryFailure(t *testing.T) {
+	data := &DetailPage{
+		CurrentFeature:          &featurepkg.Feature{Name: "naiserator"},
+		AssignmentVersionsError: "Could not load the latest versions from the chart registry. The list below contains previously used versions; enter a version manually if needed.",
+	}
+
+	var buf bytes.Buffer
+	if err := newFeatureAssignmentPopover(data).Render(&buf); err != nil {
+		t.Fatalf("render popover: %v", err)
+	}
+	html := buf.String()
+	if !strings.Contains(html, "Could not load the latest versions from the chart registry") {
+		t.Errorf("popover should explain the registry failure: %s", html)
+	}
+	if strings.Contains(html, "Available versions are loaded from the chart registry.") {
+		t.Errorf("popover should not claim versions came from the registry: %s", html)
+	}
+}
+
 func TestAssignmentCardHighlightsCreatorsOutsideWorkflows(t *testing.T) {
 	tests := []struct {
 		name      string
