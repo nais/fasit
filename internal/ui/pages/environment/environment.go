@@ -345,6 +345,7 @@ func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenan
 		components.Breadcrumbs(breadcrumbs, summaryNodes...),
 		h.Main(
 			h.Class("main-content"),
+			naisdBootstrapCard(tenant, environment, gcpProjectID, health),
 			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, features, releases, health),
 		),
 	)
@@ -446,6 +447,59 @@ func environmentTabContent(activeTab string, tenant *envpkg.Tenant, environment 
 	default:
 		return environmentFeaturesCard(tenant.Name, environment.Name, features)
 	}
+}
+
+// naisdBootstrapCard shows the Helm command that installs naisd, but only for
+// as long as the agent has never reported from this environment — the audience
+// is the operator bootstrapping a brand new environment. Once the first health
+// report arrives the card disappears; a naisd that stops reporting later is an
+// operational issue, not a bootstrap issue, and later upgrades are rolled out
+// by Fasit itself through the naisd feature assignment.
+func naisdBootstrapCard(tenant *envpkg.Tenant, environment *Environment, gcpProjectID string, health environmentHealth) g.Node {
+	if health.HasReport {
+		return nil
+	}
+	return h.Div(
+		h.Class("card"),
+		h.Div(
+			h.Class("card-body"),
+			h.H2(h.Class("card-section-heading"), g.Text("Install naisd")),
+			h.P(h.Class("text-muted"), g.Text("naisd has never reported from this environment. Install the agent to start rolling out features:")),
+			h.Div(
+				h.Class("code-block-wrap"),
+				h.Button(h.Type("button"), h.Class("copy-btn"), g.Attr("data-copy-target", "naisd-bootstrap-command"), g.Text("Copy")),
+				h.Pre(h.Class("code-block"), h.ID("naisd-bootstrap-command"), g.Text(naisdInstallCommand(tenant.Name, environment, gcpProjectID))),
+			),
+			h.P(h.Class("text-muted"), g.Text("The naisd Pub/Sub subscription and service account must be provisioned first (tenant terraform).")),
+		),
+	)
+}
+
+func naisdInstallCommand(tenantName string, environment *Environment, gcpProjectID string) string {
+	if gcpProjectID == "" {
+		gcpProjectID = "<gcp-project-id>"
+	}
+	management := "false"
+	if environment.Kind == envpkg.EnvironmentKindManagement {
+		management = "true"
+	}
+	lines := []string{
+		"helm install naisd oci://europe-north1-docker.pkg.dev/nais-io/nais/feature/naisd",
+		"--namespace nais-system",
+		"--create-namespace",
+		"--set tenantName=" + tenantName,
+		"--set env=" + environment.Name,
+		"--set envProjectId=" + gcpProjectID,
+		"--set deploySubscription=naisd-fasit-" + environment.Name,
+		"--set management=" + management,
+	}
+	if environment.Kind == envpkg.EnvironmentKindOnprem {
+		lines = append(lines,
+			"--set google.useServiceAccountKey=true",
+			"--set-file google.serviceAccountKey=<naisd service account key.json>",
+		)
+	}
+	return strings.Join(lines, " \\\n  ")
 }
 
 func naisdHealthOverviewItem(health environmentHealth) g.Node {

@@ -68,6 +68,61 @@ func TestEnvironmentDetailsRendersNaisdHealthAsCallout(t *testing.T) {
 	}
 }
 
+func TestEnvironmentPageShowsNaisdBootstrapUntilFirstReport(t *testing.T) {
+	env := &Environment{Environment: &environment2.Environment{Name: "dev", Kind: environment2.EnvironmentKindTenant}}
+	tenant := &environment2.Tenant{Name: "dev-nais"}
+
+	render := func(health environmentHealth) string {
+		var buf bytes.Buffer
+		node := page(
+			[]breadcrumb.Crumb{breadcrumb.Environments(), {Label: "dev-nais"}, breadcrumb.EnvironmentWithSwitcher("dev-nais", "dev", nil)},
+			environmentTabFeatures,
+			tenant,
+			env,
+			nil, nil, nil,
+			"my-project-123",
+			"",
+			nil, nil,
+			health,
+		)
+		if err := node.Render(&buf); err != nil {
+			t.Fatal(err)
+		}
+		return buf.String()
+	}
+
+	html := render(environmentHealth{})
+	for _, want := range []string{
+		"Install naisd",
+		"helm install naisd oci://europe-north1-docker.pkg.dev/nais-io/nais/feature/naisd",
+		`--set tenantName=dev-nais`,
+		`--set env=dev`,
+		`--set envProjectId=my-project-123`,
+		`--set deploySubscription=naisd-fasit-dev`,
+		`--set management=false`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("bootstrap card should contain %q", want)
+		}
+	}
+
+	html = render(environmentHealth{ReportedAt: time.Now(), HasReport: true})
+	if strings.Contains(html, "Install naisd") {
+		t.Errorf("bootstrap card should disappear once naisd has reported")
+	}
+}
+
+func TestNaisdInstallCommandOnprem(t *testing.T) {
+	env := &Environment{Environment: &environment2.Environment{Name: "onprem", Kind: environment2.EnvironmentKindOnprem}}
+	cmd := naisdInstallCommand("nav", env, "")
+	if !strings.Contains(cmd, `--set envProjectId=<gcp-project-id>`) {
+		t.Errorf("missing project id should render a placeholder: %s", cmd)
+	}
+	if !strings.Contains(cmd, "google.useServiceAccountKey") {
+		t.Errorf("onprem should include service account key flags: %s", cmd)
+	}
+}
+
 func TestNaisdHealthBucket(t *testing.T) {
 	now := time.Date(2026, 5, 27, 12, 0, 0, 0, time.UTC)
 	tests := []struct {
