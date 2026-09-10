@@ -470,7 +470,6 @@ func naisdBootstrapCard(tenant *envpkg.Tenant, environment *Environment, gcpProj
 				h.Button(h.Type("button"), h.Class("copy-btn"), g.Attr("data-copy-target", "naisd-bootstrap-command"), g.Text("Copy")),
 				h.Pre(h.Class("code-block"), h.ID("naisd-bootstrap-command"), g.Text(naisdInstallCommand(tenant.Name, environment, gcpProjectID))),
 			),
-			h.P(h.Class("text-muted"), g.Text("The naisd Pub/Sub subscription and service account must be provisioned first (tenant terraform).")),
 		),
 	)
 }
