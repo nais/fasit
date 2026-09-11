@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/reconciler"
@@ -60,7 +61,7 @@ func CreateHandler() http.HandlerFunc {
 			}
 		}
 
-		_, err := featureassignment.Create(r.Context(), featureassignment.CreateFeatureAssignment{
+		id, err := featureassignment.Create(r.Context(), featureassignment.CreateFeatureAssignment{
 			Chart:       chart,
 			Version:     version,
 			Description: assignmentDescription,
@@ -77,10 +78,28 @@ func CreateHandler() http.HandlerFunc {
 		if ref := r.Referer(); ref != "" {
 			if u, err := url.Parse(ref); err == nil && u.Host == r.Host {
 				redirect = u.Path
+				if detailURL := newAssignmentDetailURL(u.Path, id); detailURL != "" {
+					redirect = detailURL
+				}
 			}
 		}
-		http.Redirect(w, r, redirect, http.StatusSeeOther) // #nosec G710 -- redirect is the Referer path only when its host == r.Host, forcing a same-origin relative path
+		http.Redirect(w, r, redirect, http.StatusSeeOther) // #nosec G710 -- redirect is the Referer path, or derived from it, only when its host == r.Host, forcing a same-origin relative path
 	}
+}
+
+// newAssignmentDetailURL returns the detail page URL for the newly created
+// assignment when refererPath is an assignment detail page. Setting a version
+// from a detail page supersedes that assignment, so returning there would land
+// the user on the old version.
+func newAssignmentDetailURL(refererPath string, id uuid.UUID) string {
+	parts := strings.Split(strings.Trim(refererPath, "/"), "/")
+	if len(parts) != 4 || parts[0] != "features" || parts[2] != "assignments" {
+		return ""
+	}
+	if _, err := uuid.Parse(parts[3]); err != nil {
+		return ""
+	}
+	return "/features/" + parts[1] + "/assignments/" + id.String()
 }
 
 func requestedVersion(form url.Values) string {
