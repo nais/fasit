@@ -106,6 +106,10 @@ func TestCreateEnvironment(t *testing.T) {
 		if resp.GetEnvironment().GetTenantId() != tenant.GetId() {
 			t.Errorf("tenant id = %q, want %q", resp.GetEnvironment().GetTenantId(), tenant.GetId())
 		}
+		labels := resp.GetEnvironment().GetLabels()
+		if len(labels) != 1 || labels[0].GetKey() != "team" || labels[0].GetValue() != "platform" {
+			t.Errorf("labels = %v, want one team=platform label", labels)
+		}
 
 		got := latestAudit(ctx, t, pool)
 		assertAudit(t, got, audit.ActionCreated, audit.ObjectTypeEnvironment, resp.GetEnvironment().GetId())

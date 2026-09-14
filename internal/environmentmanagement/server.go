@@ -122,9 +122,12 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 
 	return &protogen.CreateEnvironmentResponse{
 		Environment: &protogen.Environment{
-			Id:       env.ID.String(),
-			TenantId: tenant.ID.String(),
-			Name:     env.Name,
+			Id:               env.ID.String(),
+			TenantId:         tenant.ID.String(),
+			Name:             env.Name,
+			Labels:           labelsToProto(env.Labels),
+			OidcIssuer:       env.OidcIssuer,
+			OidcDiscoveryUrl: env.OidcDiscoveryUrl,
 		},
 	}, nil
 }
