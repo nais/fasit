@@ -328,7 +328,7 @@ func (f *Feature) SecretKeys() []string {
 func FromChart(chartURL, version string) (*Feature, error) {
 	resp, err := DownloadChartFunc(chartURL, version, "")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to download chart: %w", err)
 	}
 
 	chart, err := loader.LoadArchive(resp)
@@ -345,7 +345,7 @@ func FromChart(chartURL, version string) (*Feature, error) {
 		if f.Name == "Feature.yaml" {
 			hasFeatureYAML = true
 			if err := yaml.NewDecoder(bytes.NewReader(f.Data)).Decode(&feat.FeatureYAML); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to parse Feature.yaml: %w", err)
 			}
 			break
 		}
@@ -355,7 +355,7 @@ func FromChart(chartURL, version string) (*Feature, error) {
 	}
 
 	if err := feat.parseChartYAML(chart.Metadata); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse Chart.yaml: %w", err)
 	}
 	if err := chartutil.ProcessDependencies(chart, chart.Values); err != nil {
 		return nil, fmt.Errorf("unable to process dependencies: %w", err)
