@@ -62,7 +62,7 @@ func SiteHeader(currentPage Page, userEmail string, hideSearch bool, appVersion 
 				h.A(h.Href("/reconciler"), h.Class("kebab-item"), g.Text("Reconciler")),
 				h.A(h.Href("/template-test"), h.Class("kebab-item"), g.Text("Template tester")),
 				h.A(
-					h.Href("https://vedtak.nais.io/"),
+					h.Href("https://m8e.nais.io/"),
 					h.Class("kebab-item"),
 					g.Attr("target", "_blank"),
 					g.Attr("rel", "noopener noreferrer"),
