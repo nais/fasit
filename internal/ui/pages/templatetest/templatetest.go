@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -18,6 +20,10 @@ import (
 )
 
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
+
+// previewKey is a synthetic value key used to render ad-hoc templates in a
+// feature's context when no existing key is selected.
+const previewKey = "template-tester.preview"
 
 func Handler(renderPage RenderPage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +63,19 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			}
 		}
 
+		var featureNames []string
+		if envID != uuid.Nil {
+			assignments, err := featureassignment.ListForEnvironment(ctx, envID)
+			if err != nil {
+				http.Error(w, "Failed to load features", http.StatusInternalServerError)
+				return
+			}
+			for _, a := range assignments {
+				featureNames = append(featureNames, a.Feature.Name)
+			}
+			sort.Strings(featureNames)
+		}
+
 		// Pre-fill template from feature's computed key if not explicitly provided
 		if template == "" && featureName != "" && key != "" && envID != uuid.Nil {
 			feat, err := featureassignment.FeatureForEnvironment(ctx, envID, featureName)
@@ -69,8 +88,12 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 
 		// Render if we have both env and template
 		if envID != uuid.Nil && template != "" {
-			if featureName != "" && key != "" {
-				result, renderErr = renderWithFeature(ctx, featureName, envID, key, template)
+			if featureName != "" {
+				lookupKey := key
+				if lookupKey == "" {
+					lookupKey = previewKey
+				}
+				result, renderErr = renderWithFeature(ctx, featureName, envID, lookupKey, template)
 			} else {
 				mv, _, mvErr := featurepkg.MappingValuesForEnvironment(ctx, envID, false)
 				if mvErr != nil {
@@ -84,7 +107,7 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		renderPage(w, r, layout.Props{
 			Title:       "Template tester",
 			CurrentPage: components.PageTemplateTester,
-			Content:     templateTestPage(tenantEnvs, template, tenantName, envName, featureName, key, result, renderErr),
+			Content:     templateTestPage(tenantEnvs, featureNames, envID != uuid.Nil, template, tenantName, envName, featureName, key, result, renderErr),
 		})
 	}
 }
@@ -146,7 +169,7 @@ func lookupHelmValue(m map[string]any, key string) (string, bool) {
 	}
 }
 
-func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, template, selectedTenant, selectedEnv, featureName, key, result string, renderErr error) g.Node {
+func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, featureNames []string, hasEnv bool, template, selectedTenant, selectedEnv, featureName, key, result string, renderErr error) g.Node {
 	envOpts := make([]g.Node, 0, len(tenantEnvs)+1)
 	envOpts = append(envOpts, h.Option(h.Value(""), g.Text("Select environment…")))
 	for _, te := range tenantEnvs {
@@ -158,6 +181,28 @@ func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, template, selected
 		envOpts = append(envOpts, h.Option(attrs...))
 	}
 
+	featureOpts := make([]g.Node, 0, len(featureNames)+2)
+	featureOpts = append(featureOpts, h.Option(h.Value(""), g.Text("(no feature)")))
+	// Keep a feature passed via URL (e.g. from a feature's "Test template"
+	// link) selectable even if it is not assigned in the chosen environment.
+	if featureName != "" && !slices.Contains(featureNames, featureName) {
+		featureNames = append(featureNames, featureName)
+	}
+	for _, name := range featureNames {
+		attrs := []g.Node{h.Value(name), g.Text(name)}
+		if name == featureName {
+			attrs = append(attrs, g.Attr("selected", "selected"))
+		}
+		featureOpts = append(featureOpts, h.Option(attrs...))
+	}
+
+	featureSelectAttrs := []g.Node{h.Name("feature"), h.ID("feature-select"), g.Group(featureOpts)}
+	featureHint := "Selecting a feature renders with its real configuration values (.Configs). Without one, only environment data (.Env, .Tenant, .Envs, ...) is available."
+	if !hasEnv {
+		featureSelectAttrs = append(featureSelectAttrs, h.Disabled())
+		featureHint = "Select an environment to choose a feature."
+	}
+
 	var resultNode g.Node
 	if renderErr != nil {
 		resultNode = h.Pre(h.Class("code-block template-test-error"), g.Text(renderErr.Error()))
@@ -167,13 +212,11 @@ func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, template, selected
 		resultNode = h.Pre(h.Class("code-block template-test-empty"), g.Text("Result will appear here"))
 	}
 
-	// Hidden fields to preserve feature/key context across form submissions
-	var hiddenFields g.Node
-	if featureName != "" {
-		hiddenFields = g.Group([]g.Node{
-			h.Input(h.Type("hidden"), h.Name("feature"), h.Value(featureName)),
-			h.Input(h.Type("hidden"), h.Name("key"), h.Value(key)),
-		})
+	// Preserve key context across form submissions when arriving from a
+	// feature's "Test template" link.
+	var keyField g.Node
+	if key != "" {
+		keyField = h.Input(h.Type("hidden"), h.Name("key"), h.Value(key))
 	}
 
 	return h.Div(
@@ -188,11 +231,17 @@ func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, template, selected
 						h.H2(g.Text("Template tester")),
 						h.Form(
 							h.Method("GET"), h.Class("template-test-page-form"),
-							hiddenFields,
+							keyField,
 							h.Div(
 								h.Class("form-group"),
 								h.Label(h.For("env-select"), g.Text("Environment")),
-								h.Select(h.Name("env"), h.ID("env-select"), g.Group(envOpts)),
+								h.Select(h.Name("env"), h.ID("env-select"), g.Attr("onchange", "const f=this.form;f.feature.value='';if(f.key){f.key.value='';f.template.value='';}f.submit()"), g.Group(envOpts)),
+							),
+							h.Div(
+								h.Class("form-group"),
+								h.Label(h.For("feature-select"), g.Text("Feature (optional)")),
+								h.Select(featureSelectAttrs...),
+								h.Small(h.Class("text-muted"), g.Text(featureHint)),
 							),
 							h.Div(
 								h.Class("form-group"),

@@ -2777,6 +2777,14 @@ tr.assignment-non-workflow td:first-child {
   color: var(--text-primary);
   font: inherit;
 }
+#feature-select:has(option[value=""]:checked) {
+  font-style: italic;
+  color: var(--text-muted);
+}
+#feature-select option[value=""] {
+  font-style: italic;
+  color: var(--text-faint);
+}
 .template-test-page-form textarea {
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 0.85rem;
