@@ -1622,6 +1622,11 @@ textarea.bulk-value-input {
 .popover-header h3 {
   margin: 0;
 }
+.popover-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 [popover] .popover-header .popover-close {
   background: none;
   border: none;

@@ -81,6 +81,28 @@ func findElements(n *html.Node, tag string) []*html.Node {
 	return result
 }
 
+func TestLogBlockRendersCopyableLogContent(t *testing.T) {
+	var buf bytes.Buffer
+	if err := logBlock("deploy-log", []LogLine{{Timestamp: "12:34:56", Message: "deployed"}}).Render(&buf); err != nil {
+		t.Fatalf("render log block: %v", err)
+	}
+
+	if html := buf.String(); !strings.Contains(html, `<pre id="deploy-log" class="code-block">12:34:56 deployed</pre>`) {
+		t.Errorf("log block missing copyable log content: %s", html)
+	}
+}
+
+func TestCopyLogButtonTargetsLogBlock(t *testing.T) {
+	var buf bytes.Buffer
+	if err := copyLogButton("deploy-log").Render(&buf); err != nil {
+		t.Fatalf("render copy button: %v", err)
+	}
+
+	if html := buf.String(); !strings.Contains(html, `data-copy-target="deploy-log"`) {
+		t.Errorf("copy button missing log target: %s", html)
+	}
+}
+
 func TestFeatureSidebarUsesFeatureEnvironmentList(t *testing.T) {
 	page := &FeaturePage{
 		Feature:     &FeatureDetail{Feature: &feature.Feature{Name: "azureator-nav"}},

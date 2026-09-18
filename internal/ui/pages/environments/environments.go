@@ -54,9 +54,10 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:       "Environments",
-			CurrentPage: components.PageEnvironments,
-			Content:     page(rows, query, time.Now()),
+			Title:           "Environments",
+			CurrentPage:     components.PageEnvironments,
+			Content:         page(rows, query, time.Now()),
+			RefreshInterval: time.Minute,
 		})
 	}
 }

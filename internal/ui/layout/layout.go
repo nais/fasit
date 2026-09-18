@@ -2,6 +2,8 @@ package layout
 
 import (
 	"encoding/json"
+	"strconv"
+	"time"
 
 	"github.com/nais/fasit/internal/ui/components"
 	g "maragu.dev/gomponents"
@@ -19,6 +21,7 @@ type Props struct {
 	FeatureNames     []string
 	Scripts          []string
 	AppVersion       string
+	RefreshInterval  time.Duration
 }
 
 func featureNamesScript(names []string) g.Node {
@@ -40,23 +43,28 @@ func Page(props Props) g.Node {
 		v = "?v=" + props.AssetVersion
 	}
 
+	head := []g.Node{
+		h.Meta(h.Name("viewport"), h.Content("width=1024")),
+		h.Meta(h.Name("color-scheme"), h.Content("dark light")),
+		h.Link(h.Rel("icon"), h.Type("image/svg+xml"), h.Href("/favicon.svg"+v)),
+		h.Link(h.Rel("icon"), h.Href("/favicon.ico"+v)),
+		h.Script(g.Raw(`(function(){var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t})()`)),
+		h.StyleEl(g.Raw(`html{background:#1a1a1a;color:#ddd}html[data-theme="light"]{background:#f5f5f5;color:#333}`)),
+		featureNamesScript(props.FeatureNames),
+		h.Link(h.Rel("stylesheet"), h.Href("/site.css"+v)),
+		h.Script(h.Src("/site.js"+v), h.Defer()),
+		g.Group(g.Map(props.Scripts, func(s string) g.Node {
+			return h.Script(h.Src("/"+s+v), h.Defer())
+		})),
+	}
+	if props.RefreshInterval > 0 {
+		head = append(head, h.Meta(g.Attr("http-equiv", "refresh"), h.Content(strconv.Itoa(int(props.RefreshInterval.Seconds())))))
+	}
+
 	return c.HTML5(c.HTML5Props{
 		Title:    title,
 		Language: "en",
-		Head: []g.Node{
-			h.Meta(h.Name("viewport"), h.Content("width=1024")),
-			h.Meta(h.Name("color-scheme"), h.Content("dark light")),
-			h.Link(h.Rel("icon"), h.Type("image/svg+xml"), h.Href("/favicon.svg"+v)),
-			h.Link(h.Rel("icon"), h.Href("/favicon.ico"+v)),
-			h.Script(g.Raw(`(function(){var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t})()`)),
-			h.StyleEl(g.Raw(`html{background:#1a1a1a;color:#ddd}html[data-theme="light"]{background:#f5f5f5;color:#333}`)),
-			featureNamesScript(props.FeatureNames),
-			h.Link(h.Rel("stylesheet"), h.Href("/site.css"+v)),
-			h.Script(h.Src("/site.js"+v), h.Defer()),
-			g.Group(g.Map(props.Scripts, func(s string) g.Node {
-				return h.Script(h.Src("/"+s+v), h.Defer())
-			})),
-		},
+		Head:     head,
 		Body: []g.Node{
 			components.SiteHeader(props.CurrentPage, props.UserEmail, props.HideHeaderSearch, props.AppVersion),
 			props.Content,

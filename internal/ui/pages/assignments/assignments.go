@@ -94,10 +94,11 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:       "Assignments",
-			CurrentPage: components.PageAssignments,
-			Content:     listPage(rows, query),
-			Scripts:     []string{"assignments.js"},
+			Title:           "Assignments",
+			CurrentPage:     components.PageAssignments,
+			Content:         listPage(rows, query),
+			Scripts:         []string{"assignments.js"},
+			RefreshInterval: time.Minute,
 		})
 	}
 }

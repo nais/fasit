@@ -10,11 +10,17 @@ import (
 // doubles as the close button's popovertarget. class is applied to the popover
 // element when non-empty (e.g. "popover-wide").
 func Popover(id, class, title string, body ...g.Node) g.Node {
+	return PopoverWithHeaderActions(id, class, title, nil, body...)
+}
+
+// PopoverWithHeaderActions renders a popover with optional actions next to its
+// close button.
+func PopoverWithHeaderActions(id, class, title string, actions []g.Node, body ...g.Node) g.Node {
 	attrs := []g.Node{g.Attr("popover", ""), h.ID(id)}
 	if class != "" {
 		attrs = append(attrs, h.Class(class))
 	}
-	attrs = append(attrs, popoverHeader(id, title))
+	attrs = append(attrs, popoverHeader(id, title, actions...))
 	attrs = append(attrs, body...)
 	return h.Div(attrs...)
 }
@@ -33,11 +39,11 @@ func PopoverCloseButton(popoverID string) g.Node {
 		g.Attr("aria-label", "Close"), g.Raw("&times;"))
 }
 
-func popoverHeader(id, title string) g.Node {
+func popoverHeader(id, title string, actions ...g.Node) g.Node {
 	return h.Div(
 		h.Class("popover-header"),
 		h.H3(g.Text(title)),
-		PopoverCloseButton(id),
+		h.Div(h.Class("popover-header-actions"), g.Group(actions), PopoverCloseButton(id)),
 	)
 }
 

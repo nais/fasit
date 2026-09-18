@@ -688,9 +688,10 @@ func deployLogsPopover(page *FeaturePage) g.Node {
 	if page.FeatureLog == nil || len(page.FeatureLog.CurrentLog) == 0 {
 		return nil
 	}
-	return components.Popover(
+	return components.PopoverWithHeaderActions(
 		"deploy-logs", "popover-wide", "Logs",
-		h.Div(h.Class("popover-scroll"), logBlock(page.FeatureLog.CurrentLog)),
+		[]g.Node{copyLogButton("current-deploy-log")},
+		h.Div(h.Class("popover-scroll"), logBlock("current-deploy-log", page.FeatureLog.CurrentLog)),
 	)
 }
 
@@ -719,7 +720,12 @@ func deployHistoryPopover(page *FeaturePage) g.Node {
 		lines := page.DeployLogs[di.ID]
 		var body g.Node
 		if len(lines) > 0 {
-			body = h.Div(h.Class("popover-scroll"), logBlock(lines))
+			logID := "deploy-log-" + di.ID.String()
+			body = h.Div(
+				h.Class("popover-scroll"),
+				h.Div(h.Class("code-block-header"), copyLogButton(logID)),
+				logBlock(logID, lines),
+			)
 		} else {
 			body = h.P(h.Class("text-muted deploy-history-empty"), g.Text("No Helm logs for this deploy."))
 		}
@@ -1048,7 +1054,11 @@ func sourceBadge(item FeatureConfigItem) g.Node {
 	return h.Span(h.Class(cls), h.Title(title), g.Text(label))
 }
 
-func logBlock(lines []LogLine) g.Node {
+func copyLogButton(id string) g.Node {
+	return h.Button(h.Type("button"), h.Class("copy-btn"), g.Attr("data-copy-target", id), g.Text("Copy"))
+}
+
+func logBlock(id string, lines []LogLine) g.Node {
 	nodes := make([]g.Node, 0, len(lines)*2)
 	for i, line := range lines {
 		if i > 0 {
@@ -1060,7 +1070,7 @@ func logBlock(lines []LogLine) g.Node {
 			nodes = append(nodes, g.Text(line.Message))
 		}
 	}
-	return h.Pre(h.Class("code-block"), g.Group(nodes))
+	return h.Pre(h.ID(id), h.Class("code-block"), g.Group(nodes))
 }
 
 func assignmentsTab(page *FeaturePage) g.Node {

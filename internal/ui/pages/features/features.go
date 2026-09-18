@@ -79,7 +79,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 			})
 		}
 
-		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(rows, audits), HideHeaderSearch: true})
+		renderPage(w, r, layout.Props{Title: "Home", CurrentPage: components.PageHome, Content: listPage(rows, audits), HideHeaderSearch: true, RefreshInterval: time.Minute})
 	}
 }
 
@@ -102,7 +102,7 @@ func IndexHandler(renderPage RenderPage) http.HandlerFunc {
 			return rows[i].Name < rows[j].Name
 		})
 
-		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: featureIndexPage(rows, query)})
+		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: featureIndexPage(rows, query), RefreshInterval: time.Minute})
 	}
 }
 
