@@ -65,7 +65,7 @@ Never modify or delete existing tests — especially integration tests in `integ
 
 ## Database
 
-PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). `database.Repo` composes domain-specific repo interfaces; some domains have their own sqlc querier via context loader instead.
+PostgreSQL 18. Migrations in `internal/database/migrations/` (goose, embedded). `database.Repo` composes domain-specific repo interfaces; some domains have their own sqlc querier via context loader instead.
 
 ## Code Style
 

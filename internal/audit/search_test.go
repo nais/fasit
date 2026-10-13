@@ -21,7 +21,7 @@ func discardLog() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard,
 func startPostgres(ctx context.Context, t *testing.T) (*postgres.PostgresContainer, string) {
 	t.Helper()
 	container, err := postgres.Run(
-		ctx, "docker.io/postgres:16-alpine",
+		ctx, "docker.io/postgres:18-alpine",
 		postgres.WithDatabase("test"), postgres.WithUsername("test"), postgres.WithPassword("test"),
 		postgres.WithSQLDriver("pgx"), postgres.BasicWaitStrategies(),
 	)

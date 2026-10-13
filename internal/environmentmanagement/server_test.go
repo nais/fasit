@@ -560,7 +560,7 @@ func startPostgresContainer(ctx context.Context, t *testing.T) *postgres.Postgre
 	t.Helper()
 	container, err := postgres.Run(
 		ctx,
-		"docker.io/postgres:16-alpine",
+		"docker.io/postgres:18-alpine",
 		postgres.WithDatabase("test"),
 		postgres.WithUsername("test"),
 		postgres.WithPassword("test"),

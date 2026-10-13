@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:14
+    image: postgres:18
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fasit
@@ -8,7 +8,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data-18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h localhost -U postgres"]
       interval: 10s
@@ -22,4 +22,4 @@ services:
     ports:
       - 8081:8080
 volumes:
-  db-data:
+  db-data-18:
