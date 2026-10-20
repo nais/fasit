@@ -264,9 +264,6 @@ func featureEnvironments(ctx context.Context, feat *featurepkg.Feature) ([]confi
 	}
 	var allEnvs []envInfo
 	for _, te := range tenantEnvs {
-		if !featureTargetsKind(feat.EnvironmentKinds, te.Kind) {
-			continue
-		}
 		env := te.Environment
 		allEnvs = append(allEnvs, envInfo{env: &env, tenantName: te.TenantName, labels: te.Labels})
 	}

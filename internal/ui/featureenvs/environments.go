@@ -2,7 +2,6 @@ package featureenvs
 
 import (
 	"context"
-	"slices"
 	"sort"
 	"time"
 
@@ -108,9 +107,6 @@ func targetedEnvironments(ctx context.Context, feature *featurepkg.Feature) []en
 
 	var ret []envInfo
 	for _, te := range envs {
-		if !featureTargetsKind(feature.EnvironmentKinds, te.Kind) {
-			continue
-		}
 		env := te.Environment
 		ret = append(ret, envInfo{env: &env, tenantName: te.TenantName, labels: te.Labels})
 	}
@@ -181,11 +177,4 @@ func targetMatchesLabels(target, envLabels map[string]string) bool {
 		}
 	}
 	return true
-}
-
-func featureTargetsKind(kinds []envpkg.EnvironmentKind, envKind envpkg.EnvironmentKind) bool {
-	if len(kinds) == 0 {
-		return true
-	}
-	return slices.Contains(kinds, envKind)
 }

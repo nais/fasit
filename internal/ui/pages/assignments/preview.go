@@ -8,8 +8,7 @@ import (
 )
 
 type previewRequest struct {
-	Labels map[string]string             `json:"labels"`
-	Kinds  []environment.EnvironmentKind `json:"kinds"`
+	Labels map[string]string `json:"labels"`
 }
 
 type previewEnvironment struct {
@@ -34,7 +33,7 @@ func PreviewTargetsHandler() http.HandlerFunc {
 
 		var matched []previewEnvironment
 		for _, te := range tenantEnvs {
-			if matchesKind(te.Kind, req.Kinds) && matchesLabels(te.Labels, req.Labels) {
+			if matchesLabels(te.Labels, req.Labels) {
 				matched = append(matched, previewEnvironment{
 					Tenant:      te.TenantName,
 					Environment: te.Name,
@@ -49,18 +48,6 @@ func PreviewTargetsHandler() http.HandlerFunc {
 			return
 		}
 	}
-}
-
-func matchesKind(kind environment.EnvironmentKind, kinds []environment.EnvironmentKind) bool {
-	if len(kinds) == 0 {
-		return true
-	}
-	for _, candidate := range kinds {
-		if candidate == kind {
-			return true
-		}
-	}
-	return false
 }
 
 // matchesLabels returns true if env labels contain all target labels.

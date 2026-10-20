@@ -37,10 +37,6 @@ func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) 
 		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
 	}
 
-	if len(feat.EnvironmentKinds) == 0 {
-		return uuid.Nil, fmt.Errorf("no environments defined in Feature.yaml")
-	}
-
 	if feat.Source == "" {
 		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
 	}
