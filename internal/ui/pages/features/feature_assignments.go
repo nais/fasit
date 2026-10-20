@@ -2,6 +2,7 @@ package features
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -743,15 +744,24 @@ func labelPills(labels map[string]string) g.Node {
 }
 
 func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Feature) []AssignmentEnvStatus {
+	log := slog.With("feature", feature.Name)
+	fail := func(step string, err error) []AssignmentEnvStatus {
+		log.With("step", step, "err", err).Error("loading assignment environment statuses")
+		return []AssignmentEnvStatus{}
+	}
+
 	fas, err := featureassignment.ListByFeature(ctx, feature.Name)
-	if err != nil || len(fas) == 0 {
+	if err != nil {
+		return fail("list assignments", err)
+	}
+	if len(fas) == 0 {
 		return []AssignmentEnvStatus{}
 	}
 	fas = latestAssignmentPerTarget(fas)
 
 	tenantEnvs, err := envpkg.ListTenantEnvironments(ctx, false)
 	if err != nil {
-		return []AssignmentEnvStatus{}
+		return fail("list tenant environments", err)
 	}
 
 	type envInfo struct {
@@ -783,7 +793,7 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 
 	statusesByFA, err := reconciler.AllReconcileStatuses(ctx)
 	if err != nil {
-		return []AssignmentEnvStatus{}
+		return fail("reconcile statuses", err)
 	}
 	statusByAssignmentEnv := map[string]*reconciler.FeatureReconcileStatus{}
 	for _, fa := range fas {
@@ -794,19 +804,19 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 
 	disabledByEnv, err := featurepkg.ListDisabledEnvironmentsForFeature(ctx, feature.Name)
 	if err != nil {
-		return []AssignmentEnvStatus{}
+		return fail("disabled environments", err)
 	}
 	latestDeployed, err := featurepkg.LatestDeployedForFeature(ctx, feature.Name)
 	if err != nil {
-		return []AssignmentEnvStatus{}
+		return fail("latest deployed", err)
 	}
 	latestInstruction, err := featurepkg.LatestDeployInstructionsForFeature(ctx, feature.Name)
 	if err != nil {
-		return []AssignmentEnvStatus{}
+		return fail("latest deploy instructions", err)
 	}
 	releaseByEnv, err := naisdstatus.ReleaseStatusesForFeature(ctx, feature.Name)
 	if err != nil {
-		return []AssignmentEnvStatus{}
+		return fail("release statuses", err)
 	}
 
 	ret := []AssignmentEnvStatus{}
