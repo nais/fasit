@@ -112,16 +112,13 @@ func assignmentCreators(ctx context.Context, envs []AssignmentEnvStatus) (map[st
 	return ret, nil
 }
 
-func loadAssignmentLabelOptions(ctx context.Context, feature *featurepkg.Feature) ([]assignmentLabelOption, error) {
+func loadAssignmentLabelOptions(ctx context.Context) ([]assignmentLabelOption, error) {
 	tenantEnvs, err := envpkg.ListTenantEnvironments(ctx, false)
 	if err != nil {
 		return nil, err
 	}
 	valuesByKey := make(map[string]map[string]struct{})
 	for _, tenantEnv := range tenantEnvs {
-		if !featureTargetsKind(feature.EnvironmentKinds, tenantEnv.Kind) {
-			continue
-		}
 		for key, value := range tenantEnv.Labels {
 			if valuesByKey[key] == nil {
 				valuesByKey[key] = make(map[string]struct{})
@@ -623,9 +620,6 @@ func formatLabels(labels map[string]string) string {
 }
 
 func newFeatureAssignmentPopover(data *DetailPage) g.Node {
-	kindInputs := g.Map(data.CurrentFeature.EnvironmentKinds, func(kind envpkg.EnvironmentKind) g.Node {
-		return h.Input(h.Type("hidden"), h.Name("environment_kind"), h.Value(string(kind)))
-	})
 	labelOptions := g.Map(data.AssignmentLabelOptions, func(option assignmentLabelOption) g.Node {
 		values := g.Map(option.Values, func(value string) g.Node {
 			return h.Span(g.Attr("data-label-value", ""), g.Text(value))
@@ -638,7 +632,6 @@ func newFeatureAssignmentPopover(data *DetailPage) g.Node {
 		h.Form(
 			h.Method("POST"), h.Action("/assignments"), g.Attr("data-assignment-form", ""),
 			h.Input(h.Type("hidden"), h.Name("chart"), h.Value(data.CurrentFeature.Chart)),
-			g.Group(kindInputs),
 			h.Label(h.ID("assignment-version-label"), g.Text("Version")),
 			versionSelect("assignment-version", "assignment-custom-version", "assignment-version-label", data.AssignmentVersions),
 			g.If(data.AssignmentVersionsError != "",
@@ -771,9 +764,6 @@ func featureAssignmentEnvStatuses(ctx context.Context, feature *featurepkg.Featu
 	}
 	var allEnvs []envInfo
 	for _, te := range tenantEnvs {
-		if !featureTargetsKind(feature.EnvironmentKinds, te.Kind) {
-			continue
-		}
 		env := te.Environment
 		allEnvs = append(allEnvs, envInfo{env: &env, tenantName: te.TenantName, labels: te.Labels})
 	}

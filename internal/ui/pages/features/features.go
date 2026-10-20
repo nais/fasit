@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	helmpkg "github.com/nais/fasit/internal/helm"
@@ -140,7 +138,7 @@ func DeploySpecsHandler(renderPage RenderPage) http.HandlerFunc {
 			data.AssignmentVersionsError = "Could not load versions from the chart registry. Enter a version manually."
 			slog.With("chart", data.CurrentFeature.Chart, "err", registryErr).Warn("failed to list chart versions")
 		}
-		data.AssignmentLabelOptions, err = loadAssignmentLabelOptions(r.Context(), data.CurrentFeature)
+		data.AssignmentLabelOptions, err = loadAssignmentLabelOptions(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load environment labels", http.StatusInternalServerError)
 			return
@@ -530,11 +528,4 @@ func toFeatureNavs(names []string) []view.FeatureNav {
 		return ret[i].Name < ret[j].Name
 	})
 	return ret
-}
-
-func featureTargetsKind(kinds []environment.EnvironmentKind, envKind environment.EnvironmentKind) bool {
-	if len(kinds) == 0 {
-		return true
-	}
-	return slices.Contains(kinds, envKind)
 }

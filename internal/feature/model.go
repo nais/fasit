@@ -225,7 +225,7 @@ type Feature struct {
 
 type FeatureYAML struct {
 	Dependencies     Dependencies                  `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
-	EnvironmentKinds []environment.EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,required"`
+	EnvironmentKinds []environment.EnvironmentKind `json:"environmentKinds,omitempty" yaml:"environmentKinds,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem" jsonschema_description:"Deprecated: ignored by Fasit. Assignment target labels decide where a feature is deployed."`
 	Timeout          time.Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 	Values           Values                        `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
 }

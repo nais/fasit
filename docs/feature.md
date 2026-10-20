@@ -33,18 +33,14 @@ To make the chart into a feature, you must create a `Feature.yaml` file in the s
 Minimal example:
 
 ```yaml
-# environmentKinds defines which environments the feature can be enabled in.
-environmentKinds:
-  - tenant
+values: {}
 ```
+
+> `environmentKinds` is deprecated and ignored. Where a feature is deployed is decided only by the target labels of its assignments (for example `kind: tenant`).
 
 Complete example:
 
 ```yaml
-environmentKinds:
-  - management
-  - tenant
-  - onprem
 # list of values that will be provided by Fasit, either as a computed value or manually entered (config).
 values:
   # The key is the key used in the values.yaml file.
@@ -104,8 +100,6 @@ Examples
 Simple `allOf`:
 
 ```yaml
-environmentKinds:
-  - tenant
 dependencies:
   - allOf: ["monitoring-crds"]
 ```

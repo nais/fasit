@@ -51,14 +51,13 @@
     previewControllers.get(form)?.abort();
     const controller = new AbortController();
     previewControllers.set(form, controller);
-    const kinds = new FormData(form).getAll("environment_kind");
     if (!result.hasChildNodes()) renderMessage(result, "Loading matching environments…", "text-muted");
     result.classList.add("is-loading");
     result.setAttribute("aria-busy", "true");
     fetch("/assignments/preview-targets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ labels, kinds }),
+      body: JSON.stringify({ labels }),
       signal: controller.signal,
     })
       .then((response) => {

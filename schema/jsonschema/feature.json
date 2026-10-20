@@ -25,6 +25,7 @@
 			"type": "array"
 		},
 		"environmentKinds": {
+			"description": "Deprecated: ignored by Fasit. Assignment target labels decide where a feature is deployed.",
 			"items": {
 				"enum": [
 					"management",
@@ -113,8 +114,5 @@
 			"type": "object"
 		}
 	},
-	"required": [
-		"environmentKinds"
-	],
 	"type": "object"
 }
