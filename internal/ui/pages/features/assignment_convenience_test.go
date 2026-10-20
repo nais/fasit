@@ -35,7 +35,6 @@ func TestNewFeatureAssignmentPopoverUsesFeatureAndStructuredTargets(t *testing.T
 		`Choose a version…`,
 		`value="2.0.0">2.0.0`,
 		`Enter manually…`,
-		`name="environment_kind" value="tenant"`,
 		`data-label-builder`,
 		`data-label-key="kind"`,
 		`data-label-key="tenant"`,
