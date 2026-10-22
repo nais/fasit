@@ -2,6 +2,9 @@ environmentKinds:
   - tenant
   - management
   - onprem
+dependencies:
+  - allOf:
+      - fqdn-policy-crds
 values:
   tenantName:
     displayName: Tenant name
