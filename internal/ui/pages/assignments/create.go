@@ -61,7 +61,7 @@ func CreateHandler() http.HandlerFunc {
 			}
 		}
 
-		id, err := featureassignment.Create(r.Context(), featureassignment.CreateFeatureAssignment{
+		id, _, err := featureassignment.Create(r.Context(), featureassignment.CreateFeatureAssignment{
 			Chart:       chart,
 			Version:     version,
 			Description: assignmentDescription,

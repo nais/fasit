@@ -31,19 +31,19 @@ var ChartDownloader = func(chartURL, version string) (*featurepkg.Feature, error
 	return featurepkg.FromChart(chartURL, version)
 }
 
-func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) {
+func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, string, error) {
 	feat, err := ChartDownloader(in.Chart, in.Version)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
+		return uuid.Nil, "", fmt.Errorf("unable to convert oci chart: %w", err)
 	}
 
 	if feat.Source == "" {
-		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
+		return uuid.Nil, "", fmt.Errorf("no source url found in Chart.yaml")
 	}
 
 	id, err := createFeatureAssignment(ctx, feat, in.Description, in.Commit, in.Target)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, "", err
 	}
 
 	_ = audit.Create(ctx, audit.CreateParams{
@@ -59,7 +59,7 @@ func Create(ctx context.Context, in CreateFeatureAssignment) (uuid.UUID, error) 
 		},
 	})
 
-	return id, nil
+	return id, feat.Name, nil
 }
 
 func ListForEnvironment(ctx context.Context, envID uuid.UUID) ([]*FeatureAssignment, error) {
