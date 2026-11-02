@@ -96,6 +96,10 @@ func TestCreateDeploymentHTTP(t *testing.T) {
 		if _, err := uuid.Parse(resp["id"]); err != nil {
 			t.Errorf("response id should be a valid UUID: %v", err)
 		}
+
+		if resp["feature"] != "my-feature" {
+			t.Errorf("got feature %q, want %q", resp["feature"], "my-feature")
+		}
 	})
 
 	t.Run("invalid JSON returns 400", func(t *testing.T) {

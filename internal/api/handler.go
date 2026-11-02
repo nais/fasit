@@ -109,7 +109,7 @@ func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.R
 		}
 	}
 
-	assignmentID, err := featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
+	assignmentID, featureName, err := featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
 		Chart:       body.Chart,
 		Version:     body.Version,
 		Description: &body.Description,
@@ -124,7 +124,8 @@ func (h *HttpHandler) CreateFeatureAssignment(w http.ResponseWriter, req *http.R
 
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"id": assignmentID.String(),
+		"id":      assignmentID.String(),
+		"feature": featureName,
 	})
 
 	reconciler.TriggerReconcile()

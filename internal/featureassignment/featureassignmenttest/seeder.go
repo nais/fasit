@@ -98,13 +98,15 @@ func (s *Seeder) CreateAssignmentWithValues(ctx context.Context, name, version s
 }
 
 func (s *Seeder) create(ctx context.Context, d assignmentInput) (uuid.UUID, error) {
-	return featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
+	id, _, err := featureassignment.Create(ctx, featureassignment.CreateFeatureAssignment{
 		Chart:       "oci://" + d.FeatureName,
 		Version:     d.Version,
 		Description: new("Setup local environment assignment"),
 		Commit:      fakeGitHubCommit(d.FeatureName, d.Version),
 		Target:      d.Target,
 	})
+
+	return id, err
 }
 
 func (s *Seeder) ChartDownloader() featureassignment.ChartDownloaderFunc {
