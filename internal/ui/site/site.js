@@ -492,17 +492,33 @@ function dismissNavHint() {
       .catch((err) => { content.innerHTML = '<p class="text-error">Failed to load: ' + err.message + '</p>'; });
   });
 
-  // Shift+Enter submits the template tester form
+  // Shift+Enter submits the template tester form; Tab inserts a tab character
   document.addEventListener("keydown", (e) => {
-    if (e.shiftKey && e.key === "Enter" && e.target.id === "template-input") {
+    if (e.target.id !== "template-input") return;
+    if (e.shiftKey && e.key === "Enter") {
       e.preventDefault();
       e.target.closest("form").requestSubmit();
+    } else if (e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      const ta = e.target;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      ta.setRangeText("\t", start, end, "end");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
     }
   });
 
-  // Keep URL in sync with template tester form state
+  // Keep URL in sync and auto-resize template tester textarea
   const envSelect = document.getElementById("env-select");
   const templateInput = document.getElementById("template-input");
+  if (templateInput) {
+    const fitHeight = () => {
+      templateInput.style.height = "auto";
+      templateInput.style.height = templateInput.scrollHeight + "px";
+    };
+    fitHeight();
+    templateInput.addEventListener("input", fitHeight);
+  }
   if (envSelect && templateInput) {
     const syncURL = () => {
       const url = new URL(window.location);

@@ -2799,6 +2799,9 @@ tr.assignment-non-workflow td:first-child {
   padding: 0.5rem;
   color: var(--text-primary);
   resize: vertical;
+  field-sizing: content;
+  min-height: 7.5rem;
+  tab-size: 2;
 }
 .template-test-actions {
   display: flex;
