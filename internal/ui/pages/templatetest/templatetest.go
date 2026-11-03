@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -219,6 +220,8 @@ func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, featureNames []str
 		keyField = h.Input(h.Type("hidden"), h.Name("key"), h.Value(key))
 	}
 
+	rows := max(strings.Count(template, "\n")+1, 6)
+
 	return h.Div(
 		h.Class("container"),
 		h.Main(
@@ -247,7 +250,7 @@ func templateTestPage(tenantEnvs []*envpkg.TenantEnvironment, featureNames []str
 								h.Class("form-group"),
 								h.Label(h.For("template-input"), g.Text("Template")),
 								h.Textarea(
-									h.Name("template"), h.ID("template-input"), h.Rows("6"),
+									h.Name("template"), h.ID("template-input"), h.Rows(strconv.Itoa(rows)),
 									g.Text(template),
 								),
 							),
