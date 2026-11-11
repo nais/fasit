@@ -59,10 +59,6 @@ type compareRow struct {
 }
 
 func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key string, envs []configCompareEnv) ([]compareRow, error) {
-	val, hasVal := feat.Values[key]
-	isComputed := hasVal && val.Computed != nil
-	isSecret := hasVal && val.Config != nil && val.Config.Secret
-
 	globalConfigs, err := featurepkg.GetGlobalConfig(ctx, feat.Name)
 	if err != nil {
 		return nil, err
@@ -88,14 +84,20 @@ func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key str
 
 	rows := make([]compareRow, 0, len(envs))
 
-	if isComputed {
-		for _, env := range envs {
-			row := compareRow{
-				TenantName: env.TenantName,
-				EnvName:    env.Name,
-				EnvHref:    "/features/" + feat.Name + "/envs/" + env.TenantName + "/" + env.Name + "/config#config-" + key,
-			}
-			rendered, rerr := featurepkg.HelmValues(ctx, feat, env.ID)
+	for _, env := range envs {
+		envFeature, err := featureassignment.FeatureForEnvironment(ctx, env.ID, feat.Name)
+		if err != nil {
+			return nil, fmt.Errorf("load feature for %s/%s: %w", env.TenantName, env.Name, err)
+		}
+		val := envFeature.Values[key]
+		row := compareRow{
+			TenantName: env.TenantName,
+			EnvName:    env.Name,
+			IsSecret:   val.Config != nil && val.Config.Secret,
+			EnvHref:    "/features/" + feat.Name + "/envs/" + env.TenantName + "/" + env.Name + "/config#config-" + key,
+		}
+		if val.Computed != nil {
+			rendered, rerr := featurepkg.HelmValues(ctx, envFeature, env.ID)
 			if rerr != nil {
 				row.Value = "(render error)"
 				row.Source = "mapping"
@@ -106,29 +108,17 @@ func compareKeyAcrossEnvs(ctx context.Context, feat *featurepkg.Feature, key str
 				row.Value = "—"
 				row.Source = "mapping"
 			}
-			rows = append(rows, row)
+		} else if raw, ok := envOverridesByEnv[env.ID]; ok {
+			row.Value = components.RawValueForDisplay(raw)
+			row.Source = "env config"
+		} else if globalValue != nil {
+			row.Value = components.RawValueForDisplay(globalValue)
+			row.Source = "global config"
+		} else {
+			row.Value = components.RawValueForDisplay(envFeature.ValuesYAML[key])
+			row.Source = "helm value"
 		}
-	} else {
-		helmDefault := components.RawValueForDisplay(feat.ValuesYAML[key])
-		for _, env := range envs {
-			row := compareRow{
-				TenantName: env.TenantName,
-				EnvName:    env.Name,
-				IsSecret:   isSecret,
-				EnvHref:    "/features/" + feat.Name + "/envs/" + env.TenantName + "/" + env.Name + "/config#config-" + key,
-			}
-			if raw, ok := envOverridesByEnv[env.ID]; ok {
-				row.Value = components.RawValueForDisplay(raw)
-				row.Source = "env config"
-			} else if globalValue != nil {
-				row.Value = components.RawValueForDisplay(globalValue)
-				row.Source = "global config"
-			} else {
-				row.Value = helmDefault
-				row.Source = "helm value"
-			}
-			rows = append(rows, row)
-		}
+		rows = append(rows, row)
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
