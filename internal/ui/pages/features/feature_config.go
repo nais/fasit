@@ -44,11 +44,6 @@ func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]com
 			item.IsOrphaned = true
 		} else {
 			populateFromValue(&item, feat.Values[cfg.Key])
-			if cfg.Source == featurepkg.ConfigSourceGlobal {
-				if raw, ok := feat.ValuesYAML[cfg.Key]; ok {
-					item.FallbackValue = components.RawValueForDisplay(raw)
-				}
-			}
 		}
 		items = append(items, item)
 	}
@@ -58,10 +53,8 @@ func loadGlobalConfigItems(ctx context.Context, feat *featurepkg.Feature) ([]com
 			continue
 		}
 		item := components.ConfigItem{
-			ID:     uuid.NewSHA1(uuid.Nil, []byte(feat.Name+"|"+key)).String(),
-			Key:    key,
-			Source: string(featurepkg.ConfigSourceHelm),
-			Value:  components.RawValueForDisplay(feat.ValuesYAML[key]),
+			ID:  uuid.NewSHA1(uuid.Nil, []byte(feat.Name+"|"+key)).String(),
+			Key: key,
 		}
 		populateFromValue(&item, val)
 		items = append(items, item)
@@ -120,6 +113,7 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 	}
 	return h.Div(
 		h.H2(g.Text("Global configuration")),
+		h.P(h.Class("text-muted"), g.Text("Values not set globally are resolved per environment.")),
 		h.Table(
 			h.Class("table sortable config-table"), g.Attr("data-sort-key", "feature-global-config"),
 			h.THead(h.Tr(
@@ -134,7 +128,7 @@ func globalConfigurableTable(featureName string, items []components.ConfigItem) 
 					h.ID("config-"+item.Key),
 					components.ConfigKeyCell(item),
 					components.ConfigActionsCell(globalConfigActionsCell(featureName, item)),
-					components.ConfigValueCell(item),
+					globalConfigValueCell(item),
 					globalSourceLabel(item),
 					h.Td(h.Class("config-kebab-col"), components.ConfigKebab(featureName, item.Key)),
 				)
@@ -206,8 +200,18 @@ func orphanedConfigTable(featureName string, items []components.ConfigItem) g.No
 	)
 }
 
+func globalConfigValueCell(item components.ConfigItem) g.Node {
+	if item.Source != string(featurepkg.ConfigSourceGlobal) {
+		return h.Td(h.Span(h.Class("value-empty"), g.Text("<not set>")))
+	}
+	if item.Value == "" && !item.IsSecret {
+		return h.Td(h.Span(h.Class("value-empty"), g.Text("(empty string)")))
+	}
+	return components.ConfigValueCell(item)
+}
+
 func globalSourceLabel(item components.ConfigItem) g.Node {
-	label, title := "values.yaml", "Chart default from values.yaml"
+	label, title := "—", "No global override"
 	if item.Source == string(featurepkg.ConfigSourceGlobal) {
 		label, title = "global config", "Set for all environments (feature config)"
 	}
@@ -246,8 +250,8 @@ func globalDeleteButton(featureName string, item components.ConfigItem) g.Node {
 		"/features/"+featureName+"/config/"+item.ID+"/delete",
 		"Remove Configuration",
 		"Remove",
-		fmt.Sprintf("Remove global config for %s?", item.Key),
-		item.FallbackValue,
+		fmt.Sprintf("Remove global config for %s? Values will be resolved per environment.", item.Key),
+		"",
 	)
 }
 
