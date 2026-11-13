@@ -35,6 +35,7 @@ SELECT
 	"id",
 	"name",
 	"kind",
+	"labels",
 	-- FILTER is added to prevent error when there's no environment values
 	COALESCE(JSON_OBJECT_AGG("key", "value") FILTER (WHERE "key" IS NOT NULL), '{}'::JSON)::JSON AS "values"
 FROM
@@ -45,7 +46,8 @@ WHERE
 GROUP BY
 	"id",
 	"name",
-	"kind"
+	"kind",
+	"labels"
 ORDER BY
 	"name" ASC;
 
