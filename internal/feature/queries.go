@@ -187,6 +187,7 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 		}
 		val["name"] = env.Name
 		val["kind"] = string(env.Kind)
+		val["labels"] = env.Labels
 
 		if env.ID == envID {
 			mv.Env = val

@@ -46,6 +46,7 @@ SELECT
 	"id",
 	"name",
 	"kind",
+	"labels",
 	-- FILTER is added to prevent error when there's no environment values
 	COALESCE(JSON_OBJECT_AGG("key", "value") FILTER (WHERE "key" IS NOT NULL), '{}'::JSON)::JSON AS "values"
 FROM
@@ -56,7 +57,8 @@ WHERE
 GROUP BY
 	"id",
 	"name",
-	"kind"
+	"kind",
+	"labels"
 ORDER BY
 	"name" ASC
 `
@@ -70,6 +72,7 @@ type ListMappingValuesForTenantRow struct {
 	ID     uuid.UUID
 	Name   string
 	Kind   types.EnvironmentKind
+	Labels types.EnvironmentLabels
 	Values []byte
 }
 
@@ -87,6 +90,7 @@ func (q *Queries) ListMappingValuesForTenant(ctx context.Context, arg ListMappin
 			&i.ID,
 			&i.Name,
 			&i.Kind,
+			&i.Labels,
 			&i.Values,
 		); err != nil {
 			return nil, err
