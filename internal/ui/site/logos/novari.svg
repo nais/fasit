@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   viewBox="0 0 136.69998 83.7"
+   id="svg4"
+   sodipodi:docname="novari_logo_primaer.svg"
+   width="136.7"
+   height="83.699997"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.1374787"
+     inkscape:cx="205.85001"
+     inkscape:cy="41.871763"
+     inkscape:window-width="1707"
+     inkscape:window-height="1382"
+     inkscape:window-x="1938"
+     inkscape:window-y="30"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="Layer_1-2" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .cls-1 {
+        fill: #f76650;
+      }
+    </style>
+  </defs>
+  <!-- Generator: Adobe Illustrator 28.7.1, SVG Export Plug-In . SVG Version: 1.2.0 Build 142)  -->
+  <g
+     id="g4">
+    <g
+       id="Layer_1-2"
+       data-name="Layer_1">
+      <path
+         class="cls-1"
+         d="m 94.9,0.3 v 15 C 110.6,15.3 123.2,29 121.4,45 120,57.2 110.2,67.1 97.9,68.5 81.8,70.3 68.2,57.7 68.2,42 h -15 c 0,23 18.7,41.7 41.7,41.7 23,0 41.7,-18.7 41.7,-41.7 0,-23 -18.7,-41.7 -41.7,-41.7 z"
+         id="path1" />
+      <path
+         class="cls-1"
+         d="m 68.4,42 h 15 C 83.4,18.1 63.2,-1.2 39,0.4 16.9,1.8 0,20.7 0,42.8 V 83.5 H 15 V 42.6 C 15,28.6 25.6,16.5 39.6,15.4 55.2,14.2 68.3,26.6 68.3,42 v 0 z"
+         id="path2" />
+    </g>
+  </g>
+</svg>
