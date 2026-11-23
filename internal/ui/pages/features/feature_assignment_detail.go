@@ -172,6 +172,10 @@ func AssignmentDetailHandler(renderPage RenderPage) http.HandlerFunc {
 func assignmentDetailPageContent(data *DetailPage) g.Node {
 	d := data.Assignment
 	featureName := d.Feature.Name
+	description := ""
+	if d.Description != nil {
+		description = *d.Description
+	}
 
 	meta := []g.Node{
 		metaRow("Chart", g.Text(d.Feature.Chart)),
@@ -190,16 +194,18 @@ func assignmentDetailPageContent(data *DetailPage) g.Node {
 	content := []g.Node{
 		h.Div(
 			h.Class("deploy-detail-topbar"),
-			g.If(d.Active, h.Details(
+			h.Details(
 				h.Class("env-actions"),
 				h.Summary(h.Class("env-actions-toggle"), g.Attr("title", "Actions"), g.Text("\u22ee")),
 				h.Div(
 					h.Class("env-actions-menu"),
-					h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version")),
-					h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "remove-assignment"), g.Text("Remove assignment")),
+					g.If(d.Active, h.Button(h.Type("button"), g.Attr("popovertarget", "set-version"), g.Text("Set version"))),
+					h.Button(h.Type("button"), g.Attr("popovertarget", "edit-description"), g.Text("Edit description")),
+					g.If(d.Active, h.Button(h.Type("button"), h.Class("env-actions-danger"), g.Attr("popovertarget", "remove-assignment"), g.Text("Remove assignment"))),
 				),
-			)),
+			),
 		),
+		editAssignmentDescriptionPopover("edit-description", d.ID.String(), description, "/features/"+featureName+"/assignments/"+d.ID.String()),
 		g.If(d.Active, setVersionPopover("set-version", featureName, d.Feature.Chart, assignmentTargetLabels(d), data.AssignmentVersions)),
 		g.If(d.Active, removeAssignmentPopover(d)),
 	}

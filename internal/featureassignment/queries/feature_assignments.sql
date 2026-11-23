@@ -70,6 +70,16 @@ SET
 WHERE
 	id = @id::UUID;
 
+-- name: UpdateFeatureAssignmentDescription :one
+UPDATE
+	feature_assignments
+SET
+	description = sqlc.narg(description)
+WHERE
+	id = @id::UUID
+RETURNING
+	feature_name;
+
 -- name: GetFeatureAssignment :one
 SELECT
 	sqlc.embed(d),

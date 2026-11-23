@@ -498,3 +498,26 @@ func (q *Queries) ListFeatureAssignmentsForFeatureInEnvironment(ctx context.Cont
 	}
 	return items, nil
 }
+
+const updateFeatureAssignmentDescription = `-- name: UpdateFeatureAssignmentDescription :one
+UPDATE
+	feature_assignments
+SET
+	description = $1
+WHERE
+	id = $2::UUID
+RETURNING
+	feature_name
+`
+
+type UpdateFeatureAssignmentDescriptionParams struct {
+	Description *string
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateFeatureAssignmentDescription(ctx context.Context, arg UpdateFeatureAssignmentDescriptionParams) (string, error) {
+	row := q.db.QueryRow(ctx, updateFeatureAssignmentDescription, arg.Description, arg.ID)
+	var feature_name string
+	err := row.Scan(&feature_name)
+	return feature_name, err
+}

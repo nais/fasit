@@ -322,6 +322,7 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 	var actions g.Node
 	if c.FeatureAssignmentID != "" {
 		setVersionPopoverID := "set-version-" + c.FeatureAssignmentID
+		descriptionPopoverID := "edit-description-" + c.FeatureAssignmentID
 		removePopoverID := "remove-assignment-" + c.FeatureAssignmentID
 		actions = h.Div(
 			h.Class("feature-card-actions"),
@@ -336,12 +337,18 @@ func renderCard(c card, featureName, chart string, prefs ViewPrefs, fallbackVers
 						g.Text("Set version"),
 					),
 					h.Button(
+						h.Type("button"), h.Class("kebab-item"),
+						g.Attr("popovertarget", descriptionPopoverID),
+						g.Text("Edit description"),
+					),
+					h.Button(
 						h.Type("button"), h.Class("kebab-item kebab-item-danger"),
 						g.Attr("popovertarget", removePopoverID),
 						g.Text("Remove"),
 					),
 				),
 				setVersionPopover(setVersionPopoverID, featureName, chart, c.Labels, versions),
+				editAssignmentDescriptionPopover(descriptionPopoverID, c.FeatureAssignmentID, c.Description, "/features/"+featureName+"/assignments"),
 				components.Popover(
 					removePopoverID, "", "Remove assignment",
 					g.If(
@@ -655,6 +662,22 @@ func newFeatureAssignmentPopover(data *DetailPage) g.Node {
 				h.Div(h.ID("preview-targets-result"), h.Class("preview-targets-result"), g.Attr("aria-live", "polite")),
 			),
 			components.PopoverActions(h.Button(h.Type("submit"), g.Text("Create assignment"))),
+		),
+	)
+}
+
+func editAssignmentDescriptionPopover(popoverID, assignmentID, description, redirect string) g.Node {
+	if description == "Set via UI" {
+		description = ""
+	}
+	return components.Popover(
+		popoverID, "", "Edit description",
+		h.Form(
+			h.Method("POST"), h.Action("/assignments/"+assignmentID+"/description"),
+			h.Input(h.Type("hidden"), h.Name("redirect"), h.Value(redirect)),
+			h.Label(h.For(popoverID+"-input"), g.Text("Description (optional)")),
+			h.Input(h.Type("text"), h.ID(popoverID+"-input"), h.Name("description"), h.Value(description), h.Placeholder("e.g. Rollback to stable")),
+			components.PopoverActions(h.Button(h.Type("submit"), g.Text("Save"))),
 		),
 	)
 }

@@ -142,6 +142,38 @@ func ListAllByFeature(ctx context.Context, featureName string) ([]*FeatureAssign
 	return ret, nil
 }
 
+func UpdateDescription(ctx context.Context, id uuid.UUID, description string) (string, error) {
+	description = strings.TrimSpace(description)
+	var value *string
+	if description != "" {
+		value = &description
+	}
+
+	var featureName string
+	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
+		var err error
+		featureName, err = querier(ctx).UpdateFeatureAssignmentDescription(ctx, featureassignmentsql.UpdateFeatureAssignmentDescriptionParams{
+			ID:          id,
+			Description: value,
+		})
+		if err != nil {
+			return fmt.Errorf("update assignment description: %w", err)
+		}
+		return audit.Create(ctx, audit.CreateParams{
+			Action:      audit.ActionUpdated,
+			Description: "Updated assignment description",
+			ObjectType:  audit.ObjectTypeFeatureAssignment,
+			ObjectID:    featureName,
+			Feature:     featureName,
+			Metadata: map[string]any{
+				"assignmentId": id.String(),
+				"description":  description,
+			},
+		})
+	})
+	return featureName, err
+}
+
 func Deactivate(ctx context.Context, featureAssignmentID uuid.UUID) (string, error) {
 	var featureName string
 	err := dbtx.WithTx(ctx, func(ctx context.Context) error {
