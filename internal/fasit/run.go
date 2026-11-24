@@ -136,7 +136,7 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("creating fasitd server: %w", err)
 	}
-	fasitdDeployer, err := fasitd.NewDeployer(pool, fasitdServer, meter, log)
+	fasitdDeployer, err := fasitd.NewDeployer(pool, fasitdServer, loadContext, meter, log)
 	if err != nil {
 		return fmt.Errorf("creating fasitd deployer: %w", err)
 	}

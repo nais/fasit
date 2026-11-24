@@ -10,25 +10,28 @@ import (
 
 var _ credentials.PerRPCCredentials = ksaPerRPCCredentials{}
 
-const tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token" // #nosec G101 -- filesystem path to the projected token, not a credential
+const tokenPath = "/var/run/secrets/fasit.nais.io/serviceaccount/token" // #nosec G101 -- filesystem path to the projected token, not a credential
 
 func KSAPerRPCCredentials() (credentials.PerRPCCredentials, error) {
-	token, err := os.ReadFile(tokenPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not read %s: %v", tokenPath, err)
+	if _, err := os.ReadFile(tokenPath); err != nil {
+		return nil, fmt.Errorf("could not read %s: %w", tokenPath, err)
 	}
 	return ksaPerRPCCredentials{
-		token: token,
+		tokenPath: tokenPath,
 	}, nil
 }
 
 type ksaPerRPCCredentials struct {
-	token []byte
+	tokenPath string
 }
 
 func (k ksaPerRPCCredentials) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
+	token, err := os.ReadFile(k.tokenPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not read %s: %w", k.tokenPath, err)
+	}
 	return map[string]string{
-		"authorization": fmt.Sprintf("bearer %s", k.token),
+		"authorization": fmt.Sprintf("bearer %s", token),
 	}, nil
 }
 

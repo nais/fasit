@@ -58,7 +58,7 @@ VALUES (
 type CreateCommandParams struct {
 	Diid                uuid.UUID
 	EnvironmentID       uuid.UUID
-	FeatureAssignmentID uuid.UUID
+	FeatureAssignmentID *uuid.UUID
 	FeatureName         string
 	FeatureVersion      string
 	Chart               string
@@ -112,7 +112,7 @@ WHERE
 type GetCommandByDIIDRow struct {
 	Diid                uuid.UUID
 	EnvironmentID       uuid.UUID
-	FeatureAssignmentID uuid.UUID
+	FeatureAssignmentID *uuid.UUID
 	FeatureName         string
 	FeatureVersion      string
 	Chart               string
