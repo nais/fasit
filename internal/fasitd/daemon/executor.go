@@ -142,7 +142,7 @@ func (e *HelmExecutor) prepareRelease(cfg *action.Configuration, name string, ti
 		return false, fmt.Errorf("release %s has an operation in progress (%s for %s)", name, last.Info.Status, age.Round(time.Second))
 	}
 
-	logFn(fmt.Sprintf("recovering release %s stuck in %s since %s", name, last.Info.Status, last.Info.LastDeployed.Time.Format(time.RFC3339)))
+	logFn(fmt.Sprintf("recovering release %s stuck in %s since %s", name, last.Info.Status, last.Info.LastDeployed.Format(time.RFC3339)))
 	if last.Info.Status == release.StatusPendingInstall || last.Version <= 1 {
 		uninstall := action.NewUninstall(cfg)
 		uninstall.Wait = true
