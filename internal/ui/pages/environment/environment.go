@@ -14,6 +14,7 @@ import (
 	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/auth"
 	envpkg "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/fasitd"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/featureassignment"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -76,7 +77,7 @@ const (
 	environmentTabFasitd   = "fasitd"
 )
 
-func Handler(renderPage RenderPage, fasitdStatus fasitdpage.StatusSource) http.HandlerFunc {
+func Handler(renderPage RenderPage, fasitdStatus fasitd.StatusSource) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantSlug := chi.URLParam(r, "tenant")
 		envName := chi.URLParam(r, "env")
@@ -161,12 +162,7 @@ func Handler(renderPage RenderPage, fasitdStatus fasitdpage.StatusSource) http.H
 				http.Error(w, "Failed to load fasitd status: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
-			content = h.Div(
-				h.Class("container"),
-				environmentSidebar(tenant.Name, env.Name, activeTab, countOrphans(releaseRows)),
-				components.Breadcrumbs(crumbs, environmentSummaryNodes(environment, labels, gcpProjectID, userEmail, health)...),
-				h.Main(h.Class("main-content"), fasitdpage.EnvironmentContent(ov)),
-			)
+			content = environmentShell(crumbs, activeTab, tenant, environment, labels, gcpProjectID, userEmail, countOrphans(releaseRows), health, fasitdpage.EnvironmentContent(ov))
 		} else {
 			content = page(crumbs, activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, featureRows, releaseRows, health)
 		}
@@ -359,18 +355,21 @@ func loadEnvironmentHealth(ctx context.Context, environmentID uuid.UUID) (enviro
 	return environmentHealth{ReportedAt: health.ReportedAt, HasReport: true}, nil
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, userEmail string, features []environmentFeatureRow, releases []releaseRow, health environmentHealth) g.Node {
+func environmentShell(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, gcpProjectID string, userEmail string, orphanCount int, health environmentHealth, mainContent ...g.Node) g.Node {
 	summaryNodes := environmentSummaryNodes(environment, labels, gcpProjectID, userEmail, health)
-	orphanCount := countOrphans(releases)
 	return h.Div(
 		h.Class("container"),
 		environmentSidebar(tenant.Name, environment.Name, activeTab, orphanCount),
 		components.Breadcrumbs(breadcrumbs, summaryNodes...),
-		h.Main(
-			h.Class("main-content"),
-			naisdBootstrapCard(tenant, environment, gcpProjectID, health),
-			environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, features, releases, health),
-		),
+		h.Main(append([]g.Node{h.Class("main-content")}, mainContent...)...),
+	)
+}
+
+func page(breadcrumbs []breadcrumb.Crumb, activeTab string, tenant *envpkg.Tenant, environment *Environment, labels map[string]string, envValues []*envpkg.EnvironmentValue, valueRefs map[string][]string, gcpProjectID string, userEmail string, features []environmentFeatureRow, releases []releaseRow, health environmentHealth) g.Node {
+	return environmentShell(
+		breadcrumbs, activeTab, tenant, environment, labels, gcpProjectID, userEmail, countOrphans(releases), health,
+		naisdBootstrapCard(tenant, environment, gcpProjectID, health),
+		environmentTabContent(activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, features, releases, health),
 	)
 }
 
@@ -685,7 +684,7 @@ func environmentFeaturesCard(tenantName, environmentName string, features []envi
 					return h.Tr(
 						h.Td(h.A(h.Href("/features/"+feature.Name+"/envs/"+tenantName+"/"+environmentName), g.Text(feature.Name))),
 						statusCell,
-						h.Td(textOrMuted(feature.Version, "unknown")),
+						h.Td(view.TextOrMuted(feature.Version, "unknown")),
 						view.TimeCell(feature.LastSuccessful),
 					)
 				}))),
@@ -726,7 +725,7 @@ func helmReleasesCard(tenantName, environmentName string, releases []releaseRow)
 					return h.Tr(
 						nameCell,
 						h.Td(g.Text(release.Status)),
-						h.Td(textOrMuted(release.Version, "unknown")),
+						h.Td(view.TextOrMuted(release.Version, "unknown")),
 						view.TimeCell(release.LastDeployed),
 						view.TimeCell(release.LastModified),
 						view.TimeCell(release.Created),
@@ -751,11 +750,4 @@ func uninstallCell(tenantName, environmentName string, release releaseRow) g.Nod
 		g.Attr("onsubmit", "return confirm('Uninstall "+release.Name+" from "+tenantName+"/"+environmentName+"? This runs helm uninstall in the environment.')"),
 		h.Button(h.Type("submit"), h.Class("btn btn-danger btn-sm"), g.Text("Uninstall")),
 	)
-}
-
-func textOrMuted(value, fallback string) g.Node {
-	if value == "" {
-		return h.Span(h.Class("text-muted"), g.Text(fallback))
-	}
-	return g.Text(value)
 }

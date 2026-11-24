@@ -16,8 +16,9 @@ const (
 type Direction string
 
 const (
-	DirectionIn  Direction = "in"
-	DirectionOut Direction = "out"
+	DirectionIn      Direction = "in"
+	DirectionOut     Direction = "out"
+	DirectionDropped Direction = "dropped"
 )
 
 type MessageRecord struct {
@@ -119,6 +120,15 @@ func (st *sessionStats) recordOut(typ, summary string, now time.Time) {
 	defer st.mu.Unlock()
 	st.out[typ]++
 	st.push(MessageRecord{Time: now, Direction: DirectionOut, Type: typ, Summary: summary})
+}
+
+func (st *sessionStats) recordDropped(typ, summary string, now time.Time) {
+	if st == nil {
+		return
+	}
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	st.push(MessageRecord{Time: now, Direction: DirectionDropped, Type: typ, Summary: summary})
 }
 
 func (st *sessionStats) markDraining(now time.Time) {

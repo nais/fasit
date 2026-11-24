@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/fasitd"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/ui/layout"
-	fasitdpage "github.com/nais/fasit/internal/ui/pages/fasitd"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -30,10 +30,10 @@ type Server struct {
 	assetVersion string
 	appVersion   string
 	meter        metric.Meter
-	fasitd       fasitdpage.StatusSource
+	fasitd       fasitd.StatusSource
 }
 
-func New(siteFS fs.FS, meter metric.Meter, appVersion string, fasitdStatus fasitdpage.StatusSource) *Server {
+func New(siteFS fs.FS, meter metric.Meter, appVersion string, fasitdStatus fasitd.StatusSource) *Server {
 	return &Server{
 		siteFS:       siteFS,
 		assetVersion: computeAssetVersion(siteFS),

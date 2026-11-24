@@ -115,7 +115,7 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) (err error) {
 			case msg := <-sess.send:
 				if !sess.accepting() {
 					s.markUndeliverable(ctx, msg, "fasitd session draining")
-					sess.stats.recordOut("undeliverable", commandSummary(msg.GetCommand()), time.Now())
+					sess.stats.recordDropped("undeliverable", commandSummary(msg.GetCommand()), time.Now())
 					continue
 				}
 				if err := stream.Send(msg); err != nil {
@@ -168,7 +168,7 @@ func (s *Server) retire(ctx context.Context, sess *session, reason string) {
 	s.registry.remove(sess)
 	for _, msg := range sess.stopAccepting() {
 		s.markUndeliverable(ctx, msg, reason)
-		sess.stats.recordOut("undeliverable", commandSummary(msg.GetCommand()), time.Now())
+		sess.stats.recordDropped("undeliverable", commandSummary(msg.GetCommand()), time.Now())
 	}
 }
 
@@ -191,36 +191,52 @@ func (s *Server) markUndeliverable(ctx context.Context, msg *protogen.ServerMess
 }
 
 func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *protogen.AgentMessage) error {
-	typ, summary := s.describeAgentMessage(sess, msg)
-	sess.stats.recordIn(typ, summary, time.Now())
-
+	now := time.Now()
 	switch m := msg.GetMessage().(type) {
 	case *protogen.AgentMessage_Ack:
+		sess.stats.recordIn("ack", sess.stats.commandLabel(m.Ack.GetDiid(), false), now)
 		s.countReport(ctx, "ack")
 		return s.appendStatus(ctx, m.Ack.GetDiid(), string(commandstatus.Installing), "")
 	case *protogen.AgentMessage_Status:
+		summary := m.Status.GetStatus() + " " + sess.stats.commandLabel(m.Status.GetDiid(), true)
+		if e := m.Status.GetError(); e != "" {
+			summary += ": " + e
+		}
+		sess.stats.recordIn("status", summary, now)
 		s.countReport(ctx, "status")
 		return s.appendStatus(ctx, m.Status.GetDiid(), m.Status.GetStatus(), m.Status.GetError())
 	case *protogen.AgentMessage_Logs:
+		sess.stats.recordIn("logs", fmt.Sprintf("%d lines for %s", len(m.Logs.GetLines()), sess.stats.commandLabel(m.Logs.GetDiid(), false)), now)
 		s.countReport(ctx, "logs")
 		return s.appendLogs(ctx, m.Logs)
 	case *protogen.AgentMessage_Releases:
 		s.countReport(ctx, "releases")
+		summary := fmt.Sprintf("%d releases", len(m.Releases.GetReleases()))
 		if !s.registry.isPrimary(sess) {
+			sess.stats.recordIn("releases", summary+" (ignored, not primary)", now)
 			return nil
 		}
-		return s.setReleases(ctx, sess.environmentID, m.Releases)
+		sess.stats.recordIn("releases", summary, now)
+		if err := s.setReleases(ctx, sess.environmentID, m.Releases); err != nil {
+			return err
+		}
+		s.registry.recordReleasesReport(sess.environmentID, now)
+		return nil
 	case *protogen.AgentMessage_Draining:
+		sess.stats.recordIn("draining", "", now)
 		s.countReport(ctx, "draining")
-		sess.stats.markDraining(time.Now())
+		sess.stats.markDraining(now)
 		s.retire(ctx, sess, "fasitd session draining")
 		s.log.With("tenant", sess.key.tenant, "environment", sess.key.environment, "fasitd_version", sess.fasitdVersion).Info("fasitd session draining")
 		return nil
 	case *protogen.AgentMessage_Register:
+		sess.stats.recordIn("register", "duplicate", now)
 		return status.Error(codes.InvalidArgument, "duplicate register message")
 	case *protogen.AgentMessage_Heartbeat:
+		sess.stats.recordIn("heartbeat", "", now)
 		return nil
 	default:
+		sess.stats.recordIn("unknown", "", now)
 		s.log.Warn("unknown agent message")
 		return nil
 	}

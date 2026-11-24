@@ -2,7 +2,6 @@ package fasitdpage
 
 import (
 	"cmp"
-	"context"
 	"fmt"
 	"maps"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/fasitd"
 	"github.com/nais/fasit/internal/fasitd/commandstatus"
 	"github.com/nais/fasit/internal/ui/components"
@@ -24,13 +22,6 @@ const recentDisconnectsShown = 20
 
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
-// StatusSource is the Fasit-side fasitd session server. Session state is held
-// in memory by the Fasit instance that owns the gRPC streams.
-type StatusSource interface {
-	Overview(ctx context.Context) ([]fasitd.EnvironmentOverview, error)
-	EnvironmentOverview(ctx context.Context, envID uuid.UUID, tenant, environment string) (fasitd.EnvironmentOverview, error)
-}
-
 var outcomeOrder = []commandstatus.Status{
 	commandstatus.Deployed,
 	commandstatus.Uninstalled,
@@ -40,7 +31,7 @@ var outcomeOrder = []commandstatus.Status{
 	commandstatus.Sent,
 }
 
-func Handler(renderPage RenderPage, src StatusSource) http.HandlerFunc {
+func Handler(renderPage RenderPage, src fasitd.StatusSource) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		overviews, err := src.Overview(r.Context())
 		if err != nil {
@@ -172,27 +163,41 @@ func recentDisconnectsCard(overviews []fasitd.EnvironmentOverview) g.Node {
 	if len(all) > recentDisconnectsShown {
 		all = all[:recentDisconnectsShown]
 	}
+	return disconnectsCard(all, true)
+}
+
+func environmentDisconnectsCard(closed []fasitd.ClosedSession) g.Node {
+	rows := make([]disconnect, len(closed))
+	for i, c := range closed {
+		rows[i] = disconnect{ClosedSession: c}
+	}
+	return disconnectsCard(rows, false)
+}
+
+func disconnectsCard(rows []disconnect, showEnvironment bool) g.Node {
 	return h.Div(h.Class("card"), h.Div(h.Class("card-body"),
 		h.H2(h.Class("card-section-heading"), g.Text("Recent disconnects")),
-		g.If(len(all) == 0, h.P(h.Class("text-muted"), g.Text("No sessions have closed since Fasit started."))),
-		g.If(len(all) > 0, h.Table(
+		g.If(len(rows) == 0, h.P(h.Class("text-muted"), g.Text("No sessions have closed since Fasit started."))),
+		g.If(len(rows) > 0, h.Table(
 			h.Class("table"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Closed")),
-				h.Th(g.Text("Environment")),
+				g.If(showEnvironment, h.Th(g.Text("Environment"))),
 				h.Th(g.Text("Instance")),
 				h.Th(g.Text("Version")),
 				h.Th(g.Text("Duration")),
+				g.If(!showEnvironment, h.Th(g.Text("Messages in/out"))),
 				h.Th(g.Text("Drained")),
 				h.Th(g.Text("Reason")),
 			)),
-			h.TBody(g.Map(all, func(d disconnect) g.Node {
+			h.TBody(g.Map(rows, func(d disconnect) g.Node {
 				return h.Tr(
 					view.TimeCell(d.ClosedAt),
-					h.Td(h.A(h.Href(EnvironmentHref(d.Tenant, d.Environment)), g.Text(d.Tenant+" / "+d.Environment))),
-					h.Td(textOrMuted(d.Instance, "unknown")),
+					g.If(showEnvironment, h.Td(h.A(h.Href(EnvironmentHref(d.Tenant, d.Environment)), g.Text(d.Tenant+" / "+d.Environment)))),
+					h.Td(view.TextOrMuted(d.Instance, "unknown")),
 					h.Td(g.Text(d.Version)),
 					h.Td(g.Text(formatDuration(d.ClosedAt.Sub(d.ConnectedAt)))),
+					g.If(!showEnvironment, h.Td(g.Textf("%d / %d", d.MessagesIn, d.MessagesOut))),
 					h.Td(g.Text(yesNo(d.Drained))),
 					h.Td(g.Text(d.Reason)),
 				)
@@ -294,36 +299,6 @@ func releaseDifferencesCard(r fasitd.ReleaseSummary) g.Node {
 	))
 }
 
-func environmentDisconnectsCard(closed []fasitd.ClosedSession) g.Node {
-	return h.Div(h.Class("card"), h.Div(h.Class("card-body"),
-		h.H2(h.Class("card-section-heading"), g.Text("Recent disconnects")),
-		g.If(len(closed) == 0, h.P(h.Class("text-muted"), g.Text("No sessions have closed since Fasit started."))),
-		g.If(len(closed) > 0, h.Table(
-			h.Class("table"),
-			h.THead(h.Tr(
-				h.Th(g.Text("Closed")),
-				h.Th(g.Text("Instance")),
-				h.Th(g.Text("Version")),
-				h.Th(g.Text("Duration")),
-				h.Th(g.Text("Messages in/out")),
-				h.Th(g.Text("Drained")),
-				h.Th(g.Text("Reason")),
-			)),
-			h.TBody(g.Map(closed, func(c fasitd.ClosedSession) g.Node {
-				return h.Tr(
-					view.TimeCell(c.ClosedAt),
-					h.Td(textOrMuted(c.Instance, "unknown")),
-					h.Td(g.Text(c.Version)),
-					h.Td(g.Text(formatDuration(c.ClosedAt.Sub(c.ConnectedAt)))),
-					h.Td(g.Textf("%d / %d", c.MessagesIn, c.MessagesOut)),
-					h.Td(g.Text(yesNo(c.Drained))),
-					h.Td(g.Text(c.Reason)),
-				)
-			})),
-		)),
-	))
-}
-
 func detailsItem(key string, value g.Node) g.Node {
 	return h.Div(
 		h.Class("environment-details-item"),
@@ -369,24 +344,25 @@ func instanceSuffix(instance string) g.Node {
 }
 
 func directionArrow(d fasitd.Direction) string {
-	if d == fasitd.DirectionOut {
+	switch d {
+	case fasitd.DirectionOut:
 		return "→"
+	case fasitd.DirectionDropped:
+		return "×"
+	default:
+		return "←"
 	}
-	return "←"
 }
 
 func directionTitle(d fasitd.Direction) string {
-	if d == fasitd.DirectionOut {
+	switch d {
+	case fasitd.DirectionOut:
 		return "Fasit to fasitd"
+	case fasitd.DirectionDropped:
+		return "Not sent (dropped before delivery)"
+	default:
+		return "fasitd to Fasit"
 	}
-	return "fasitd to Fasit"
-}
-
-func textOrMuted(value, fallback string) g.Node {
-	if value == "" {
-		return h.Span(h.Class("text-muted"), g.Text(fallback))
-	}
-	return g.Text(value)
 }
 
 func yesNo(b bool) string {

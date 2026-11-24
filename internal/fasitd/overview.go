@@ -17,6 +17,12 @@ import (
 // OutcomeWindow is how far back command outcome counts reach.
 const OutcomeWindow = 24 * time.Hour
 
+// StatusSource provides live session state and persisted summaries for the UI.
+type StatusSource interface {
+	Overview(ctx context.Context) ([]EnvironmentOverview, error)
+	EnvironmentOverview(ctx context.Context, envID uuid.UUID, tenant, environment string) (EnvironmentOverview, error)
+}
+
 type EnvironmentOverview struct {
 	EnvironmentID uuid.UUID
 	Tenant        string
@@ -100,6 +106,9 @@ func (s *Server) liveOverview(envID uuid.UUID, tenant, environment string) Envir
 		Sessions:      sessions,
 		Closed:        closed,
 		Outcomes:      map[commandstatus.Status]int64{},
+		Releases: ReleaseSummary{
+			ReportedAt: s.registry.releasesReportedAt(envID),
+		},
 	}
 }
 
@@ -124,7 +133,9 @@ func (s *Server) fillPersisted(ctx context.Context, envID *uuid.UUID, byID map[u
 	for _, r := range reports {
 		if ov, ok := byID[r.EnvironmentID]; ok {
 			ov.Releases.Count = r.Releases
-			ov.Releases.ReportedAt = r.ReportedAt
+			if r.ReportedAt.After(ov.Releases.ReportedAt) {
+				ov.Releases.ReportedAt = r.ReportedAt
+			}
 		}
 	}
 
@@ -156,35 +167,6 @@ func addReleaseDifference(sum *ReleaseSummary, row fasitdsql.ListReleaseComparis
 			NaisdVersion:  *row.NaisdVersion,
 			NaisdStatus:   deref(row.NaisdStatus),
 		})
-	}
-}
-
-func (s *Server) describeAgentMessage(sess *session, msg *protogen.AgentMessage) (typ, summary string) {
-	switch m := msg.GetMessage().(type) {
-	case *protogen.AgentMessage_Ack:
-		return "ack", sess.stats.commandLabel(m.Ack.GetDiid(), false)
-	case *protogen.AgentMessage_Status:
-		summary = m.Status.GetStatus() + " " + sess.stats.commandLabel(m.Status.GetDiid(), true)
-		if e := m.Status.GetError(); e != "" {
-			summary += ": " + e
-		}
-		return "status", summary
-	case *protogen.AgentMessage_Logs:
-		return "logs", fmt.Sprintf("%d lines for %s", len(m.Logs.GetLines()), sess.stats.commandLabel(m.Logs.GetDiid(), false))
-	case *protogen.AgentMessage_Releases:
-		summary = fmt.Sprintf("%d releases", len(m.Releases.GetReleases()))
-		if !s.registry.isPrimary(sess) {
-			summary += " (ignored, not primary)"
-		}
-		return "releases", summary
-	case *protogen.AgentMessage_Draining:
-		return "draining", ""
-	case *protogen.AgentMessage_Heartbeat:
-		return "heartbeat", ""
-	case *protogen.AgentMessage_Register:
-		return "register", "duplicate"
-	default:
-		return "unknown", ""
 	}
 }
 

@@ -80,18 +80,32 @@ func (s *session) stopAccepting() []*protogen.ServerMessage {
 // Separately from routing it tracks every connected session (including
 // draining ones) and the most recently closed sessions, for the status page.
 type registry struct {
-	mu        sync.RWMutex
-	sessions  map[sessionKey][]*session
-	connected map[sessionKey][]*session
-	closed    map[sessionKey][]ClosedSession
+	mu               sync.RWMutex
+	sessions         map[sessionKey][]*session
+	connected        map[sessionKey][]*session
+	closed           map[sessionKey][]ClosedSession
+	releasesReported map[uuid.UUID]time.Time
 }
 
 func newRegistry() *registry {
 	return &registry{
-		sessions:  make(map[sessionKey][]*session),
-		connected: make(map[sessionKey][]*session),
-		closed:    make(map[sessionKey][]ClosedSession),
+		sessions:         make(map[sessionKey][]*session),
+		connected:        make(map[sessionKey][]*session),
+		closed:           make(map[sessionKey][]ClosedSession),
+		releasesReported: make(map[uuid.UUID]time.Time),
 	}
+}
+
+func (r *registry) recordReleasesReport(envID uuid.UUID, at time.Time) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.releasesReported[envID] = at
+}
+
+func (r *registry) releasesReportedAt(envID uuid.UUID) time.Time {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.releasesReported[envID]
 }
 
 func (r *registry) track(s *session) {

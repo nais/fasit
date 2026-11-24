@@ -10,14 +10,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
+	"github.com/nais/fasit/internal/fasitd"
 	"github.com/nais/fasit/internal/ui"
-	fasitdpage "github.com/nais/fasit/internal/ui/pages/fasitd"
 	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/metric"
 )
 
-func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log *slog.Logger, appVersion string, fasitdStatus fasitdpage.StatusSource) (http.Handler, error) {
+func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log *slog.Logger, appVersion string, fasitdStatus fasitd.StatusSource) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {

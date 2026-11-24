@@ -36,6 +36,21 @@ func TestSessionStatsRecentIsNewestFirstAndBounded(t *testing.T) {
 	}
 }
 
+func TestSessionStatsDroppedDoesNotIncrementMessagesOut(t *testing.T) {
+	st := newSessionStats("pod-a", time.Unix(0, 0))
+	st.recordDropped("undeliverable", "kyverno@1 (d1)", time.Unix(1, 0))
+
+	var out SessionStatus
+	st.fill(&out)
+
+	if len(out.MessagesOut) != 0 {
+		t.Errorf("MessagesOut = %v, want empty for dropped command", out.MessagesOut)
+	}
+	if len(out.Recent) != 1 || out.Recent[0].Direction != DirectionDropped {
+		t.Errorf("Recent = %+v, want single dropped record", out.Recent)
+	}
+}
+
 func TestRegistryStatusRolesAndClosedHistory(t *testing.T) {
 	r := newRegistry()
 	key := keyFor("nav", "prod")
