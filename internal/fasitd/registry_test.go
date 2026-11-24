@@ -9,10 +9,9 @@ import (
 
 func newSession(tenant, env string) *session {
 	return &session{
-		key:           keyFor(tenant, env),
-		environmentID: uuid.New(),
-		send:          make(chan *protogen.ServerMessage, 1),
-		done:          make(chan struct{}),
+		env:  EnvironmentRef{ID: uuid.New(), Tenant: tenant, Environment: env},
+		send: make(chan *protogen.ServerMessage, 1),
+		done: make(chan struct{}),
 	}
 }
 

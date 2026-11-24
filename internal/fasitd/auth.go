@@ -23,6 +23,54 @@ import (
 	"github.com/nais/fasit/internal/fasitd/protogen"
 )
 
+// fasitdServiceAccount is the only Kubernetes service account whose token may
+// open a fasitd session; other workloads in the cluster can mint tokens for the
+// same audience.
+const fasitdServiceAccount = "system:serviceaccount:nais-system:fasitd"
+
+// streamIdentity is the environment a stream has proven it belongs to.
+// unrestricted marks local development streams with authentication skipped.
+type streamIdentity struct {
+	tenant       string
+	environment  string
+	unrestricted bool
+}
+
+type identityKey struct{}
+
+func identityFrom(ctx context.Context) (streamIdentity, bool) {
+	id, ok := ctx.Value(identityKey{}).(streamIdentity)
+	return id, ok
+}
+
+type identifiedStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s identifiedStream) Context() context.Context { return s.ctx }
+
+func withIdentity(ss grpc.ServerStream, id streamIdentity) grpc.ServerStream {
+	return identifiedStream{ServerStream: ss, ctx: context.WithValue(ss.Context(), identityKey{}, id)}
+}
+
+// authorizeRegister rejects a Register for any environment other than the one
+// the stream authenticated as. Streams without a verified environment (IAP
+// assertions) cannot register at all.
+func authorizeRegister(ctx context.Context, tenant, environment string) error {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return status.Error(codes.PermissionDenied, "stream has no verified environment identity")
+	}
+	if id.unrestricted {
+		return nil
+	}
+	if id.tenant != tenant || id.environment != environment {
+		return status.Errorf(codes.PermissionDenied, "authenticated as %s/%s, cannot register as %s/%s", id.tenant, id.environment, tenant, environment)
+	}
+	return nil
+}
+
 // iapAssertionHeader is the gRPC metadata key Google IAP injects the signed JWT
 // assertion under. It is a header name, not a secret.
 const iapAssertionHeader = "x-goog-iap-jwt-assertion" // #nosec G101
@@ -32,12 +80,13 @@ type jwtValidator func(ctx context.Context, idToken, audience string) (*idtoken.
 // NewStreamInterceptor authenticates incoming fasitd streams. Agents exposed to
 // the internet send a projected KSA token in the Authorization header along
 // with x-fasit-tenant / x-fasit-environment, validated against the cluster's
-// OIDC issuer. Otherwise it falls back to the Google IAP JWT assertion. When
-// audience is empty (local/dev with the proxy skipped) validation is bypassed.
+// OIDC issuer. Otherwise it falls back to the Google IAP JWT assertion, which
+// carries no environment identity, so such streams cannot register. When
+// insecureSkipProxy is set (local development) validation is bypassed.
 func NewStreamInterceptor(loadContext contextloader.LoaderFunc, audience string, insecureSkipProxy bool) grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if insecureSkipProxy {
-			return handler(srv, ss)
+			return handler(srv, withIdentity(ss, streamIdentity{unrestricted: true}))
 		}
 		if audience == "" {
 			return status.Error(codes.Internal, "IAP audience is not configured")
@@ -52,10 +101,11 @@ func NewStreamInterceptor(loadContext contextloader.LoaderFunc, audience string,
 		authHeaders := md.Get("authorization")
 		if len(authHeaders) > 0 && strings.HasPrefix(strings.ToLower(authHeaders[0]), "bearer ") {
 			rawToken := authHeaders[0][len("bearer "):]
-			if err := validateKSAToken(ctx, loadContext, md, rawToken, audience); err != nil {
+			id, err := validateKSAToken(ctx, loadContext, md, rawToken, audience)
+			if err != nil {
 				return err
 			}
-			return handler(srv, ss)
+			return handler(srv, withIdentity(ss, id))
 		}
 
 		if err := validateIAP(ctx, audience, idtoken.Validate); err != nil {
@@ -135,25 +185,25 @@ func remoteKeySetFromDiscovery(ctx context.Context, discoveryURL string) (oidc.K
 	return oidc.NewRemoteKeySet(context.Background(), doc.JWKSURI), nil
 }
 
-func validateKSAToken(ctx context.Context, loadContext contextloader.LoaderFunc, md metadata.MD, rawToken, audience string) error {
+func validateKSAToken(ctx context.Context, loadContext contextloader.LoaderFunc, md metadata.MD, rawToken, audience string) (streamIdentity, error) {
 	tenantHeaders := md.Get("x-fasit-tenant")
 	envHeaders := md.Get("x-fasit-environment")
 	if len(tenantHeaders) == 0 || len(envHeaders) == 0 {
-		return status.Error(codes.InvalidArgument, "missing tenant/environment headers for KSA auth")
+		return streamIdentity{}, status.Error(codes.InvalidArgument, "missing tenant/environment headers for KSA auth")
 	}
 
 	reqCtx := loadContext(ctx)
 	tenant, err := envpkg.GetTenantByName(reqCtx, tenantHeaders[0])
 	if err != nil {
-		return status.Errorf(codes.NotFound, "unknown tenant: %v", err)
+		return streamIdentity{}, status.Errorf(codes.NotFound, "unknown tenant: %v", err)
 	}
 	env, err := envpkg.GetByName(reqCtx, tenant.ID, envHeaders[0])
 	if err != nil {
-		return status.Errorf(codes.NotFound, "unknown environment: %v", err)
+		return streamIdentity{}, status.Errorf(codes.NotFound, "unknown environment: %v", err)
 	}
 
 	if env.OIDCIssuer == nil || *env.OIDCIssuer == "" {
-		return status.Error(codes.FailedPrecondition, "environment has no OIDC issuer configured")
+		return streamIdentity{}, status.Error(codes.FailedPrecondition, "environment has no OIDC issuer configured")
 	}
 	discoveryURL := ""
 	if env.OIDCDiscoveryURL != nil {
@@ -162,12 +212,16 @@ func validateKSAToken(ctx context.Context, loadContext contextloader.LoaderFunc,
 
 	verifier, err := getOIDCVerifier(reqCtx, *env.OIDCIssuer, discoveryURL, audience)
 	if err != nil {
-		return status.Errorf(codes.Internal, "configure oidc verifier: %v", err)
+		return streamIdentity{}, status.Errorf(codes.Internal, "configure oidc verifier: %v", err)
 	}
-	if _, err := verifier.Verify(reqCtx, rawToken); err != nil {
-		return status.Errorf(codes.Unauthenticated, "invalid KSA token: %v", err)
+	token, err := verifier.Verify(reqCtx, rawToken)
+	if err != nil {
+		return streamIdentity{}, status.Errorf(codes.Unauthenticated, "invalid KSA token: %v", err)
 	}
-	return nil
+	if token.Subject != fasitdServiceAccount {
+		return streamIdentity{}, status.Errorf(codes.PermissionDenied, "token subject %q is not the fasitd service account", token.Subject)
+	}
+	return streamIdentity{tenant: tenant.Name, environment: env.Name}, nil
 }
 
 // iapStreamInterceptor validates only the Google IAP JWT assertion. It is the

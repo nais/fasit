@@ -21,10 +21,27 @@ const (
 	DirectionDropped Direction = "dropped"
 )
 
+// MessageKind is the type of a message exchanged on a fasitd session, as shown
+// on the status page and used as the key of its per-session counters.
+type MessageKind string
+
+const (
+	KindRegister      MessageKind = "register"
+	KindHeartbeat     MessageKind = "heartbeat"
+	KindAck           MessageKind = "ack"
+	KindStatus        MessageKind = "status"
+	KindLogs          MessageKind = "logs"
+	KindReleases      MessageKind = "releases"
+	KindDraining      MessageKind = "draining"
+	KindUnknown       MessageKind = "unknown"
+	KindCommand       MessageKind = "command"
+	KindUndeliverable MessageKind = "undeliverable"
+)
+
 type MessageRecord struct {
 	Time      time.Time
 	Direction Direction
-	Type      string
+	Kind      MessageKind
 	Summary   string
 }
 
@@ -48,8 +65,8 @@ type SessionStatus struct {
 	LastHeartbeat time.Time
 	DrainingSince time.Time
 	QueueDepth    int
-	MessagesIn    map[string]int64
-	MessagesOut   map[string]int64
+	MessagesIn    map[MessageKind]int64
+	MessagesOut   map[MessageKind]int64
 	// Recent holds the latest messages, newest first. Heartbeats are counted
 	// but not listed so they do not crowd out everything else.
 	Recent []MessageRecord
@@ -77,8 +94,8 @@ type sessionStats struct {
 	lastSeen      time.Time
 	lastHeartbeat time.Time
 	drainingSince time.Time
-	in            map[string]int64
-	out           map[string]int64
+	in            map[MessageKind]int64
+	out           map[MessageKind]int64
 	recent        []MessageRecord
 	next          int
 	commandNames  map[string]string
@@ -90,45 +107,45 @@ func newSessionStats(instance string, now time.Time) *sessionStats {
 		instance:     instance,
 		connectedAt:  now,
 		lastSeen:     now,
-		in:           map[string]int64{},
-		out:          map[string]int64{},
+		in:           map[MessageKind]int64{},
+		out:          map[MessageKind]int64{},
 		recent:       make([]MessageRecord, 0, recentMessagesPerSession),
 		commandNames: map[string]string{},
 	}
 }
 
-func (st *sessionStats) recordIn(typ, summary string, now time.Time) {
+func (st *sessionStats) recordIn(kind MessageKind, summary string, now time.Time) {
 	if st == nil {
 		return
 	}
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	st.lastSeen = now
-	st.in[typ]++
-	if typ == "heartbeat" {
+	st.in[kind]++
+	if kind == KindHeartbeat {
 		st.lastHeartbeat = now
 		return
 	}
-	st.push(MessageRecord{Time: now, Direction: DirectionIn, Type: typ, Summary: summary})
+	st.push(MessageRecord{Time: now, Direction: DirectionIn, Kind: kind, Summary: summary})
 }
 
-func (st *sessionStats) recordOut(typ, summary string, now time.Time) {
+func (st *sessionStats) recordOut(kind MessageKind, summary string, now time.Time) {
 	if st == nil {
 		return
 	}
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	st.out[typ]++
-	st.push(MessageRecord{Time: now, Direction: DirectionOut, Type: typ, Summary: summary})
+	st.out[kind]++
+	st.push(MessageRecord{Time: now, Direction: DirectionOut, Kind: kind, Summary: summary})
 }
 
-func (st *sessionStats) recordDropped(typ, summary string, now time.Time) {
+func (st *sessionStats) recordDropped(kind MessageKind, summary string, now time.Time) {
 	if st == nil {
 		return
 	}
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	st.push(MessageRecord{Time: now, Direction: DirectionDropped, Type: typ, Summary: summary})
+	st.push(MessageRecord{Time: now, Direction: DirectionDropped, Kind: kind, Summary: summary})
 }
 
 func (st *sessionStats) markDraining(now time.Time) {
@@ -199,7 +216,7 @@ func (st *sessionStats) fill(out *SessionStatus) {
 	}
 }
 
-func (st *sessionStats) closed(version, reason string, now time.Time) ClosedSession {
+func (st *sessionStats) toClosedSession(version, reason string, now time.Time) ClosedSession {
 	c := ClosedSession{Version: version, ClosedAt: now, Reason: reason}
 	if st == nil {
 		return c

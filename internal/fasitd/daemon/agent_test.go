@@ -120,10 +120,9 @@ func (e *fakeExecutor) Uninstall(_ context.Context, name string, _ time.Duration
 
 func newTestAgent(stream *fakeStream, opts AgentOptions) *Agent {
 	opts.Tenant, opts.Environment = "nav", "dev"
-	if opts.DrainGrace == 0 {
-		opts.DrainGrace = testGrace
-	}
-	return NewAgent(&fakeClient{stream: stream}, opts, slog.New(slog.DiscardHandler))
+	agent := NewAgent(&fakeClient{stream: stream}, opts, slog.New(slog.DiscardHandler))
+	agent.drainGrace = testGrace
+	return agent
 }
 
 func cmdMsg(c *protogen.Command) *protogen.ServerMessage {
@@ -317,7 +316,9 @@ func TestAgentReleaseReportingStopsWithSession(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		close(stream.recvCh)
 	}()
-	_ = agent.Run(context.Background())
+	if err := agent.Run(context.Background()); err == nil {
+		t.Fatalf("Run should return the recv error after the stream ends")
+	}
 
 	time.Sleep(10 * time.Millisecond)
 	after := lister.calls.Load()

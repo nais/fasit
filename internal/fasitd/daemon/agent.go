@@ -23,6 +23,11 @@ const (
 // intermediary on the path (haproxy timeout-client defaults to 50s).
 const heartbeatInterval = 20 * time.Second
 
+// selfUpgradeMargin is how much of the pod's termination grace period is kept
+// free after a self-upgrade's Helm timeout, so the old pod can report the
+// terminal status before Kubernetes kills it.
+const selfUpgradeMargin = time.Minute
+
 // defaultDrainGrace is how long a drained session keeps reading before it
 // closes, so commands Fasit sent just before it processed Draining are rejected
 // as undeliverable instead of being lost on the wire.
@@ -47,8 +52,9 @@ type AgentOptions struct {
 	ReleaseInterval time.Duration
 	// DryRun reports what would happen without executing Helm.
 	DryRun bool
-	// DrainGrace overrides defaultDrainGrace.
-	DrainGrace time.Duration
+	// TerminationGracePeriod is the pod's terminationGracePeriodSeconds. When
+	// set, self-upgrades are capped to finish within it. Zero disables the cap.
+	TerminationGracePeriod time.Duration
 }
 
 // Agent runs the client side of a fasitd session. When DryRun is true it never
@@ -61,11 +67,12 @@ type Agent struct {
 	opts   AgentOptions
 	log    *slog.Logger
 
-	ready atomic.Bool
+	drainGrace time.Duration
+	ready      atomic.Bool
 }
 
 func NewAgent(client protogen.FasitdClient, opts AgentOptions, log *slog.Logger) *Agent {
-	return &Agent{client: client, opts: opts, log: log.With("subsystem", "fasitd-agent")}
+	return &Agent{client: client, opts: opts, log: log.With("subsystem", "fasitd-agent"), drainGrace: defaultDrainGrace}
 }
 
 // Ready reports whether the agent currently has an active, registered session
@@ -136,11 +143,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		})
 	}
 
-	grace := a.opts.DrainGrace
-	if grace <= 0 {
-		grace = defaultDrainGrace
-	}
-	closeAfterGrace := func() { time.AfterFunc(grace, cancelStream) }
+	closeAfterGrace := func() { time.AfterFunc(a.drainGrace, cancelStream) }
 
 	gate := &commandGate{}
 	go func() {
@@ -286,6 +289,11 @@ func (a *Agent) handleCommand(ctx context.Context, send func(*protogen.AgentMess
 	// subsequent commands to the next session while this pod upgrades.
 	selfUpgrade := cmd.GetName() == selfReleaseName
 	if selfUpgrade {
+		capped := capSelfUpgradeTimeout(timeout, a.opts.TerminationGracePeriod)
+		if capped != timeout {
+			log.With("requested", timeout, "capped", capped).Warn("self-upgrade timeout capped to fit termination grace period")
+			timeout = capped
+		}
 		drain()
 	}
 
@@ -304,6 +312,16 @@ func (a *Agent) handleCommand(ctx context.Context, send func(*protogen.AgentMess
 	}
 
 	return selfUpgrade, send(statusMsg(diid, commandstatus.Deployed, hash, ""))
+}
+
+// capSelfUpgradeTimeout keeps a self-upgrade's Helm timeout inside the pod's
+// termination grace period: Kubernetes terminates this pod as part of the
+// rollout, and killing it mid-upgrade leaves the release pending.
+func capSelfUpgradeTimeout(timeout, gracePeriod time.Duration) time.Duration {
+	if gracePeriod <= selfUpgradeMargin {
+		return timeout
+	}
+	return min(helmTimeout(timeout), gracePeriod-selfUpgradeMargin)
 }
 
 func (a *Agent) handleDryRun(send func(*protogen.AgentMessage) error, cmd *protogen.Command, log *slog.Logger) error {

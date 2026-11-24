@@ -40,8 +40,3 @@ values:
     displayName: Image tag
     config:
       type: string
-  dryRun:
-    displayName: Dry run
-    description: Acknowledge commands without executing Helm. Defaults to true when unset.
-    config:
-      type: bool

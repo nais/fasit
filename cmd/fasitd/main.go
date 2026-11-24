@@ -37,6 +37,7 @@ func init() {
 	flag.BoolVar(&cfg.Insecure, "insecure", cfg.Insecure, "connect without TLS/IAP (local development)")
 	flag.BoolVar(&cfg.Production, "production", false, "run in-cluster (real helm release inventory)")
 	flag.BoolVar(&cfg.DryRun, "dry-run", cfg.DryRun, "acknowledge commands without executing Helm")
+	flag.DurationVar(&cfg.TerminationGracePeriod, "termination-grace-period", cfg.TerminationGracePeriod, "pod termination grace period; caps self-upgrade timeouts (0 disables)")
 }
 
 func main() {
@@ -76,6 +77,8 @@ func run(ctx context.Context, log *slog.Logger) error {
 		Version:     Version,
 		Instance:    instance,
 		DryRun:      cfg.DryRun,
+
+		TerminationGracePeriod: cfg.TerminationGracePeriod,
 	}
 
 	if cfg.Production {

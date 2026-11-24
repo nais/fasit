@@ -24,15 +24,13 @@ func render(t *testing.T, n g.Node) string {
 func sampleOverview() fasitd.EnvironmentOverview {
 	now := time.Now()
 	return fasitd.EnvironmentOverview{
-		EnvironmentID: uuid.New(),
-		Tenant:        "nav",
-		Environment:   "dev",
+		EnvironmentRef: fasitd.EnvironmentRef{ID: uuid.New(), Tenant: "nav", Environment: "dev"},
 		Sessions: []fasitd.SessionStatus{
 			{
 				ID: uuid.New(), Instance: "fasitd-abc", Version: "v2", Role: fasitd.RolePrimary,
 				ConnectedAt: now, LastSeen: now, LastHeartbeat: now,
-				MessagesIn: map[string]int64{"heartbeat": 3},
-				Recent:     []fasitd.MessageRecord{{Time: now, Direction: fasitd.DirectionOut, Type: "command", Summary: "kyverno@1.2.3 (d1)"}},
+				MessagesIn: map[fasitd.MessageKind]int64{fasitd.KindHeartbeat: 3},
+				Recent:     []fasitd.MessageRecord{{Time: now, Direction: fasitd.DirectionOut, Kind: fasitd.KindCommand, Summary: "kyverno@1.2.3 (d1)"}},
 			},
 			{ID: uuid.New(), Instance: "fasitd-def", Version: "v1", Role: fasitd.RoleDraining, DrainingSince: now},
 		},
@@ -43,7 +41,7 @@ func sampleOverview() fasitd.EnvironmentOverview {
 }
 
 func TestOverviewPageShowsEnvironmentSummary(t *testing.T) {
-	missing := fasitd.EnvironmentOverview{Tenant: "nav", Environment: "prod"}
+	missing := fasitd.EnvironmentOverview{EnvironmentRef: fasitd.EnvironmentRef{Tenant: "nav", Environment: "prod"}}
 	html := render(t, overviewPage([]fasitd.EnvironmentOverview{sampleOverview(), missing}))
 
 	for _, want := range []string{

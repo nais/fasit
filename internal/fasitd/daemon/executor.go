@@ -83,10 +83,7 @@ func (e *HelmExecutor) InstallOrUpgrade(ctx context.Context, req DeployRequest, 
 		return err
 	}
 
-	timeout := req.Timeout
-	if timeout <= 0 {
-		timeout = defaultHelmTimeout
-	}
+	timeout := helmTimeout(req.Timeout)
 
 	installed, err := e.prepareRelease(cfg, req.Name, timeout, logFn)
 	if err != nil {
@@ -144,10 +141,7 @@ func (e *HelmExecutor) prepareRelease(cfg *action.Configuration, name string, ti
 
 	logFn(fmt.Sprintf("recovering release %s stuck in %s since %s", name, last.Info.Status, last.Info.LastDeployed.Format(time.RFC3339)))
 	if last.Info.Status == release.StatusPendingInstall || last.Version <= 1 {
-		uninstall := action.NewUninstall(cfg)
-		uninstall.Wait = true
-		uninstall.Timeout = timeout
-		if _, err := uninstall.Run(name); err != nil {
+		if _, err := newUninstall(cfg, timeout).Run(name); err != nil {
 			return false, fmt.Errorf("remove stuck release %s: %w", name, err)
 		}
 		return false, nil
@@ -169,16 +163,24 @@ func (e *HelmExecutor) Uninstall(_ context.Context, name string, timeout time.Du
 		return err
 	}
 
-	if timeout <= 0 {
-		timeout = defaultHelmTimeout
-	}
-
-	uninstall := action.NewUninstall(cfg)
-	uninstall.Wait = true
-	uninstall.Timeout = timeout
+	uninstall := newUninstall(cfg, helmTimeout(timeout))
 	uninstall.IgnoreNotFound = true
 	_, err = uninstall.Run(name)
 	return err
+}
+
+func newUninstall(cfg *action.Configuration, timeout time.Duration) *action.Uninstall {
+	uninstall := action.NewUninstall(cfg)
+	uninstall.Wait = true
+	uninstall.Timeout = timeout
+	return uninstall
+}
+
+func helmTimeout(requested time.Duration) time.Duration {
+	if requested <= 0 {
+		return defaultHelmTimeout
+	}
+	return requested
 }
 
 func parseValues(raw []byte) (map[string]any, error) {

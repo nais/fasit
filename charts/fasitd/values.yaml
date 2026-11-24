@@ -5,8 +5,13 @@ envProjectId:
 fasitAddress: fasitd.nais.io:443
 # iapAudience is the OAuth client ID of the IAP-protected backend.
 iapAudience: ""
-# dryRun acknowledges commands without executing Helm.
+# dryRun acknowledges commands without executing Helm. It must stay true while
+# naisd deploys the environment, or both agents run Helm on the same releases.
+# It is deliberately not exposed in Feature.yaml.
 dryRun: true
+# terminationGracePeriodSeconds bounds how long a pod can keep running an
+# in-flight command after SIGTERM; self-upgrade timeouts are capped to fit.
+terminationGracePeriodSeconds: 600
 # replicaCount > 1 keeps a standby session so commands fail over while a pod
 # drains (shutdown or self-upgrade).
 replicaCount: 2

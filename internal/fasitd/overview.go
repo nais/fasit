@@ -20,15 +20,13 @@ const OutcomeWindow = 24 * time.Hour
 // StatusSource provides live session state and persisted summaries for the UI.
 type StatusSource interface {
 	Overview(ctx context.Context) ([]EnvironmentOverview, error)
-	EnvironmentOverview(ctx context.Context, envID uuid.UUID, tenant, environment string) (EnvironmentOverview, error)
+	EnvironmentOverview(ctx context.Context, env EnvironmentRef) (EnvironmentOverview, error)
 }
 
 type EnvironmentOverview struct {
-	EnvironmentID uuid.UUID
-	Tenant        string
-	Environment   string
-	Sessions      []SessionStatus
-	Closed        []ClosedSession
+	EnvironmentRef
+	Sessions []SessionStatus
+	Closed   []ClosedSession
 	// Outcomes counts commands created within OutcomeWindow by latest status.
 	Outcomes map[commandstatus.Status]int64
 	Releases ReleaseSummary
@@ -77,7 +75,7 @@ func (s *Server) Overview(ctx context.Context) ([]EnvironmentOverview, error) {
 	byID := make(map[uuid.UUID]*EnvironmentOverview, len(envs))
 	out := make([]EnvironmentOverview, len(envs))
 	for i, env := range envs {
-		out[i] = s.liveOverview(env.ID, env.TenantName, env.Name)
+		out[i] = s.liveOverview(EnvironmentRef{ID: env.ID, Tenant: env.TenantName, Environment: env.Name})
 		byID[env.ID] = &out[i]
 	}
 	if err := s.fillPersisted(ctx, nil, byID); err != nil {
@@ -89,25 +87,23 @@ func (s *Server) Overview(ctx context.Context) ([]EnvironmentOverview, error) {
 	return out, nil
 }
 
-func (s *Server) EnvironmentOverview(ctx context.Context, envID uuid.UUID, tenant, environment string) (EnvironmentOverview, error) {
-	ov := s.liveOverview(envID, tenant, environment)
-	if err := s.fillPersisted(ctx, &envID, map[uuid.UUID]*EnvironmentOverview{envID: &ov}); err != nil {
+func (s *Server) EnvironmentOverview(ctx context.Context, env EnvironmentRef) (EnvironmentOverview, error) {
+	ov := s.liveOverview(env)
+	if err := s.fillPersisted(ctx, &env.ID, map[uuid.UUID]*EnvironmentOverview{env.ID: &ov}); err != nil {
 		return EnvironmentOverview{}, err
 	}
 	return ov, nil
 }
 
-func (s *Server) liveOverview(envID uuid.UUID, tenant, environment string) EnvironmentOverview {
-	sessions, closed := s.registry.status(keyFor(tenant, environment))
+func (s *Server) liveOverview(env EnvironmentRef) EnvironmentOverview {
+	sessions, closed := s.registry.status(env.key())
 	return EnvironmentOverview{
-		EnvironmentID: envID,
-		Tenant:        tenant,
-		Environment:   environment,
-		Sessions:      sessions,
-		Closed:        closed,
-		Outcomes:      map[commandstatus.Status]int64{},
+		EnvironmentRef: env,
+		Sessions:       sessions,
+		Closed:         closed,
+		Outcomes:       map[commandstatus.Status]int64{},
 		Releases: ReleaseSummary{
-			ReportedAt: s.registry.releasesReportedAt(envID),
+			ReportedAt: s.registry.releasesReportedAt(env.ID),
 		},
 	}
 }

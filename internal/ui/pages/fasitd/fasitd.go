@@ -257,7 +257,7 @@ func sessionCard(s fasitd.SessionStatus) g.Node {
 				return h.Tr(
 					view.TimeCell(m.Time),
 					h.Td(h.Title(directionTitle(m.Direction)), g.Text(directionArrow(m.Direction))),
-					h.Td(g.Text(m.Type)),
+					h.Td(g.Text(string(m.Kind))),
 					h.Td(g.Text(m.Summary)),
 				)
 			})),
@@ -307,7 +307,7 @@ func detailsItem(key string, value g.Node) g.Node {
 	)
 }
 
-func counters(m map[string]int64) g.Node {
+func counters(m map[fasitd.MessageKind]int64) g.Node {
 	if len(m) == 0 {
 		return h.Span(h.Class("text-muted"), g.Text("none"))
 	}

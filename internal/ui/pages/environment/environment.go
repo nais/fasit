@@ -157,7 +157,7 @@ func Handler(renderPage RenderPage, fasitdStatus fasitd.StatusSource) http.Handl
 
 		var content g.Node
 		if activeTab == environmentTabFasitd {
-			ov, err := fasitdStatus.EnvironmentOverview(r.Context(), env.ID, tenant.Name, env.Name)
+			ov, err := fasitdStatus.EnvironmentOverview(r.Context(), fasitd.EnvironmentRef{ID: env.ID, Tenant: tenant.Name, Environment: env.Name})
 			if err != nil {
 				http.Error(w, "Failed to load fasitd status: "+err.Error(), http.StatusInternalServerError)
 				return

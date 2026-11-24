@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type Config struct {
 	BindAddress  string
 	LogLevel     string
@@ -10,6 +12,8 @@ type Config struct {
 	Insecure     bool
 	Production   bool
 	DryRun       bool
+	// TerminationGracePeriod must match the pod's terminationGracePeriodSeconds.
+	TerminationGracePeriod time.Duration
 }
 
 func DefaultConfig() Config {

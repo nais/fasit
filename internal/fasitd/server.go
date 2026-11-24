@@ -8,15 +8,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
-	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/fasitd/commandstatus"
 	"github.com/nais/fasit/internal/fasitd/fasitdsql"
 	"github.com/nais/fasit/internal/fasitd/protogen"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -75,23 +71,25 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) (err error) {
 	if reg.GetTenant() == "" || reg.GetEnvironment() == "" {
 		return status.Error(codes.InvalidArgument, "register requires tenant and environment")
 	}
+	if err := authorizeRegister(ctx, reg.GetTenant(), reg.GetEnvironment()); err != nil {
+		return err
+	}
 
-	envID, err := resolveEnvironmentID(ctx, reg.GetTenant(), reg.GetEnvironment())
+	env, err := resolveEnvironment(ctx, reg.GetTenant(), reg.GetEnvironment())
 	if err != nil {
 		return status.Errorf(codes.NotFound, "unknown tenant/environment: %v", err)
 	}
 
 	sess := &session{
-		key:           keyFor(reg.GetTenant(), reg.GetEnvironment()),
-		environmentID: envID,
+		env:           env,
 		fasitdVersion: reg.GetFasitdVersion(),
 		send:          make(chan *protogen.ServerMessage, sendBuffer),
 		done:          make(chan struct{}),
 		stats:         newSessionStats(reg.GetInstance(), time.Now()),
 	}
-	sess.stats.recordIn("register", "version "+reg.GetFasitdVersion(), time.Now())
+	sess.stats.recordIn(KindRegister, "version "+reg.GetFasitdVersion(), time.Now())
 
-	log := s.log.With("tenant", reg.GetTenant(), "environment", reg.GetEnvironment(), "fasitd_version", reg.GetFasitdVersion(), "instance", reg.GetInstance())
+	log := s.log.With("tenant", env.Tenant, "environment", env.Environment, "fasitd_version", reg.GetFasitdVersion(), "instance", reg.GetInstance())
 
 	s.registry.track(sess)
 	n := s.registry.add(sess)
@@ -115,16 +113,21 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) (err error) {
 			case msg := <-sess.send:
 				if !sess.accepting() {
 					s.markUndeliverable(ctx, msg, "fasitd session draining")
-					sess.stats.recordDropped("undeliverable", commandSummary(msg.GetCommand()), time.Now())
+					sess.stats.recordDropped(KindUndeliverable, commandSummary(msg.GetCommand()), time.Now())
 					continue
 				}
 				if err := stream.Send(msg); err != nil {
+					// Stop routing to this session at once so later commands fail
+					// over; the receive loop only notices on its next message.
+					s.markUndeliverable(context.WithoutCancel(ctx), msg, "fasitd session send failed")
+					sess.stats.recordDropped(KindUndeliverable, commandSummary(msg.GetCommand()), time.Now())
+					s.retire(context.WithoutCancel(ctx), sess, "fasitd session send failed")
 					sendErr <- err
 					return
 				}
 				cmd := msg.GetCommand()
 				sess.stats.rememberCommand(cmd.GetDiid(), commandLabel(cmd))
-				sess.stats.recordOut("command", commandSummary(cmd), time.Now())
+				sess.stats.recordOut(KindCommand, commandSummary(cmd), time.Now())
 			}
 		}
 	}()
@@ -148,27 +151,13 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) (err error) {
 	}
 }
 
-// resolveEnvironmentID looks up the environment ID for a tenant and environment
-// name. ctx must carry the environment querier (see contextloader).
-func resolveEnvironmentID(ctx context.Context, tenant, environment string) (uuid.UUID, error) {
-	t, err := envpkg.GetTenantByName(ctx, tenant)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("get tenant %s: %w", tenant, err)
-	}
-	env, err := envpkg.GetByName(ctx, t.ID, environment)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("get environment %s/%s: %w", tenant, environment, err)
-	}
-	return env.ID, nil
-}
-
 // retire removes sess from command routing and records any commands still
 // queued for it as undeliverable.
 func (s *Server) retire(ctx context.Context, sess *session, reason string) {
 	s.registry.remove(sess)
 	for _, msg := range sess.stopAccepting() {
 		s.markUndeliverable(ctx, msg, reason)
-		sess.stats.recordDropped("undeliverable", commandSummary(msg.GetCommand()), time.Now())
+		sess.stats.recordDropped(KindUndeliverable, commandSummary(msg.GetCommand()), time.Now())
 	}
 }
 
@@ -183,139 +172,54 @@ func closeReason(err error) string {
 	}
 }
 
-func (s *Server) markUndeliverable(ctx context.Context, msg *protogen.ServerMessage, reason string) {
-	diid := msg.GetCommand().GetDiid()
-	if err := s.appendStatus(ctx, diid, string(commandstatus.Undeliverable), reason); err != nil {
-		s.log.With("err", err, "diid", diid).Error("mark command undeliverable")
-	}
-}
-
 func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *protogen.AgentMessage) error {
 	now := time.Now()
 	switch m := msg.GetMessage().(type) {
 	case *protogen.AgentMessage_Ack:
-		sess.stats.recordIn("ack", sess.stats.commandLabel(m.Ack.GetDiid(), false), now)
-		s.countReport(ctx, "ack")
+		sess.stats.recordIn(KindAck, sess.stats.commandLabel(m.Ack.GetDiid(), false), now)
+		s.countReport(ctx, KindAck)
 		return s.appendStatus(ctx, m.Ack.GetDiid(), string(commandstatus.Installing), "")
 	case *protogen.AgentMessage_Status:
 		summary := m.Status.GetStatus() + " " + sess.stats.commandLabel(m.Status.GetDiid(), true)
 		if e := m.Status.GetError(); e != "" {
 			summary += ": " + e
 		}
-		sess.stats.recordIn("status", summary, now)
-		s.countReport(ctx, "status")
+		sess.stats.recordIn(KindStatus, summary, now)
+		s.countReport(ctx, KindStatus)
 		return s.appendStatus(ctx, m.Status.GetDiid(), m.Status.GetStatus(), m.Status.GetError())
 	case *protogen.AgentMessage_Logs:
-		sess.stats.recordIn("logs", fmt.Sprintf("%d lines for %s", len(m.Logs.GetLines()), sess.stats.commandLabel(m.Logs.GetDiid(), false)), now)
-		s.countReport(ctx, "logs")
+		sess.stats.recordIn(KindLogs, fmt.Sprintf("%d lines for %s", len(m.Logs.GetLines()), sess.stats.commandLabel(m.Logs.GetDiid(), false)), now)
+		s.countReport(ctx, KindLogs)
 		return s.appendLogs(ctx, m.Logs)
 	case *protogen.AgentMessage_Releases:
-		s.countReport(ctx, "releases")
+		s.countReport(ctx, KindReleases)
 		summary := fmt.Sprintf("%d releases", len(m.Releases.GetReleases()))
 		if !s.registry.isPrimary(sess) {
-			sess.stats.recordIn("releases", summary+" (ignored, not primary)", now)
+			sess.stats.recordIn(KindReleases, summary+" (ignored, not primary)", now)
 			return nil
 		}
-		sess.stats.recordIn("releases", summary, now)
-		if err := s.setReleases(ctx, sess.environmentID, m.Releases); err != nil {
+		sess.stats.recordIn(KindReleases, summary, now)
+		if err := s.setReleases(ctx, sess.env.ID, m.Releases); err != nil {
 			return err
 		}
-		s.registry.recordReleasesReport(sess.environmentID, now)
+		s.registry.recordReleasesReport(sess.env.ID, now)
 		return nil
 	case *protogen.AgentMessage_Draining:
-		sess.stats.recordIn("draining", "", now)
-		s.countReport(ctx, "draining")
+		sess.stats.recordIn(KindDraining, "", now)
+		s.countReport(ctx, KindDraining)
 		sess.stats.markDraining(now)
 		s.retire(ctx, sess, "fasitd session draining")
-		s.log.With("tenant", sess.key.tenant, "environment", sess.key.environment, "fasitd_version", sess.fasitdVersion).Info("fasitd session draining")
+		s.log.With("tenant", sess.env.Tenant, "environment", sess.env.Environment, "fasitd_version", sess.fasitdVersion).Info("fasitd session draining")
 		return nil
 	case *protogen.AgentMessage_Register:
-		sess.stats.recordIn("register", "duplicate", now)
+		sess.stats.recordIn(KindRegister, "duplicate", now)
 		return status.Error(codes.InvalidArgument, "duplicate register message")
 	case *protogen.AgentMessage_Heartbeat:
-		sess.stats.recordIn("heartbeat", "", now)
+		sess.stats.recordIn(KindHeartbeat, "", now)
 		return nil
 	default:
-		sess.stats.recordIn("unknown", "", now)
+		sess.stats.recordIn(KindUnknown, "", now)
 		s.log.Warn("unknown agent message")
 		return nil
-	}
-}
-
-func (s *Server) appendStatus(ctx context.Context, diidStr, statusStr, msg string) error {
-	diid, err := uuid.Parse(diidStr)
-	if err != nil {
-		return fmt.Errorf("parse diid: %w", err)
-	}
-	if err := s.querier.AppendCommandStatus(ctx, fasitdsql.AppendCommandStatusParams{
-		Diid:    diid,
-		Status:  statusStr,
-		Message: msg,
-	}); err != nil {
-		return fmt.Errorf("append command status: %w", err)
-	}
-	return nil
-}
-
-func (s *Server) appendLogs(ctx context.Context, batch *protogen.LogBatch) error {
-	diid, err := uuid.Parse(batch.GetDiid())
-	if err != nil {
-		return fmt.Errorf("parse diid: %w", err)
-	}
-	lines := batch.GetLines()
-	if len(lines) == 0 {
-		return nil
-	}
-	params := make([]fasitdsql.AppendHelmLogsParams, len(lines))
-	for i, l := range lines {
-		params[i] = fasitdsql.AppendHelmLogsParams{
-			Diid:    diid,
-			Time:    time.Unix(0, l.GetTimeUnixNano()),
-			Message: l.GetMsg(),
-			Kind:    l.GetKind(),
-		}
-	}
-	br := s.querier.AppendHelmLogs(ctx, params)
-	var outerErr error
-	br.Exec(func(_ int, err error) {
-		if err != nil {
-			outerErr = multierror.Append(outerErr, err)
-		}
-	})
-	return outerErr
-}
-
-func (s *Server) setReleases(ctx context.Context, envID uuid.UUID, inv *protogen.ReleaseInventory) error {
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("begin release tx: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	q := fasitdsql.New(tx)
-	if err := q.DeleteReleaseStatusesInEnvironment(ctx, envID); err != nil {
-		return fmt.Errorf("delete release statuses: %w", err)
-	}
-	for _, r := range inv.GetReleases() {
-		if err := q.SetReleaseStatus(ctx, fasitdsql.SetReleaseStatusParams{
-			EnvironmentID: envID,
-			Feature:       r.GetName(),
-			Version:       r.GetVersion(),
-			Status:        r.GetStatus(),
-			Revision:      r.GetRevision(),
-			LastDeployed:  time.Unix(r.GetLastDeployedUnix(), 0),
-		}); err != nil {
-			return fmt.Errorf("set release status: %w", err)
-		}
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit release tx: %w", err)
-	}
-	return nil
-}
-
-func (s *Server) countReport(ctx context.Context, kind string) {
-	if s.reportsRecv != nil {
-		s.reportsRecv.Add(ctx, 1, metric.WithAttributes(attribute.String("type", kind)))
 	}
 }
