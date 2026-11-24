@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -64,10 +65,16 @@ func run(ctx context.Context, log *slog.Logger) error {
 
 	client := protogen.NewFasitdClient(conn)
 
+	instance, err := os.Hostname()
+	if err != nil {
+		return fmt.Errorf("resolve hostname: %w", err)
+	}
+
 	opts := daemon.AgentOptions{
 		Tenant:      cfg.TenantName,
 		Environment: cfg.Env,
 		Version:     Version,
+		Instance:    instance,
 		DryRun:      cfg.DryRun,
 	}
 

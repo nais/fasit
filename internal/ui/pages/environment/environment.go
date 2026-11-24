@@ -21,6 +21,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	fasitdpage "github.com/nais/fasit/internal/ui/pages/fasitd"
 	"github.com/nais/fasit/internal/ui/uidata"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
@@ -72,9 +73,10 @@ const (
 	environmentTabFeatures = "features"
 	environmentTabValues   = "values"
 	environmentTabHelm     = "helm"
+	environmentTabFasitd   = "fasitd"
 )
 
-func Handler(renderPage RenderPage) http.HandlerFunc {
+func Handler(renderPage RenderPage, fasitdStatus fasitdpage.StatusSource) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantSlug := chi.URLParam(r, "tenant")
 		envName := chi.URLParam(r, "env")
@@ -144,14 +146,35 @@ func Handler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
+		crumbs := []breadcrumb.Crumb{
+			breadcrumb.Environments(),
+			tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
+			breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
+		}
+		gcpProjectID := gcpProjectIDFromValues(envValues)
+		userEmail := auth.GetEmail(r.Context())
+
+		var content g.Node
+		if activeTab == environmentTabFasitd {
+			ov, err := fasitdStatus.EnvironmentOverview(r.Context(), env.ID, tenant.Name, env.Name)
+			if err != nil {
+				http.Error(w, "Failed to load fasitd status: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			content = h.Div(
+				h.Class("container"),
+				environmentSidebar(tenant.Name, env.Name, activeTab, countOrphans(releaseRows)),
+				components.Breadcrumbs(crumbs, environmentSummaryNodes(environment, labels, gcpProjectID, userEmail, health)...),
+				h.Main(h.Class("main-content"), fasitdpage.EnvironmentContent(ov)),
+			)
+		} else {
+			content = page(crumbs, activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectID, userEmail, featureRows, releaseRows, health)
+		}
+
 		renderPage(w, r, layout.Props{
 			Title:       tenant.Name + " / " + env.Name,
 			CurrentPage: components.PageEnvironments,
-			Content: page([]breadcrumb.Crumb{
-				breadcrumb.Environments(),
-				tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
-				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-			}, activeTab, tenant, environment, labels, envValues, valueRefs, gcpProjectIDFromValues(envValues), auth.GetEmail(r.Context()), featureRows, releaseRows, health),
+			Content:     content,
 		})
 	}
 }
@@ -288,7 +311,7 @@ func loadEnvironmentFeatureRows(ctx context.Context, env *envpkg.Environment) ([
 
 func environmentTab(tab string) string {
 	switch tab {
-	case environmentTabDetails, environmentTabValues, environmentTabFeatures, environmentTabHelm:
+	case environmentTabDetails, environmentTabValues, environmentTabFeatures, environmentTabHelm, environmentTabFasitd:
 		return tab
 	default:
 		return environmentTabFeatures
@@ -374,6 +397,7 @@ func environmentSidebar(tenantName, environmentName, activeTab string, orphanCou
 				environmentNavItem(base+"?tab=features", g.Text("Features"), activeTab == environmentTabFeatures),
 				environmentNavItem(base+"?tab=values", g.Text("Values"), activeTab == environmentTabValues),
 				environmentNavItem(base+"?tab=helm", helmLabel, activeTab == environmentTabHelm),
+				environmentNavItem(base+"?tab=fasitd", g.Text("fasitd"), activeTab == environmentTabFasitd),
 				environmentNavItem(base+"?tab=details", g.Text("Details"), activeTab == environmentTabDetails),
 			),
 		),

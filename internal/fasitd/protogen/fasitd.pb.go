@@ -337,8 +337,10 @@ type Register struct {
 	Environment     string                 `protobuf:"bytes,2,opt,name=environment,proto3" json:"environment,omitempty"`
 	FasitdVersion   string                 `protobuf:"bytes,3,opt,name=fasitd_version,json=fasitdVersion,proto3" json:"fasitd_version,omitempty"`
 	ProtocolVersion uint32                 `protobuf:"varint,4,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// instance identifies the replica (pod name) so operators can tell sessions apart.
+	Instance      string `protobuf:"bytes,5,opt,name=instance,proto3" json:"instance,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Register) Reset() {
@@ -397,6 +399,13 @@ func (x *Register) GetProtocolVersion() uint32 {
 		return x.ProtocolVersion
 	}
 	return 0
+}
+
+func (x *Register) GetInstance() string {
+	if x != nil {
+		return x.Instance
+	}
+	return ""
 }
 
 // Command instructs the agent to install/upgrade or uninstall a feature.
@@ -875,12 +884,13 @@ const file_fasitd_proto_rawDesc = "" +
 	"\amessage\"\v\n" +
 	"\tHeartbeat\"\n" +
 	"\n" +
-	"\bDraining\"\x96\x01\n" +
+	"\bDraining\"\xb2\x01\n" +
 	"\bRegister\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12 \n" +
 	"\venvironment\x18\x02 \x01(\tR\venvironment\x12%\n" +
 	"\x0efasitd_version\x18\x03 \x01(\tR\rfasitdVersion\x12)\n" +
-	"\x10protocol_version\x18\x04 \x01(\rR\x0fprotocolVersion\"\xd7\x01\n" +
+	"\x10protocol_version\x18\x04 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +
+	"\binstance\x18\x05 \x01(\tR\binstance\"\xd7\x01\n" +
 	"\aCommand\x12\x12\n" +
 	"\x04diid\x18\x01 \x01(\tR\x04diid\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +

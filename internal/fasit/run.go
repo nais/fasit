@@ -180,7 +180,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHTTPServer(serverCtx, loadContext, pool, cfg, meter, log)
+	httpServer, err := newHTTPServer(serverCtx, loadContext, pool, cfg, meter, log, fasitdServer)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}

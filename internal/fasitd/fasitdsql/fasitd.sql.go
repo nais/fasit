@@ -138,6 +138,164 @@ func (q *Queries) GetCommandByDIID(ctx context.Context, diid uuid.UUID) (GetComm
 	return i, err
 }
 
+const listCommandOutcomeCounts = `-- name: ListCommandOutcomeCounts :many
+SELECT
+	c.environment_id,
+	latest.status,
+	count(*)::BIGINT AS count
+FROM
+	fasitd_commands c
+	CROSS JOIN LATERAL (
+		SELECT
+			s.status
+		FROM
+			fasitd_command_statuses s
+		WHERE
+			s.diid = c.diid
+		ORDER BY
+			s.created DESC,
+			s.id DESC
+		LIMIT 1) latest
+WHERE
+	c.created >= $1
+	AND ($2::UUID IS NULL
+		OR c.environment_id = $2)
+GROUP BY
+	c.environment_id,
+	latest.status
+ORDER BY
+	1,
+	2
+`
+
+type ListCommandOutcomeCountsParams struct {
+	Since         time.Time
+	EnvironmentID *uuid.UUID
+}
+
+type ListCommandOutcomeCountsRow struct {
+	EnvironmentID uuid.UUID
+	Status        string
+	Count         int64
+}
+
+func (q *Queries) ListCommandOutcomeCounts(ctx context.Context, arg ListCommandOutcomeCountsParams) ([]ListCommandOutcomeCountsRow, error) {
+	rows, err := q.db.Query(ctx, listCommandOutcomeCounts, arg.Since, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCommandOutcomeCountsRow{}
+	for rows.Next() {
+		var i ListCommandOutcomeCountsRow
+		if err := rows.Scan(&i.EnvironmentID, &i.Status, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReleaseComparison = `-- name: ListReleaseComparison :many
+SELECT
+	COALESCE(f.environment_id, n.environment_id)::UUID AS environment_id,
+	COALESCE(f.feature, n.feature)::TEXT AS feature,
+	f.version AS fasitd_version,
+	f.status AS fasitd_status,
+	n.version AS naisd_version,
+	n.status AS naisd_status
+FROM
+	fasitd_release_statuses f
+	FULL OUTER JOIN release_statuses n ON n.environment_id = f.environment_id
+	AND n.feature = f.feature
+WHERE
+	$1::UUID IS NULL
+	OR COALESCE(f.environment_id, n.environment_id) = $1
+ORDER BY
+	2
+`
+
+type ListReleaseComparisonRow struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	FasitdVersion *string
+	FasitdStatus  *string
+	NaisdVersion  *string
+	NaisdStatus   *string
+}
+
+func (q *Queries) ListReleaseComparison(ctx context.Context, environmentID *uuid.UUID) ([]ListReleaseComparisonRow, error) {
+	rows, err := q.db.Query(ctx, listReleaseComparison, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReleaseComparisonRow{}
+	for rows.Next() {
+		var i ListReleaseComparisonRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.FasitdVersion,
+			&i.FasitdStatus,
+			&i.NaisdVersion,
+			&i.NaisdStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReleaseInventoryReports = `-- name: ListReleaseInventoryReports :many
+SELECT
+	environment_id,
+	count(*)::BIGINT AS releases,
+	max(created)::TIMESTAMPTZ AS reported_at
+FROM
+	fasitd_release_statuses
+WHERE
+	$1::UUID IS NULL
+	OR environment_id = $1
+GROUP BY
+	environment_id
+ORDER BY
+	1
+`
+
+type ListReleaseInventoryReportsRow struct {
+	EnvironmentID uuid.UUID
+	Releases      int64
+	ReportedAt    time.Time
+}
+
+func (q *Queries) ListReleaseInventoryReports(ctx context.Context, environmentID *uuid.UUID) ([]ListReleaseInventoryReportsRow, error) {
+	rows, err := q.db.Query(ctx, listReleaseInventoryReports, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReleaseInventoryReportsRow{}
+	for rows.Next() {
+		var i ListReleaseInventoryReportsRow
+		if err := rows.Scan(&i.EnvironmentID, &i.Releases, &i.ReportedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setReleaseStatus = `-- name: SetReleaseStatus :exec
 INSERT INTO fasitd_release_statuses(
 	environment_id,

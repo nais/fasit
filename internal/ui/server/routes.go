@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/auditlog"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/environments"
+	fasitdpage "github.com/nais/fasit/internal/ui/pages/fasitd"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	reconcilerpage "github.com/nais/fasit/internal/ui/pages/reconciler"
@@ -36,9 +37,10 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/", features.ListHandler(s.renderPage))
 	r.Get("/environments", environments.Handler(s.renderPage))
+	r.Get("/fasitd", fasitdpage.Handler(s.renderPage, s.fasitd))
 	r.Get("/tenants/{tenant}/logo", environments.ServeLogoHandler())
 
-	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage))
+	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage, s.fasitd))
 	r.Post("/tenants/{tenant}/envs/{env}/releases/{release}/uninstall", environment.UninstallReleaseHandler())
 
 	r.Get("/assignments", assignments.ListHandler(s.renderPage))

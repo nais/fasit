@@ -35,9 +35,11 @@ type ReleaseLister interface {
 
 // AgentOptions configures a fasitd agent.
 type AgentOptions struct {
-	Tenant        string
-	Environment   string
-	Version       string
+	Tenant      string
+	Environment string
+	Version     string
+	// Instance identifies this replica (pod name) to Fasit.
+	Instance      string
 	ReleaseLister ReleaseLister
 	Executor      Executor
 	// ReleaseInterval mirrors naisd's helm-list cadence. Zero disables periodic
@@ -106,6 +108,7 @@ func (a *Agent) Run(ctx context.Context) error {
 				Environment:     a.opts.Environment,
 				FasitdVersion:   a.opts.Version,
 				ProtocolVersion: protocolVersion,
+				Instance:        a.opts.Instance,
 			},
 		},
 	}); err != nil {

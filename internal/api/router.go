@@ -11,12 +11,13 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/ui"
+	fasitdpage "github.com/nais/fasit/internal/ui/pages/fasitd"
 	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/metric"
 )
 
-func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log *slog.Logger, appVersion string) (http.Handler, error) {
+func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool *pgxpool.Pool, iapAudience string, insecureSkipProxy bool, meter metric.Meter, log *slog.Logger, appVersion string, fasitdStatus fasitdpage.StatusSource) (http.Handler, error) {
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {
@@ -37,7 +38,7 @@ func SetupRouter(ctx context.Context, loadContext contextloader.LoaderFunc, pool
 	router.Post("/github/deployment", handler.CreateFeatureAssignment)
 	router.Get("/github/deployment/{id}", handler.GetFeatureAssignment)
 	router.Get("/api/tenants", handler.GetTenants)
-	uiServer := uiserver.New(ui.SiteFS, meter, appVersion)
+	uiServer := uiserver.New(ui.SiteFS, meter, appVersion, fasitdStatus)
 	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil
 }

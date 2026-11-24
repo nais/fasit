@@ -47,6 +47,8 @@ message Register {
   string environment = 2;
   string fasitd_version = 3;
   uint32 protocol_version = 4;
+  // instance identifies the replica (pod name) so operators can tell sessions apart.
+  string instance = 5;
 }
 
 // Command instructs the agent to install/upgrade or uninstall a feature.

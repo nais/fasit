@@ -3,6 +3,7 @@ package fasitd
 import (
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/fasitd/protogen"
@@ -26,6 +27,7 @@ type session struct {
 	fasitdVersion string
 	send          chan *protogen.ServerMessage
 	done          chan struct{}
+	stats         *sessionStats
 
 	mu     sync.Mutex
 	closed bool
@@ -74,13 +76,85 @@ func (s *session) stopAccepting() []*protogen.ServerMessage {
 // registry tracks connected fasitd sessions per environment as an ordered list.
 // Index 0 is the primary session; any remaining sessions are standbys tried in
 // order if the primary does not accept a command or drains/disconnects.
+//
+// Separately from routing it tracks every connected session (including
+// draining ones) and the most recently closed sessions, for the status page.
 type registry struct {
-	mu       sync.RWMutex
-	sessions map[sessionKey][]*session
+	mu        sync.RWMutex
+	sessions  map[sessionKey][]*session
+	connected map[sessionKey][]*session
+	closed    map[sessionKey][]ClosedSession
 }
 
 func newRegistry() *registry {
-	return &registry{sessions: make(map[sessionKey][]*session)}
+	return &registry{
+		sessions:  make(map[sessionKey][]*session),
+		connected: make(map[sessionKey][]*session),
+		closed:    make(map[sessionKey][]ClosedSession),
+	}
+}
+
+func (r *registry) track(s *session) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.connected[s.key] = append(r.connected[s.key], s)
+}
+
+// untrack records s as closed with reason, keeping the most recent closures
+// per environment newest first.
+func (r *registry) untrack(s *session, reason string, now time.Time) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if list := slices.DeleteFunc(r.connected[s.key], func(c *session) bool { return c == s }); len(list) > 0 {
+		r.connected[s.key] = list
+	} else {
+		delete(r.connected, s.key)
+	}
+	closed := append([]ClosedSession{s.stats.closed(s.fasitdVersion, reason, now)}, r.closed[s.key]...)
+	if len(closed) > recentClosedPerEnvironment {
+		closed = closed[:recentClosedPerEnvironment]
+	}
+	r.closed[s.key] = closed
+}
+
+// status returns the live sessions (routing order first, then draining) and
+// recent closures for key.
+func (r *registry) status(key sessionKey) ([]SessionStatus, []ClosedSession) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	routing := r.sessions[key]
+	live := make([]SessionStatus, 0, len(r.connected[key]))
+	for _, s := range r.connected[key] {
+		st := SessionStatus{
+			Tenant:      key.tenant,
+			Environment: key.environment,
+			Version:     s.fasitdVersion,
+			QueueDepth:  len(s.send),
+		}
+		switch idx := slices.Index(routing, s); {
+		case idx == 0:
+			st.Role = RolePrimary
+		case idx > 0:
+			st.Role = RoleStandby
+		default:
+			st.Role = RoleDraining
+		}
+		s.stats.fill(&st)
+		live = append(live, st)
+	}
+	slices.SortStableFunc(live, func(a, b SessionStatus) int {
+		return rolePriority(a, routing) - rolePriority(b, routing)
+	})
+	return live, slices.Clone(r.closed[key])
+}
+
+func rolePriority(st SessionStatus, routing []*session) int {
+	for i, s := range routing {
+		if s.stats != nil && s.stats.id == st.ID {
+			return i
+		}
+	}
+	return len(routing)
 }
 
 // add appends s to the end of its environment's session list and returns the

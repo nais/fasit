@@ -61,7 +61,7 @@ func NewServer(pool *pgxpool.Pool, loadContext contextloader.LoaderFunc, meter m
 // Registry exposes the session registry so the deployer can route commands.
 func (s *Server) Registry() *registry { return s.registry }
 
-func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
+func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) (err error) {
 	ctx := s.loadContext(stream.Context())
 
 	first, err := stream.Recv()
@@ -87,14 +87,18 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 		fasitdVersion: reg.GetFasitdVersion(),
 		send:          make(chan *protogen.ServerMessage, sendBuffer),
 		done:          make(chan struct{}),
+		stats:         newSessionStats(reg.GetInstance(), time.Now()),
 	}
+	sess.stats.recordIn("register", "version "+reg.GetFasitdVersion(), time.Now())
 
-	log := s.log.With("tenant", reg.GetTenant(), "environment", reg.GetEnvironment(), "fasitd_version", reg.GetFasitdVersion())
+	log := s.log.With("tenant", reg.GetTenant(), "environment", reg.GetEnvironment(), "fasitd_version", reg.GetFasitdVersion(), "instance", reg.GetInstance())
 
+	s.registry.track(sess)
 	n := s.registry.add(sess)
 	defer func() {
 		s.retire(context.WithoutCancel(ctx), sess, "fasitd session closed before delivery")
 		close(sess.done)
+		s.registry.untrack(sess, closeReason(err), time.Now())
 	}()
 
 	log.With("active_sessions", n).Info("fasitd session connected")
@@ -111,12 +115,16 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 			case msg := <-sess.send:
 				if !sess.accepting() {
 					s.markUndeliverable(ctx, msg, "fasitd session draining")
+					sess.stats.recordOut("undeliverable", commandSummary(msg.GetCommand()), time.Now())
 					continue
 				}
 				if err := stream.Send(msg); err != nil {
 					sendErr <- err
 					return
 				}
+				cmd := msg.GetCommand()
+				sess.stats.rememberCommand(cmd.GetDiid(), commandLabel(cmd))
+				sess.stats.recordOut("command", commandSummary(cmd), time.Now())
 			}
 		}
 	}()
@@ -160,6 +168,18 @@ func (s *Server) retire(ctx context.Context, sess *session, reason string) {
 	s.registry.remove(sess)
 	for _, msg := range sess.stopAccepting() {
 		s.markUndeliverable(ctx, msg, reason)
+		sess.stats.recordOut("undeliverable", commandSummary(msg.GetCommand()), time.Now())
+	}
+}
+
+func closeReason(err error) string {
+	switch {
+	case err == nil:
+		return "closed by fasitd"
+	case status.Code(err) == codes.Canceled || errors.Is(err, context.Canceled):
+		return "stream cancelled"
+	default:
+		return err.Error()
 	}
 }
 
@@ -171,6 +191,9 @@ func (s *Server) markUndeliverable(ctx context.Context, msg *protogen.ServerMess
 }
 
 func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *protogen.AgentMessage) error {
+	typ, summary := s.describeAgentMessage(sess, msg)
+	sess.stats.recordIn(typ, summary, time.Now())
+
 	switch m := msg.GetMessage().(type) {
 	case *protogen.AgentMessage_Ack:
 		s.countReport(ctx, "ack")
@@ -189,6 +212,7 @@ func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *pro
 		return s.setReleases(ctx, sess.environmentID, m.Releases)
 	case *protogen.AgentMessage_Draining:
 		s.countReport(ctx, "draining")
+		sess.stats.markDraining(time.Now())
 		s.retire(ctx, sess, "fasitd session draining")
 		s.log.With("tenant", sess.key.tenant, "environment", sess.key.environment, "fasitd_version", sess.fasitdVersion).Info("fasitd session draining")
 		return nil

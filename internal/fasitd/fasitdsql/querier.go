@@ -14,6 +14,9 @@ type Querier interface {
 	CreateCommand(ctx context.Context, arg CreateCommandParams) error
 	DeleteReleaseStatusesInEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	GetCommandByDIID(ctx context.Context, diid uuid.UUID) (GetCommandByDIIDRow, error)
+	ListCommandOutcomeCounts(ctx context.Context, arg ListCommandOutcomeCountsParams) ([]ListCommandOutcomeCountsRow, error)
+	ListReleaseComparison(ctx context.Context, environmentID *uuid.UUID) ([]ListReleaseComparisonRow, error)
+	ListReleaseInventoryReports(ctx context.Context, environmentID *uuid.UUID) ([]ListReleaseInventoryReportsRow, error)
 	SetReleaseStatus(ctx context.Context, arg SetReleaseStatusParams) error
 }
 
