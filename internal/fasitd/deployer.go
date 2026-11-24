@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
-	envpkg "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/fasitd/commandstatus"
 	"github.com/nais/fasit/internal/fasitd/fasitdsql"
 	"github.com/nais/fasit/internal/fasitd/protogen"
 	"github.com/nais/fasit/internal/reconciler"
@@ -18,12 +17,10 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const sendTimeout = 5 * time.Second
-
 // Deployer is the fasitd shadow lane of the reconciler. It mirrors each deploy
-// decision as a fasitd command: it records the command, then either delivers it
-// over an active session (status "sent") or records it as "undeliverable" when
-// no session is connected. It never blocks the canonical naisd rollout.
+// decision as a fasitd command: it records the command, then hands it to the
+// first session that accepts it (status "sent") or records it as
+// "undeliverable" when none does. It never blocks the canonical naisd rollout.
 type Deployer struct {
 	registry    *registry
 	querier     fasitdsql.Querier
@@ -65,19 +62,14 @@ func (d *Deployer) Deploy(ctx context.Context, decisions []reconciler.DeployDeci
 }
 
 func (d *Deployer) Uninstall(ctx context.Context, diid uuid.UUID, tenantName, envName, releaseName string) error {
-	reqCtx := d.loadContext(ctx)
-	tenant, err := envpkg.GetTenantByName(reqCtx, tenantName)
+	envID, err := resolveEnvironmentID(d.loadContext(ctx), tenantName, envName)
 	if err != nil {
-		return fmt.Errorf("get tenant %s: %w", tenantName, err)
-	}
-	env, err := envpkg.GetByName(reqCtx, tenant.ID, envName)
-	if err != nil {
-		return fmt.Errorf("get environment %s/%s: %w", tenantName, envName, err)
+		return err
 	}
 
 	if err := d.querier.CreateCommand(ctx, fasitdsql.CreateCommandParams{
 		Diid:          diid,
-		EnvironmentID: env.ID,
+		EnvironmentID: envID,
 		FeatureName:   releaseName,
 		Uninstall:     true,
 		Vals:          []byte("{}"),
@@ -95,7 +87,7 @@ func (d *Deployer) Uninstall(ctx context.Context, diid uuid.UUID, tenantName, en
 		},
 	}
 
-	return d.sendCommand(ctx, diid, tenantName, envName, releaseName, cmd)
+	return d.sendCommand(ctx, diid, keyFor(tenantName, envName), releaseName, cmd)
 }
 
 func (d *Deployer) dispatch(ctx context.Context, dec reconciler.DeployDecision) error {
@@ -135,39 +127,37 @@ func (d *Deployer) dispatch(ctx context.Context, dec reconciler.DeployDecision) 
 		},
 	}
 
-	return d.sendCommand(ctx, diid, dec.TenantName, dec.EnvironmentName, dec.Feature.Name, cmd)
+	return d.sendCommand(ctx, diid, keyFor(dec.TenantName, dec.EnvironmentName), dec.Feature.Name, cmd)
 }
 
-func (d *Deployer) sendCommand(ctx context.Context, diid uuid.UUID, tenantName, envName, featureName string, cmd *protogen.ServerMessage) error {
-	sessions := d.registry.list(keyFor(tenantName, envName))
+// sendCommand offers cmd to the environment's sessions in priority order. The
+// "sent" status is recorded before offering so an agent's fast acknowledgement
+// can never be ordered before it; if no session accepts, "undeliverable" follows.
+func (d *Deployer) sendCommand(ctx context.Context, diid uuid.UUID, key sessionKey, featureName string, cmd *protogen.ServerMessage) error {
+	sessions := d.registry.list(key)
 	if len(sessions) == 0 {
-		d.record(ctx, tenantName, envName, featureName, "undeliverable")
-		return d.appendStatus(ctx, diid, "undeliverable", "no active fasitd session for environment")
+		d.record(ctx, key, featureName, commandstatus.Undeliverable)
+		return d.appendStatus(ctx, diid, commandstatus.Undeliverable, "no active fasitd session for environment")
 	}
 
-	lastReason := "no active fasitd session for environment"
+	if err := d.appendStatus(ctx, diid, commandstatus.Sent, ""); err != nil {
+		return err
+	}
 	for _, sess := range sessions {
-		select {
-		case sess.send <- cmd:
-			d.record(ctx, tenantName, envName, featureName, "sent")
-			return d.appendStatus(ctx, diid, "sent", "")
-		case <-sess.done:
-			d.registry.remove(sess)
-			lastReason = "fasitd session closed before delivery"
-		case <-time.After(sendTimeout):
-			d.registry.remove(sess)
-			lastReason = "timeout writing to fasitd session"
+		if sess.offer(cmd) {
+			d.record(ctx, key, featureName, commandstatus.Sent)
+			return nil
 		}
 	}
 
-	d.record(ctx, tenantName, envName, featureName, "undeliverable")
-	return d.appendStatus(ctx, diid, "undeliverable", lastReason)
+	d.record(ctx, key, featureName, commandstatus.Undeliverable)
+	return d.appendStatus(ctx, diid, commandstatus.Undeliverable, "no fasitd session accepted the command (draining or queue full)")
 }
 
-func (d *Deployer) appendStatus(ctx context.Context, diid uuid.UUID, status, msg string) error {
+func (d *Deployer) appendStatus(ctx context.Context, diid uuid.UUID, status commandstatus.Status, msg string) error {
 	if err := d.querier.AppendCommandStatus(ctx, fasitdsql.AppendCommandStatusParams{
 		Diid:    diid,
-		Status:  status,
+		Status:  string(status),
 		Message: msg,
 	}); err != nil {
 		return fmt.Errorf("append command status: %w", err)
@@ -175,14 +165,14 @@ func (d *Deployer) appendStatus(ctx context.Context, diid uuid.UUID, status, msg
 	return nil
 }
 
-func (d *Deployer) record(ctx context.Context, tenantName, envName, featureName, outcome string) {
+func (d *Deployer) record(ctx context.Context, key sessionKey, featureName string, outcome commandstatus.Status) {
 	if d.commands == nil {
 		return
 	}
 	d.commands.Add(ctx, 1, metric.WithAttributes(
-		attribute.String("outcome", outcome),
-		attribute.String("tenant", tenantName),
-		attribute.String("environment", envName),
+		attribute.String("outcome", string(outcome)),
+		attribute.String("tenant", key.tenant),
+		attribute.String("environment", key.environment),
 		attribute.String("feature", featureName),
 	))
 }

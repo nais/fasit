@@ -7,6 +7,9 @@ fasitAddress: fasitd.nais.io:443
 iapAudience: ""
 # dryRun acknowledges commands without executing Helm.
 dryRun: true
+# replicaCount > 1 keeps a standby session so commands fail over while a pod
+# drains (shutdown or self-upgrade).
+replicaCount: 2
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/fasitd
   pullPolicy: IfNotPresent

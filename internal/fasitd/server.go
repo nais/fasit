@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
 	envpkg "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/fasitd/commandstatus"
 	"github.com/nais/fasit/internal/fasitd/fasitdsql"
 	"github.com/nais/fasit/internal/fasitd/protogen"
 	"go.opentelemetry.io/otel/attribute"
@@ -75,7 +76,7 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 		return status.Error(codes.InvalidArgument, "register requires tenant and environment")
 	}
 
-	envID, err := s.resolveEnvironment(ctx, reg.GetTenant(), reg.GetEnvironment())
+	envID, err := resolveEnvironmentID(ctx, reg.GetTenant(), reg.GetEnvironment())
 	if err != nil {
 		return status.Errorf(codes.NotFound, "unknown tenant/environment: %v", err)
 	}
@@ -91,8 +92,10 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 	log := s.log.With("tenant", reg.GetTenant(), "environment", reg.GetEnvironment(), "fasitd_version", reg.GetFasitdVersion())
 
 	n := s.registry.add(sess)
-	defer s.registry.remove(sess)
-	defer close(sess.done)
+	defer func() {
+		s.retire(context.WithoutCancel(ctx), sess, "fasitd session closed before delivery")
+		close(sess.done)
+	}()
 
 	log.With("active_sessions", n).Info("fasitd session connected")
 	defer log.Info("fasitd session disconnected")
@@ -106,6 +109,10 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 			case <-sess.done:
 				return
 			case msg := <-sess.send:
+				if !sess.accepting() {
+					s.markUndeliverable(ctx, msg, "fasitd session draining")
+					continue
+				}
 				if err := stream.Send(msg); err != nil {
 					sendErr <- err
 					return
@@ -133,23 +140,41 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 	}
 }
 
-func (s *Server) resolveEnvironment(ctx context.Context, tenant, environment string) (uuid.UUID, error) {
+// resolveEnvironmentID looks up the environment ID for a tenant and environment
+// name. ctx must carry the environment querier (see contextloader).
+func resolveEnvironmentID(ctx context.Context, tenant, environment string) (uuid.UUID, error) {
 	t, err := envpkg.GetTenantByName(ctx, tenant)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("get tenant: %w", err)
+		return uuid.Nil, fmt.Errorf("get tenant %s: %w", tenant, err)
 	}
 	env, err := envpkg.GetByName(ctx, t.ID, environment)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("get environment: %w", err)
+		return uuid.Nil, fmt.Errorf("get environment %s/%s: %w", tenant, environment, err)
 	}
 	return env.ID, nil
+}
+
+// retire removes sess from command routing and records any commands still
+// queued for it as undeliverable.
+func (s *Server) retire(ctx context.Context, sess *session, reason string) {
+	s.registry.remove(sess)
+	for _, msg := range sess.stopAccepting() {
+		s.markUndeliverable(ctx, msg, reason)
+	}
+}
+
+func (s *Server) markUndeliverable(ctx context.Context, msg *protogen.ServerMessage, reason string) {
+	diid := msg.GetCommand().GetDiid()
+	if err := s.appendStatus(ctx, diid, string(commandstatus.Undeliverable), reason); err != nil {
+		s.log.With("err", err, "diid", diid).Error("mark command undeliverable")
+	}
 }
 
 func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *protogen.AgentMessage) error {
 	switch m := msg.GetMessage().(type) {
 	case *protogen.AgentMessage_Ack:
 		s.countReport(ctx, "ack")
-		return s.appendStatus(ctx, m.Ack.GetDiid(), "installing", "")
+		return s.appendStatus(ctx, m.Ack.GetDiid(), string(commandstatus.Installing), "")
 	case *protogen.AgentMessage_Status:
 		s.countReport(ctx, "status")
 		return s.appendStatus(ctx, m.Status.GetDiid(), m.Status.GetStatus(), m.Status.GetError())
@@ -164,7 +189,7 @@ func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *pro
 		return s.setReleases(ctx, sess.environmentID, m.Releases)
 	case *protogen.AgentMessage_Draining:
 		s.countReport(ctx, "draining")
-		s.registry.remove(sess)
+		s.retire(ctx, sess, "fasitd session draining")
 		s.log.With("tenant", sess.key.tenant, "environment", sess.key.environment, "fasitd_version", sess.fasitdVersion).Info("fasitd session draining")
 		return nil
 	case *protogen.AgentMessage_Register:

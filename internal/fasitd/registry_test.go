@@ -16,6 +16,10 @@ func newSession(tenant, env string) *session {
 	}
 }
 
+func command(diid string) *protogen.ServerMessage {
+	return &protogen.ServerMessage{Message: &protogen.ServerMessage_Command{Command: &protogen.Command{Diid: diid}}}
+}
+
 func TestRegistryOrdersPrimaryAndStandbys(t *testing.T) {
 	r := newRegistry()
 	key := keyFor("nav", "prod")
@@ -24,14 +28,10 @@ func TestRegistryOrdersPrimaryAndStandbys(t *testing.T) {
 	second := newSession("nav", "prod")
 	third := newSession("nav", "prod")
 
-	if n := r.add(first); n != 1 {
-		t.Fatalf("add(first) = %d, want 1", n)
-	}
-	if n := r.add(second); n != 2 {
-		t.Fatalf("add(second) = %d, want 2", n)
-	}
-	if n := r.add(third); n != 3 {
-		t.Fatalf("add(third) = %d, want 3", n)
+	for i, s := range []*session{first, second, third} {
+		if n := r.add(s); n != i+1 {
+			t.Fatalf("add #%d = %d, want %d", i+1, n, i+1)
+		}
 	}
 
 	if !r.isPrimary(first) || r.isPrimary(second) {
@@ -43,7 +43,6 @@ func TestRegistryOrdersPrimaryAndStandbys(t *testing.T) {
 		t.Fatalf("list = %v, want [first second third]", got)
 	}
 
-	// Removing primary promotes second to index 0.
 	r.remove(first)
 	if !r.isPrimary(second) || r.isPrimary(first) {
 		t.Errorf("second should be promoted to primary after removing first")
@@ -53,10 +52,9 @@ func TestRegistryOrdersPrimaryAndStandbys(t *testing.T) {
 		t.Fatalf("list after remove(first) = %v, want [second third]", got)
 	}
 
-	// Removing an already-removed session is a no-op.
 	r.remove(first)
-	if got := r.count(); got != 2 {
-		t.Errorf("count = %d, want 2", got)
+	if got := len(r.list(key)); got != 2 {
+		t.Errorf("removing an already-removed session changed the list: len = %d, want 2", got)
 	}
 }
 
@@ -65,8 +63,11 @@ func TestRegistryDifferentEnvironments(t *testing.T) {
 
 	r.add(newSession("nav", "prod"))
 	r.add(newSession("nav", "dev"))
-	if got := r.count(); got != 2 {
-		t.Errorf("count = %d, want 2", got)
+	if got := len(r.list(keyFor("nav", "prod"))); got != 1 {
+		t.Errorf("nav/prod sessions = %d, want 1", got)
+	}
+	if got := len(r.list(keyFor("nav", "dev"))); got != 1 {
+		t.Errorf("nav/dev sessions = %d, want 1", got)
 	}
 }
 
@@ -77,7 +78,6 @@ func TestRegistryRemoveOnlyOwnSession(t *testing.T) {
 	first := newSession("nav", "prod")
 	r.add(first)
 
-	// An unregistered session with the same key must not evict the active one.
 	stale := newSession("nav", "prod")
 	r.remove(stale)
 	if len(r.list(key)) != 1 {
@@ -104,5 +104,40 @@ func TestRegistryReconnectAfterRemove(t *testing.T) {
 	}
 	if !r.isPrimary(second) || len(r.list(key)) != 1 {
 		t.Errorf("reconnected session should be primary")
+	}
+}
+
+func TestSessionOfferRejectsWhenFullWithoutClosing(t *testing.T) {
+	s := newSession("nav", "prod")
+
+	if !s.offer(command("a")) {
+		t.Fatalf("first offer should be accepted")
+	}
+	if s.offer(command("b")) {
+		t.Errorf("offer to a full queue should be rejected")
+	}
+	if !s.accepting() {
+		t.Errorf("a full queue must not stop the session from accepting later commands")
+	}
+
+	<-s.send
+	if !s.offer(command("c")) {
+		t.Errorf("offer should be accepted again once the queue has room")
+	}
+}
+
+func TestSessionStopAcceptingReturnsQueuedCommands(t *testing.T) {
+	s := newSession("nav", "prod")
+	s.offer(command("queued"))
+
+	pending := s.stopAccepting()
+	if len(pending) != 1 || pending[0].GetCommand().GetDiid() != "queued" {
+		t.Fatalf("pending = %v, want the queued command", pending)
+	}
+	if s.accepting() {
+		t.Errorf("session should not accept after stopAccepting")
+	}
+	if s.offer(command("late")) {
+		t.Errorf("offer after stopAccepting should be rejected")
 	}
 }

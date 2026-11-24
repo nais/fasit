@@ -11,34 +11,39 @@ import (
 	"github.com/nais/fasit/internal/helm"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/client-go/rest"
 )
 
 const defaultHelmTimeout = 5 * time.Minute
 
-// Executor runs Helm operations for a fasitd command.
+// maxHistory matches the Helm CLI's default --history-max so release secrets
+// do not accumulate without bound.
+const maxHistory = 10
+
 type Executor interface {
 	InstallOrUpgrade(ctx context.Context, req DeployRequest, logFn func(string)) error
 	Uninstall(ctx context.Context, name string, timeout time.Duration, logFn func(string)) error
 }
 
-// DeployRequest holds the parameters for a Helm install or upgrade.
 type DeployRequest struct {
 	Name    string
 	Chart   string
 	Version string
 	Values  map[string]any
 	Timeout time.Duration
-	Atomic  bool
+	// Atomic rolls the release back if the upgrade does not become ready.
+	Atomic bool
 }
 
-// HelmExecutor executes real Helm operations against a Kubernetes cluster.
 type HelmExecutor struct {
 	restConfig *rest.Config
 	namespace  string
 	log        *slog.Logger
 }
+
+var _ Executor = (*HelmExecutor)(nil)
 
 func NewHelmExecutor(restConfig *rest.Config, namespace string, log *slog.Logger) *HelmExecutor {
 	return &HelmExecutor{
@@ -83,33 +88,79 @@ func (e *HelmExecutor) InstallOrUpgrade(ctx context.Context, req DeployRequest, 
 		timeout = defaultHelmTimeout
 	}
 
-	histClient := action.NewHistory(cfg)
-	histClient.Max = 1
-	_, histErr := histClient.Run(req.Name)
-	if errors.Is(histErr, driver.ErrReleaseNotFound) {
+	installed, err := e.prepareRelease(cfg, req.Name, timeout, logFn)
+	if err != nil {
+		return err
+	}
+
+	if !installed {
 		install := action.NewInstall(cfg)
 		install.ReleaseName = req.Name
 		install.Namespace = e.namespace
-		install.CreateNamespace = true
 		install.Wait = true
 		install.Atomic = req.Atomic
 		install.Timeout = timeout
 		_, err = install.RunWithContext(ctx, ch, req.Values)
 		return err
 	}
-	if histErr != nil {
-		return fmt.Errorf("check release history: %w", histErr)
-	}
 
 	upgrade := action.NewUpgrade(cfg)
 	upgrade.Namespace = e.namespace
-	upgrade.Install = true
 	upgrade.Wait = true
 	upgrade.Atomic = req.Atomic
 	upgrade.Timeout = timeout
-	upgrade.MaxHistory = 10
+	upgrade.MaxHistory = maxHistory
 	_, err = upgrade.RunWithContext(ctx, req.Name, ch, req.Values)
 	return err
+}
+
+// prepareRelease reports whether name is currently installed. A release left in
+// a pending state by an operation that was killed midway (for example a fasitd
+// pod replaced during its own upgrade) blocks every later operation, so once it
+// is older than timeout it is recovered: rolled back to the previous revision,
+// or removed if it never finished installing. A younger pending release is
+// treated as an operation still in progress.
+func (e *HelmExecutor) prepareRelease(cfg *action.Configuration, name string, timeout time.Duration, logFn func(string)) (bool, error) {
+	hist := action.NewHistory(cfg)
+	hist.Max = 1
+	releases, err := hist.Run(name)
+	if errors.Is(err, driver.ErrReleaseNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check release history: %w", err)
+	}
+	if len(releases) == 0 {
+		return false, nil
+	}
+
+	last := releases[len(releases)-1]
+	if !last.Info.Status.IsPending() {
+		return true, nil
+	}
+	if age := time.Since(last.Info.LastDeployed.Time); age < timeout {
+		return false, fmt.Errorf("release %s has an operation in progress (%s for %s)", name, last.Info.Status, age.Round(time.Second))
+	}
+
+	logFn(fmt.Sprintf("recovering release %s stuck in %s since %s", name, last.Info.Status, last.Info.LastDeployed.Time.Format(time.RFC3339)))
+	if last.Info.Status == release.StatusPendingInstall || last.Version <= 1 {
+		uninstall := action.NewUninstall(cfg)
+		uninstall.Wait = true
+		uninstall.Timeout = timeout
+		if _, err := uninstall.Run(name); err != nil {
+			return false, fmt.Errorf("remove stuck release %s: %w", name, err)
+		}
+		return false, nil
+	}
+
+	rollback := action.NewRollback(cfg)
+	rollback.Wait = true
+	rollback.Timeout = timeout
+	rollback.MaxHistory = maxHistory
+	if err := rollback.Run(name); err != nil {
+		return false, fmt.Errorf("roll back stuck release %s: %w", name, err)
+	}
+	return true, nil
 }
 
 func (e *HelmExecutor) Uninstall(_ context.Context, name string, timeout time.Duration, logFn func(string)) error {
@@ -143,6 +194,3 @@ func parseValues(raw []byte) (map[string]any, error) {
 	}
 	return vals, nil
 }
-
-// Ensure HelmExecutor implements Executor.
-var _ Executor = (*HelmExecutor)(nil)

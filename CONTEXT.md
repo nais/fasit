@@ -44,11 +44,14 @@ The lifecycle state of a deploy instruction: sent → installing → deployed/fa
 _Avoid_: deploy status, reconcile status (the legacy merged field)
 
 **Fasitd session**:
-A long-lived gRPC connection from one `fasitd` instance to Fasit for receiving commands and reporting back status, logs, and release inventory; the session's liveness is itself the `fasitd` health signal.
-_Avoid_: subscription
+A long-lived gRPC connection from one `fasitd` instance to Fasit for receiving commands and reporting back status, logs, and release inventory; the session's liveness is itself the `fasitd` health signal. Several sessions may exist per environment (one per replica), kept in connection order: the first is the **primary**, the rest are standbys tried in order.
+_Avoid_: subscription, active/passive session
+
+**Draining**:
+A **Fasitd session** announcing it will take no new commands (shutdown or self-upgrade). It leaves command routing at once but stays open until its in-flight command reports a terminal status.
 
 **Fasitd command**:
-A deploy or uninstall command sent to `fasitd`. During dry-run it is recorded separately from the canonical naisd rollout and may fail independently without blocking the real deployment.
+A deploy or uninstall command sent to `fasitd`. Recorded separately from the canonical naisd rollout and may fail independently without blocking the real deployment. Its lifecycle is sent → installing → deployed/uninstalled/failed, or `undeliverable` when no session accepts it.
 _Avoid_: shadow command, dry-run deploy, shadow deploy
 
 **Reconciler**:
@@ -69,6 +72,7 @@ _Avoid_: dispatcher, applier (earlier names for this stage)
 - The compute stage emits one **Decision** per (assignment, environment); the **Deployer** applies it
 - The displayed status of a feature×environment is two complementary signals: its **Rollout status** (from `deploy_log`) and its latest **Decision** (from `decision_log`)
 - A **Fasitd session** belongs to exactly one environment and carries zero or more **Fasitd commands** over time
+- An environment has zero or more **Fasitd sessions**; a command goes to the first session that accepts it, and only the primary's release inventory is persisted
 
 ## Example dialogue
 
