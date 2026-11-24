@@ -19,6 +19,7 @@ message AgentMessage {
     LogBatch logs = 4;
     ReleaseInventory releases = 5;
     Heartbeat heartbeat = 6;
+    Draining draining = 7;
   }
 }
 
@@ -32,6 +33,12 @@ message ServerMessage {
 // Heartbeat keeps the session stream warm so intermediaries (load balancers,
 // proxies) do not close the otherwise-idle connection. It carries no payload.
 message Heartbeat {}
+
+// Draining signals that the agent will not accept new commands (e.g. during
+// SIGTERM shutdown or a self-upgrade). Fasit removes the session from active
+// command routing while keeping the stream open so any in-flight command can
+// finish reporting logs and terminal status.
+message Draining {}
 
 // Register is the first message an agent must send. It declares which
 // environment the session belongs to and the agent's version/capabilities.

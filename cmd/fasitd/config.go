@@ -9,6 +9,7 @@ type Config struct {
 	IAPAudience  string
 	Insecure     bool
 	Production   bool
+	DryRun       bool
 }
 
 func DefaultConfig() Config {
@@ -17,5 +18,6 @@ func DefaultConfig() Config {
 		LogLevel:     "info",
 		FasitAddress: "localhost:4445",
 		Insecure:     false,
+		DryRun:       true,
 	}
 }

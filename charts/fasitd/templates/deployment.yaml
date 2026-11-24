@@ -6,6 +6,11 @@ metadata:
     {{- include "fasitd.labels" . | nindent 4 }}
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "fasitd.selectorLabels" . | nindent 6 }}
@@ -25,6 +30,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "fasitd.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 600
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -48,6 +54,7 @@ spec:
           {{ end }}
           args:
             - --production
+            - --dry-run={{ .Values.dryRun }}
             - --tenant-name
             - {{ .Values.tenantName }}
             - --env
@@ -56,6 +63,22 @@ spec:
             - {{ .Values.fasitAddress }}
             - --iap-audience
             - {{ .Values.iapAudience }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
           volumeMounts:
             - name: fasit-token
               mountPath: /var/run/secrets/fasit.nais.io/serviceaccount

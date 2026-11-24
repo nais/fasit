@@ -139,23 +139,29 @@ func (d *Deployer) dispatch(ctx context.Context, dec reconciler.DeployDecision) 
 }
 
 func (d *Deployer) sendCommand(ctx context.Context, diid uuid.UUID, tenantName, envName, featureName string, cmd *protogen.ServerMessage) error {
-	sess, ok := d.registry.get(keyFor(tenantName, envName))
-	if !ok {
+	sessions := d.registry.list(keyFor(tenantName, envName))
+	if len(sessions) == 0 {
 		d.record(ctx, tenantName, envName, featureName, "undeliverable")
 		return d.appendStatus(ctx, diid, "undeliverable", "no active fasitd session for environment")
 	}
 
-	select {
-	case sess.send <- cmd:
-		d.record(ctx, tenantName, envName, featureName, "sent")
-		return d.appendStatus(ctx, diid, "sent", "")
-	case <-sess.done:
-		d.record(ctx, tenantName, envName, featureName, "undeliverable")
-		return d.appendStatus(ctx, diid, "undeliverable", "fasitd session closed before delivery")
-	case <-time.After(sendTimeout):
-		d.record(ctx, tenantName, envName, featureName, "undeliverable")
-		return d.appendStatus(ctx, diid, "undeliverable", "timeout writing to fasitd session")
+	lastReason := "no active fasitd session for environment"
+	for _, sess := range sessions {
+		select {
+		case sess.send <- cmd:
+			d.record(ctx, tenantName, envName, featureName, "sent")
+			return d.appendStatus(ctx, diid, "sent", "")
+		case <-sess.done:
+			d.registry.remove(sess)
+			lastReason = "fasitd session closed before delivery"
+		case <-time.After(sendTimeout):
+			d.registry.remove(sess)
+			lastReason = "timeout writing to fasitd session"
+		}
 	}
+
+	d.record(ctx, tenantName, envName, featureName, "undeliverable")
+	return d.appendStatus(ctx, diid, "undeliverable", lastReason)
 }
 
 func (d *Deployer) appendStatus(ctx context.Context, diid uuid.UUID, status, msg string) error {

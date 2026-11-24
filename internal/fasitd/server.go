@@ -29,6 +29,7 @@ const sendBuffer = 64
 type Server struct {
 	protogen.UnimplementedFasitdServer
 
+	pool        *pgxpool.Pool
 	registry    *registry
 	querier     fasitdsql.Querier
 	loadContext contextloader.LoaderFunc
@@ -47,6 +48,7 @@ func NewServer(pool *pgxpool.Pool, loadContext contextloader.LoaderFunc, meter m
 	}
 
 	return &Server{
+		pool:        pool,
 		registry:    newRegistry(),
 		querier:     fasitdsql.New(pool),
 		loadContext: loadContext,
@@ -88,14 +90,11 @@ func (s *Server) Connect(stream protogen.Fasitd_ConnectServer) error {
 
 	log := s.log.With("tenant", reg.GetTenant(), "environment", reg.GetEnvironment(), "fasitd_version", reg.GetFasitdVersion())
 
-	if !s.registry.add(sess) {
-		log.Warn("rejecting fasitd session, one already active for environment")
-		return status.Error(codes.AlreadyExists, "a fasitd session is already active for this environment")
-	}
+	n := s.registry.add(sess)
 	defer s.registry.remove(sess)
 	defer close(sess.done)
 
-	log.Info("fasitd session connected")
+	log.With("active_sessions", n).Info("fasitd session connected")
 	defer log.Info("fasitd session disconnected")
 
 	sendErr := make(chan error, 1)
@@ -159,7 +158,15 @@ func (s *Server) handleAgentMessage(ctx context.Context, sess *session, msg *pro
 		return s.appendLogs(ctx, m.Logs)
 	case *protogen.AgentMessage_Releases:
 		s.countReport(ctx, "releases")
+		if !s.registry.isPrimary(sess) {
+			return nil
+		}
 		return s.setReleases(ctx, sess.environmentID, m.Releases)
+	case *protogen.AgentMessage_Draining:
+		s.countReport(ctx, "draining")
+		s.registry.remove(sess)
+		s.log.With("tenant", sess.key.tenant, "environment", sess.key.environment, "fasitd_version", sess.fasitdVersion).Info("fasitd session draining")
+		return nil
 	case *protogen.AgentMessage_Register:
 		return status.Error(codes.InvalidArgument, "duplicate register message")
 	case *protogen.AgentMessage_Heartbeat:
@@ -214,11 +221,18 @@ func (s *Server) appendLogs(ctx context.Context, batch *protogen.LogBatch) error
 }
 
 func (s *Server) setReleases(ctx context.Context, envID uuid.UUID, inv *protogen.ReleaseInventory) error {
-	if err := s.querier.DeleteReleaseStatusesInEnvironment(ctx, envID); err != nil {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin release tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := fasitdsql.New(tx)
+	if err := q.DeleteReleaseStatusesInEnvironment(ctx, envID); err != nil {
 		return fmt.Errorf("delete release statuses: %w", err)
 	}
 	for _, r := range inv.GetReleases() {
-		if err := s.querier.SetReleaseStatus(ctx, fasitdsql.SetReleaseStatusParams{
+		if err := q.SetReleaseStatus(ctx, fasitdsql.SetReleaseStatusParams{
 			EnvironmentID: envID,
 			Feature:       r.GetName(),
 			Version:       r.GetVersion(),
@@ -228,6 +242,9 @@ func (s *Server) setReleases(ctx context.Context, envID uuid.UUID, inv *protogen
 		}); err != nil {
 			return fmt.Errorf("set release status: %w", err)
 		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit release tx: %w", err)
 	}
 	return nil
 }

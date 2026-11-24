@@ -1,6 +1,7 @@
 package fasitd
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/google/uuid"
@@ -27,52 +28,72 @@ type session struct {
 	done          chan struct{}
 }
 
-// registry tracks the currently connected fasitd sessions, at most one per
-// environment. The session itself is the fasitd health signal, so this is
-// deliberately in-memory only.
-//
-// TODO: only one active session per environment is supported; a second
-// connection for the same tenant+environment is rejected. This needs a cleverer
-// strategy (drain/handover) once fasitd moves beyond dry-run.
+// registry tracks connected fasitd sessions per environment as an ordered list.
+// Index 0 is the primary session; any remaining sessions are standbys tried in
+// order if delivery to the primary fails or the primary drains/disconnects.
 type registry struct {
 	mu       sync.RWMutex
-	sessions map[sessionKey]*session
+	sessions map[sessionKey][]*session
 }
 
 func newRegistry() *registry {
-	return &registry{sessions: make(map[sessionKey]*session)}
+	return &registry{sessions: make(map[sessionKey][]*session)}
 }
 
-// add registers s unless one already exists for its environment. It returns
-// false when a session is already present (the caller must reject).
-func (r *registry) add(s *session) bool {
+// add appends s to the end of its environment's session list and returns the
+// new number of sessions for that environment.
+func (r *registry) add(s *session) int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if _, ok := r.sessions[s.key]; ok {
-		return false
-	}
-	r.sessions[s.key] = s
-	return true
+	r.sessions[s.key] = append(r.sessions[s.key], s)
+	return len(r.sessions[s.key])
 }
 
-// remove deregisters s, but only if it is still the active session for its key.
+// remove deletes s from its environment's session list. Removing the primary
+// promotes the next session to index 0.
 func (r *registry) remove(s *session) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if cur, ok := r.sessions[s.key]; ok && cur == s {
-		delete(r.sessions, s.key)
+	list := r.sessions[s.key]
+	idx := slices.Index(list, s)
+	if idx < 0 {
+		return
 	}
+	list = slices.Delete(list, idx, idx+1)
+	if len(list) == 0 {
+		delete(r.sessions, s.key)
+		return
+	}
+	r.sessions[s.key] = list
 }
 
-func (r *registry) get(key sessionKey) (*session, bool) {
+// list returns a snapshot of sessions for key in priority order (index 0 first).
+func (r *registry) list(key sessionKey) []*session {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	s, ok := r.sessions[key]
-	return s, ok
+	list := r.sessions[key]
+	if len(list) == 0 {
+		return nil
+	}
+	out := make([]*session, len(list))
+	copy(out, list)
+	return out
+}
+
+// isPrimary reports whether s is currently index 0 for its environment.
+func (r *registry) isPrimary(s *session) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	list := r.sessions[s.key]
+	return len(list) > 0 && list[0] == s
 }
 
 func (r *registry) count() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return len(r.sessions)
+	n := 0
+	for _, list := range r.sessions {
+		n += len(list)
+	}
+	return n
 }

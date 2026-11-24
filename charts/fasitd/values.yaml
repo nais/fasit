@@ -5,6 +5,8 @@ envProjectId:
 fasitAddress: fasitd.nais.io:443
 # iapAudience is the OAuth client ID of the IAP-protected backend.
 iapAudience: ""
+# dryRun acknowledges commands without executing Helm.
+dryRun: true
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/fasitd
   pullPolicy: IfNotPresent

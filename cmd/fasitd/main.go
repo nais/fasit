@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/nais/fasit/internal/fasitd/daemon"
@@ -34,12 +35,13 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience (OAuth client ID) for the ID token sent to Fasit")
 	flag.BoolVar(&cfg.Insecure, "insecure", cfg.Insecure, "connect without TLS/IAP (local development)")
 	flag.BoolVar(&cfg.Production, "production", false, "run in-cluster (real helm release inventory)")
+	flag.BoolVar(&cfg.DryRun, "dry-run", cfg.DryRun, "acknowledge commands without executing Helm")
 }
 
 func main() {
 	flag.Parse()
 	log := newLogger(cfg.LogLevel)
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	if err := run(ctx, log); err != nil {
@@ -49,15 +51,6 @@ func main() {
 }
 
 func run(ctx context.Context, log *slog.Logger) error {
-	go func() {
-		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.Handler())
-		srv := &http.Server{Addr: cfg.BindAddress, Handler: mux, ReadHeaderTimeout: 2 * time.Second}
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.With("err", err).Error("metrics server")
-		}
-	}()
-
 	dialOpts, err := dialOptions()
 	if err != nil {
 		return err
@@ -75,7 +68,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		Tenant:      cfg.TenantName,
 		Environment: cfg.Env,
 		Version:     Version,
-		DryRun:      true,
+		DryRun:      cfg.DryRun,
 	}
 
 	if cfg.Production {
@@ -85,9 +78,29 @@ func run(ctx context.Context, log *slog.Logger) error {
 		}
 		opts.ReleaseLister = helm.New(kubeConfig, "nais-system", log.With("subsystem", "helm"))
 		opts.ReleaseInterval = 15 * time.Minute
+		opts.Executor = daemon.NewHelmExecutor(kubeConfig, "nais-system", log)
 	}
 
 	agent := daemon.NewAgent(client, opts, log)
+
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+			if !agent.Ready() {
+				http.Error(w, "not registered", http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+		})
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+		srv := &http.Server{Addr: cfg.BindAddress, Handler: mux, ReadHeaderTimeout: 2 * time.Second}
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.With("err", err).Error("metrics server")
+		}
+	}()
 
 	for {
 		err = agent.Run(ctx)

@@ -24,7 +24,7 @@ func New(restConfig *rest.Config, namespace string, log *slog.Logger) *Client {
 	cfg := &action.Configuration{}
 
 	// Init cannot error, it will panic if something goes wrong
-	_ = cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", func(format string, v ...any) {
+	_ = cfg.Init(&K8sClient{Cfg: restConfig}, namespace, "", func(format string, v ...any) {
 		log.Debug(fmt.Sprintf(format, v...))
 	})
 	return &Client{
@@ -59,17 +59,17 @@ func (c *Client) List() ([]*release.Release, error) {
 }
 
 type K8sClient struct {
-	cfg *rest.Config
+	Cfg *rest.Config
 }
 
 // ToRESTConfig returns restconfig
 func (k *K8sClient) ToRESTConfig() (*rest.Config, error) {
-	return k.cfg, nil
+	return k.Cfg, nil
 }
 
 // ToDiscoveryClient returns discovery client
 func (k *K8sClient) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
-	dcfg, err := discovery.NewDiscoveryClientForConfig(k.cfg)
+	dcfg, err := discovery.NewDiscoveryClientForConfig(k.Cfg)
 	if err != nil {
 		return nil, err
 	}
