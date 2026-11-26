@@ -147,10 +147,12 @@ func Handler(renderPage RenderPage, fasitdStatus fasitd.StatusSource) http.Handl
 			return
 		}
 
+		envCrumb := breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs))
+		preserveTab(envCrumb.Alternatives, activeTab)
 		crumbs := []breadcrumb.Crumb{
 			breadcrumb.Environments(),
 			tenantCrumb(tenant.Name, toTenantNavs(allTenants)),
-			breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
+			envCrumb,
 		}
 		gcpProjectID := gcpProjectIDFromValues(envValues)
 		userEmail := auth.GetEmail(r.Context())
