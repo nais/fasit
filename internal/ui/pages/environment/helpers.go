@@ -93,6 +93,17 @@ func toEnvironmentNavs(environments []*envpkg.Environment) []view.EnvironmentNav
 	return ret
 }
 
+// preserveTab keeps the environment switcher on the current tab
+func preserveTab(alternatives []breadcrumb.Crumb, tab string) {
+	if tab == environmentTabFeatures {
+		return
+	}
+
+	for i := range alternatives {
+		alternatives[i].URL += "?tab=" + tab
+	}
+}
+
 func getEnvironmentMetadata(env *envpkg.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
 	addMetadata(&metadata, "ID", env.ID.String())
